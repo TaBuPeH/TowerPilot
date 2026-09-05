@@ -1320,16 +1320,143 @@ def _emulator_instances() -> list[dict]:
         try:
             with open(bs, encoding="utf-8", errors="replace") as fh:
                 txt = fh.read()
+            # which instances are UP: HD-Player.exe carries the key on its
+            # command line (`HD-Player.exe --instance Pie64`, the same form
+            # the Start Menu shortcut uses)
+            live_keys = set()
+            try:
+                import psutil
+                for pr in psutil.process_iter(["name", "cmdline"]):
+                    if "hd-player" in (pr.info["name"] or "").lower():
+                        args = pr.info["cmdline"] or []
+                        for i, a in enumerate(args):
+                            if a == "--instance" and i + 1 < len(args):
+                                live_keys.add(args[i + 1])
+            except Exception:                   # noqa: BLE001
+                pass
+            adb_on = 'bst.enable_adb_access="1"' in txt
             for m in re.finditer(r'bst\.instance\.(\w+)\.display_name="([^"]*)"', txt):
                 key, name = m.group(1), m.group(2)
                 pm = re.search(rf'bst\.instance\.{key}\.adb_port="(\d+)"', txt)
                 out.append({"emulator": "BlueStacks", "index": key, "name": name,
-                            "running": None,
+                            "running": key in live_keys,
+                            "adb_enabled": adb_on,
                             "adb_port": int(pm.group(1)) if pm else None,
                             "port_source": "conf" if pm else None})
         except Exception as e:                  # noqa: BLE001
             out.append({"emulator": "BlueStacks", "error": f"conf: {e}"})
     return out
+
+
+def _program_files_dirs() -> list[str]:
+    out = []
+    for var in ("ProgramFiles", "ProgramFiles(x86)"):
+        d = os.environ.get(var)
+        if d and d not in out:
+            out.append(d)
+    return out or [r"C:\Program Files"]
+
+
+def _bluestacks_player() -> str | None:
+    for pf in _program_files_dirs():
+        exe = os.path.join(pf, "BlueStacks_nxt", "HD-Player.exe")
+        if os.path.exists(exe):
+            return exe
+    return None
+
+
+def _adopt_placeholder(serial: str, adb: str | None) -> str:
+    """Start-button counterpart of /api/wizard/adopt for a FRESH install:
+    when the active instance has no serial yet, write this emulator's serial
+    (and its adb binary) so the boot pipeline has something to drive. An
+    instance that already points somewhere is left alone - repointing it is
+    the adopt endpoint's explicit act, never a side effect of Start."""
+    with _CONFIG_WRITE_LOCK:
+        cfg = load_config()
+        name = cfg.get("active_instance", "main")
+        inst = (cfg.get("instances") or {}).get(name)
+        if not isinstance(inst, dict):
+            return f" - no instance {name!r} in config.yaml; nothing adopted"
+        if inst.get("serial"):
+            if inst["serial"] == serial:
+                return ""
+            return (f" - instance {name!r} keeps {inst['serial']}; use 'Use this "
+                    f"one' to repoint it at {serial}")
+        inst["serial"] = serial
+        if adb and os.path.exists(adb):
+            cfg.setdefault("adb", {})["exe"] = adb
+        try:
+            save_config(cfg)
+        except Exception as e:                  # noqa: BLE001
+            return f" - could not write config.yaml: {e}"
+    return f" - instance {name!r} now points at {serial}"
+
+
+def _boot_pipeline_for(serial: str) -> str:
+    """Start boot.py for the configured instance that uses `serial`, if any.
+    Returns the sentence to append to the launch message."""
+    cfg = load_config()
+    inst = next((n for n, i in (cfg.get("instances") or {}).items()
+                 if isinstance(i, dict) and i.get("serial") == serial), None)
+    if not inst:
+        return (f" - no configured instance uses {serial}; adopt it once it is "
+                "up, the game auto-launch is skipped this time")
+    pyw = sys.executable.replace("python.exe", "pythonw.exe")
+    subprocess.Popen([pyw, os.path.join(ROOT, "device", "boot.py"),
+                      "--instance", inst], cwd=ROOT,
+                     creationflags=subprocess.DETACHED_PROCESS | NO_WINDOW)
+    return (f" - boot pipeline started for '{inst}': waits for Android, clears "
+            "ad overlays, launches the game")
+
+
+def _launch_bluestacks(key: str):
+    """`HD-Player.exe --instance <key>` - the exact command BlueStacks' own
+    Start Menu shortcut runs - then the same boot pipeline MuMu gets. The adb
+    daemon is started with BlueStacks' HD-Adb.exe only when no OTHER
+    emulator's adb is configured (a foreign adb kills the shared daemon)."""
+    if not re.fullmatch(r"[A-Za-z0-9_]+", key):
+        return jsonify({"ok": False, "error": "BlueStacks instance key expected"}), 400
+    player = _bluestacks_player()
+    if not player:
+        return jsonify({"ok": False, "error": "HD-Player.exe not found under "
+                        "BlueStacks_nxt"}), 400
+    entry = next((i for i in _emulator_instances()
+                  if i.get("emulator") == "BlueStacks" and i.get("index") == key), None)
+    if entry is None:
+        return jsonify({"ok": False, "error": f"no BlueStacks instance {key!r} in "
+                        "bluestacks.conf"}), 400
+    if entry.get("running"):
+        msg = f"BlueStacks '{entry.get('name') or key}' is already running"
+    else:
+        try:
+            subprocess.Popen([player, "--instance", key],
+                             creationflags=subprocess.DETACHED_PROCESS | NO_WINDOW)
+        except Exception as e:                  # noqa: BLE001
+            return jsonify({"ok": False, "error": f"HD-Player: {e}"}), 500
+        msg = f"BlueStacks '{entry.get('name') or key}' starting"
+    hd_adb = os.path.join(os.path.dirname(player), "HD-Adb.exe")
+    cfg_adb = (load_config().get("adb") or {}).get("exe") or ""
+    foreign = (os.path.exists(cfg_adb)
+               and os.path.normcase(cfg_adb) != os.path.normcase(hd_adb))
+    if foreign:
+        msg += (f" - adb daemon NOT started: config points at {cfg_adb}; adopt "
+                "this instance to switch to HD-Adb.exe")
+    elif os.path.exists(hd_adb):
+        try:
+            _run([hd_adb, "start-server"], capture_output=True, timeout=30)
+            msg += " - adb daemon started with HD-Adb.exe"
+        except Exception as e:                  # noqa: BLE001
+            msg += f" - adb start-server failed: {e}"
+    if entry.get("adb_enabled") is False:
+        msg += (" - WARNING: BlueStacks' Android Debug Bridge is OFF in "
+                "bluestacks.conf; nothing answers on the adb port until you "
+                "switch it on (Settings > Advanced)")
+    port = entry.get("adb_port")
+    if port:
+        serial = f"127.0.0.1:{port}"
+        msg += _adopt_placeholder(serial, hd_adb if not foreign else None)
+        msg += _boot_pipeline_for(serial)
+    return jsonify({"ok": True, "message": msg})
 
 
 @app.post("/api/wizard/launch")
@@ -1347,9 +1474,12 @@ def api_wizard_launch():
     if _procs():
         return jsonify({"ok": False, "error": "runners alive - stop them first"}), 409
     body = request.get_json(force=True) or {}
+    if body.get("emulator") == "BlueStacks":
+        return _launch_bluestacks(str(body.get("index") or ""))
     mgr = _mumu_manager()
     if body.get("emulator") != "MuMu" or not mgr:
-        return jsonify({"ok": False, "error": "launch is wired for MuMu only"}), 400
+        return jsonify({"ok": False, "error": "launch is wired for MuMu and "
+                        "BlueStacks only"}), 400
     idx = str(int(body["index"]))
     try:
         r = _run([mgr, "control", "-v", idx, "launch"], capture_output=True,
@@ -1358,22 +1488,9 @@ def api_wizard_launch():
         if r.returncode != 0:
             return jsonify({"ok": False, "message": msg})
         serial = f"127.0.0.1:{16384 + 32 * int(idx)}"   # MuMu's port scheme
-        cfg = load_config()
-        inst = next((n for n, i in (cfg.get("instances") or {}).items()
-                     if isinstance(i, dict) and i.get("serial") == serial),
-                    None)
-        if inst:
-            pyw = sys.executable.replace("python.exe", "pythonw.exe")
-            subprocess.Popen(
-                [pyw, os.path.join(ROOT, "device", "boot.py"),
-                 "--instance", inst],
-                cwd=ROOT,
-                creationflags=subprocess.DETACHED_PROCESS | NO_WINDOW)
-            msg += (f" - boot pipeline started for '{inst}': waits for "
-                    "Android, clears ad overlays, launches the game")
-        else:
-            msg += (f" - no configured instance uses {serial}; "
-                    "game auto-launch skipped")
+        mumu_adb = os.path.join(os.path.dirname(mgr), "adb.exe")
+        msg += _adopt_placeholder(serial, mumu_adb)
+        msg += _boot_pipeline_for(serial)
         return jsonify({"ok": True, "message": msg})
     except Exception as e:                      # noqa: BLE001
         return jsonify({"ok": False, "error": str(e)}), 500

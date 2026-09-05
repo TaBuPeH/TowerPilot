@@ -3,7 +3,7 @@
 > **Status:** Active
 > **Type:** Knowledge
 > **Created:** 2026-09-05
-> **Updated:** 2026-09-05
+> **Updated:** 2026-09-06
 > **Tags:** bluestacks, emulator, setup
 
 The autopilot was built against MuMu Player. Everything it needs from an
@@ -53,25 +53,34 @@ simply scores low. Match both.
 ## Connecting the autopilot
 
 1. Start `python frontend/dashboard.py`, open <http://127.0.0.1:8620/>.
-2. On **Setup**, scan. BlueStacks appears with its instance name and the
-   adb port from `bluestacks.conf`. Adopt it: the wizard writes
-   `adb.exe = ...\BlueStacks_nxt\HD-Adb.exe` and
-   `instances.main.serial = 127.0.0.1:<port>` into `backend/config.yaml`,
-   then runs `adb connect`.
-3. The resolution check must read exactly 1080 x 2560.
-4. Leave the instance's `display` and `input_display` keys **absent**
+2. On **Setup**, scan. BlueStacks appears with its instance name, the adb
+   port from `bluestacks.conf`, and whether it is running (the wizard
+   looks for `HD-Player.exe --instance <key>`).
+3. Press **Start it**. That runs the same command as BlueStacks' own
+   shortcut (`HD-Player.exe --instance <key>`), starts the adb daemon with
+   `HD-Adb.exe`, and, when the configured instance has no serial yet,
+   points it at `127.0.0.1:<port>` with `adb.exe = ...\HD-Adb.exe`. It
+   then hands off to the boot pipeline (`device/boot.py`): wait for adb
+   and Android, dismiss overlays, launch The Tower by package name, and
+   verify a known screen. No icon is tapped - the game is started through
+   `am start`, so which BlueStacks tab is in front does not matter. The
+   pipeline gives adb four minutes; with ADB still off in BlueStacks it
+   times out, and Start can simply be pressed again.
+4. An instance that already points somewhere is not repointed by Start;
+   **Use this one** does that explicitly.
+5. The resolution check must read exactly 1080 x 2560.
+6. Leave the instance's `display` and `input_display` keys **absent**
    (the template config has none). They exist for MuMu's secondary game
    display; without them the capture and input paths use the default
    display and skip the MuMu-only display refresh entirely.
-5. The **Start** button on the Setup page launches MuMu only. Start
-   BlueStacks yourself; the runners attach to whatever is on screen.
 
 > [!warning] Ad overlays on first boot
 > `device/overlays.py` closes known emulator ad windows and REFUSES an
 > unknown one (it logs the package name and a screenshot instead of
-> tapping). Its allowlist has no BlueStacks entry yet. If `boot.py` stops
-> on an overlay, read the package from `backend/logs/<instance>/` and add
-> it to `AD_PACKAGES`.
+> tapping). BlueStacks' own Home tab and launcher apps are allowed by the
+> `com.bluestacks.` prefix; its ad windows are not known yet. If `boot.py`
+> stops on an overlay, read the package from `backend/logs/<instance>/`
+> and add it to `AD_PACKAGES`.
 
 ---
 

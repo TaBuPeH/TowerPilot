@@ -569,15 +569,16 @@ async function ovLoadEmulators(){
     const e = await api("/api/wizard/emulators");
     const rows = (e.instances || []).filter(i => !i.error).map(i => {
       const addr = i.adb_port ? `127.0.0.1:${i.adb_port}` : "";
-      const canStart = !i.running && (i.emulator || "").startsWith("MuMu")
-        && i.index !== undefined;
+      const fam = (i.emulator || "");
+      const canStart = !i.running && i.index !== undefined
+        && (fam.startsWith("MuMu") || fam.startsWith("BlueStacks"));
       return `<tr>
         <td style="text-align:left">${esc(i.emulator || "?")} ${esc(i.name || "")}</td>
         <td>${i.running ? '<span class="ok">running</span>'
                         : '<span class="muted">off</span>'}</td>
         <td class="muted">${esc(addr)}</td>
         <td>${canStart ? `<button class="small"
-              onclick="ovStartVM(this, ${Number(i.index)})">▶ Start</button>` : ""}</td>
+              onclick="ovStartVM(this, '${esc(fam)}', '${esc(String(i.index))}')">▶ Start</button>` : ""}</td>
       </tr>`;
     });
     box.innerHTML = rows.length
@@ -588,10 +589,10 @@ async function ovLoadEmulators(){
     box.textContent = "emulator scan failed: " + err.message;
   }
 }
-async function ovStartVM(btn, index){
+async function ovStartVM(btn, emulator, index){
   btn.disabled = true; btn.textContent = "starting…";
   try {
-    const r = await post("/api/wizard/launch", { emulator: "MuMu", index });
+    const r = await post("/api/wizard/launch", { emulator, index });
     toast(r.message || "launch requested");
     // MuMu boots for ~a minute; the boot pipeline then clears ads and
     // starts the game, and the overlay clears itself once the adb port
@@ -627,6 +628,11 @@ async function renderSetup(){
         <td>${c.port_open === true ? '<span class="ok">reachable</span>'
              : c.port_open === false ? '<span class="bad">not reachable</span>' : ""}</td></tr>`).join("");
 
+  // the adb binary of an instance's family, from the install scan - adopt
+  // writes it into config so BlueStacks drives with HD-Adb.exe, MuMu with
+  // its own adb.exe (mixing them kills the shared daemon)
+  const adbFor = fam => ((e.scanned || []).find(s => s.adb && !/^adb$/i.test(s.adb)
+    && (s.emulator || "").startsWith((fam || "").split(" ")[0])) || {}).adb || "";
   const rows = [];
   for (const i of (e.instances || [])) {
     const serial = i.adb_port ? `127.0.0.1:${i.adb_port}` : null;
@@ -635,9 +641,10 @@ async function renderSetup(){
       <td>${i.running ? '<span class="ok">running</span>' : '<span class="muted">off</span>'}</td>
       <td>${esc(serial || "")}</td>
       <td style="white-space:nowrap">
-        ${serial && i.running ? `<button class="small" onclick="adopt('${esc(serial)}')">Use this one</button>` : ""}
-        ${!i.running && (i.emulator||"").startsWith("MuMu") && i.index !== undefined
-          ? `<button class="small ghost" onclick="launchVM(${Number(i.index)})">Start it</button>` : ""}
+        ${serial && i.running ? `<button class="small" onclick='adopt(${JSON.stringify(serial)}, ${JSON.stringify(adbFor(i.emulator))})'>Use this one</button>` : ""}
+        ${!i.running && i.index !== undefined
+          && ((i.emulator||"").startsWith("MuMu") || (i.emulator||"").startsWith("BlueStacks"))
+          ? `<button class="small ghost" onclick="launchVM('${esc(i.emulator)}', '${esc(String(i.index))}')">Start it</button>` : ""}
       </td></tr>`);
   }
   for (const f of (e.scanned || []))
@@ -706,9 +713,9 @@ async function adopt(serial, adb){
     renderSetup();
   } catch(e){ toast(e.message, true); }
 }
-async function launchVM(index){
+async function launchVM(emulator, index){
   try {
-    const r = await post("/api/wizard/launch", { emulator:"MuMu", index });
+    const r = await post("/api/wizard/launch", { emulator, index });
     toast(r.message || "launch requested");
   } catch(e){ toast(e.message, true); }
 }

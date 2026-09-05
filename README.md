@@ -3,7 +3,7 @@
 > **Status:** Active
 > **Type:** Knowledge
 > **Created:** 2026-08-24
-> **Updated:** 2026-09-05
+> **Updated:** 2026-09-06
 > **Tags:** autopilot, the-tower, distribution
 
 Vision-driven autopilot for **The Tower** running in an Android emulator
@@ -23,8 +23,11 @@ machine.
 3. `python frontend/dashboard.py` and open <http://127.0.0.1:8620/>.
    The first start copies `backend/config.example.yaml` to
    `backend/config.yaml` - that file is your machine and is git-ignored.
-4. **Setup** page: the wizard finds your emulator's adb, connects, writes
-   the serial into `config.yaml`, and checks the display resolution.
+4. **Setup** page: the wizard lists the emulators it finds. **Start it**
+   launches the instance (MuMu through MuMuManager, BlueStacks through
+   `HD-Player.exe`), points the config at it on a fresh install, and runs
+   the boot pipeline that waits for Android, clears overlays and starts
+   the game. Then check the display resolution.
 5. **Calibrate** page: the *Required for your account* list names every
    picture only your account can provide (card presets, global and
    category presets as you named them, your modules at your rarity). Open
