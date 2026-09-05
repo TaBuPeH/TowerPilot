@@ -94,13 +94,9 @@ BUY_TICKET_BAND = ((1450, 1600), (600, 900))
 GEM_PRICE_BAND = ((1480, 1630), (560, 820))
 GEM_DIGIT_H = (25, 45)          # digit glyph height; the diamond is ~51 tall
 GEM_DIGIT_MIN_SCORE = 0.60
-CARD_PRESET = "cards/preset_tourney_p1.png"
-CARDS_DROP = ("cash",)                          # "we don't need it"
-CARDS_ADD = ("extra_orb",)                      # unless Orb damage is resisted
-MODULE_PLAN = [("dimension_core", "assist"),
-               ("primordial_collapse", "primary"),
-               ("pulsar_harvester", "assist"),
-               ("galaxy_compressor", "primary")]
+# The cards screen's own header - the anchor for "we are on the cards
+# screen". Preset tabs are the player's (templates/cards/preset_*.png).
+CARDS_SCREEN = "cards/active_label.png"
 
 FIND_THRESH = 0.90
 STRICT = 0.95           # inventory items: a wrong equip is expensive
@@ -506,7 +502,7 @@ def guardian_swap(chips=CHIPS_IN):
     tap_at(GUARDIAN_TAB, "guardian tab")
 
     # v29 GUARD (2026-08-27): the redesigned guardian screen carries its own
-    # loadout tabs (this account: "Farm"/"Tourney") and a new slot layout -
+    # loadout tabs (as the player named them) and a new slot layout -
     # the legacy geometry below tapped the edge of a live slot and unequipped
     # a farm chip before the stuck-guard fired. Presets auto-save, so a
     # single stray tap here is a permanent build edit: refuse BEFORE the
@@ -723,28 +719,41 @@ def _locate_card(name: str):
     return capture.grab(), None, 0.0
 
 
-TOURNEY_LOADOUT = "tourney_1"   # the config.yaml loadouts key setup() equips.
-                                # cards/guardians/modules there are IDENTICAL
-                                # to CARD_PRESET / CHIPS_IN / MODULE_PLAN - the
-                                # constants are kept as the read-only checker's
-                                # fallback and as this module's own record.
+TOURNEY_LOADOUT = "tourney_1"   # the config.yaml loadouts key setup() equips;
+                                # its body is the player's own (empty on a
+                                # fresh install = equip nothing).
+
+
+def _card_tweak_plan() -> tuple[list[str], list[str]]:
+    """The standing deck tweaks applied on top of a loaded preset, from
+    config.yaml `tourney_card_tweaks: {drop: [...], add: [...]}` (card
+    template names under templates/cards/). Empty unless the player wrote
+    one - it is their plan, not something the code can assume."""
+    plan = CONFIG.get("tourney_card_tweaks") or {}
+    drop = [str(c) for c in (plan.get("drop") or [])]
+    add = [str(c) for c in (plan.get("add") or [])]
+    return drop, add
 
 
 def card_tweaks():
     """The condition-driven deck tweaks, ON TOP of whatever preset is loaded.
 
-    Split out of card_swap so the PRESET LOAD can go through loadout.apply()
-    with every other equip while these stay here, where they belong: they are
-    the user's standing plan (drop Cash, add Extra Orb), not part of any named
-    loadout.
+    Kept apart from the PRESET LOAD (loadout.apply() does that with every
+    other equip) because they are the player's standing plan - e.g. drop
+    Cash, add Extra Orb - written in config.yaml `tourney_card_tweaks`, not
+    part of any named loadout. Nothing configured: nothing is opened.
 
     The 2026-08-15 rule stands: a tweak that cannot be applied is logged with a
     screenshot and SKIPPED - entering with the plain preset always beats not
     entering. Only the preset load itself is fatal, and that is loadout's.
     """
-    open_nav("cards", CARD_PRESET, "cards screen")
-    for name, want_in in [(n, False) for n in CARDS_DROP] + \
-                         [(n, True) for n in CARDS_ADD]:
+    drop, add = _card_tweak_plan()
+    if not drop and not add:
+        logger.event("card_tweaks_skipped", why="no tourney_card_tweaks configured")
+        return
+    open_nav("cards", CARDS_SCREEN, "cards screen")
+    for name, want_in in [(n, False) for n in drop] + \
+                         [(n, True) for n in add]:
         frame, pt, tick = _locate_card(name)
         if pt is None:
             logger.event("tourney_cards", card=name, skipped=True,
@@ -836,31 +845,6 @@ def verify_loadout(name: str = TOURNEY_LOADOUT) -> list[str]:
     logger.event("tourney_verify_loadout", loadout=name, ok=not problems,
                  problems=problems)
     return problems
-
-
-def card_swap():
-    """Cards: load the tournament preset, then the condition-driven tweaks.
-
-    SUPERSEDED by setup()'s loadout.apply() + card_tweaks() and kept as the
-    one-call form (and for any caller that still wants the old sequence).
-
-    The PRESET is the base deck; the tweaks (drop Cash, add Extra Orb) are
-    the user's standing plan on top of it. Two rules learned 2026-08-15,
-    when a failed Extra Orb lookup aborted a valid 22/22 deck and cost the
-    Saturday tournament entry:
-      * a tweak that cannot be applied is logged with a screenshot and
-        SKIPPED - entering with the plain preset always beats not entering;
-      * the preset load itself stays fatal on failure, because entering
-        with the farm deck would waste the ticket.
-    """
-    open_nav("cards", CARD_PRESET, "cards screen")
-    frame, pt = require(CARD_PRESET, "Tourney P1 preset tab")
-    tap_at(pt, "load preset Tourney P1")
-    logger.event("tourney_cards", stage="preset loaded")
-    return_to_game("cards")
-    # ONE COPY OF THE TWEAKS, shared with setup()'s loadout path - two copies
-    # of "drop Cash, add Extra Orb" is two places to update when the plan does.
-    card_tweaks()
 
 
 # Which category's header slots a module occupies. The art gives it away
@@ -989,27 +973,6 @@ def _equip_module(name: str, slot: str, present: set | None = None) -> str:
     logger.event("tourney_modules", module=name, slot=slot, result="equipped",
                  slot_verified=(True if ok else "no-template"))
     return "equipped"
-
-
-def module_swap():
-    open_nav("modules", "modules/buy_module.png", "modules screen")
-    present = set(_scan_grid([f"modules/{n}.png" for n, _ in MODULE_PLAN],
-                             1100, 2200))
-    results = {}
-    # THE BATCH SCAN IS ONLY VALID UNTIL THE FIRST EQUIP - the same stale-scan
-    # bug loadout.apply_modules fixed on 2026-08-13, still live here until the
-    # 2026-08-15 tournament: equipping Dimension Core displaced Primordial
-    # Collapse into the grid, but the pre-swap scan had already recorded PC
-    # absent-therefore-equipped, so PC (and GComp, displaced by Pulsar
-    # Harvester) were skipped as "already" and the tournament ran on the coin
-    # primaries. After any equip, later lookups get a fresh frame instead.
-    for name, slot in MODULE_PLAN:
-        results[name] = _equip_module(name, slot, present)
-        if results[name] == "equipped":
-            present = None
-    logger.event("tourney_modules", plan=results)
-    return_to_game("modules")
-    return results
 
 
 def read_gem_price(frame) -> int | None:

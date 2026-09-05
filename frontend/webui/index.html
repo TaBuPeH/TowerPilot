@@ -768,6 +768,7 @@ function pollScan(){
 async function renderCalibrate(){
   S.calib = await api("/api/wizard/templates").catch(e => ({ error:e.message }));
   S.required = await api("/api/wizard/required").catch(e => ({ required:[], missing:[] }));
+  S.catalogue = await api("/api/catalogue/modules").catch(() => ({ modules:[] }));
   S.calibTs = Date.now();
   const missing = (S.calib.missing_seen || []);
   const have = S.calib.have || [];
@@ -811,8 +812,35 @@ async function renderCalibrate(){
         your modules at your own rarity - derived from the loadouts in
         config.yaml and the scanned profile. Click a missing one to name the
         crop, then draw it on the live screen.</p>
+      <details ${req.length ? "" : "open"}>
+        <summary>What a fresh account has to cut, and how to name it</summary>
+        <ul class="muted" style="font-size:.9em; line-height:1.5">
+          <li><b>Card preset tabs</b> — open Cards, box one tab label at a time:
+            <code>cards/preset_&lt;name&gt;.png</code>. The name is yours; the
+            loadouts and the scan refer to it.</li>
+          <li><b>Global presets</b> — open the preset picker on the Battle
+            screen, box each row's label: <code>presets/gp_&lt;slug&gt;.png</code>
+            (slug = the name lower-cased, anything but letters and digits
+            becomes <code>_</code>).</li>
+          <li><b>Category presets</b> — the same picker per category:
+            <code>presets/modules_&lt;slug&gt;.png</code>,
+            <code>presets/guardians_&lt;slug&gt;.png</code>,
+            <code>presets/workshop_&lt;slug&gt;.png</code>,
+            <code>presets/bots_&lt;slug&gt;.png</code>.</li>
+          <li><b>Modules</b> — every module a loadout names, twice, at your own
+            rarity: the grid tile <code>modules/&lt;slug&gt;.png</code> and the
+            equipped header art <code>modules/equipped/&lt;slug&gt;.png</code>.
+            Slugs: ${((S.catalogue || {}).modules || []).map(m =>
+              `<code title="${esc(m.name)}">${esc(m.slug)}</code>`).join(" ")}</li>
+          <li><b>Guardian chips</b> and every button ship with the repo - their
+            art is the same on every account.</li>
+        </ul>
+        <p class="muted">Then run the account scan (Setup page): it records the
+          tabs, rows and modules these templates find, and the loadouts you fill
+          in on the Configuration page may only name what it recorded.</p>
+      </details>
       ${req.length === 0
-        ? '<p class="muted">Nothing is referenced yet - add loadouts or scan the account.</p>'
+        ? '<p class="muted">Nothing is referenced yet — cut the pictures above, then scan the account and fill the loadouts; this list follows both.</p>'
         : req.map(r => `
           <div class="flowcard" style="cursor:pointer" onclick="cropPick('${esc(r.rel)}')">
             <div><b>${r.have ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>'}

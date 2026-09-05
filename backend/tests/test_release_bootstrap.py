@@ -53,6 +53,10 @@ def test_shipped_example_config_is_generic_and_read_only():
     assert "display" not in inst and "input_display" not in inst
     assert cfg["screen"] == {"width": 1080, "height": 2560}
     assert cfg["active_profile"] == "default"
+    # no account in the template: every loadout body is empty (or a
+    # declared placeholder) and the deck tweaks are off
+    assert all(body in ({}, {"defined": False}) for body in cfg["loadouts"].values())
+    assert cfg["tourney_card_tweaks"] == {"drop": [], "add": []}
 
 
 def test_dashboard_seeds_config_too(dash, tmp_path, monkeypatch):
@@ -94,26 +98,38 @@ def test_template_path_accepts_a_plain_subfolder_name(dash):
 
 
 # ------------------------------------------------------- required templates
-def test_required_templates_come_from_loadouts_and_the_scanned_player(dash):
+def test_required_templates_come_from_loadouts_and_the_scanned_player(dash, tmp_path, monkeypatch):
+    # a template library with a few of the player's own cuts in it
+    root = tmp_path / "backend"
+    for rel in ("cards/preset_deck_a.png", "presets/modules_tourney_mods.png",
+                "modules/space_displacer.png", "modules/equipped/sharp_fortitude.png",
+                "presets/bots_farm_bots.png", "presets/picker_icon.png"):
+        p = root / "templates" / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(b"png")
+    monkeypatch.setattr(dash, "ROOT", str(root))
     cfg = {"loadouts": {
-        "coin": {"global_preset": "Farm Run"},
-        "shard": {"cards": "18v300", "module_preset": "Tourney",
-                  "cards_restore": "main_farm"},
+        "coin": {"global_preset": "Farm Build"},
+        "shard": {"cards": "deck_a", "module_preset": "Tourney Mods",
+                  "cards_restore": "deck_b"},
         "ilm": {"modules": [["space_displacer", "primary"]],
                 "modules_restore": [["sharp_fortitude", "primary"]]},
         "off": {"defined": False}}}
-    prof = {"player": {"card_presets": ["disco"], "global_presets": ["Tournament"],
-                       "category_presets": {"bots": ["Farm"]},
+    prof = {"player": {"card_presets": ["deck_c"], "global_presets": ["Tourney Build"],
+                       "category_presets": {"bots": ["Farm Bots"]},
                        "modules_equipped": ["zz_not_cut"]}}
     rows = {r["rel"]: r for r in dash._required_templates(cfg, prof)}
-    assert rows["presets/gp_farm_run.png"]["used_by"] == ["loadout coin"]
-    assert rows["cards/preset_18v300.png"]["have"] is True
-    assert rows["cards/preset_main_farm.png"]["feature"] == "card preset tab"
-    assert rows["presets/modules_tourney.png"]["have"] is True
+    assert rows["presets/gp_farm_build.png"]["used_by"] == ["loadout coin"]
+    assert rows["presets/gp_farm_build.png"]["have"] is False
+    assert rows["cards/preset_deck_a.png"]["have"] is True
+    assert rows["cards/preset_deck_b.png"]["feature"] == "card preset tab"
+    assert rows["cards/preset_deck_b.png"]["have"] is False
+    assert rows["presets/modules_tourney_mods.png"]["have"] is True
     assert rows["modules/space_displacer.png"]["have"] is True
+    assert rows["modules/equipped/space_displacer.png"]["have"] is False
     assert rows["modules/equipped/sharp_fortitude.png"]["have"] is True
-    assert rows["presets/gp_tournament.png"]["used_by"] == ["scanned account"]
-    assert rows["presets/bots_farm.png"]["have"] is True
+    assert rows["presets/gp_tourney_build.png"]["used_by"] == ["scanned account"]
+    assert rows["presets/bots_farm_bots.png"]["have"] is True
     assert rows["modules/zz_not_cut.png"]["have"] is False
     assert rows["modules/equipped/zz_not_cut.png"]["have"] is False
     assert rows["presets/picker_icon.png"]["have"] is True

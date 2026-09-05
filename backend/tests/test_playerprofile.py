@@ -1913,7 +1913,8 @@ def test_refuse_missing_ownership_inventory(prof, key, monkeypatch):
     v29 note: the shipped loadouts are preset-based, so the guardians and
     modules cases inject a manual body - the ownership check itself must
     keep firing for any future manual list."""
-    manual = {"guardians": {"guardians": ["fetch"]},
+    manual = {"card_presets": {"cards": "farm_deck"},
+              "guardians": {"guardians": ["fetch"]},
               "modules_equipped": {"modules": [["space_displacer", "primary"]],
                                    "module_preset": "Farm"}}
     if key in manual:
@@ -2365,10 +2366,14 @@ def test_refuse_loadout_with_unowned_module(prof, monkeypatch):
                for p in problems)
 
 
-def test_refuse_loadout_with_unowned_cards(prof):
-    prof["player"]["card_presets"] = ["no_card"]
+def test_refuse_loadout_with_unowned_cards(prof, monkeypatch):
+    patched = dict(CONFIG.get("loadouts") or {})
+    patched["zz_cards"] = {"cards": "farm_deck"}
+    monkeypatch.setitem(CONFIG, "loadouts", patched)
+    prof["blueprints"]["quest_ilm"]["loadout"] = "zz_cards"
+    prof["player"]["card_presets"] = ["other_deck"]
     problems = profile_mod.validate(prof)
-    assert any("wants card preset" in p and "main_farm" in p
+    assert any("wants card preset" in p and "farm_deck" in p
                for p in problems)
 
 
@@ -3119,10 +3124,11 @@ def test_materialize_retires_deleted_blueprints(prof):
 def test_materialize_leaves_legacy_presets_alone(prof):
     """It owns the `bp_` namespace and nothing else."""
     before = set(CONFIG["presets"])
+    legacy_tier = CONFIG["presets"]["normal_run"]["tier"]
     try:
         profile_mod.materialize(prof)
         assert "normal_run" in CONFIG["presets"]
-        assert CONFIG["presets"]["normal_run"]["tier"] == 14
+        assert CONFIG["presets"]["normal_run"]["tier"] == legacy_tier
     finally:
         for key in set(CONFIG["presets"]) - before:
             del CONFIG["presets"][key]

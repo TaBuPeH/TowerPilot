@@ -1,13 +1,18 @@
 """What every module is called, and every name it gets called by.
 
 Read off the game itself by inventory.py: tap each tile, read the detail panel.
-The abbreviations are the community ones (the user's own shorthand, and what
-Reddit / the wiki use) so that a loadout can be written as "MVN" or
-"Multiverse Nexus" or "multiverse_nexus" and mean the same module.
+The abbreviations are the community ones (what Reddit / the wiki use) so that a
+loadout can be written as "MVN" or "Multiverse Nexus" or "multiverse_nexus" and
+mean the same module.
 
 Most abbreviations are just the initials, but not all of them - MVN keeps the
 V from multiVerse, and Galaxy Compressor is written both GC and GCOMP - so
 they are listed rather than derived. resolve() accepts any of the three forms.
+
+This is GAME knowledge only. What an account holds - the six equipped slots,
+the inventory grid with its rarities - is account data: the scan writes it to
+the player profile (player.modules_equipped / player.modules_in_grid) and
+nothing in code assumes it.
 """
 
 # slug -> (display name, abbreviations)
@@ -39,61 +44,6 @@ MODULES = {
     "wormhole_redirector":     ("Wormhole Redirector",     ["WR"]),
 }
 
-# What the main account holds, as read on 2026-08-13 (37/300).
-#
-# READ FROM THE SIX EQUIPPED SLOTS, not from the intended build. An earlier
-# version of this table was written from the loadout described in conversation
-# and got the core slot wrong in both halves: the tower runs Primordial
-# Collapse as PRIMARY with Dimension Core assisting, and Multiverse Nexus is
-# not equipped at all - it is a Lv.1 spare sitting in the inventory. Equipped
-# modules are absent from the inventory grid, so the only way to read them is
-# to open each slot.
-EQUIPPED = {
-    "amplifying_strike":   {"level": 179, "slot": "primary", "stars": 3},
-    "black_hole_digestor": {"level": 179, "slot": "primary", "stars": 0},
-    "galaxy_compressor":   {"level": 89,  "slot": "assist",  "stars": 2},
-    "sharp_fortitude":     {"level": 179, "slot": "primary", "stars": 1},
-    "primordial_collapse": {"level": 179, "slot": "primary", "stars": 3},
-    "dimension_core":      {"level": 78,  "slot": "assist",  "stars": 3},
-}
-
-# The 31 inventory tiles, in grid order: (slug, rarity, stars).
-# Every one of these is Lv.1 - they are spares and shatter fodder, NOT the
-# build. That distinction is the whole reason this list records rarity.
-INVENTORY = [
-    ("shrink_ray",              "ancestral", 2),
-    ("multiverse_nexus",        "ancestral", 2),
-    ("death_penalty",           "ancestral", 2),
-    ("pulsar_harvester",        "mythic+",   0),
-    ("restorative_bonus",       "ancestral", 5),
-    ("om_chip",                 "ancestral", 4),
-    ("space_displacer",         "ancestral", 4),
-    ("havoc_bringer",           "ancestral", 4),
-    ("harmony_conductor",       "ancestral", 3),
-    ("singularity_harness",     "ancestral", 3),
-    ("negative_mass_projector", "ancestral", 3),
-    ("orbital_augment",         "ancestral", 2),
-    ("wormhole_redirector",     "ancestral", 2),
-    ("astral_deliverance",      "ancestral", 2),
-    ("magnetic_hook",           "ancestral", 1),
-    ("project_funding",         "ancestral", 1),
-    ("anti_cube_portal",        "ancestral", 1),
-    ("being_annihilator",       "ancestral", 1),
-    ("pulsar_harvester",        "epic+",     0),
-    ("primordial_collapse",     "epic",      0),
-    ("orbital_augment",         "epic",      0),
-    ("amplifying_strike",       "epic",      0),
-    ("magnetic_hook",           "epic",      0),
-    ("sharp_fortitude",         "epic",      0),
-    ("shrink_ray",              "epic",      0),
-    ("galaxy_compressor",       "epic",      0),
-    ("pulsar_harvester",        "epic",      0),
-    ("anti_cube_portal",        "epic",      0),
-    ("astral_deliverance",      "epic",      0),
-    ("being_annihilator",       "epic",      0),
-    ("solar_dyson_sphere",      "rare",      0),
-]
-
 
 def _index():
     idx = {}
@@ -119,9 +69,3 @@ def resolve(text: str) -> str:
 
 def display(slug: str) -> str:
     return MODULES[slug][0]
-
-
-def duplicates_of(slug: str) -> list:
-    """Inventory copies of a module, which is what makes it unsafe to equip by
-    icon alone - see the note in loadout.apply_modules."""
-    return [(s, r, st) for s, r, st in INVENTORY if s == slug]

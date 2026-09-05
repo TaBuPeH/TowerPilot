@@ -2,7 +2,7 @@
 
 > **Status:** Active
 > **Type:** Knowledge
-> **Updated:** 2026-08-27
+> **Updated:** 2026-09-06
 > **Tags:** profiles, schema, validator, presets
 
 One YAML file per player: `profiles/<name>.yaml`. Four top-level sections.
@@ -21,14 +21,14 @@ player:
         smart_missiles: false, inner_land_mines: false, chronofield: false}
   abilities: {nuke: true, demon_mode: true}
   abilities_verified: false       # see below - gates every rescue policy
-  card_presets: [main_farm, tourney_p1, disco, no_card, 18v300]
+  card_presets: [farm_deck, tourney_deck]   # the tab names as YOU typed them
   guardians: [ally, attack, bounty, fetch, scout, summon]
   modules_equipped: [...]         # slugs
   modules_in_grid: [...]
   wall: true
   max_tier: 19
   # v29 preset capabilities - names as the user renamed them in-game
-  global_presets: [Farm Run, Tournament]
+  global_presets: [Farm Build, Tourney Build]   # as you named them
   category_presets:
     workshop: [Preset 1, Preset 2]
     modules: [Preset 1, Preset 2]
@@ -150,8 +150,8 @@ An ORDERED list of card swaps inside one tournament run, written FLAT:
 
 ```
 in_run_actions:
-  - {at_wave: 1, switch_cards: tourney_p1}
-  - {at_wave: 1500, switch_cards: main_farm}
+  - {at_wave: 1, switch_cards: tourney_deck}
+  - {at_wave: 1500, switch_cards: farm_deck}
 ```
 
 `switch_cards` is the card-preset NAME as a bare string - not the rules
@@ -181,9 +181,9 @@ when the route is verified:
 
 ```
 in_run_actions: [{"id": "in_run#0", "at_wave": 1500,
-                  "switch_cards": "main_farm",
+                  "switch_cards": "farm_deck",
                   "requires": {"abilities": [], "wall": false,
-                               "card_presets": ["main_farm"], "uws": []}}]
+                               "card_presets": ["farm_deck"], "uws": []}}]
 ```
 
 `id` is `in_run#<index>` and is STABLE - the runtime keys "already fired"
@@ -224,13 +224,13 @@ bodies in `config.yaml` gain two new forms, both validated against the
 ```yaml
 loadouts:
   coin_farm:
-    global_preset: Farm Run       # EXCLUSIVE - no other keys allowed
+    global_preset: Farm Build     # EXCLUSIVE - no other keys allowed
   shard_farm:
-    cards: 18v300
-    module_preset: Tourney        # per-category selection by name
+    cards: shard_deck
+    module_preset: Tourney Mods   # per-category selection by name
   inner_land_mines_quest:
-    cards: main_farm
-    guardian_preset: Farm         # guild > Guardian tab row
+    cards: farm_deck
+    guardian_preset: Farm Guards  # guild > Guardian tab row
 ```
 
 - `global_preset: <name>` must be a member of `player.global_presets`, and
@@ -264,7 +264,7 @@ loadouts:
 - **`cards_restore: <preset>`** (shard/quest blocks): the deck re-selected
   on the cards screen when the block ends. A following `global_preset`
   block applies only at battle entry and would leave the specialized deck
-  (18v300) selected - and the SELECTED preset is where later card
+  (the shard deck) selected - and the SELECTED preset is where later card
   mutations land. Same ownership rule as `cards`; refused inside
   `global_preset` bodies; failure degrades loudly (`shard_cards_restore`
   event), never crashes a completed block.

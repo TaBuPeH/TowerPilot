@@ -1,103 +1,99 @@
 # Tower Pilot - the GENERIC STARTER profile (schema v1, profiles/SCHEMA.md).
 #
 # This file ships with the repo and is what `active_profile: default` binds
-# on a fresh install. It knows nothing about your account: run the account
-# scan on the dashboard's Setup page and press "Promote to profile" - that
-# writes profiles/<your name>.yaml with the scanned `player:` block on top of
-# everything below, and binds it. Your profile is git-ignored; this one is
-# not - keep it generic.
+# on a fresh install. It knows NOTHING about any account - no preset names,
+# no modules, no weapons, no wall, tier 1 - so nothing in it can be wrong
+# about yours. How it gets filled in:
+#   1. Calibrate page: cut your card preset tabs, preset picker rows and
+#      module icons (the naming rules are on that page).
+#   2. Setup page: "Scan account" records what those templates find in
+#      profiles/<instance>.draft.yaml; --battle adds weapons and abilities.
+#   3. Home page: "Promote" writes profiles/<name>.yaml = the scanned
+#      player block on top of the blueprints, policies and plan below.
+#   4. Configuration page: fill the loadouts with your preset names, raise
+#      the tiers, bind `uw:` / `rescue:` policies to the blueprints.
+# Your profile is git-ignored; this one is not - keep it generic.
 #
-# READ THIS BEFORE ARMING ABILITIES: no blueprint below references a rescue
-# policy, because `player.abilities_verified` is false. The validator
-# refuses a rescue reference on an unverified account (a burst taps the
-# Demon Mode coordinate blind when no glyph matches, so an ability that is
-# merely assumed must not arm one). After `scan.py --battle` has seen the
-# buttons (or you set abilities_verified: true by hand having watched them
-# work), add `rescue: high_tier_wall` etc. to the blueprints' policies.
-# The `player:` block below is PLACEHOLDER data for a typical mid-game
-# account, there only so the blueprints validate out of the box. The account
-# scan replaces every line of it with what it actually saw.
+# EVERY POLICY BELOW IS A LIBRARY ENTRY. The validator checks ownership
+# where a blueprint BINDS a policy, not where it is defined, so the Chain
+# Lightning choreographies and the wall rescues ship here for an account
+# that has scanned nothing. No blueprint binds a rescue policy:
+# `player.abilities_verified` stays false until scan.py --battle has seen
+# the ability buttons (a burst taps the Demon Mode coordinate blind when no
+# glyph matches). No blueprint binds a uw policy either - every one of them
+# needs Chain Lightning, which nothing here owns yet.
 player:
-  seeded_from: starter placeholder (nothing scanned yet)
-  # Ultimate weapons the account owns. Unowned weapons are dropped from every
-  # uw policy automatically; a blueprint that needs an unowned one is refused.
-  uws: {chain_lightning: true, black_hole: true, death_wave: true, golden_tower: true,
-    poison_swamp: true, spotlight: true, chronofield: true, inner_land_mines: false,
+  seeded_from: starter (nothing scanned yet - owns nothing)
+  uws: {chain_lightning: false, black_hole: false, death_wave: false, golden_tower: false,
+    poison_swamp: false, spotlight: false, chronofield: false, inner_land_mines: false,
     smart_missiles: false}
   abilities: {nuke: false, demon_mode: false}
   abilities_verified: false
-  # Preset names AS YOU NAMED THEM in the game. The loadouts in
-  # config.yaml refer to these names; the scan lists what it found.
-  card_presets: [main_farm, tourney_p1, disco, no_card, 18v300]
-  global_presets: [Farm Run, Tournament]
-  category_presets:
-    workshop: [Preset 1, Preset 2]
-    modules: [Farm, Tourney]
-    guardians: [Farm, Tourney]
-    bots: [Farm, Tourney]
+  # Preset names AS YOU NAMED THEM in the game. The scan fills these from
+  # the templates you cut on the Calibrate page; the loadouts in
+  # config.yaml refer to these names.
+  card_presets: []
+  global_presets: []
+  category_presets: {workshop: [], modules: [], guardians: [], bots: []}
   guardians: []
   # Module slugs (player/catalogue.py). A loadout may only name modules that
   # appear in one of these two lists.
-  modules_equipped: [sharp_fortitude]
-  modules_in_grid: [space_displacer]
-  # The scanner assumes a wall and lets you correct it; the wall rescue
-  # policies below validate only while this is true.
-  wall: true
-  max_tier: 19
+  modules_equipped: []
+  modules_in_grid: []
+  # Set true (and add a `rois.wall_bar` box in config.yaml) once the
+  # account has a wall; the wall rescue policies bind only then.
+  wall: false
+  # Promote takes the tier the home screen showed at scan time.
+  max_tier: 1
 blueprints:
+  # Coin farming with whatever is equipped (`as_is` = touch nothing). Raise
+  # `tier` once Promote has set max_tier; add `uw: farm_cl_choreo` once the
+  # scan shows chain_lightning; add `rescue: high_tier_wall` once
+  # player.abilities_verified is true.
   coin_default:
     kind: coin
-    loadout: coin_farm
-    tier: 14
+    loadout: as_is
+    tier: 1
     restart_via_home: true
     shop_interval_sec: 90
     shopping: default_sweep
-    # add `rescue: high_tier_wall` once player.abilities_verified is true
-    policies: {uw: farm_cl_choreo, gather: all_on}
-  coin_t19:
-    kind: coin
-    loadout: coin_farm
-    tier: 19
-    restart_via_home: true
-    shop_interval_sec: 90
-    shopping: default_sweep
-    # add `rescue: t19_fast_drain` once player.abilities_verified is true
-    policies: {uw: farm_cl_choreo, gather: all_on}
+    policies: {gather: all_on}
+  # Tournament entry with the `tourney_1` loadout from config.yaml (empty
+  # until you fill it in). Add `uw: tourney_cl` and
+  # `rescue: tournament_wall_nuke` the same way as above.
   tourney_main:
     kind: tournament
     loadout: tourney_1
     gem_entry_max: 10
-    tier: 14
+    tier: 1
     restart_via_home: true
     shop_interval_sec: 90
     shopping: default_sweep
-    # add `rescue: tournament_wall_nuke` once player.abilities_verified is true
-    policies: {uw: tourney_cl, gather: all_on}
+    policies: {gather: all_on}
   # Rides along on a tournament run YOU play by hand: no shopping, no UW
-  # toggles, no gem taps - only the rescue abilities. gem_entry_max 0: it
-  # never buys an entry, it adopts the run already on screen. Needs a
-  # rescue policy to do anything: add `rescue: tournament_wall_nuke` once
-  # player.abilities_verified is true.
+  # toggles, no gem taps - only the rescue abilities, once a rescue policy
+  # is bound. gem_entry_max 0: it never buys an entry, it adopts the run
+  # already on screen.
   tourney_assist:
     kind: tournament
     loadout: tourney_1
     gem_entry_max: 0
-    tier: 14
+    tier: 1
     restart_via_home: false
     policies: {gather: hands_off}
   coin_dissonance:
     kind: coin
     loadout: dissonance
     dissonant_tab: utility
-    tier: 14
+    tier: 1
     restart_via_home: true
     shop_interval_sec: 90
     shopping: no_utility_sweep
-    policies: {uw: tourney_cl, gather: all_on}
+    policies: {gather: all_on}
   shard_daily:
     kind: shard
     loadout: shard_farm
-    tier: 18
+    tier: 1
     count: 100
     policies: {gather: gems_only}
   quest_sm:
@@ -108,8 +104,11 @@ blueprints:
     reroll_at_wave: 1000
     ride_to_wave: 6500
     rides: 1
-    uw_setup: {chain_lightning: false, death_wave: false, poison_swamp: false, golden_tower: true,
-      black_hole: true, spotlight: true, chronofield: false}
+    # all off: switching on a weapon the account does not own is refused.
+    # Turn on the ones the scan shows (the quest rides best with golden
+    # tower, black hole and spotlight on).
+    uw_setup: {chain_lightning: false, death_wave: false, poison_swamp: false, golden_tower: false,
+      black_hole: false, spotlight: false, chronofield: false}
   quest_ilm: {kind: cycle_quest, loadout: inner_land_mines_quest, tier: 1, cycle_sec: 25,
     cycles: 40}
 policies:
@@ -279,7 +278,7 @@ policies:
   - {name: quest_scan, enabled: true}
   - {name: shatter, enabled: false}
 # The day plan: shards from 08:00, coin the rest of the day, one tournament
-# entry from 19:00 on Wednesday and Saturday.
+# entry from 19:00 on Wednesday and Saturday (the game's tournament days).
 plan:
   week: {default: farm_day, wednesday: tourney_day, saturday: tourney_day}
   days:

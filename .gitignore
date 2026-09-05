@@ -6,6 +6,26 @@ backend/profiles/*.yaml
 backend/profiles/*.bak-*
 backend/profiles/*.draft.yaml
 backend/logs/
+# --- the player's own template cuts (Calibrate page) - one account, one
+# --- rarity, never shipped. The generic buttons in modules/ stay tracked.
+backend/templates/cards/preset_*.png
+backend/templates/modules/equipped/
+backend/templates/modules/*.png
+!backend/templates/modules/assist_btn.png
+!backend/templates/modules/buy_module.png
+!backend/templates/modules/equip_btn.png
+!backend/templates/modules/primary_btn.png
+!backend/templates/modules/shatter_dialog.png
+!backend/templates/modules/shatter_rare_text.png
+!backend/templates/modules/transfer_yes.png
+!backend/templates/modules/v29_dialog_close.png
+!backend/templates/modules/v29_equip_btn.png
+backend/templates/presets/gp_*.png
+!backend/templates/presets/gp_none.png
+backend/templates/presets/modules_*.png
+backend/templates/presets/guardians_*.png
+backend/templates/presets/workshop_*.png
+backend/templates/presets/bots_*.png
 backend/runs/
 backend/captures/
 

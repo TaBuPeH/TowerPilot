@@ -260,7 +260,18 @@ def _patch_loadout(dash, name, body):
         return c.post("/api/loadout-patch", json={"name": name, "body": body})
 
 
-def test_api_loadout_valid_roundtrip(dash, config_guard):
+def test_api_loadout_valid_roundtrip(dash, config_guard, tmp_path, monkeypatch):
+    # The endpoint validates the ACTIVE profile against the patched body, and
+    # the shipped starter owns no preset by design (2026-09-06) - so the
+    # active profile here is the frozen account, which owns "Tournament".
+    import yaml
+    from goldens import load_golden
+    pdir = tmp_path / "profiles"
+    pdir.mkdir()
+    doc = {k: v for k, v in load_golden().items() if not str(k).startswith("_")}
+    (pdir / "default.yaml").write_text(yaml.safe_dump(doc, sort_keys=False),
+                                       encoding="utf-8")
+    monkeypatch.setattr(dash, "_profiles_dir", lambda: str(pdir))
     r = _patch_loadout(dash, "tourney_2", {"global_preset": "Tournament"})
     assert r.status_code == 200, r.get_json()
     assert r.get_json()["loadouts"]["tourney_2"] == \

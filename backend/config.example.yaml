@@ -86,42 +86,39 @@ tabs:
 # needed for each name: cards/preset_<name>.png, presets/gp_<slug>.png,
 # presets/<category>_<slug>.png, modules/<slug>.png - the Calibrate page
 # lists exactly which ones are still missing.
+# Every loadout ships EMPTY: an empty body equips nothing and needs no
+# template, so a fresh install runs with whatever is on the account. Fill
+# them in on the Configuration page (Loadouts) with the names EXACTLY as
+# your account spells them - the scan lists what it found in the draft
+# profile, and the validator refuses a name the profile does not own.
+# The keys are the activities the blueprints and the tray start by; the
+# bodies are yours. Shapes:
+#   {global_preset: <name>}                  one global preset, nothing else
+#   {cards: <tab>, module_preset: <name>,    per-category selections
+#    guardian_preset: <name>, bot_preset: <name>, workshop_preset: <name>,
+#    cards_restore: <tab>}                   deck re-selected after a block
+#   {cards: <tab>, modules: [[<slug>, primary|assist], ...],
+#    modules_restore: [[<slug>, primary|assist], ...]}
+#                                            explicit equips (order matters:
+#                                            displaced modules read Lv.1 -
+#                                            always answer Transfer Yes)
+#   {defined: false}                         placeholder - refused if used
 loadouts:
-  # Coin farming enters with a global preset (v29 Global Presets lab).
-  coin_farm: {global_preset: Farm Run}
-  # Shard farming: a fixed deck plus the tournament module/bot presets;
-  # cards_restore is re-selected when the shard block ends.
-  shard_farm: {cards: 18v300, module_preset: Tourney, bot_preset: Tourney,
-               cards_restore: main_farm}
-  # The no-card quest enters with the tournament build and an empty deck.
-  quest_nocard: {cards: no_card, module_preset: Tourney,
-                 guardian_preset: Tourney, bot_preset: Tourney}
-  # Dissonance event: tournament-like presets, a dedicated deck.
-  dissonance: {cards: disco, module_preset: Tourney,
-               guardian_preset: Tourney, bot_preset: Tourney}
-  # Tournament entry: one global preset does all the equipping.
-  tourney_1: {global_preset: Tournament}
-  # Explicit module lists (equip order is load-bearing: displaced modules
-  # read Lv.1 - always answer Transfer Yes).
-  tourney_2:
-    cards: tourney_p1
-    modules:
-    - [dimension_core, assist]
-    - [primordial_collapse, primary]
-    - [pulsar_harvester, assist]
-    - [galaxy_compressor, primary]
+  coin_farm: {}
+  shard_farm: {}
+  quest_nocard: {}
+  dissonance: {}
+  tourney_1: {}
+  tourney_2: {}
   smart_missiles_quest: {defined: false}
-  # Inner Land Mines quest: Space Displacer goes into the health slot for the
-  # quest; modules_restore puts the farm's health module back afterwards.
-  inner_land_mines_quest:
-    cards: main_farm
-    guardian_preset: Farm
-    module_preset: Farm
-    modules:
-    - [space_displacer, primary]
-    modules_restore:
-    - [sharp_fortitude, primary]
+  inner_land_mines_quest: {}
   chronofield_quest: {defined: false}
+
+# Deck tweaks the tournament entry applies ON TOP of the loaded preset, by
+# card template name (templates/cards/<name>.png): e.g. {drop: [cash],
+# add: [extra_orb]}. Empty = no tweaks. Ignored under a global preset - the
+# game re-applies the saved deck at battle entry.
+tourney_card_tweaks: {drop: [], add: []}
 
 # LEGACY PRESETS - the pre-profile run definitions. Kept because the tray and
 # the scheduler still start runs by these keys; behavior knobs for profile-
@@ -150,7 +147,9 @@ presets:
       clicks: 3
     shop_interval_sec: 90
     restart_via_home: true
-    tier: 14
+    # 1 is always unlocked; raise it to your farming tier (a profile's
+    # blueprints carry their own tiers, gated by player.max_tier).
+    tier: 1
     # Ultimate weapons forced to this state at wave 1 (only the ones you own
     # apply). chain_lightning is driven dynamically below.
     uw_wanted: {death_wave: true, golden_tower: true, poison_swamp: true, black_hole: true,
@@ -168,11 +167,6 @@ presets:
       nuke_below: null
       nuke_on_fleet: {after_waves: 3, window_waves: 60}
       dm_below: 0.02
-  t19_test:
-    label: T19 rescue test
-    base: normal_run
-    tier: 19
-    abilities: {dm_below: 0.4, post_sw_watch_sec: null}
   tournament:
     label: Tournament
     base: normal_run
@@ -207,7 +201,7 @@ presets:
     runner_args: [--cycles, '40']
     tier: 1
   quest_chronofield: {label: 'Quest: Chrono Field', defined: false}
-  combo: {label: Combo (day plan), runner: scheduling/combo.py, tier: 14}
+  combo: {label: Combo (day plan), runner: scheduling/combo.py, tier: 1}
   full_auto_high: {label: Full Auto High, defined: false}
 
 # Human-like tap timing: random delay before each tap, positional jitter, and

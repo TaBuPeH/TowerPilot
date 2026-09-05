@@ -24,16 +24,29 @@ Card preset and does not put the old one back hands the next run an empty
 deck - so current_cards() reads what is selected BEFORE a swap, and callers
 are expected to restore it afterwards.
 """
+import glob
+import os
+
 from runtime import logger
 from device import capture
 from interactions import tourney
-from settings import CONFIG
+from settings import CONFIG, ROOT
 
 CARD_TPL = "cards/preset_{}.png"
+
+
+def card_tabs() -> tuple[str, ...]:
+    """The card preset tabs this install can recognize: one template per tab
+    under templates/cards/preset_<name>.png, cut on the Calibrate page.
+    Nothing is assumed about how a player named them - a tab with no
+    template is invisible here, and the scan says so."""
+    paths = sorted(glob.glob(str(ROOT / "templates" / "cards" / "preset_*.png")))
+    return tuple(os.path.basename(p)[len("preset_"):-4] for p in paths)
+
+
 # Measured on the live tab row: the selected tab is outlined GREEN, the rest
 # CYAN, and the label art is identical either way - so selection is decided by
 # which hue is present, not by a threshold either has to clear.
-CARD_TABS = ("main_farm", "tourney_p1", "disco", "no_card", "18v300")
 MODULE_GRID = (1100, 2200)
 # The equipped modules are drawn on the tower diagram above the tab row. Their
 # art is a different size there than in the grid, so they need their own
@@ -87,7 +100,7 @@ def current_cards(frame=None) -> str | None:
     guessing - restoring the wrong deck is worse than leaving this one.
     """
     frame = frame if frame is not None else capture.grab()
-    for name in CARD_TABS:
+    for name in card_tabs():
         hit = tourney.find(frame, CARD_TPL.format(name), 0.90)
         if hit and _tab_active(frame, hit[0]):
             return name
@@ -218,7 +231,7 @@ def apply_modules(plan) -> dict:
     tourney.open_nav("modules", "modules/buy_module.png", "modules screen")
     header = capture.grab()
     # v29 (2026-08-27): the redesigned modules screen carries preset tabs
-    # (this account: "Farm"/"Tourney") - its equip choreography is a
+    # (as the player named them) - its equip choreography is a
     # different flow, live-verified the same day.
     if (tourney.find(header, "presets/modules_farm.png", 0.85)
             or tourney.find(header, "presets/modules_tourney.png", 0.85)):

@@ -105,12 +105,12 @@ def find_skip(frame):
     cyan-bordered pill of roughly the right shape in the upper right - and
     then SAVE whatever it found as the template. Both halves were wrong:
 
-      * the CARDS screen puts five cyan preset tabs ("Main Farm", "Att Farm",
-        "18v300", ...) at exactly that size, in exactly that box, so the
+      * the CARDS screen puts five cyan preset tabs (labelled however the
+        player named them) at exactly that size, in exactly that box, so the
         search matched them;
       * harvesting on match let a single false positive overwrite the
-        detector's own ground truth - reward_skip.png became a picture of the
-        user's "18v300" preset tab, which would have poisoned every later run.
+        detector's own ground truth - reward_skip.png became a picture of one
+        of the user's card preset tabs, which would have poisoned every later run.
 
     A detector must never rewrite the thing it is measured against. If the
     template is missing, this returns None and the caller does nothing, which

@@ -379,7 +379,10 @@ def phase_battle(p, adopt: bool) -> dict:
             logger.event("scan_battle_tier_restore_failed", error=str(e)[:200],
                          wanted=prev_tier)
     return {"uws": uws, "abilities": sorted(abilities),
-            "wall": True}       # wall presence: assume true, human corrects
+            # NOT DETECTED HERE (the wall bar ROI is per account, config
+            # `rois.wall_bar`): nothing is assumed - set player.wall: true
+            # yourself once the account has one.
+            "wall": False}
 
 
 PHASES = {"g": ("guardians", phase_guardians),
@@ -414,6 +417,18 @@ def main() -> None:
     if a.battle and "b" not in wanted:
         wanted.append("b")
     player: dict = st.get("player", {})
+    # The Difficulty number on the home screen is the one account fact the
+    # scan can read without a phase: the tier selected right now is
+    # unlocked, so Promote uses it as max_tier (it assumes nothing else).
+    try:
+        from device import capture
+        from flows import shard
+        tier = shard.read_tier(capture.grab())
+        if tier is not None:
+            player["tier_current"] = int(tier)
+            logger.event("scan_tier", tier=int(tier))
+    except Exception as e:                  # noqa: BLE001 - a read, not a phase
+        logger.event("scan_tier_read_failed", error=str(e)[:200])
     logger.event("scan", stage="begin", phases=wanted, resume=not a.fresh)
     for key in wanted:
         name, fn = PHASES[key]

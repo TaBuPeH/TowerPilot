@@ -33,9 +33,14 @@ portrait at 360 dpi.
 7. **An Abort means the screen was not what the code expected.** Stop and
    log; never blind-tap into an unknown screen.
 8. **Machine and account state stay out of git**: `backend/config.yaml`,
-   `backend/profiles/<name>.yaml`, logs, runs, captures (see `.gitignore`).
-   `backend/profiles/default.yaml` is the generic starter and must stay
-   generic; the compiler regression fixture is
+   `backend/profiles/<name>.yaml`, logs, runs, captures, and the player's
+   own template cuts (see `.gitignore`). **Shipped files carry no account
+   data**: no preset names, no module icons or equipped/inventory tables,
+   no tiers above 1, no deck tweaks - `config.example.yaml` loadouts are
+   empty, `backend/profiles/default.yaml` owns nothing, and
+   `backend/tests/test_release_clean.py` fails when something slips back.
+   The Calibrate cropper, the scan and the config editor produce all of it
+   per install. The compiler regression fixture is
    `backend/tests/fixtures/golden_profile.yaml`.
 
 ## Ops knowledge
@@ -47,10 +52,15 @@ portrait at 360 dpi.
 - Logs: `backend/logs/<instance>/events_*.jsonl`, one file per process
   start; a monitor must re-resolve the newest file. Screenshots land next
   to them. Run stats: `backend/runs/<instance>/<stamp>/`.
-- Templates are account- and rarity-specific for cards, presets and
-  modules (`templates/cards/preset_*`, `templates/presets/*`,
-  `templates/modules/*`). Missing ones surface as `template_missing`
-  events and on the Calibrate page.
+- Templates are account- and rarity-specific for card preset tabs, preset
+  picker rows and module icons (`templates/cards/preset_*`,
+  `templates/presets/{gp,modules,guardians,workshop,bots}_*`,
+  `templates/modules/<slug>.png`, `templates/modules/equipped/`) and are
+  NOT shipped: the player cuts them on the Calibrate page and git ignores
+  them. Missing ones surface as `template_missing` events and on that page.
+- Ownership is validated where a blueprint BINDS a policy, not where the
+  policy is defined: the policy library ships in full for an account that
+  has scanned nothing.
 - Per-machine rendering differences are handled by variant tuples
   (`presets.PICKER_ICONS`, `tourney.BATTLE_BUTTONS`) and the
   `templates/floaters/gem_*.png` glob, never by lowering thresholds.

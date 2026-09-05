@@ -2030,6 +2030,16 @@ def api_wizard_required():
                     "missing": [r["rel"] for r in rows if not r["have"]]})
 
 
+@app.get("/api/catalogue/modules")
+def api_catalogue_modules():
+    """Module slugs the loadouts and the module templates are keyed by - the
+    Calibrate page's naming help for a fresh account (game knowledge only,
+    player/catalogue.py; nothing about any account)."""
+    from player import catalogue
+    return jsonify({"modules": [{"slug": s, "name": n, "abbrevs": list(a)}
+                                for s, (n, a) in catalogue.MODULES.items()]})
+
+
 @app.post("/api/template/<path:rel>")
 def api_template_save(rel):
     """Cut a template out of a frame the browser displayed.
@@ -2133,8 +2143,13 @@ def api_profile_promote():
     # else stays unverified, exactly as the schema demands
     if player.get("abilities_verified") is not True:
         player["abilities_verified"] = False
-    player.setdefault("wall", True)
-    player.setdefault("max_tier", (doc.get("player") or {}).get("max_tier", 14))
+    # Nothing is assumed: no wall until the player says so, and max_tier is
+    # the tier the home screen showed at scan time (unlocked by definition),
+    # else the starter's floor.
+    player.setdefault("wall", False)
+    tier_seen = player.get("tier_current")
+    player.setdefault("max_tier", tier_seen if isinstance(tier_seen, int) and tier_seen > 0
+                      else (doc.get("player") or {}).get("max_tier", 1))
     doc["player"] = player
     doc.pop("_name", None)
     doc.pop("_path", None)

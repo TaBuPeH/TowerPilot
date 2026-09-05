@@ -3,7 +3,7 @@
 > **Status:** Active
 > **Type:** Knowledge
 > **Created:** 2026-08-24
-> **Updated:** 2026-09-05
+> **Updated:** 2026-09-06
 > **Tags:** autopilot, the-tower, distribution
 
 Vision-driven autopilot for **The Tower** running in an Android emulator
@@ -31,11 +31,13 @@ machine.
    `HD-Player.exe`), points the config at it on a fresh install, and runs
    the boot pipeline that waits for Android, clears overlays and starts
    the game. Then check the display resolution.
-5. **Calibrate** page: the *Required for your account* list names every
-   picture only your account can provide (card presets, global and
-   category presets as you named them, your modules at your rarity). Open
-   the screen in the game, drag a box on the live frame, save. The generic
-   buttons and screens ship with the repo.
+5. **Calibrate** page: the generic buttons and screens ship with the repo;
+   the pictures only your account can provide - card preset tabs, global
+   and category preset rows as you named them, your modules at your rarity
+   - do not, and the page says what to cut and how to name each one. Open
+   the screen in the game, drag a box on the live frame, save. Once the
+   loadouts and the scanned profile refer to names, the *Required for your
+   account* list tracks which of them still lack a picture.
 6. **Analyze the account**: *Scan account* on the Setup page reads the
    guardians, card presets and modules (add the battle phase for ultimate
    weapons and abilities) into `profiles/<instance>.draft.yaml`, then
@@ -86,11 +88,15 @@ in the folder it belongs to, never a patch inside a monolith.
 | `backend/profiles/<name>.yaml`, `*.draft.yaml` | what your account owns, your run types |
 | `backend/logs/` | event logs, screenshots, daily counters |
 | `backend/runs/`, `backend/captures/` | run statistics, calibration captures |
+| `backend/templates/cards/preset_*`, `presets/{gp,modules,guardians,workshop,bots}_*`, `modules/<slug>.png`, `modules/equipped/` | your card tabs, preset rows and module icons, cut by the cropper |
 
 The only shipped profile is `backend/profiles/default.yaml`, the starter.
-Its `player:` block is placeholder data so the blueprints validate; no
-blueprint in it binds a rescue policy, because the account's abilities are
-unverified until the scan's battle phase has seen the buttons work.
+Its `player:` block owns nothing - no preset names, no modules, no weapons,
+no wall, tier 1 - and every loadout in `config.example.yaml` is empty. The
+validator gates ownership where a blueprint *binds* a policy, so the full
+policy library ships unbound and the starter still validates; you bind the
+Chain Lightning choreography and the rescues after the scan has shown what
+the account has. Nothing shipped assumes how you named anything.
 
 ---
 

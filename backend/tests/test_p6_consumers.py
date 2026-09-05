@@ -523,32 +523,29 @@ def test_setup_equips_through_loadout_not_its_own_copy(tourney):
     assert "card_tweaks()" in src           # ...the part loadout does not own
 
 
-def test_the_tournament_loadout_matches_the_module_constants(tourney):
-    """The unification is only behaviour-identical if the config loadout says
-    what the constants said. If someone edits one, this fails rather than the
-    tournament.
-
-    v29: a `global_preset` body carries NO manual keys (the validator refuses
-    mixed bodies), so there is nothing to drift from the constants - the pin
-    becomes "the body is exactly the preset selection". A legacy body keeps
-    the original constants sync."""
+def test_the_tournament_build_lives_in_config_not_in_constants(tourney):
+    """The unification's end state (2026-09-06): the tournament build is the
+    `tourney_1` loadout body in config.yaml and nothing else - no module
+    plan, no card preset, no deck tweak constants in code, because those
+    were one account's. A `global_preset` body carries NO manual keys (the
+    validator refuses mixed bodies)."""
     from settings import CONFIG
     lo = CONFIG["loadouts"][tourney.TOURNEY_LOADOUT]
     if "global_preset" in lo:
         assert set(lo) == {"global_preset"}
-    else:
-        assert [tuple(m) for m in lo["modules"]] == list(tourney.MODULE_PLAN)
-        assert tourney.CARD_PRESET.endswith(f"preset_{lo['cards']}.png")
-        assert lo.get("guardians") is True      # -> tourney.CHIPS_IN
+    for gone in ("MODULE_PLAN", "CARD_PRESET", "CARDS_DROP", "CARDS_ADD",
+                 "card_swap", "module_swap"):
+        assert not hasattr(tourney, gone), gone
 
 
-def test_the_card_tweaks_are_defined_once(tourney):
-    """card_swap and setup both need "drop Cash, add Extra Orb"; two copies is
-    two places to update when the plan changes."""
+def test_the_card_tweaks_are_defined_once_and_read_from_config(tourney):
+    """setup() applies the deck tweaks through the one card_tweaks(), which
+    takes its plan from config.yaml `tourney_card_tweaks` - two copies of
+    "drop this, add that" is two places to update when the plan changes."""
     import inspect
-    assert "card_tweaks()" in inspect.getsource(tourney.card_swap)
+    assert inspect.getsource(tourney.setup).count("card_tweaks()") == 1
     body = inspect.getsource(tourney.card_tweaks)
-    assert "CARDS_DROP" in body and "CARDS_ADD" in body
+    assert "_card_tweak_plan()" in body and "CARDS_SCREEN" in body
 
 
 def test_read_only_verifies_and_taps_nothing_that_changes_state(tourney,

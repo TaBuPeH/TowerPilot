@@ -922,6 +922,16 @@ def _arm(policy: dict) -> tuple[bool, object, object]:
 
 # ------------------------------------------------------------------ validate
 
+def _rescue_watches_wall(body: dict) -> bool:
+    """Does this rescue policy read the wall bar (`bar: wall` or a
+    `wall_collapse` trigger)? The binding-time ownership gate's question."""
+    for rule in _rules_of(body):
+        when = _d(_d(rule).get("when"))
+        if when.get("bar") == "wall" or "wall_collapse" in when:
+            return True
+    return False
+
+
 def validate(profile: dict) -> list[str]:
     """Every problem with `profile`, as human-readable strings naming the
     offending path. Empty list = the profile is safe to run on THIS account.
@@ -1167,10 +1177,10 @@ def _validate_uw_policy(path: str, body: dict, owned: set[str]) -> list[str]:
         out.append(f"{path}.chain_lightning.mode: unknown mode {mode!r} "
                    f"(known: {', '.join(CL_MODES)})")
         return out
-    if mode != "off" and "chain_lightning" not in owned:
-        out.append(f"{path}.chain_lightning: mode {mode!r} needs Chain "
-                   f"Lightning, which the player does not own "
-                   f"(player.uws.chain_lightning is not true)")
+    # Chain Lightning OWNERSHIP is checked where a blueprint BINDS this policy
+    # (_validate_blueprint), not here: a policy is a library entry, and the
+    # starter profile ships the choreographies for an account that has
+    # scanned nothing yet (2026-09-06).
     # Every one of these is splatted into random.randint() by cl_window().
     for key in ("always_on_above", "on_above", "pre_mark_waves",
                 "off_after_waves"):
@@ -1381,14 +1391,12 @@ def _validate_rescue_policy(path: str, body: dict, player: dict) -> list[str]:
                    f"`burst` action, so nothing sets dm_below - the watch "
                    f"would compare every wall sample against null")
 
-    # THE WALL HAS TO EXIST. `collapse_from` is hoisted by _fast_wall_watch and
-    # a Tier B wall rule reads detect.wall_overheal for itself - both are
-    # meaningless on an account with no wall bar, and "no bar" does not read as
-    # "empty bar", it reads as whatever else is in that ROI.
-    if (("wall" in bars_used) or uses_collapse) and not player.get("wall"):
-        out.append(f"{path}: watches the wall (`bar: wall` / `wall_collapse`), "
-                   f"but the player has no wall (player.wall is not true) - "
-                   f"there is no bar to watch")
+    # THE WALL HAS TO EXIST - `collapse_from` is hoisted by _fast_wall_watch
+    # and a Tier B wall rule reads detect.wall_overheal for itself; "no bar"
+    # reads as whatever else is in that ROI. That refusal lives where a
+    # blueprint BINDS the policy (_validate_blueprint, via
+    # _rescue_watches_wall): the library entry itself is harmless on an
+    # account with no wall, and the starter ships it unbound (2026-09-06).
     if bars_used == {"wall", "hp"}:
         out.append(f"{path}: mixes `bar: wall` and `bar: hp` in one policy - "
                    f"the rescue watches exactly one bar, pick one")
@@ -1651,6 +1659,28 @@ def _validate_blueprint(path: str, bp: dict, player: dict, uw_policies: dict,
         if slot not in ("uw", "rescue", "gather"):
             out.append(f"{path}.policies.{slot}: unknown policy slot "
                        f"(known: uw, rescue, gather)")
+
+    # ---- ownership gates live at the BINDING, not the definition (2026-09-06).
+    # A policy is a library entry: the starter profile ships every
+    # choreography and rescue for an account that has scanned nothing, and a
+    # library entry the account cannot use is harmless until a blueprint
+    # binds it - then it is the same refusal it always was, at the blueprint.
+    uw_ref = refs.get("uw")
+    if uw_ref in uw_policies:
+        cl = _d(_d(uw_policies[uw_ref]).get("chain_lightning"))
+        mode = cl.get("mode")
+        if mode is not None and mode != "off" and "chain_lightning" not in owned:
+            out.append(f"{path}.policies.uw -> policies.uw_policies.{uw_ref}"
+                       f".chain_lightning: mode {mode!r} needs Chain Lightning, "
+                       f"which the player does not own "
+                       f"(player.uws.chain_lightning is not true)")
+    rescue_ref = refs.get("rescue")
+    if rescue_ref in rescue_policies and not player.get("wall") \
+            and _rescue_watches_wall(_d(rescue_policies[rescue_ref])):
+        out.append(f"{path}.policies.rescue -> policies.rescue_policies."
+                   f"{rescue_ref}: watches the wall (`bar: wall` / "
+                   f"`wall_collapse`), but the player has no wall "
+                   f"(player.wall is not true) - there is no bar to watch")
 
     shopping = bp.get("shopping")
     if shopping is not None and shopping not in shopping_lists:

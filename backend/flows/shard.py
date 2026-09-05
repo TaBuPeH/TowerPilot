@@ -16,8 +16,8 @@ the fleet has been on the field for six waves by then, and fleets spawn even
 on waves the sprint skips. It also removes any need to tell the three fleet
 types apart - whichever one rolled, it is already there and it drops the same.
 
-    SETUP (once)   end any live run -> Tier 18 -> cards preset 18v300
-                   -> Primordial Collapse to Primary -> BATTLE
+    SETUP (once)   end any live run -> the block's tier -> the shard_farm
+                   loadout (deck, presets, modules as configured) -> BATTLE
     LOOP (forever) wave 100 -> cancel Intro Sprint
                    -> wave 101 nearly over -> NUKE
                    -> side menu -> EXIT BATTLE -> Surrender -> RETRY
@@ -81,22 +81,11 @@ FLOW = {
     "adopt_arg": "--no-setup",
 }
 
-# --- the plan, as the user performed it --------------------------------
-TIER = 18
-CARD_PRESET = "cards/preset_18v300.png"
-# ORDER MATTERS, and not for the reason it looks like. Primordial Collapse is
-# normally already sitting in a slot. Equipping Dimension Core first DISPLACES
-# it - the Transfer Level prompt moves the levels across - which frees
-# Primordial Collapse to go into Primary clean. Doing these the other way
-# round, or doing only the second one, does not produce the same loadout.
-#
-# Slots confirmed from the recording's own taps: op 1 landed at x=734 (the
-# Assist button spans 555-790), op 2 at x=403 (Primary spans 285-530).
-#
-# Idempotent on a re-run: _equip_module reads "not in the inventory" as
-# already-equipped, because equipping removes a module from the grid.
-MODULE_PLAN = [("dimension_core", "assist"),
-               ("primordial_collapse", "primary")]
+# --- defaults ------------------------------------------------------------
+# The tier used when nothing passes one (blueprints and presets do): 1 is
+# always unlocked. The deck, presets and modules come from the `shard_farm`
+# loadout in config.yaml - nothing about a build lives here.
+TIER = 1
 
 # --- chrome measured off the recording ---------------------------------
 TIER_LEFT = (390, 1410)         # "<" on the home Difficulty selector
@@ -307,13 +296,13 @@ def preset_active(frame, pt) -> bool:
 
     The selected tab is outlined in GREEN, the others in CYAN - and that is the
     only difference, the label art is identical either way. Measured across the
-    five tabs of a recorded frame with 18v300 selected:
+    five tabs of a recorded frame with the fifth tab selected:
 
-        Main Farm   green 0.000  cyan 0.077
-        Tourney P1  green 0.000  cyan 0.056
-        Disco       green 0.000  cyan 0.058
-        Att Farm    green 0.000  cyan 0.055
-        18v300      green 0.030  cyan 0.000      <- selected
+        tab 1       green 0.000  cyan 0.077
+        tab 2       green 0.000  cyan 0.056
+        tab 3       green 0.000  cyan 0.058
+        tab 4       green 0.000  cyan 0.055
+        tab 5       green 0.030  cyan 0.000      <- selected
 
     Cleanly separated, so it is decided on which hue is present rather than on
     a threshold either one has to clear.
@@ -740,7 +729,7 @@ def one_loop(n: int, gems: "GemWatch | None" = None, last: bool = False):
     # The LAST loop exits to HOME, not RETRY (2026-08-29): the final RETRY
     # used to chain a 101st run that the next handoff walked over - since
     # the orphan-adoption fix that leftover gets ADOPTED as a coin run
-    # (T18 + 18v300 farming as coin until it dies) or HELD ON by a
+    # (the shard tier and deck farming as coin until it dies) or HELD ON by a
     # tournament block, and it also parked cards_restore off the nav row.
     if last:
         abandon_run(to_home=True)
@@ -814,7 +803,7 @@ def run(loops: int | None = None, do_setup: bool = True,
     # v29 (user, 2026-08-28): put the farming deck back on the cards screen
     # before leaving. The coin block's global preset only SELECTS presets at
     # battle entry - nothing else moves the cards screen off this block's
-    # 18v300, and whichever preset stays selected is where later card
+    # deck, and whichever preset stays selected is where later card
     # mutations land. Degrades loudly: a failed restore must not turn a
     # completed block into a crash.
     restore = loadout.spec("shard_farm").get("cards_restore")
