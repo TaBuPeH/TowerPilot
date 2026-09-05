@@ -36,11 +36,14 @@ simply scores low. Match both.
    pixel density of **360**. Restart the instance afterwards (BlueStacks
    applies display changes on restart).
 2. **Advanced > Android Debug Bridge**: switch it **on**. Note the port it
-   shows (the default instance uses 5555). Until this is on, nothing
-   listens and the wizard reports the instance as "installed - not
-   probed". In `%ProgramData%\BlueStacks_nxt\bluestacks.conf` the switch
-   is `bst.enable_adb_access` and the port is
-   `bst.instance.<key>.adb_port`; the wizard reads both.
+   shows (the default instance uses 5555). While it is off the device
+   still shows up in `adb devices`, but every shell command is refused
+   with `error: closed` (seen 2026-09-06 through HD-Adb.exe itself), so
+   the boot pipeline waits on its adb stage until it times out. The
+   Setup page marks the row "ADB switch off in BlueStacks". In
+   `%ProgramData%\BlueStacks_nxt\bluestacks.conf` the switch is
+   `bst.enable_adb_access` and the port is `bst.instance.<key>.adb_port`;
+   the wizard reads both.
 3. Install The Tower from the Play Store inside the instance and sign in
    yourself. The autopilot never handles credentials.
 4. **Do not run MuMu at the same time.** BlueStacks' `HD-Adb.exe` and
@@ -69,6 +72,10 @@ simply scores low. Match both.
 4. An instance that already points somewhere is not repointed by Start;
    **Use this one** does that explicitly.
 5. The resolution check must read exactly 1080 x 2560.
+   BlueStacks' Windows-side Home tab (the one with the adverts) is not the
+   Android screen: the pipeline starts The Tower by package name over
+   adb, and BlueStacks opens it in its own tab. Nothing needs to be
+   clicked in the BlueStacks window.
 6. Leave the instance's `display` and `input_display` keys **absent**
    (the template config has none). They exist for MuMu's secondary game
    display; without them the capture and input paths use the default
