@@ -1338,9 +1338,15 @@ def _emulator_instances() -> list[dict]:
             for m in re.finditer(r'bst\.instance\.(\w+)\.display_name="([^"]*)"', txt):
                 key, name = m.group(1), m.group(2)
                 pm = re.search(rf'bst\.instance\.{key}\.adb_port="(\d+)"', txt)
+                def _val(field):
+                    mm = re.search(rf'bst\.instance\.{key}\.{field}="([^"]*)"', txt)
+                    return mm.group(1) if mm else None
+                w, h, dpi = _val("fb_width"), _val("fb_height"), _val("dpi")
                 out.append({"emulator": "BlueStacks", "index": key, "name": name,
                             "running": key in live_keys,
                             "adb_enabled": adb_on,
+                            "display": (f"{w}x{h}@{dpi}" if w and h and dpi else None),
+                            "display_ok": (w, h, dpi) == ("1080", "2560", "360"),
                             "adb_port": int(pm.group(1)) if pm else None,
                             "port_source": "conf" if pm else None})
         except Exception as e:                  # noqa: BLE001
@@ -1457,6 +1463,84 @@ def _launch_bluestacks(key: str):
         msg += _adopt_placeholder(serial, hd_adb if not foreign else None)
         msg += _boot_pipeline_for(serial)
     return jsonify({"ok": True, "message": msg})
+
+
+_BS_WANT_DISPLAY = {"fb_width": "1080", "fb_height": "2560", "dpi": "360",
+                    "custom_resolution_selected": "1"}
+
+
+def _bluestacks_conf_path() -> str:
+    return os.path.join(os.environ.get("ProgramData", r"C:\ProgramData"),
+                        "BlueStacks_nxt", "bluestacks.conf")
+
+
+def _prepare_bluestacks(key: str) -> dict:
+    """Set what Tower Pilot needs in bluestacks.conf for one instance: the
+    global Android Debug Bridge switch on, and the instance's display at
+    1080x2560 / 360 dpi (the layout every template was cut at). BlueStacks
+    reads the file when the instance starts and rewrites it while a player
+    runs, so this refuses unless every HD-Player.exe is closed. A timestamped
+    backup of the file is written first. Returns what changed."""
+    if not re.fullmatch(r"[A-Za-z0-9_]+", key):
+        raise ValueError("BlueStacks instance key expected")
+    path = _bluestacks_conf_path()
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"{path} not found")
+    try:
+        import psutil
+        if any("hd-player" in (pr.info["name"] or "").lower()
+               for pr in psutil.process_iter(["name"])):
+            raise RuntimeError("BlueStacks is running - close every BlueStacks "
+                               "window first (it rewrites bluestacks.conf on "
+                               "exit and would undo the change)")
+    except ImportError:
+        pass
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        text = fh.read()
+    if not re.search(rf'^bst\.instance\.{key}\.display_name=', text, re.M):
+        raise ValueError(f"no instance {key!r} in bluestacks.conf")
+    want = {"bst.enable_adb_access": "1"}
+    want.update({f"bst.instance.{key}.{k}": v for k, v in _BS_WANT_DISPLAY.items()})
+    changed, added = {}, []
+    for full, val in want.items():
+        pat = re.compile(rf'^{re.escape(full)}="([^"]*)"$', re.M)
+        m = pat.search(text)
+        if m is None:
+            text = text.rstrip("\n") + f'\n{full}="{val}"\n'
+            added.append(full)
+        elif m.group(1) != val:
+            changed[full] = {"from": m.group(1), "to": val}
+            text = pat.sub(f'{full}="{val}"', text, count=1)
+    if not changed and not added:
+        return {"changed": {}, "added": [], "backup": None,
+                "message": "already prepared (ADB on, 1080x2560 @ 360)"}
+    stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup = f"{path}.bak-{stamp}"
+    with open(path, encoding="utf-8", errors="replace") as src, \
+            open(backup, "w", encoding="utf-8") as dst:
+        dst.write(src.read())
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        fh.write(text)
+    return {"changed": changed, "added": added, "backup": backup,
+            "message": (f"bluestacks.conf updated for {key}: "
+                        + ", ".join(f"{k.split('.')[-1]} {v['from']}->{v['to']}"
+                                    for k, v in changed.items())
+                        + (" (+" + ", ".join(a.split(".")[-1] for a in added) + ")"
+                           if added else "")
+                        + f"; backup {os.path.basename(backup)}")}
+
+
+@app.post("/api/wizard/bluestacks/prepare")
+def api_wizard_bluestacks_prepare():
+    body = request.get_json(force=True) or {}
+    try:
+        return jsonify({"ok": True, **_prepare_bluestacks(str(body.get("index") or ""))})
+    except (ValueError, FileNotFoundError) as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+    except RuntimeError as e:
+        return jsonify({"ok": False, "error": str(e)}), 409
+    except OSError as e:
+        return jsonify({"ok": False, "error": f"cannot write bluestacks.conf: {e}"}), 500
 
 
 @app.post("/api/wizard/launch")

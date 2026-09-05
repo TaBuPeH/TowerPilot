@@ -639,13 +639,16 @@ async function renderSetup(){
     rows.push(`<tr>
       <td>${esc(i.emulator || "?")}</td><td>${esc(i.name || "")}</td>
       <td>${i.running ? '<span class="ok">running</span>' : '<span class="muted">off</span>'}
-          ${i.adb_enabled === false ? '<div class="bad" style="font-size:.85em">ADB switch off in BlueStacks (Settings › Advanced)</div>' : ""}</td>
+          ${i.adb_enabled === false ? '<div class="bad" style="font-size:.85em">ADB switch off in BlueStacks</div>' : ""}
+          ${i.display && i.display_ok === false ? `<div class="bad" style="font-size:.85em">display ${esc(i.display)}, needs 1080x2560@360</div>` : ""}</td>
       <td>${esc(serial || "")}</td>
       <td style="white-space:nowrap">
         ${serial && i.running ? `<button class="small" onclick='adopt(${JSON.stringify(serial)}, ${JSON.stringify(adbFor(i.emulator))})'>Use this one</button>` : ""}
         ${!i.running && i.index !== undefined
           && ((i.emulator||"").startsWith("MuMu") || (i.emulator||"").startsWith("BlueStacks"))
           ? `<button class="small ghost" onclick="launchVM('${esc(i.emulator)}', '${esc(String(i.index))}')">Start it</button>` : ""}
+        ${!i.running && (i.emulator||"").startsWith("BlueStacks") && (i.adb_enabled === false || i.display_ok === false)
+          ? `<button class="small ghost" onclick="prepareBS('${esc(String(i.index))}')" title="ADB on + 1080x2560 @ 360 dpi in bluestacks.conf (backup kept)">Prepare</button>` : ""}
       </td></tr>`);
   }
   for (const f of (e.scanned || []))
@@ -711,6 +714,14 @@ async function adopt(serial, adb){
     toast("Connected: config now points at " + serial);
     await checkResolution(serial);
     await loadStatus();
+    renderSetup();
+  } catch(e){ toast(e.message, true); }
+}
+async function prepareBS(index){
+  if (!window.confirm("Write to BlueStacks' own config (bluestacks.conf):\n- Android Debug Bridge: on\n- display 1080 x 2560 portrait, 360 dpi\n\nA backup of the file is kept. BlueStacks must be closed. Continue?")) return;
+  try {
+    const r = await post("/api/wizard/bluestacks/prepare", { index });
+    toast(r.message || "prepared");
     renderSetup();
   } catch(e){ toast(e.message, true); }
 }
