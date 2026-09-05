@@ -55,6 +55,8 @@ EXPECTED_PREFIXES = (
     "ScreenDecorOverlay",           # covers ...Bottom too
     "ShellDropTarget",
     "InputMethod",
+    "AssistPreviewPanel",           # Android 9 system windows seen on BlueStacks
+    "DockedStackDivider",           # Pie64 at boot (overlay_unknown, 2026-09-06)
 )
 
 # Overlay owners we KNOW are ads and know how to dismiss. Grown by
