@@ -22,6 +22,7 @@ import glob
 import json
 import os
 import re
+import struct
 import subprocess
 import sys
 import threading
@@ -1346,7 +1347,7 @@ def _emulator_instances() -> list[dict]:
                             "running": key in live_keys,
                             "adb_enabled": adb_on,
                             "display": (f"{w}x{h}@{dpi}" if w and h and dpi else None),
-                            "display_ok": (w, h, dpi) == ("1080", "2560", "360"),
+                            "display_ok": (w, h, dpi) == _BS_DISPLAY_OK,
                             "adb_port": int(pm.group(1)) if pm else None,
                             "port_source": "conf" if pm else None})
         except Exception as e:                  # noqa: BLE001
@@ -1465,8 +1466,14 @@ def _launch_bluestacks(key: str):
     return jsonify({"ok": True, "message": msg})
 
 
-_BS_WANT_DISPLAY = {"fb_width": "1080", "fb_height": "2560", "dpi": "360",
+# BlueStacks keeps a LANDSCAPE framebuffer and rotates the display when a
+# portrait-only app such as The Tower comes to the front, so 2560x1080 rotated
+# is the 1080x2560 layout every template was cut at. A portrait framebuffer
+# (1080x2560) reads right in `wm size` but Unity never produces a frame on it:
+# blank window, SurfaceFlinger latency table all zero (seen 2026-09-05).
+_BS_WANT_DISPLAY = {"fb_width": "2560", "fb_height": "1080", "dpi": "360",
                     "custom_resolution_selected": "1"}
+_BS_DISPLAY_OK = ("2560", "1080", "360")
 
 
 def _bluestacks_conf_path() -> str:
@@ -1476,8 +1483,9 @@ def _bluestacks_conf_path() -> str:
 
 def _prepare_bluestacks(key: str) -> dict:
     """Set what Tower Pilot needs in bluestacks.conf for one instance: the
-    global Android Debug Bridge switch on, and the instance's display at
-    1080x2560 / 360 dpi (the layout every template was cut at). BlueStacks
+    global Android Debug Bridge switch on, and the instance's framebuffer at
+    2560x1080 landscape / 360 dpi - BlueStacks rotates it to the 1080x2560
+    portrait layout every template was cut at when The Tower starts. BlueStacks
     reads the file when the instance starts and rewrites it while a player
     runs, so this refuses unless every HD-Player.exe is closed. A timestamped
     backup of the file is written first. Returns what changed."""
@@ -1513,7 +1521,7 @@ def _prepare_bluestacks(key: str) -> dict:
             text = pat.sub(f'{full}="{val}"', text, count=1)
     if not changed and not added:
         return {"changed": {}, "added": [], "backup": None,
-                "message": "already prepared (ADB on, 1080x2560 @ 360)"}
+                "message": "already prepared (ADB on, 2560x1080 @ 360)"}
     stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     backup = f"{path}.bak-{stamp}"
     with open(path, encoding="utf-8", errors="replace") as src, \
@@ -1842,31 +1850,38 @@ def api_wizard_resolution():
 
     The `adb` query parameter is ACCEPTED AND IGNORED - the socket talks to
     the one adb server on this machine, whichever binary started it. Kept so
-    existing callers and bookmarked URLs keep working."""
+    existing callers and bookmarked URLs keep working.
+
+    The size comes from the raw `screencap` header, not `wm size`: `wm size`
+    reports the physical panel, and BlueStacks keeps a 2560x1080 landscape
+    panel that it rotates when The Tower is in front - screencap then
+    delivers a 1080x2560 frame while `wm size` still says 2560x1080 (seen
+    2026-09-05). The screencap header is exactly what capture.grab's
+    resolution lock enforces, so it is the truth this check has to match."""
     serial = request.args["serial"]
     try:
         from device import adbclient
-        out = adbclient.exec_out(serial, "wm size", timeout=10).decode(
-            "utf-8", "replace")
+        raw = adbclient.exec_out(serial, "screencap", timeout=20)
+        if len(raw) < 8:
+            raise RuntimeError("screencap answered nothing")
+        w, h = struct.unpack("<II", raw[:8])
     except Exception as e:                      # noqa: BLE001
         return jsonify(_wiz_save("resolution", {
             "ok": False, "serial": serial,
             "error": f"{e} (no adb server, or the device is not attached - "
                      f"use adb connect above first)"}))
-    m = re.search(r"(\d+)x(\d+)", out)
-    if not m:
-        return jsonify(_wiz_save("resolution", {
-            "ok": False, "serial": serial, "error": out.strip() or "no answer"}))
-    w, h = int(m.group(1)), int(m.group(2))
     if (w, h) == (1080, 2560):
         # the device answered at the calibrated resolution: wiring proven
         _mark_setup_complete("resolution")
     return jsonify(_wiz_save("resolution", {
-        "ok": True, "serial": serial, "width": w, "height": h,
-        "expected": w == 1080 and h == 2560,
+        "ok": True, "serial": serial, "width": int(w), "height": int(h),
+        "expected": (w, h) == (1080, 2560),
         "note": ("" if (w, h) == (1080, 2560) else
-                 "Templates are calibrated for 1080x2560. Set the"
-                 " emulator display to exactly this resolution.")}))
+                 "Templates are calibrated for a 1080x2560 portrait frame."
+                 " MuMu: set the display to 1080x2560 @ 360. BlueStacks:"
+                 " 2560x1080 landscape @ 360 (Prepare writes it) and run"
+                 " this check while the game is in front - it rotates the"
+                 " panel.")}))
 
 
 @app.get("/api/wizard/templates")

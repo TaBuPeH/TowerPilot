@@ -3,7 +3,7 @@
 > **Status:** Active
 > **Type:** Knowledge
 > **Created:** 2026-09-05
-> **Updated:** 2026-09-06
+> **Updated:** 2026-09-05
 > **Tags:** bluestacks, emulator, setup
 
 The autopilot was built against MuMu Player. Everything it needs from an
@@ -28,17 +28,29 @@ The capture layer refuses any other resolution outright
 by code - a wrong dpi renders the HUD at another size and every template
 simply scores low. Match both.
 
+BlueStacks reaches that frame the other way round: its panel stays
+**landscape, 2560 x 1080 at 360 dpi**, and when The Tower (portrait-only)
+comes to the front BlueStacks rotates the display. `wm size` keeps saying
+`2560x1080`, but `screencap` delivers the rotated 1080 x 2560 frame and the
+home screen matched at 1.0 (seen 2026-09-05). A portrait panel of
+1080 x 2560 reads right in `wm size` but Unity never draws a frame on it:
+blank window, all-zero SurfaceFlinger frame table. **Prepare** writes the
+landscape values for that reason.
+
 ---
 
 ## BlueStacks 5 settings
 
-1. **Display**: set a custom resolution of **1080 x 2560** in portrait and a
-   pixel density of **360**. Restart the instance afterwards (BlueStacks
-   applies display changes on restart).
+1. **Display**: a custom resolution of **2560 x 1080 landscape** and a pixel
+   density of **360** (see above for why not portrait). The Setup page's
+   **Prepare** button writes both into `bluestacks.conf` while BlueStacks is
+   closed and keeps a timestamped backup; by hand it is Settings > Display.
+   Restart the instance afterwards (BlueStacks applies display changes on
+   restart).
 2. **Advanced > Android Debug Bridge**: switch it **on**. Note the port it
    shows (the default instance uses 5555). While it is off the device
    still shows up in `adb devices`, but every shell command is refused
-   with `error: closed` (seen 2026-09-06 through HD-Adb.exe itself), so
+   with `error: closed` (seen 2026-09-05 through HD-Adb.exe itself), so
    the boot pipeline waits on its adb stage until it times out. The
    Setup page marks the row "ADB switch off in BlueStacks". In
    `%ProgramData%\BlueStacks_nxt\bluestacks.conf` the switch is
@@ -59,7 +71,12 @@ simply scores low. Match both.
 2. On **Setup**, scan. BlueStacks appears with its instance name, the adb
    port from `bluestacks.conf`, and whether it is running (the wizard
    looks for `HD-Player.exe --instance <key>`).
-3. Press **Start it**. That runs the same command as BlueStacks' own
+3. When the row says "ADB switch off in BlueStacks" or "display ...,
+   needs 2560x1080@360 landscape", close BlueStacks and press **Prepare**:
+   it edits `bluestacks.conf` (ADB on, panel 2560 x 1080 @ 360, custom
+   resolution on) with a backup next to it, and refuses while any
+   `HD-Player.exe` runs because BlueStacks rewrites the file on exit.
+4. Press **Start it**. That runs the same command as BlueStacks' own
    shortcut (`HD-Player.exe --instance <key>`), starts the adb daemon with
    `HD-Adb.exe`, and, when the configured instance has no serial yet,
    points it at `127.0.0.1:<port>` with `adb.exe = ...\HD-Adb.exe`. It
@@ -69,14 +86,16 @@ simply scores low. Match both.
    `am start`, so which BlueStacks tab is in front does not matter. The
    pipeline gives adb four minutes; with ADB still off in BlueStacks it
    times out, and Start can simply be pressed again.
-4. An instance that already points somewhere is not repointed by Start;
+5. An instance that already points somewhere is not repointed by Start;
    **Use this one** does that explicitly.
-5. The resolution check must read exactly 1080 x 2560.
+6. The resolution check reads the `screencap` header - the frame the
+   vision layer gets - and must say 1080 x 2560. Run it after Start has
+   brought the game up: only then has BlueStacks rotated the panel.
    BlueStacks' Windows-side Home tab (the one with the adverts) is not the
    Android screen: the pipeline starts The Tower by package name over
    adb, and BlueStacks opens it in its own tab. Nothing needs to be
    clicked in the BlueStacks window.
-6. Leave the instance's `display` and `input_display` keys **absent**
+7. Leave the instance's `display` and `input_display` keys **absent**
    (the template config has none). They exist for MuMu's secondary game
    display; without them the capture and input paths use the default
    display and skip the MuMu-only display refresh entirely.

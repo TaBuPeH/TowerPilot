@@ -2,6 +2,7 @@
 switch + display) only while the player is closed, with a backup, and the
 instance rows reporting what the conf says."""
 import importlib.util
+import os
 from pathlib import Path
 
 import pytest
@@ -58,8 +59,8 @@ def test_prepare_sets_adb_and_display_for_one_instance_with_a_backup(dash, conf)
     assert r["added"] == []
     k = _keys(conf.read_text(encoding="utf-8"))
     assert k["bst.enable_adb_access"] == '"1"'
-    assert k["bst.instance.Pie64.fb_width"] == '"1080"'
-    assert k["bst.instance.Pie64.fb_height"] == '"2560"'
+    assert k["bst.instance.Pie64.fb_width"] == '"2560"'
+    assert k["bst.instance.Pie64.fb_height"] == '"1080"'
     assert k["bst.instance.Pie64.dpi"] == '"360"'
     assert k["bst.instance.Pie64.custom_resolution_selected"] == '"1"'
     # the other instance and unrelated keys are untouched
@@ -114,8 +115,38 @@ def test_prepare_endpoint_maps_errors(dash, conf, monkeypatch):
                       json={"index": "Pie64"}).status_code == 409
 
 
+def test_resolution_check_reads_the_captured_frame_not_the_panel(dash, tmp_path, monkeypatch):
+    """BlueStacks keeps a 2560x1080 landscape panel and rotates it for The
+    Tower: `wm size` says 2560x1080 while screencap delivers 1080x2560. The
+    check must judge the frame the vision layer gets (seen 2026-09-05)."""
+    import struct
+    from device import adbclient
+
+    monkeypatch.setattr(dash, "_WIZ_STATE", str(tmp_path / "wizard_state.json"))
+    monkeypatch.setattr(dash, "_SETUP_FLAG", str(tmp_path / "setup_done"))
+    monkeypatch.setitem(dash._SETUP_CACHE, "done", False)
+    frames = {"rotated": struct.pack("<III", 1080, 2560, 1) + b"\0" * 16,
+              "panel": struct.pack("<III", 2560, 1080, 1) + b"\0" * 16}
+    current, calls = ["rotated"], []
+
+    def fake_exec_out(serial, command, timeout=None):
+        calls.append(command)
+        return frames[current[0]]
+
+    monkeypatch.setattr(adbclient, "exec_out", fake_exec_out)
+    with dash.app.test_client() as c:
+        r = c.get("/api/wizard/resolution?serial=127.0.0.1:5555").get_json()
+        assert (r["width"], r["height"], r["expected"]) == (1080, 2560, True)
+        assert os.path.exists(tmp_path / "setup_done")
+        current[0] = "panel"
+        r = c.get("/api/wizard/resolution?serial=127.0.0.1:5555").get_json()
+        assert (r["width"], r["height"], r["expected"]) == (2560, 1080, False)
+        assert "2560x1080 landscape" in r["note"]
+    assert calls and all(cmd == "screencap" for cmd in calls)
+
+
 def test_ui_offers_prepare_for_bluestacks():
     html = (BACKEND.parent / "frontend" / "webui" / "index.html").read_text(encoding="utf-8")
     for needle in ("/api/wizard/bluestacks/prepare", "async function prepareBS",
-                   "ADB switch off in BlueStacks", "needs 1080x2560@360"):
+                   "ADB switch off in BlueStacks", "needs 2560x1080@360"):
         assert needle in html, needle

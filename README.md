@@ -3,7 +3,7 @@
 > **Status:** Active
 > **Type:** Knowledge
 > **Created:** 2026-08-24
-> **Updated:** 2026-09-06
+> **Updated:** 2026-09-05
 > **Tags:** autopilot, the-tower, distribution
 
 Vision-driven autopilot for **The Tower** running in an Android emulator
@@ -14,10 +14,13 @@ machine.
 ## Quick start
 
 1. Install [Python 3.12](https://www.python.org/downloads/) (3.10 is the
-   floor) and an Android emulator with The Tower installed. The emulator
-   display must be **1080 x 2560 portrait at 360 dpi** - every template and
-   coordinate assumes that layout. MuMu Player is the reference setup;
-   BlueStacks is covered step by step in [docs/BLUESTACKS.md](docs/BLUESTACKS.md).
+   floor) and an Android emulator with The Tower installed. The frame the
+   autopilot sees must be **1080 x 2560 portrait at 360 dpi** - every
+   template and coordinate assumes that layout. On MuMu Player (the
+   reference setup) that is the display setting itself; BlueStacks keeps a
+   2560 x 1080 landscape panel that the game rotates, and the Setup page's
+   **Prepare** button writes it - step by step in
+   [docs/BLUESTACKS.md](docs/BLUESTACKS.md).
 2. `pip install -r requirements.txt` (add `-r requirements-dev.txt` to run
    the tests).
 3. `python frontend/dashboard.py` and open <http://127.0.0.1:8620/>.
