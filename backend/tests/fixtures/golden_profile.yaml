@@ -1,0 +1,271 @@
+player:
+  seeded_from: config.yaml (migrate)
+  uws: {chain_lightning: true, black_hole: true, death_wave: true, golden_tower: true,
+    poison_swamp: true, spotlight: true, chronofield: true, inner_land_mines: false,
+    smart_missiles: false}
+  abilities: {nuke: true, demon_mode: true}
+  abilities_verified: true
+  card_presets: [18v300, disco, main_farm, no_card, tourney_p1]
+  global_presets: [Farm Run, Tournament]
+  category_presets:
+    workshop: [Full Upgraded, Devo]
+    modules: [Farm, Tourney]
+    guardians: [Farm, Tourney]
+    bots: [Farm, Tourney]
+  guardians: [bounty, fetch, summon]
+  modules_equipped: [amplifying_strike, black_hole_digestor, dimension_core, galaxy_compressor,
+    multiverse_nexus, primordial_collapse, pulsar_harvester, sharp_fortitude, space_displacer]
+  modules_in_grid: []
+  wall: true
+  max_tier: 19
+  abilities_verified_by: operator flag
+blueprints:
+  coin_default:
+    kind: coin
+    loadout: coin_farm
+    tier: 14
+    restart_via_home: true
+    shop_interval_sec: 90
+    shopping: default_sweep
+    policies: {uw: farm_cl_choreo, rescue: high_tier_wall, gather: all_on}
+  coin_t19:
+    kind: coin
+    loadout: coin_farm
+    tier: 19
+    restart_via_home: true
+    shop_interval_sec: 90
+    shopping: default_sweep
+    policies: {uw: farm_cl_choreo, rescue: t19_fast_drain, gather: all_on}
+  tourney_main:
+    kind: tournament
+    loadout: tourney_1
+    gem_entry_max: 10
+    tier: 14
+    restart_via_home: true
+    shop_interval_sec: 90
+    shopping: default_sweep
+    policies: {uw: tourney_cl, rescue: tournament_any_falling, gather: all_on}
+  # 2026-09-05 (user: "watch for the demon mode" on a run they play by
+  # hand): no shopping list, no uw policy, hands_off gathering - the only
+  # taps are the rescue abilities. gem_entry_max 0: it must never buy an
+  # entry; it exists to ADOPT the tournament run already on screen.
+  tourney_assist:
+    kind: tournament
+    loadout: tourney_1
+    gem_entry_max: 0
+    tier: 14
+    restart_via_home: false
+    policies: {rescue: tournament_wall_nuke, gather: hands_off}
+  coin_dissonance:
+    kind: coin
+    loadout: dissonance
+    dissonant_tab: utility
+    tier: 14
+    restart_via_home: true
+    shop_interval_sec: 90
+    shopping: no_utility_sweep
+    policies: {uw: tourney_cl, rescue: tournament_any_falling, gather: all_on}
+  coin_t18_legend:
+    kind: coin
+    loadout: as_is
+    tier: 18
+    restart_via_home: true
+    shop_interval_sec: 90
+    shopping: default_sweep
+    policies: {uw: tourney_cl_legend, rescue: tournament_any_falling, gather: all_on}
+  shard_daily:
+    kind: shard
+    loadout: shard_farm
+    tier: 18
+    count: 100
+    policies: {gather: gems_only}
+  quest_sm:
+    kind: uw_grant_quest
+    loadout: coin_farm
+    tier: 1
+    grant_targets: [smart_missiles]
+    reroll_at_wave: 1000
+    ride_to_wave: 6500
+    rides: 1
+    uw_setup: {chain_lightning: false, death_wave: false, poison_swamp: false, golden_tower: true,
+      black_hole: true, spotlight: true, chronofield: false}
+  quest_ilm: {kind: cycle_quest, loadout: inner_land_mines_quest, tier: 1, cycle_sec: 25,
+    cycles: 40}
+policies:
+  uw_policies:
+    farm_cl_choreo:
+      baseline: {black_hole: true, chronofield: true, death_wave: true, golden_tower: true,
+        poison_swamp: true, spotlight: true}
+      chain_lightning:
+        always_on_above: [6080, 6120]
+        mode: fleet_marks
+        off_after_waves: [53, 72]
+        pre_mark_waves: [5, 25]
+      label: Chain Lightning Farming Choreography
+    tourney_cl:
+      baseline: {black_hole: true, death_wave: true, golden_tower: true, poison_swamp: true,
+        spotlight: true, chronofield: true}
+      chain_lightning:
+        mode: off_until_wave
+        on_above: [500, 550]
+      label: Tournament Chain Lightning
+    tourney_cl_legend:
+      baseline: {black_hole: true, death_wave: true, golden_tower: true, poison_swamp: true,
+        spotlight: true, chronofield: true}
+      chain_lightning:
+        mode: off_until_wave
+        on_above: [300, 330]
+      label: Tournament Chain Lightning (Legend)
+  rescue_policies:
+    high_tier_wall:
+      arm: {'on': second_wind, immunity_sec: null, watch_sec: 30}
+      end_sprint_after_sw: false
+      rules:
+      - when: {bar: wall, below: 0.02, falling_samples: 2, deadband: 0.01}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          wall_collapse: {from_above: 0.3}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          fleet_mark: {after_waves: 3, window_waves: 60}
+        do:
+          fire: {button: nuke, throttle_sec: 5}
+    t19_fast_drain:
+      arm: {'on': second_wind, immunity_sec: null, watch_sec: null}
+      end_sprint_after_sw: false
+      rules:
+      - when: {bar: wall, below: 0.4, falling_samples: 2, deadband: 0.01}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          wall_collapse: {from_above: 0.3}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          fleet_mark: {after_waves: 3, window_waves: 60}
+        do:
+          fire: {button: nuke, throttle_sec: 5}
+    tournament_any_falling:
+      arm: {'on': second_wind, immunity_sec: 8, watch_sec: null}
+      end_sprint_after_sw: false
+      rules:
+      - when: {bar: wall, below: 0.5, falling_samples: 2, deadband: 0.01}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          wall_collapse: {from_above: 0.3}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+    # 2026-09-05 (user): tournament_any_falling plus the fleet-mark Nuke the
+    # coin policies carry - Demon Mode on the wall drain after Second Wind,
+    # Nuke 3 waves after each 2495+1000k fleet.
+    tournament_wall_nuke:
+      label: Tournament Wall + Fleet Nuke
+      arm: {'on': second_wind, immunity_sec: 8, watch_sec: null}
+      end_sprint_after_sw: false
+      rules:
+      - when: {bar: wall, below: 0.5, falling_samples: 2, deadband: 0.01}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          wall_collapse: {from_above: 0.3}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          fleet_mark: {after_waves: 3, window_waves: 60}
+        do:
+          fire: {button: nuke, throttle_sec: 5}
+  gather:
+    # 2026-09-05: for a runner riding along on a HUMAN's run - no gem taps,
+    # no side flows; the rescue abilities are the only taps it makes.
+    hands_off:
+      flying_gem: false
+      gem_delay_sec: [3, 10]
+      ad_gems: false
+      quests_8h: false
+      quest_rewards: false
+      guild: false
+    all_on:
+      flying_gem: true
+      gem_delay_sec: [3, 10]
+      ad_gems: true
+      quests_8h: true
+      quest_rewards: true
+      guild: true
+    gems_only:
+      flying_gem: true
+      gem_delay_sec: [3, 10]
+      ad_gems: false
+      quests_8h: false
+      quest_rewards: false
+      guild: false
+    coin_default_gather:
+      flying_gem: true
+      gem_delay_sec: [3, 10]
+      ad_gems: true
+      quests_8h: true
+      quest_rewards: true
+      guild: true
+  shopping_lists:
+    no_utility_sweep:
+      label: No-Utility Sweep (Dissonance)
+      enabled: true
+      directives:
+      - enabled: true
+        tab: defense
+        stats: [death_defy, land_mine_radius]
+        mode: once
+      - enabled: true
+        tab: defense
+        stats: [health, health_regen]
+        mode: best_cost
+      - enabled: true
+        tab: attack
+        stats: [critical_factor, damage_per_meter, bounce_shot_range, super_crit_chance,
+          super_crit_mult]
+        mode: once
+      - enabled: true
+        tab: attack
+        stats: [damage]
+        mode: clicks
+        clicks: 3
+    default_sweep:
+      enabled: true
+      directives:
+      - enabled: true
+        tab: utility
+        stats: [enemy_attack_level_skip, enemy_health_level_skip]
+        mode: repeat
+      - enabled: true
+        tab: defense
+        stats: [death_defy, land_mine_radius]
+        mode: once
+      - enabled: true
+        tab: defense
+        stats: [health, health_regen]
+        mode: best_cost
+      - enabled: true
+        tab: attack
+        stats: [critical_factor, damage_per_meter, bounce_shot_range, super_crit_chance,
+          super_crit_mult]
+        mode: once
+      - enabled: true
+        tab: attack
+        stats: [damage]
+        mode: clicks
+        clicks: 3
+  chores:
+  - {name: quest_scan, enabled: true}
+  - {name: shatter, enabled: false}
+plan:
+  week: {default: farm_day, wednesday: tourney_day, saturday: tourney_day}
+  days:
+    farm_day:
+    - {after: '08:00', block: shards, blueprint: shard_daily, count: 100}
+    - {block: coin, blueprint: coin_default}
+    tourney_day:
+    - {block: tournament, blueprint: tourney_main, after: '19:00', count: 1}
+    - {block: shards, blueprint: shard_daily, after: '08:00', count: 100}
+    - {block: coin, blueprint: coin_default}

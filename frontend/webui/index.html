@@ -1,0 +1,2046 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tower Pilot</title>
+<link rel="stylesheet" href="vendor/pico.min.css">
+<link rel="icon" href="data:,">
+<style>
+  /* ------------------------------------------------ iOS liquid-glass skin */
+  :root {
+    --pico-font-size: 15px;
+    --pico-font-family: -apple-system, "SF Pro Display", "SF Pro Text",
+                        BlinkMacSystemFont, "Segoe UI Variable", "Segoe UI",
+                        system-ui, sans-serif;
+    --ios-blue: #0a84ff;
+    --glass:        rgba(255,255,255,.07);
+    --glass-strong: rgba(255,255,255,.11);
+    --glass-border: rgba(255,255,255,.14);
+    --glass-inner:  rgba(255,255,255,.05);
+    --pico-border-radius: 14px;
+  }
+  html { background:#0b0f1d; }
+  body {
+    padding:0; min-height:100vh; color:#eef1f7;
+    background:
+      radial-gradient(1100px 700px at 12% -8%,  rgba(88,101,242,.32), transparent 60%),
+      radial-gradient(900px 650px  at 95% 12%,  rgba(10,132,255,.22), transparent 55%),
+      radial-gradient(1000px 800px at 55% 115%, rgba(191,90,242,.18), transparent 60%),
+      linear-gradient(180deg, #0d1226 0%, #0a0e1c 100%);
+    background-attachment: fixed;
+  }
+  ::selection { background:rgba(10,132,255,.4); }
+
+  header.topbar {
+    display:flex; align-items:center; gap:1.2rem; padding:.6rem 1.3rem;
+    position:sticky; top:0; z-index:20;
+    background:rgba(16,20,38,.55);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+    backdrop-filter: blur(24px) saturate(1.6);
+    border-bottom:1px solid var(--glass-border);
+  }
+  .brand { font-weight:700; font-size:1.05rem; white-space:nowrap; letter-spacing:.01em; }
+  .brand small { opacity:.55; font-weight:400; }
+  nav.steps { display:flex; gap:.45rem; }
+  nav.steps.right { margin-left:auto; }
+  .connect-overlay {
+    position:fixed; inset:0; z-index:40;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(8, 11, 22, .55);
+    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    backdrop-filter: blur(16px) saturate(1.3);
+  }
+  .connect-overlay article { text-align:center; max-width:26rem; padding:1.6rem 2rem; }
+  #savebar {
+    position:fixed; bottom:1.1rem; left:50%; transform:translateX(-50%);
+    z-index:45; display:flex; gap:.6rem; align-items:center;
+    padding:.55rem 1.1rem; border-radius:999px;
+    background:rgba(22, 28, 52, .78);
+    -webkit-backdrop-filter: blur(20px) saturate(1.5);
+    backdrop-filter: blur(20px) saturate(1.5);
+    border:1px solid var(--glass-border);
+    box-shadow:0 10px 34px rgba(0,0,0,.45);
+  }
+  #savebar span { font-size:.88rem; opacity:.85; }
+  nav.steps a {
+    padding:.34rem .95rem; border-radius:999px; text-decoration:none;
+    color:#eef1f7; opacity:.72; font-size:.9rem; white-space:nowrap;
+    border:1px solid transparent; transition:all .18s ease;
+  }
+  nav.steps a:hover { background:var(--glass); opacity:1; }
+  nav.steps a.active {
+    background:linear-gradient(180deg, rgba(10,132,255,.85), rgba(10,110,240,.75));
+    box-shadow:0 4px 18px rgba(10,132,255,.35), inset 0 1px 0 rgba(255,255,255,.25);
+    opacity:1; color:#fff;
+  }
+  nav.steps a.locked { opacity:.28; pointer-events:none; }
+  nav.steps a .n {
+    display:inline-block; width:1.35rem; height:1.35rem; line-height:1.32rem;
+    text-align:center; border-radius:50%; background:rgba(255,255,255,.14);
+    font-size:.74rem; margin-right:.4rem;
+  }
+  nav.steps a.active .n { background:rgba(255,255,255,.25); color:#fff; }
+
+  main { padding:1.1rem 1.3rem 4rem; max-width:1500px; margin:0 auto; }
+  .grid2 { display:grid; grid-template-columns:1fr 360px; gap:1.1rem; align-items:start; }
+  @media (max-width:1100px){ .grid2 { grid-template-columns:1fr; } }
+
+  article {
+    padding:1.05rem 1.2rem; margin:0 0 1.1rem;
+    background:var(--glass);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    backdrop-filter: blur(28px) saturate(1.5);
+    border:1px solid var(--glass-border); border-radius:20px;
+    box-shadow:0 10px 34px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.10);
+  }
+  article > header {
+    margin:-1.05rem -1.2rem .9rem; padding:.6rem 1.2rem; font-weight:650;
+    background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    border-bottom:1px solid rgba(255,255,255,.08);
+    border-radius:20px 20px 0 0; letter-spacing:.01em;
+  }
+  .step-num {
+    display:inline-block; width:1.65rem; height:1.65rem; line-height:1.65rem;
+    text-align:center; border-radius:50%; margin-right:.55rem; font-size:.85rem;
+    background:linear-gradient(180deg, #3ea0ff, #0a6ef0); color:#fff;
+    box-shadow:0 3px 10px rgba(10,132,255,.4), inset 0 1px 0 rgba(255,255,255,.35);
+  }
+
+  .ok  { color:#30d158; } .bad { color:#ff453a; } .warn { color:#ffd60a; }
+  .dot { display:inline-block; width:.6rem; height:.6rem; border-radius:50%; margin-right:.4rem;
+         box-shadow:0 0 8px currentColor; }
+  .dot.ok { background:#30d158; color:#30d158; }
+  .dot.bad { background:#ff453a; color:#ff453a; }
+  .dot.unknown { background:#98989d; color:transparent; }
+
+  table { font-size:.86rem; --pico-background-color:transparent; }
+  th { opacity:.55; font-weight:600; border-bottom-color:rgba(255,255,255,.12); }
+  td { border-bottom:1px solid rgba(255,255,255,.06); }
+  td, th { padding:.4rem .55rem; background:transparent; }
+
+  button, [role=button], input[type=submit] {
+    font-size:.86rem; padding:.4rem 1rem; border-radius:999px;
+    background:linear-gradient(180deg, rgba(10,132,255,.9), rgba(9,105,235,.85));
+    border:1px solid rgba(255,255,255,.18);
+    box-shadow:0 4px 14px rgba(10,132,255,.3), inset 0 1px 0 rgba(255,255,255,.28);
+    transition:transform .12s ease, filter .12s ease; font-weight:560;
+  }
+  button:hover, [role=button]:hover { filter:brightness(1.12); }
+  button:active { transform:scale(.97); }
+  button.small { padding:.18rem .7rem; font-size:.78rem; }
+  button.ghost, a[role=button].ghost {
+    background:var(--glass-strong); color:#eef1f7;
+    border:1px solid var(--glass-border); box-shadow:inset 0 1px 0 rgba(255,255,255,.12);
+  }
+  button.danger {
+    background:linear-gradient(180deg, rgba(255,69,58,.85), rgba(215,40,30,.85));
+    border-color:rgba(255,255,255,.15); box-shadow:0 4px 14px rgba(255,69,58,.25);
+  }
+
+  input, select, textarea {
+    --pico-background-color: rgba(255,255,255,.08);
+    --pico-border-color: var(--glass-border);
+    --pico-color:#eef1f7;
+    border-radius:12px;
+  }
+  input:focus, select:focus {
+    --pico-border-color: var(--ios-blue);
+    box-shadow:0 0 0 3px rgba(10,132,255,.25);
+  }
+
+  /* iOS switches for every checkbox */
+  input[type=checkbox]:not([role=none]) {
+    appearance:none; -webkit-appearance:none; cursor:pointer;
+    width:2.55rem; height:1.5rem; border-radius:999px; margin:0;
+    background:rgba(120,120,128,.36); border:none; position:relative;
+    transition:background .2s ease; flex:none; vertical-align:middle;
+  }
+  input[type=checkbox]:not([role=none])::after {
+    content:""; position:absolute; top:.14rem; left:.14rem;
+    width:1.22rem; height:1.22rem; border-radius:50%; background:#fff;
+    box-shadow:0 2px 6px rgba(0,0,0,.35); transition:left .2s ease;
+  }
+  input[type=checkbox]:not([role=none]):checked { background:#30d158; }
+  input[type=checkbox]:not([role=none]):checked::after { left:1.19rem; }
+  input[type=checkbox]:disabled { opacity:.4; cursor:default; }
+  input[type=radio] { accent-color: var(--ios-blue); }
+
+  .muted { opacity:.6; font-size:.83rem; }
+  .stream-box img { width:100%; border-radius:16px; border:1px solid var(--glass-border);
+                    box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  .events {
+    font-family:"SF Mono", ui-monospace, Consolas, monospace; font-size:.74rem;
+    max-height:14rem; overflow-y:auto; border-radius:12px; padding:.55rem .75rem;
+    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.08);
+  }
+  .events div { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .chip { display:inline-block; padding:.08rem .6rem; border-radius:999px; font-size:.72rem;
+          background:var(--glass-strong); border:1px solid var(--glass-border);
+          margin-left:.4rem; vertical-align:middle; }
+  .chip.kind { background:rgba(10,132,255,.25); border-color:rgba(10,132,255,.4); }
+  .chip.ok { background:rgba(48,209,88,.2); border-color:rgba(48,209,88,.45); }
+
+  .flowcard {
+    display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+    padding:.55rem .8rem; border:1px solid var(--glass-border); border-radius:14px;
+    margin-bottom:.5rem; background:var(--glass-inner);
+  }
+  .flowcard b { font-size:.9rem; }
+
+  .blockrow { display:grid; grid-template-columns:1.4fr 5.2rem 5.2rem 4.2rem auto;
+              gap:.4rem; align-items:center; margin-bottom:.4rem; }
+  .blockrow input, .blockrow select { margin:0; padding:.25rem .55rem; font-size:.82rem; height:2.15rem; }
+
+  dialog { background:rgba(8,10,20,.5); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+  dialog article {
+    max-width:660px; width:92vw; max-height:88vh; overflow-y:auto;
+    background:rgba(22,26,46,.82);
+    -webkit-backdrop-filter:blur(40px) saturate(1.6);
+    backdrop-filter:blur(40px) saturate(1.6);
+    border-radius:24px;
+  }
+  fieldset { border:1px solid rgba(255,255,255,.10); border-radius:16px;
+             padding:.75rem 1rem; margin-bottom:.95rem; background:rgba(255,255,255,.03); }
+  legend { padding:0 .45rem; font-size:.82rem; font-weight:650; opacity:.85; }
+  label.inline { display:flex; align-items:center; gap:.6rem; font-size:.86rem; margin-bottom:.45rem; }
+  .kv { display:grid; grid-template-columns:11.5rem 1fr; gap:.45rem .8rem; align-items:center; }
+  .kv label { margin:0; font-size:.85rem; }
+  .kv input, .kv select { margin:0; padding:.3rem .65rem; font-size:.85rem; height:2.25rem; }
+
+  #toasts { position:fixed; bottom:1.1rem; right:1.1rem; z-index:99; display:flex;
+            flex-direction:column; gap:.5rem; max-width:26rem; }
+  .toast {
+    padding:.65rem 1rem; border-radius:14px; font-size:.85rem; color:#fff;
+    background:rgba(35,45,40,.7); border:1px solid rgba(48,209,88,.45);
+    -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px);
+    box-shadow:0 8px 24px rgba(0,0,0,.45);
+  }
+  .toast.err { background:rgba(60,25,25,.75); border-color:rgba(255,69,58,.5); white-space:pre-wrap; }
+
+  .tpl-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(110px,1fr)); gap:.5rem; }
+  .tpl-grid figure { margin:0; text-align:center; }
+  .tpl-grid img { max-width:100%; max-height:70px; background:rgba(255,255,255,.08);
+                  border-radius:8px; }
+  .tpl-grid figcaption { font-size:.65rem; word-break:break-all; opacity:.7; }
+  details summary { font-size:.9rem; }
+  details { background:transparent; }
+
+  .withpen { display:flex; gap:.4rem; align-items:center; }
+  .withpen select { flex:1; }
+  .rulecard { border:1px solid var(--glass-border); border-radius:14px;
+              padding:.6rem .8rem; margin-bottom:.6rem; background:var(--glass-inner); }
+  .rulecard .rowline { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-bottom:.4rem; }
+  .rulecard .rowline > b { width:3.4rem; font-size:.78rem; opacity:.65; text-align:right; }
+  .rulecard select, .rulecard input[type=number], .rulecard input[type=text] {
+    margin:0; padding:.25rem .55rem; font-size:.82rem; height:2.15rem; width:auto; }
+  .rulecard input[type=number] { width:5.5rem; }
+  .statchips { display:flex; flex-wrap:wrap; gap:.35rem; }
+  .statchips .chip { cursor:pointer; margin:0; user-select:none; padding:.2rem .7rem; }
+  .statchips .chip.on { background:rgba(10,132,255,.35); border-color:rgba(10,132,255,.6); }
+  .daytabs { display:flex; gap:.45rem; flex-wrap:wrap; margin-bottom:.75rem; }
+  .weekmap { display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem .8rem; font-size:.8rem; }
+  .weekmap select { margin:0; padding:.2rem .5rem; height:2rem; font-size:.8rem; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <span class="brand">🗼 Tower Pilot <small id="brand-inst"></small></span>
+  <nav class="steps">
+    <a href="#home" id="nav-home">Control</a>
+  </nav>
+  <nav class="steps right" id="nav">
+    <a href="#setup"     id="nav-setup"><span class="n">1</span>Setup</a>
+    <a href="#calibrate" id="nav-calibrate"><span class="n">2</span>Calibrate</a>
+  </nav>
+</header>
+
+<main id="view"><article aria-busy="true">Loading…</article></main>
+<div id="toasts"></div>
+<div id="savebar" hidden>
+  <span id="savebar-n"></span>
+  <button class="small" onclick="saveAll()">Save changes</button>
+  <button class="small ghost" onclick="discardAll()">Discard</button>
+</div>
+<dialog id="editor"></dialog>
+<dialog id="editor2"></dialog>
+<dialog id="editor3"></dialog>
+
+<!-- ui-seeds: every value the editors WRITE when a control is switched to a
+     new kind/mode. Single source of truth - the JS below consumes it, and
+     backend/tests/test_ui_contract.py parses this exact block and proves
+     every shape against the real profile validator. Edit shapes HERE. -->
+<script type="application/json" id="ui-seeds">
+{
+  "templates": {
+    "gather": { "flying_gem": true, "gem_delay_sec": [3, 10], "ad_gems": true,
+                "quests_8h": true, "quest_rewards": true, "guild": true },
+    "uw_policies": { "baseline": {}, "chain_lightning": { "mode": "off" } },
+    "rescue_policies": { "arm": "always", "end_sprint_after_sw": false, "rules": [] },
+    "shopping_lists": { "enabled": true, "directives": [] }
+  },
+  "triggers": {
+    "bar": { "bar": "hp", "below": 0.25 },
+    "wall_collapse": { "wall_collapse": { "from_above": 0.3 } },
+    "fleet_mark": { "fleet_mark": { "after_waves": 3, "window_waves": 60 } },
+    "wave_at_least": { "wave_at_least": 1000 },
+    "wave_between": { "wave_between": [1000, 2000] },
+    "second_wind": { "second_wind": { "state": "after_immunity" } },
+    "death_screen": { "death_screen": true }
+  },
+  "actions": {
+    "burst": { "burst": { "fire": "demon_mode", "cancel_sprint": true } },
+    "burst_tier_a": { "burst": { "fire": "demon_mode", "cancel_sprint": true, "retaps": 3 } },
+    "fire": { "fire": { "button": "nuke" } },
+    "toggle_uw": { "toggle_uw": { "weapon": "chain_lightning", "want_on": true } },
+    "cancel_sprint": { "cancel_sprint": true },
+    "surrender_retry": { "surrender_retry": true },
+    "stop_after_run": { "stop_after_run": true }
+  },
+  "cl_modes": {
+    "off": {},
+    "always_on": {},
+    "fleet_marks": { "pre_mark_waves": [5, 25], "off_after_waves": [53, 72] },
+    "off_until_wave": { "on_above": [500, 550] }
+  },
+  "arm": {
+    "always": "always",
+    "second_wind": { "on": "second_wind", "immunity_sec": null, "watch_sec": 30 }
+  },
+  "new_rule": { "when": { "wave_at_least": 1000 },
+                "do": { "toggle_uw": { "weapon": "chain_lightning", "want_on": true } } },
+  "new_directive": { "enabled": true, "tab": "attack", "stats": ["damage"], "mode": "once" }
+}
+</script>
+
+<script>
+"use strict";
+/* Tower Pilot UI - three stages: Setup -> Calibrate -> Control.
+   Talks only to the dashboard's existing JSON API; every profile edit goes
+   through /api/profile-patch, where the COMPILER's validator has the last
+   word - its message is shown verbatim, never rephrased. */
+
+const $ = s => document.querySelector(s);
+const S = { status:null, vocab:null, flows:null, config:null,
+            profiles:null, profile:null, wizard:null, calib:null,
+            emus:null, view:null, day:null, scanPoll:null,
+            pending:new Map(), serverProfile:null, editorBp:null };
+const SEEDS = JSON.parse(document.getElementById("ui-seeds").textContent);
+
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g,
+  c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+
+function toast(msg, err=false){
+  const d = document.createElement("div");
+  d.className = "toast" + (err ? " err" : "");
+  d.textContent = msg;
+  $("#toasts").appendChild(d);
+  setTimeout(() => d.remove(), err ? 9000 : 3500);
+}
+
+async function api(path, opts){
+  const r = await fetch(path, opts);
+  let j = null; try { j = await r.json(); } catch(e){}
+  if (!r.ok || (j && j.ok === false)) {
+    const m = j && (j.error || (j.problems || []).join("\n")) || `HTTP ${r.status}`;
+    throw new Error(m);
+  }
+  return j;
+}
+const post = (p, b) => api(p, { method:"POST",
+  headers:{ "Content-Type":"application/json" }, body: JSON.stringify(b || {}) });
+
+/* ---- profile patching: one field, one request, validator verdict verbatim */
+async function patch(path, value, op){
+  const body = { name:S.profiles.active, path, value };
+  if (op) body.op = op;
+  try {
+    const r = await post("/api/profile-patch", body);
+    S.serverProfile = JSON.parse(JSON.stringify(r.profile));
+    S.profile = r.profile;
+    // staged-but-unsaved edits stay visible on top of the fresh server truth
+    for (const [, e] of (S.pending || new Map()))
+      try { applyLocal(S.profile, e.path, e.value, e.op); } catch(_){ /* stale path */ }
+    (r.warnings || []).forEach(w => toast("note: " + w));
+    return true;
+  } catch(e){ toast(e.message, true); return false; }
+}
+
+/* ---- staged edits: NOTHING is written on change. Every edit queues here
+   (mirrored into S.profile so the UI shows it) and is committed only by an
+   explicit Save - the dialog buttons or the sticky bar. Validation happens
+   at Save, against whole objects, so a half-finished edit never errors. */
+const deep = v => v === undefined ? v : JSON.parse(JSON.stringify(v));
+function applyLocal(root, path, value, op){
+  let node = root;
+  for (let i = 0; i < path.length - 1; i++) {
+    const step = path[i];
+    if (node[step] == null)
+      node[step] = (typeof path[i + 1] === "number") ? [] : {};
+    node = node[step];
+  }
+  const leaf = path[path.length - 1];
+  if (op === "delete") {
+    if (Array.isArray(node)) node.splice(leaf, 1); else delete node[leaf];
+  } else if (Array.isArray(node) && leaf === node.length) node.push(value);
+  else node[leaf] = value;
+}
+function queuePatch(path, value, op){
+  S.pending.set(JSON.stringify(path), { path:deep(path), value:deep(value), op });
+  applyLocal(S.profile, path, deep(value), op);
+  syncSaveBar();
+}
+function restoreSubtree(path){
+  let src = S.serverProfile, dst = S.profile;
+  for (const step of path.slice(0, -1)) {
+    src = src ? src[step] : undefined;
+    dst = dst ? dst[step] : undefined;
+  }
+  if (!dst) return;
+  const leaf = path[path.length - 1];
+  if (src && src[leaf] !== undefined) dst[leaf] = deep(src[leaf]);
+  else if (Array.isArray(dst)) { if (leaf in dst) dst.splice(leaf, 1); }
+  else delete dst[leaf];
+}
+function dropPending(prefixes){
+  for (const [key, e] of [...S.pending])
+    if (prefixes.some(p => p.every((s, i) => e.path[i] === s)))
+      S.pending.delete(key);
+  for (const p of prefixes) restoreSubtree(p);
+  syncSaveBar();
+}
+async function saveAll(){
+  for (const [key, e] of [...S.pending.entries()]) {
+    if (!(await patch(e.path, e.value, e.op))) { rerenderEdits(); return false; }
+    S.pending.delete(key);
+  }
+  syncSaveBar(); rerenderEdits();
+  toast("saved ✓");
+  return true;
+}
+function discardAll(){
+  S.pending.clear();
+  if (S.serverProfile) S.profile = deep(S.serverProfile);
+  syncSaveBar(); rerenderEdits();
+}
+function syncSaveBar(){
+  const bar = $("#savebar");
+  if (!bar) return;
+  const n = S.pending.size;
+  // A modal dialog makes everything outside it inert - the bar would show
+  // but be unclickable. Each editor carries its own Save ✓ (which commits
+  // staged edits too), so the bar yields while one is open and returns on
+  // close (the dialogs' close listeners re-run this).
+  bar.hidden = n === 0 || !!document.querySelector("dialog[open]");
+  $("#savebar-n").textContent = n === 1 ? "1 unsaved change" : `${n} unsaved changes`;
+}
+function rerenderEdits(){
+  if (S.view === "home" && S.profile) {
+    renderDay(); renderFlows(); renderBehaviors(); renderGlobal();
+  }
+  const ed = $("#editor");
+  if (ed && ed.open && S.editorBp) ed.innerHTML = editorHtml(S.editorBp);
+  const ed2 = $("#editor2");
+  if (ed2 && ed2.open && P2.kind) p2Render();
+}
+
+/* ------------------------------------------------------------- data loads */
+async function loadStatus(){
+  try { S.status = await api("/api/status"); } catch(e){ S.status = null; }
+  applyGate();
+  const el = $("#brand-inst");
+  if (el && S.status) el.textContent = "· " + S.status.instance;
+  if (S.view === "home") renderHomeLive();
+}
+
+async function loadHomeData(){
+  const [vocab, flows, config, plist] = await Promise.all([
+    api("/api/vocab"), api("/api/flows"), api("/api/config"),
+    api("/api/profiles")]);
+  S.vocab = vocab.vocab; S.flows = flows.flows; S.config = config;
+  const rows = Array.isArray(plist) ? plist : (plist.profiles || []);
+  S.profiles = {
+    list: rows.map(r => ({ name:String(r.name || r).replace(/\.yaml$/, ""),
+                           draft:!!r.draft })),
+    active: config.active_profile || null,
+  };
+  S.profile = null;
+  if (S.profiles.active) {
+    try { S.profile = await api("/api/profile/" +
+            encodeURIComponent(S.profiles.active) + ".yaml"); }
+    catch(e){ toast("active profile unreadable: " + e.message, true); }
+  }
+  if (S.profile) {
+    S.serverProfile = deep(S.profile);
+    // navigating away and back must not lose staged, unsaved edits
+    for (const [, e] of S.pending)
+      try { applyLocal(S.profile, e.path, e.value, e.op); } catch(_){ /* stale */ }
+    syncSaveBar();
+  }
+}
+
+/* ------------------------------------------------------------------ gate */
+function calibOk(){
+  return !!(S.status && (S.status.calibrate_missing || []).length === 0);
+}
+function applyGate(){
+  if (!S.status) return;   // never RE-lock on a transient status failure
+  const done = !!S.status.setup_complete;
+  $("#nav-calibrate").classList.toggle("locked", !done);
+  $("#nav-home").classList.toggle("locked", !done || !calibOk());
+  syncConnectOverlay();
+}
+/* Control is the landing screen; each unfinished step walks back one page */
+function defaultView(){
+  if (!(S.status && S.status.setup_complete)) return "setup";
+  if (!calibOk()) return "calibrate";
+  return "home";
+}
+
+/* ---------------------------------------------------------------- router */
+window.addEventListener("hashchange", route);
+async function route(){
+  for (const id of ["editor", "editor2", "editor3"]) {
+    const dlg = $("#" + id);
+    if (dlg && dlg.open) dlg.close();   // staged edits persist in the save bar
+  }
+  const done = !!(S.status && S.status.setup_complete);
+  let v = (location.hash || "").replace("#","") || defaultView();
+  if (!done && v !== "setup") v = "setup";
+  if (v === "home" && !calibOk()) v = "calibrate";   // Control stays locked
+  // keep the hash honest after a bounce, or the next click on the same nav
+  // item fires no hashchange and the page looks dead
+  if (location.hash !== "#" + v) history.replaceState(null, "", "#" + v);
+  S.view = v;
+  for (const n of ["setup","calibrate","home"])
+    $("#nav-" + n).classList.toggle("active", n === v);
+  $("#view").innerHTML = `<article aria-busy="true">Loading…</article>`;
+  try {
+    if (v === "setup")      await renderSetup();
+    if (v === "calibrate")  await renderCalibrate();
+    if (v === "home")       await renderHome();
+  } catch(e){
+    $("#view").innerHTML = `<article><b class="bad">This page failed to load.</b>
+      <p class="muted">${esc(e.message)}</p>
+      <button onclick="route()">Try again</button></article>`;
+  }
+  syncConnectOverlay();
+}
+
+/* ------------------------------------------------- connect overlay (home) */
+function syncConnectOverlay(){
+  const want = S.view === "home" && S.status && !S.status.connected;
+  let ov = $("#connect-overlay");
+  if (!want) { if (ov) ov.remove(); return; }
+  const cfg = S.config || {};
+  const inst = (cfg.instances || {})[cfg.active_instance] || {};
+  if (cfg.instances && !inst.serial) { location.hash = "#setup"; return; }
+  const label = esc(inst.label || cfg.active_instance || "the emulator");
+  const serial = esc(inst.serial || "");
+  if (!ov) {
+    ov = document.createElement("div");
+    ov.id = "connect-overlay"; ov.className = "connect-overlay";
+    document.body.appendChild(ov);
+  }
+  if (ov.dataset.serial !== serial) {
+    ov.dataset.serial = serial;
+    ov.innerHTML = `<article>
+      <h3 style="margin-top:0">Not connected</h3>
+      <p class="muted">${label}${serial ? ` (${serial})` : ""} is not
+        answering. Start it right here, or connect if it is already up.</p>
+      <button onclick="reconnect(this)">🔌 Connect</button>
+      <div id="ov-emus" class="muted" style="margin-top:.9rem; font-size:.88rem">
+        scanning emulators…</div>
+    </article>`;
+    ovLoadEmulators();
+  }
+}
+/* The overlay's emulator list: every instance the managers know about,
+   with a Start button for stopped MuMu VMs - starting from the web was
+   only possible on the Setup page before (user, 2026-08-28). Fetched once
+   per overlay appearance (the managers' inventory calls are not free),
+   re-scan is manual. */
+async function ovLoadEmulators(){
+  const box = $("#ov-emus");
+  if (!box) return;
+  try {
+    const e = await api("/api/wizard/emulators");
+    const rows = (e.instances || []).filter(i => !i.error).map(i => {
+      const addr = i.adb_port ? `127.0.0.1:${i.adb_port}` : "";
+      const canStart = !i.running && (i.emulator || "").startsWith("MuMu")
+        && i.index !== undefined;
+      return `<tr>
+        <td style="text-align:left">${esc(i.emulator || "?")} ${esc(i.name || "")}</td>
+        <td>${i.running ? '<span class="ok">running</span>'
+                        : '<span class="muted">off</span>'}</td>
+        <td class="muted">${esc(addr)}</td>
+        <td>${canStart ? `<button class="small"
+              onclick="ovStartVM(this, ${Number(i.index)})">▶ Start</button>` : ""}</td>
+      </tr>`;
+    });
+    box.innerHTML = rows.length
+      ? `<table style="margin:.2rem 0"><tbody>${rows.join("")}</tbody></table>
+         <button class="small ghost" onclick="ovLoadEmulators()">↻ re-scan</button>`
+      : "no emulator instances detected on this computer";
+  } catch(err){
+    box.textContent = "emulator scan failed: " + err.message;
+  }
+}
+async function ovStartVM(btn, index){
+  btn.disabled = true; btn.textContent = "starting…";
+  try {
+    const r = await post("/api/wizard/launch", { emulator: "MuMu", index });
+    toast(r.message || "launch requested");
+    // MuMu boots for ~a minute; the boot pipeline then clears ads and
+    // starts the game, and the overlay clears itself once the adb port
+    // answers the status probe. The button stays "starting…" meanwhile.
+  } catch(e){
+    toast(e.message, true);
+    btn.disabled = false; btn.textContent = "▶ Start";
+  }
+}
+async function reconnect(btn){
+  if (btn) { btn.disabled = true; btn.textContent = "connecting…"; }
+  try {
+    const r = await post("/api/wizard/reconnect", {});
+    toast(r.message || "connected");
+  } catch(e){ toast(e.message, true); }
+  await loadStatus();   // fresh `connected` -> the overlay clears itself
+  if (btn && $("#connect-overlay")) { btn.disabled = false; btn.textContent = "🔌 Connect"; }
+}
+
+/* ========================================================== VIEW 1: SETUP */
+async function renderSetup(){
+  [S.wizard, S.emus] = await Promise.all([
+    api("/api/wizard/state").catch(() => ({})),
+    api("/api/wizard/emulators").catch(e => ({ error:e.message }))]);
+  const e = S.emus || {};
+  const res = (S.wizard || {}).resolution;
+  const done = !!(S.status && S.status.setup_complete);
+
+  const configured = (e.configured || []).map(c => `
+    <tr><td><span class="dot ${c.port_open === true ? "ok" : c.port_open === false ? "bad" : "unknown"}"></span>
+        ${esc(c.instance)}</td>
+        <td>${esc(c.serial || "— not set yet —")}</td>
+        <td>${c.port_open === true ? '<span class="ok">reachable</span>'
+             : c.port_open === false ? '<span class="bad">not reachable</span>' : ""}</td></tr>`).join("");
+
+  const rows = [];
+  for (const i of (e.instances || [])) {
+    const serial = i.adb_port ? `127.0.0.1:${i.adb_port}` : null;
+    rows.push(`<tr>
+      <td>${esc(i.emulator || "?")}</td><td>${esc(i.name || "")}</td>
+      <td>${i.running ? '<span class="ok">running</span>' : '<span class="muted">off</span>'}</td>
+      <td>${esc(serial || "")}</td>
+      <td style="white-space:nowrap">
+        ${serial && i.running ? `<button class="small" onclick="adopt('${esc(serial)}')">Use this one</button>` : ""}
+        ${!i.running && (i.emulator||"").startsWith("MuMu") && i.index !== undefined
+          ? `<button class="small ghost" onclick="launchVM(${Number(i.index)})">Start it</button>` : ""}
+      </td></tr>`);
+  }
+  for (const f of (e.scanned || []))
+    for (const dv of (f.devices || []))
+      rows.push(`<tr><td>${esc(f.emulator)}</td><td class="muted">adb device</td><td></td>
+        <td>${esc(dv)}</td>
+        <td><button class="small" onclick="adopt('${esc(dv)}', '${esc(f.adb || "")}')">Use this one</button></td></tr>`);
+
+  const sug = e.suggestion ? `
+    <p><b class="warn">Suggestion:</b> exactly one emulator is up
+      (${esc(e.suggestion.emulator || "")} ${esc(e.suggestion.name || "")} at ${esc(e.suggestion.serial)}) —
+      <button class="small" onclick="adopt('${esc(e.suggestion.serial)}', '${esc(e.suggestion.adb || "")}')">
+        connect to it</button></p>` : "";
+
+  $("#view").innerHTML = `
+  <article>
+    <header><span class="step-num">1</span>Connect your emulator
+      ${done ? '<span class="chip ok">setup complete ✓</span>' : ""}</header>
+    <p class="muted">Tower Pilot drives The Tower inside an Android emulator
+      (MuMu Player recommended). Start your emulator with the game installed,
+      then pick it below. Everything is saved for you — no files to edit.</p>
+    ${e.error ? `<p class="bad">${esc(e.error)}</p>` : ""}
+    ${sug}
+    <h6 style="margin-bottom:.3rem">Detected on this computer</h6>
+    <table><thead><tr><th>Emulator</th><th>Instance</th><th>State</th><th>Address</th><th></th></tr></thead>
+      <tbody>${rows.join("") || '<tr><td colspan="5" class="muted">Nothing detected — is your emulator installed and running?</td></tr>'}</tbody></table>
+    <h6 style="margin-bottom:.3rem">Currently configured</h6>
+    <table><tbody>${configured}</tbody></table>
+    <button class="ghost" onclick="renderSetup()">↻ Re-scan</button>
+  </article>
+
+  <article>
+    <header><span class="step-num">2</span>Check the screen</header>
+    <p class="muted">The vision system is calibrated for a
+      <b>1080 × 2560 portrait</b> display. This checks your emulator reports
+      exactly that.</p>
+    ${res ? (res.ok
+        ? `<p>${res.expected ? '<span class="ok">✓ ' : '<span class="warn">⚠ '}
+             ${res.width} × ${res.height}</span> ${esc(res.note || "")}</p>`
+        : `<p class="bad">${esc(res.error || "check failed")}</p>`)
+      : `<p class="muted">Not checked yet — connect an emulator first.</p>`}
+    <button class="ghost" onclick="checkResolution()">Check now</button>
+  </article>
+
+  <article>
+    <header><span class="step-num">3</span>Scan your account</header>
+    <p class="muted">With the game open on its Home screen, this reads what
+      your account owns — guardians, card presets, equipped modules — so runs
+      can be tailored to it and never tap an ability you don't have.
+      It navigates menus only; it starts no battle.</p>
+    <div id="scan-box"><button onclick="startScan()">Start account scan</button>
+      <span id="scan-state" class="muted"></span></div>
+  </article>
+
+  ${done ? `<article><p><b class="ok">Setup is complete.</b>
+     Continue to <a href="#calibrate">Calibrate</a> to verify the vision
+     templates, or go straight to <a href="#home">Control</a>.</p></article>` : ""}`;
+}
+
+async function adopt(serial, adb){
+  try {
+    const r = await post("/api/wizard/adopt", adb ? { serial, adb } : { serial });
+    toast("Connected: config now points at " + serial);
+    await checkResolution(serial);
+    await loadStatus();
+    renderSetup();
+  } catch(e){ toast(e.message, true); }
+}
+async function launchVM(index){
+  try {
+    const r = await post("/api/wizard/launch", { emulator:"MuMu", index });
+    toast(r.message || "launch requested");
+  } catch(e){ toast(e.message, true); }
+}
+async function checkResolution(serial){
+  const s = serial ||
+    ((S.emus && S.emus.configured || []).find(c => c.serial) || {}).serial;
+  if (!s) { toast("no configured emulator to check", true); return; }
+  try {
+    await api("/api/wizard/resolution?serial=" + encodeURIComponent(s));
+    await loadStatus();
+    if (S.view === "setup") renderSetup();
+  } catch(e){ toast(e.message, true); }
+}
+async function startScan(){
+  try {
+    await post("/api/scan/start", {});
+    $("#scan-state").textContent = "scanning…";
+    pollScan();
+  } catch(e){ toast(e.message, true); }
+}
+function pollScan(){
+  clearInterval(S.scanPoll);
+  S.scanPoll = setInterval(async () => {
+    try {
+      const st = await api("/api/scan/status");
+      const el = $("#scan-state");
+      if (!el) { clearInterval(S.scanPoll); return; }
+      if (st.running) el.textContent = "scanning… " + (st.stage || "");
+      else {
+        clearInterval(S.scanPoll);
+        el.innerHTML = '<span class="ok">scan finished</span> — its result is a draft profile you can activate on the Control page.';
+      }
+    } catch(e){ clearInterval(S.scanPoll); }
+  }, 2000);
+}
+
+/* ====================================================== VIEW 2: CALIBRATE */
+async function renderCalibrate(){
+  S.calib = await api("/api/wizard/templates").catch(e => ({ error:e.message }));
+  S.required = await api("/api/wizard/required").catch(e => ({ required:[], missing:[] }));
+  S.calibTs = Date.now();
+  const missing = (S.calib.missing_seen || []);
+  const have = S.calib.have || [];
+  const req = S.required.required || [];
+  const reqMissing = req.filter(r => !r.have);
+  const groups = {};
+  for (const rel of have) {
+    const g = rel.includes("/") ? rel.split("/")[0] : "(root)";
+    (groups[g] = groups[g] || []).push(rel);
+  }
+  const accountSpecific = rel => /^(cards|modules)\//.test(rel);
+
+  $("#view").innerHTML = `
+  <div class="grid2">
+  <div>
+    <article>
+      <header>What the eyes are missing</header>
+      <p class="muted">The autopilot recognizes the game purely by matching
+        small screenshots ("templates"). This lists every template the code
+        looked for <b>on this machine</b> and could not find — each one is a
+        feature that silently isn't working until its picture exists.</p>
+      ${missing.length === 0
+        ? '<p class="ok">✓ Nothing missing — every template the runs asked for was found.</p>'
+        : missing.map(rel => `
+          <div class="flowcard"><div><b>${esc(rel)}</b>
+            ${accountSpecific(rel)
+              ? '<div class="muted">account-specific: crop it from YOUR account (card/module art differs per rarity)</div>'
+              : '<div class="muted">crop it from a screenshot of the named screen</div>'}
+          </div></div>`).join("")}
+      <p class="muted">To add one: open that screen in the game, refresh the
+        live screen on the right, drag a <i>tight</i> box around the element
+        and save it under that name. A good template matches itself at ~1.0
+        and everything else clearly below.</p>
+    </article>
+    <article>
+      <header>Required for your account
+        <span class="chip">${reqMissing.length} missing / ${req.length}</span></header>
+      <p class="muted">The generic buttons and screens ship with the repo.
+        These are the pictures only <b>your</b> account can provide - the
+        card presets, the global and category presets as you named them, and
+        your modules at your own rarity - derived from the loadouts in
+        config.yaml and the scanned profile. Click a missing one to name the
+        crop, then draw it on the live screen.</p>
+      ${req.length === 0
+        ? '<p class="muted">Nothing is referenced yet - add loadouts or scan the account.</p>'
+        : req.map(r => `
+          <div class="flowcard" style="cursor:pointer" onclick="cropPick('${esc(r.rel)}')">
+            <div><b>${r.have ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>'}
+              ${esc(r.rel)}</b>
+              <div class="muted">${esc(r.feature)} — ${esc(r.used_by.join(", "))}</div>
+            </div></div>`).join("")}
+    </article>
+    <article>
+      <header>Template library (${have.length})</header>
+      ${Object.keys(groups).sort().map(g => `
+        <details><summary>${esc(g)} <span class="chip">${groups[g].length}</span></summary>
+          <div class="tpl-grid">${groups[g].map(rel => `
+            <figure><img loading="lazy" src="/api/template/${esc(rel)}" alt="">
+              <figcaption>${esc(rel.split("/").pop())}</figcaption></figure>`).join("")}
+          </div></details>`).join("")}
+    </article>
+  </div>
+  <div>
+    <article class="stream-box">
+      <header>Live screen</header>
+      <div id="crop-wrap" style="position:relative; display:inline-block; max-width:100%; line-height:0">
+        <img id="calib-frame" src="/api/frame.png?ts=${S.calibTs}"
+             onload="cropInit()" onerror="this.alt='no frame — emulator offline?'">
+        <canvas id="crop-canvas" style="position:absolute; left:0; top:0; cursor:crosshair"></canvas>
+      </div>
+      <div style="display:flex; gap:.5rem; margin-top:.5rem; flex-wrap:wrap">
+        <button class="small ghost" onclick="cropRefresh()">↻ Refresh</button>
+        <a role="button" class="small ghost" href="/api/frame.png" target="_blank">Open full size ↗</a>
+      </div>
+      <div style="display:flex; gap:.5rem; margin-top:.5rem; flex-wrap:wrap; align-items:center">
+        <input id="crop-name" placeholder="folder/name.png (e.g. modules/my_module.png)"
+               style="margin:0; flex:1; min-width:16rem">
+        <label style="margin:0; white-space:nowrap"><input type="checkbox" id="crop-over"> overwrite</label>
+        <button class="small" onclick="cropSave()">Save template</button>
+      </div>
+      <p id="crop-info" class="muted">Drag a box on the live screen. The box is
+        cut from this exact frame at native 1080×2560 resolution.</p>
+    </article>
+  </div>
+  </div>`;
+}
+
+/* ---- the cropper: drag a box on the live frame, save it as a template.
+   Coordinates are converted from the scaled <img> to native pixels through
+   naturalWidth/clientWidth; the frame's ts is posted back so the server
+   cuts from the very frame the box was drawn on. */
+const CROP = { rect:null, drag:null };
+function cropInit(){
+  const img = $("#calib-frame"), cv = $("#crop-canvas");
+  if (!img || !cv) return;
+  cv.width = img.clientWidth; cv.height = img.clientHeight;
+  CROP.rect = null; cropDraw();
+  const pos = ev => {
+    const b = cv.getBoundingClientRect();
+    return [Math.max(0, Math.min(cv.width, ev.clientX - b.left)),
+            Math.max(0, Math.min(cv.height, ev.clientY - b.top))];
+  };
+  cv.onmousedown = ev => { CROP.drag = pos(ev); CROP.rect = null; ev.preventDefault(); };
+  cv.onmousemove = ev => {
+    if (!CROP.drag) return;
+    const [x, y] = pos(ev), [x0, y0] = CROP.drag;
+    CROP.rect = [Math.min(x0, x), Math.min(y0, y), Math.abs(x - x0), Math.abs(y - y0)];
+    cropDraw();
+  };
+  cv.onmouseup = cv.onmouseleave = ev => {
+    if (!CROP.drag) return;
+    CROP.drag = null; cropDraw(); cropInfo();
+  };
+}
+function cropDraw(){
+  const cv = $("#crop-canvas"); if (!cv) return;
+  const g = cv.getContext("2d"); g.clearRect(0, 0, cv.width, cv.height);
+  if (!CROP.rect) return;
+  const [x, y, w, h] = CROP.rect;
+  g.strokeStyle = "#7cf"; g.lineWidth = 2; g.strokeRect(x + .5, y + .5, w, h);
+  g.fillStyle = "rgba(120,200,255,.15)"; g.fillRect(x, y, w, h);
+}
+function cropNative(){
+  const img = $("#calib-frame"); if (!img || !CROP.rect) return null;
+  const k = img.naturalWidth / img.clientWidth;
+  const [x, y, w, h] = CROP.rect.map(v => Math.round(v * k));
+  return { x, y, w, h };
+}
+function cropInfo(msg){
+  const el = $("#crop-info"); if (!el) return;
+  const n = cropNative();
+  el.textContent = msg || (n ? `box ${n.x},${n.y} ${n.w}×${n.h} native px — name it and save`
+                             : "Drag a box on the live screen.");
+}
+function cropRefresh(){
+  S.calibTs = Date.now();
+  const img = $("#calib-frame"); if (img) img.src = "/api/frame.png?ts=" + S.calibTs;
+}
+function cropPick(rel){ const i = $("#crop-name"); if (i) i.value = rel; cropInfo(); }
+async function cropSave(){
+  const n = cropNative(), name = ($("#crop-name").value || "").trim();
+  if (!n) { toast("draw a box first", true); return; }
+  if (!name) { toast("name the template (folder/name.png)", true); return; }
+  try {
+    const r = await post("/api/template/" + name,
+                         { ts:S.calibTs, ...n, overwrite:$("#crop-over").checked });
+    toast(`saved ${r.rel} (${r.width}×${r.height})`);
+    cropInfo(`saved ${r.rel}: next-best match on this frame ${r.second_best} `
+             + `(≥0.9 means another spot looks the same — crop tighter)`);
+    S.required = await api("/api/wizard/required").catch(() => S.required);
+    S.calib = await api("/api/wizard/templates").catch(() => S.calib);
+  } catch(e){ toast(e.message, true); }
+}
+
+/* ========================================================== VIEW 3: HOME */
+async function renderHome(){
+  await loadHomeData();
+  const active = S.profiles.active;
+  $("#view").innerHTML = `
+  <div class="grid2">
+    <div>
+      <article id="card-runner"><header>Runner</header><div id="runner-body"></div></article>
+      <article id="card-day"><header>The day plan
+        <span class="muted" style="font-weight:400">— what runs when; first open window wins</span>
+      </header><div id="day-body"></div></article>
+      <article id="card-flows"><header>Run types
+        <span class="muted" style="font-weight:400">— each is one file in backend/flows/</span>
+      </header><div id="flows-body"></div></article>
+      <article id="card-behaviors"><header>Behavior library
+        <span class="muted" style="font-weight:400">— shared plans the run types pick from</span>
+      </header><div id="behaviors-body"></div></article>
+      <article id="card-loadouts"><header>Loadouts
+        <span class="muted" style="font-weight:400">— what gets equipped before a run</span>
+      </header><div id="loadouts-body"></div></article>
+      <article id="card-global"><header>Global behaviors</header><div id="global-body"></div></article>
+    </div>
+    <div>
+      <article class="stream-box"><header>Live
+        <label class="inline" style="float:right; font-weight:400">
+          <input type="checkbox" id="stream-toggle" checked onchange="renderStream()"> stream
+        </label></header>
+        <div id="stream-slot"></div>
+        <div class="events" id="events" style="margin-top:.6rem"></div>
+      </article>
+    </div>
+  </div>`;
+  renderStream();
+  renderRunner();
+  renderDay();
+  renderFlows();
+  renderBehaviors();
+  renderLoadouts();
+  renderGlobal();
+  renderHomeLive();
+}
+
+/* ------------------------------------------------------------- loadouts
+   v29: a loadout is ideally ONE preset selection (global, or per-category)
+   and only falls back to hand-equipping. Bodies live in config.yaml, so the
+   editor saves whole bodies through /api/loadout-patch (validated against
+   the active profile server-side) - dialog-local draft, explicit Save. */
+const L2 = { name:null, draft:null };
+const LO_CATS = [
+  ["cards", "Card preset", p => (p.card_presets || [])],
+  ["module_preset", "Modules preset", p => ((p.category_presets || {}).modules || [])],
+  ["guardian_preset", "Guardians preset", p => ((p.category_presets || {}).guardians || [])],
+  ["workshop_preset", "Workshop preset", p => ((p.category_presets || {}).workshop || [])],
+  ["bot_preset", "Bots preset", p => ((p.category_presets || {}).bots || [])],
+];
+function loMode(body){
+  if ((body || {}).global_preset) return "global";
+  if ((body || {}).modules || Array.isArray((body || {}).guardians)) return "manual";
+  return "presets";
+}
+function loSummary(body){
+  if (body.defined === false) return "placeholder — not defined yet";
+  const m = loMode(body);
+  if (m === "global") return `global preset “${body.global_preset}”`;
+  if (m === "manual") {
+    const bits = [];
+    if (body.cards) bits.push(`cards ${body.cards}`);
+    if (body.modules) bits.push(`${body.modules.length} modules by hand`);
+    if (Array.isArray(body.guardians)) bits.push(`${body.guardians.length} guardians by hand`);
+    return bits.join(" · ") || "manual";
+  }
+  const bits = LO_CATS.filter(([k]) => body[k]).map(([k, label]) =>
+    `${label.toLowerCase().replace(" preset", "")} ${body[k]}`);
+  return bits.join(" · ") || "touches nothing";
+}
+function loUsedBy(name){
+  return Object.entries((S.profile || {}).blueprints || {})
+    .filter(([, b]) => (b || {}).loadout === name).map(([n]) => n);
+}
+function renderLoadouts(){
+  const bodyEl = $("#loadouts-body");
+  if (!bodyEl || !S.profile || !S.config) return;
+  const loadouts = S.config.loadouts || {};
+  bodyEl.innerHTML = Object.keys(loadouts).sort().map(n => {
+    const lo = loadouts[n] || {};
+    const used = loUsedBy(n);
+    return `<div class="rowline">
+      <b>${esc(n)}</b>
+      <span class="chip kind">${esc(loMode(lo))}</span>
+      <span class="muted">${esc(loSummary(lo))}${used.length
+        ? " · used by " + used.map(esc).join(", ") : ""}</span>
+      <span style="margin-left:auto">
+        ${lo.defined === false ? "" :
+          `<button class="small ghost" onclick="openLoadout('${esc(n)}')">✎ edit</button>`}
+      </span></div>`;
+  }).join("") + `
+    <p class="muted">A <b>global preset</b> loadout applies the whole build in
+      one picker selection at battle entry. Preset selections end with the
+      picker on “None” so the game keeps them. Hand-equipping rewrites
+      whichever preset is active — pair it with a preset selection so the
+      mutation lands where you chose.</p>`;
+}
+function openLoadout(name){
+  L2.name = name;
+  L2.draft = deep((S.config.loadouts || {})[name] || {});
+  loRender();
+}
+function loRender(){
+  const dlg = $("#editor3");
+  const d = L2.draft; const p = (S.profile || {}).player || {};
+  const mode = loMode(d);
+  const gp = p.global_presets || [];
+  const radio = (val, label, extra="") => `
+    <label class="inline"><input type="radio" name="lomode" ${mode === val ? "checked" : ""}
+      ${extra} onchange="loSetMode('${val}')"> ${label}</label>`;
+  dlg.innerHTML = `<article>
+    <header style="display:flex; justify-content:space-between; align-items:center">
+      <span><b>${esc(L2.name)}</b><span class="chip kind">loadout</span></span>
+      <span style="display:flex; gap:.4rem">
+        <button class="small ghost" onclick="$('#editor3').close()">Cancel</button>
+        <button class="small" onclick="loSave()">Save ✓</button>
+      </span></header>
+    <fieldset><legend>How this loadout equips</legend>
+      ${radio("global", `One <b>global preset</b> — the game applies the whole
+        build at battle entry`, gp.length ? "" : "disabled")}
+      ${mode === "global" ? `<div class="kv" style="margin-left:1.6rem">
+        <label>Global preset</label>
+        <select onchange="L2.draft = { global_preset: this.value }; loRender()">
+          ${gp.map(g => `<option ${d.global_preset === g ? "selected" : ""}>${esc(g)}</option>`).join("")}
+        </select></div>` : ""}
+      ${radio("presets", "Per-category <b>preset selections</b> (picker ends on “None”)")}
+      ${mode === "presets" ? `<div class="kv" style="margin-left:1.6rem">
+        ${LO_CATS.map(([key, label, opts]) => { const names = opts(p);
+          return names.length ? `
+            <label>${label}</label>
+            <select onchange="loSetCat('${key}', this.value)">
+              <option value="" ${!d[key] ? "selected" : ""}>(don’t touch)</option>
+              ${names.map(nm => `<option ${d[key] === nm ? "selected" : ""}>${esc(nm)}</option>`).join("")}
+            </select>` : ""; }).join("")}
+        </div>` : ""}
+      ${mode === "manual" ? `
+        ${radio("manual", "Manual equipment (legacy)", "")}
+        <div style="margin-left:1.6rem">
+          <pre style="white-space:pre-wrap; font-size:.8rem; opacity:.8">${esc(JSON.stringify(d, null, 1))}</pre>
+          <p class="muted">⚠ Hand-equipping rewrites whichever preset is
+            active (v29 presets auto-save). Switch to a preset mode above, or
+            add a preset selection to this body in config.yaml to choose
+            where the mutation lands.</p>
+        </div>` : ""}
+    </fieldset>
+    <p class="muted">Saving validates the active profile against this body —
+      an edit the runner would refuse is refused here, with the reason.</p>
+  </article>`;
+  if (!dlg.open) dlg.showModal();
+  syncSaveBar();
+}
+function loSetMode(mode){
+  const p = (S.profile || {}).player || {};
+  if (mode === "global")
+    L2.draft = { global_preset: L2.draft.global_preset
+                 || (p.global_presets || [])[0] || "" };
+  else if (mode === "presets") {
+    const keep = {};
+    for (const [key] of LO_CATS) if (L2.draft[key]) keep[key] = L2.draft[key];
+    L2.draft = keep;
+  }
+  loRender();
+}
+function loSetCat(key, val){
+  if (val === "") delete L2.draft[key]; else L2.draft[key] = val;
+  loRender();
+}
+async function loSave(){
+  const body = deep(L2.draft);
+  if (loMode(body) === "presets"
+      && !LO_CATS.some(([k]) => body[k])) {
+    toast("select at least one preset, or Cancel", true); return;
+  }
+  try {
+    const r = await post("/api/loadout-patch", { name:L2.name, body });
+    S.config.loadouts = r.loadouts;
+    (r.warnings || []).forEach(w => toast("note: " + w));
+    toast("saved ✓");
+    $("#editor3").close();
+    renderLoadouts(); renderFlows();
+  } catch(e){ toast(e.message, true); }
+}
+
+/* ---------------------------------------------------- behavior library */
+const BEH_FAMILIES = [
+  { sec:"gather",          title:"In-run gathering",      open:"openGatherEditor" },
+  { sec:"uw_policies",     title:"Ultimate-weapon plans", open:"openUwEditor" },
+  { sec:"rescue_policies", title:"Rescue plans",          open:"openRescueEditor" },
+  { sec:"shopping_lists",  title:"Shopping lists",        open:"openShopEditor" },
+];
+/* creation seeds live in the #ui-seeds block (single source, test-pinned) */
+const BEH_TEMPLATES = SEEDS.templates;
+function behUsedBy(sec, name){
+  const out = [];
+  for (const [bp, b] of Object.entries((S.profile || {}).blueprints || {})) {
+    const pol = (b || {}).policies || {};
+    if ((sec === "gather" && pol.gather === name)
+     || (sec === "uw_policies" && pol.uw === name)
+     || (sec === "rescue_policies" && pol.rescue === name)
+     || (sec === "shopping_lists" && ((b || {}).shopping === name))) out.push(bp);
+  }
+  return out;
+}
+function renderBehaviors(){
+  const body = $("#behaviors-body");
+  if (!body || !S.profile) return;
+  const pol = S.profile.policies || {};
+  body.innerHTML = BEH_FAMILIES.map(f => {
+    const names = Object.keys(pol[f.sec] || {}).sort();
+    return `<fieldset><legend>${f.title}</legend>
+      ${names.map(n => { const used = behUsedBy(f.sec, n);
+        const label = polLabel(f.sec, n);
+        return `<div class="rowline">
+          <b>${esc(label)}</b>
+          ${label !== n ? `<span class="chip" title="identifier">${esc(n)}</span>` : ""}
+          <span class="muted">${used.length
+            ? "used by " + used.map(esc).join(", ")
+            : "not used by any run type"}</span>
+          <span style="margin-left:auto; display:flex; gap:.3rem">
+            <button class="small ghost" onclick="${f.open}('${esc(n)}', '')">✎ edit</button>
+            <button class="small ghost" onclick="behDup('${f.sec}', '${esc(n)}')">⧉ copy</button>
+            ${used.length ? "" :
+              `<button class="small danger" onclick="behDel('${f.sec}', '${esc(n)}')">✕</button>`}
+          </span></div>`; }).join("")}
+      <div class="rowline" style="margin-top:.3rem">
+        <input id="new-${f.sec}" placeholder="new_name" style="width:11rem; margin:0"
+          onkeydown="if(event.key==='Enter')behNew('${f.sec}')">
+        <button class="small ghost" onclick="behNew('${f.sec}')">＋ create</button>
+      </div>
+    </fieldset>`; }).join("") + `
+    <p class="muted">A plan can only be deleted while no run type uses it.
+      Create, copy and delete apply immediately (each keeps a timestamped
+      profile backup); edits inside an editor are staged until you press
+      Save.</p>`;
+}
+async function behNew(sec){
+  const inp = $("#new-" + sec);
+  const name = (inp && inp.value || "").trim();
+  if (!/^[a-z][a-z0-9_]*$/.test(name)) {
+    toast("name: lowercase letters, digits and _ , starting with a letter", true);
+    return;
+  }
+  if (((S.profile.policies || {})[sec] || {})[name]) {
+    toast(`${name} already exists`, true); return;
+  }
+  if (await patch(["policies", sec, name],
+                  JSON.parse(JSON.stringify(BEH_TEMPLATES[sec])))) {
+    renderBehaviors();
+    window[BEH_FAMILIES.find(f => f.sec === sec).open](name, "");
+  }
+}
+async function behDup(sec, name){
+  const all = (S.profile.policies || {})[sec] || {};
+  if (!all[name]) return;
+  let copy = `${name}_copy`; let i = 2;
+  while (all[copy]) copy = `${name}_copy${i++}`;
+  if (await patch(["policies", sec, copy],
+                  JSON.parse(JSON.stringify(all[name])))) renderBehaviors();
+}
+async function behDel(sec, name){
+  const used = behUsedBy(sec, name);
+  if (used.length) { toast(`${name} is in use by ${used.join(", ")}`, true); return; }
+  if (!confirm(`Delete ${name}? A timestamped profile backup is kept.`)) return;
+  if (await patch(["policies", sec, name], null, "delete")) renderBehaviors();
+}
+
+function renderStream(){
+  const on = $("#stream-toggle") ? $("#stream-toggle").checked : true;
+  const slot = $("#stream-slot");
+  if (!slot) return;
+  slot.innerHTML = on
+    ? `<img src="/api/stream.mjpg?fps=4&scale=0.4&ts=${Date.now()}" alt="live stream">`
+    : `<p class="muted">stream off</p>`;
+}
+
+function renderHomeLive(){
+  if (S.view !== "home" || !S.status) return;
+  const ev = $("#events");
+  if (ev) ev.innerHTML = (S.status.events || []).slice(-14).map(r =>
+    `<div>${esc(new Date(r.t * 1000).toLocaleTimeString())}  ${esc(r.kind)}` +
+    `${r.wave ? " w" + esc(r.wave) : ""}${r.preset ? " " + esc(r.preset) : ""}</div>`
+  ).join("") || '<div class="muted">no events yet</div>';
+  const rb = $("#runner-body");
+  if (rb) renderRunner();
+}
+
+function renderRunner(){
+  const body = $("#runner-body");
+  if (!body || !S.status) return;
+  // The status poll calls this every 2.5s. A blind innerHTML rewrite slams
+  // the preset dropdown shut mid-choice, so: never rewrite while the user
+  // is inside a form control here, and only rewrite when the content that
+  // drives the card actually changed.
+  const ae = document.activeElement;
+  if (ae && body.contains(ae) && ae.matches("select, input, textarea")) return;
+  const procs = S.status.processes || [];
+  const key = JSON.stringify([procs.map(p => [p.pid, p.runner]),
+                              !!S.status.stop_flag]);
+  if (body.dataset.key === key) return;
+  body.dataset.key = key;
+  const chosen = ($("#start-preset") || {}).value;
+  const presets = Object.entries(S.config.presets || {})
+    .filter(([n, b]) => (b || {}).defined !== false)
+    .map(([n, b]) => ({ name:n, label:(b || {}).label || n }));
+  body.innerHTML = `
+    ${procs.length ? procs.map(p => `
+      <div class="flowcard"><div><b>${esc(p.runner)}</b>
+        <span class="chip">pid ${p.pid}</span>
+        <div class="muted">${esc((p.cmdline || "").slice(0, 90))}</div></div>
+        <button class="small danger" onclick="killPid(${p.pid})">Stop now</button>
+      </div>`).join("")
+      : '<p class="muted">Nothing is running.</p>'}
+    <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-top:.6rem">
+      <select id="start-preset" style="margin:0; width:auto; padding:.3rem .6rem">
+        ${presets.map(p => `<option value="${esc(p.name)}"
+            ${p.name === "combo" ? "selected" : ""}>${esc(p.label)}</option>`).join("")}
+      </select>
+      <button onclick="startPreset()">▶ Start</button>
+      ${S.status.stop_flag
+        ? `<button class="small ghost" onclick="ctl('clear_flag')">✋ will stop after this run — cancel?</button>`
+        : `<button class="small ghost" onclick="ctl('stop_after_run')">Finish current run, then stop</button>`}
+    </div>
+    <p class="muted" style="margin-top:.4rem">“Combo (day plan)” runs the whole
+      day plan below. “Stop now” never touches the game — a live run keeps
+      playing; prefer “finish current run, then stop”.</p>`;
+  if (chosen) {
+    const sel = $("#start-preset");
+    if (sel && [...sel.options].some(o => o.value === chosen)) sel.value = chosen;
+  }
+}
+async function killPid(pid){
+  if (!confirm("Stop this runner process? The game itself is never touched.")) return;
+  try { await post("/api/control", { action:"kill", pid }); toast("stopped"); loadStatus(); }
+  catch(e){ toast(e.message, true); }
+}
+async function startPreset(){
+  try {
+    const r = await post("/api/control", { action:"start", preset:$("#start-preset").value });
+    toast("started (pid " + r.pid + ")"); loadStatus();
+  } catch(e){ toast(e.message, true); }
+}
+async function ctl(action){
+  try { await post("/api/control", { action }); loadStatus(); setTimeout(renderRunner, 300); }
+  catch(e){ toast(e.message, true); }
+}
+
+/* ------------------------------------------------------------- day plan */
+function activeProfileBox(){
+  const ready = (S.profiles.list || []).filter(p => !p.draft);
+  const drafts = (S.profiles.list || []).filter(p => p.draft);
+  return `
+    <p class="muted">Run-by-run behavior is defined per <b>player profile</b>.
+      ${ready.length ? "Activate one to unlock the plan and run editors:" :
+      "No complete profile exists yet — run the account scan on the Setup page first."}</p>
+    ${ready.length ? `<div style="display:flex; gap:.5rem">
+      <select id="prof-pick" style="margin:0; width:auto">${ready.map(p =>
+        `<option>${esc(p.name)}</option>`).join("")}</select>
+      <button class="small" onclick="activateProfile()">Activate</button></div>` : ""}
+    ${drafts.length ? `<p class="muted">Drafts from the account scan hold only
+      what was seen (<code>player:</code>). Promote one to get a runnable
+      profile: the scanned block on top of the starter's run types, written
+      to <code>profiles/&lt;name&gt;.yaml</code>.</p>
+      ${drafts.map(p => `<button class="small" onclick="promoteDraft('${esc(p.name)}')">
+        Promote ${esc(p.name.replace(/\.draft\.yaml$/i, ""))}</button>`).join(" ")}` : ""}`;
+}
+async function promoteDraft(draft){
+  const base = draft.replace(/\.draft\.yaml$/i, "");
+  const name = window.prompt("Profile name to write (profiles/<name>.yaml):", base);
+  if (!name) return;
+  try {
+    const r = await post("/api/profile-promote", { draft, name });
+    const n = (r.problems || []).length;
+    toast(n ? `wrote profiles/${r.name}.yaml with ${n} validation problem(s) — fix them before activating`
+            : `wrote profiles/${r.name}.yaml — activate it above`, !!n);
+    if (n) window.alert("Validation problems in " + r.name + ":\n\n" + r.problems.join("\n"));
+    await loadHomeData(); renderHome();
+  } catch(e){
+    if (/exists/.test(e.message) && window.confirm(e.message + "\n\nOverwrite it?")) {
+      try {
+        const r = await post("/api/profile-promote", { draft, name, overwrite:true });
+        toast(`rewrote profiles/${r.name}.yaml`); await loadHomeData(); renderHome();
+      } catch(e2){ toast(e2.message, true); }
+    } else toast(e.message, true);
+  }
+}
+async function activateProfile(){
+  try {
+    await post("/api/profile-activate", { name:$("#prof-pick").value });
+    toast("profile activated — every new runner start uses it");
+    renderHome();
+  } catch(e){ toast(e.message, true); }
+}
+
+function renderDay(){
+  const body = $("#day-body");
+  if (!S.profile) { body.innerHTML = activeProfileBox(); return; }
+  const plan = S.profile.plan;
+  if (!plan || !plan.days) {
+    body.innerHTML = `<p class="muted">This profile has no day plan — the
+      scheduler uses its built-in constants (coin all day, shards after
+      08:00, tournament Wed/Sat 19:00).</p>`;
+    return;
+  }
+  const days = Object.keys(plan.days);
+  if (!S.day || !days.includes(S.day)) S.day = days[0];
+  const week = plan.week || {};
+  const weekSlots = ["default","monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+  body.innerHTML = `
+    <div class="daytabs">${days.map(d => `
+      <button class="small ${d === S.day ? "" : "ghost"}"
+        onclick="S.day='${esc(d)}'; renderDay()">${esc(d)}</button>`).join("")}
+    </div>
+    <div id="blocks">${(plan.days[S.day] || []).map((b, i) =>
+      blockRow(b, i, plan.days[S.day].length)).join("")}</div>
+    <button class="small ghost" onclick="addBlock()">＋ add a run block</button>
+    <details style="margin-top:.8rem"><summary class="muted">Which days use which plan</summary>
+      <div class="weekmap" style="margin-top:.5rem">${weekSlots.map(d => `
+        <label>${esc(d)}<select onchange="setWeek('${esc(d)}', this.value)">
+          <option value="" ${!week[d] ? "selected" : ""}>—</option>
+          ${days.map(n => `<option ${week[d] === n ? "selected" : ""}>${esc(n)}</option>`).join("")}
+        </select></label>`).join("")}
+      </div></details>
+    <p class="muted" style="margin-top:.5rem">Order is priority: the first
+      block whose time window is open (and whose daily count isn’t spent)
+      owns the tower. The last unbounded block is the day’s filler.</p>`;
+}
+
+function blueprintOptions(selected, kindFilter){
+  const bps = Object.entries((S.profile || {}).blueprints || {});
+  return bps
+    .filter(([n, b]) => !kindFilter || (b || {}).kind === kindFilter)
+    .map(([n, b]) => `<option value="${esc(n)}" ${n === selected ? "selected" : ""}>
+        ${esc(n)} (${esc((b || {}).kind)})</option>`).join("");
+}
+function blockRow(b, i, total){
+  return `<div class="blockrow">
+    <select onchange="setBlockBp(${i}, this.value)">${blueprintOptions(b.blueprint)}</select>
+    <input placeholder="from" title="from HH:MM (empty = 00:00)" value="${esc(b.after || "")}"
+           onchange="setBlockField(${i}, 'after', this.value)">
+    <input placeholder="until" title="until HH:MM, exclusive (empty = midnight)" value="${esc(b.until || "")}"
+           onchange="setBlockField(${i}, 'until', this.value)">
+    <input type="number" placeholder="runs" title="runs of this block per day (empty = unlimited)"
+           value="${b.count ?? ""}" onchange="setBlockField(${i}, 'count', this.value)">
+    <span style="white-space:nowrap">
+      ${i > 0 ? `<button class="small ghost" onclick="moveBlock(${i},-1)">↑</button>` : ""}
+      ${i < total - 1 ? `<button class="small ghost" onclick="moveBlock(${i},1)">↓</button>` : ""}
+      <button class="small ghost" title="edit this run type's behavior"
+        onclick="openEditor('${esc(b.blueprint)}')">✎</button>
+      <button class="small danger" onclick="delBlock(${i})">✕</button>
+    </span></div>`;
+}
+function dayList(){ return JSON.parse(JSON.stringify(S.profile.plan.days[S.day] || [])); }
+function saveDay(list){
+  queuePatch(["plan","days",S.day], list); renderDay();
+}
+const KIND2BLOCK = { coin:"coin", shard:"shards", tournament:"tournament",
+                     uw_grant_quest:"quest_sm", cycle_quest:"quest_ilm" };
+async function setBlockBp(i, name){
+  const list = dayList();
+  const kind = ((S.profile.blueprints || {})[name] || {}).kind;
+  list[i].blueprint = name;
+  list[i].block = KIND2BLOCK[kind] || kind;
+  saveDay(list);
+}
+async function setBlockField(i, key, val){
+  const list = dayList();
+  if (val === "" || val === null) delete list[i][key];
+  else list[i][key] = (key === "count") ? Number(val) : val;
+  saveDay(list);
+}
+async function moveBlock(i, d){
+  const list = dayList();
+  const [b] = list.splice(i, 1); list.splice(i + d, 0, b);
+  saveDay(list);
+}
+async function delBlock(i){
+  const list = dayList(); list.splice(i, 1); saveDay(list);
+}
+async function addBlock(){
+  const bps = Object.entries(S.profile.blueprints || {});
+  if (!bps.length) { toast("this profile has no blueprints yet", true); return; }
+  const [name, b] = bps[0];
+  const list = dayList();
+  list.push({ block:KIND2BLOCK[(b || {}).kind] || (b || {}).kind, blueprint:name });
+  saveDay(list);
+}
+function setWeek(day, val){
+  if (val === "") queuePatch(["plan","week",day], null, "delete");
+  else queuePatch(["plan","week",day], val);
+  renderDay();
+}
+
+/* ----------------------------------------------------------- flow cards */
+function renderFlows(){
+  const body = $("#flows-body");
+  if (!S.profile) { body.innerHTML = '<p class="muted">Activate a profile to edit run types.</p>'; return; }
+  const bps = Object.entries(S.profile.blueprints || {});
+  body.innerHTML = bps.map(([name, b]) => {
+    const spec = (S.flows || {})[(b || {}).kind] || {};
+    return `<div class="flowcard">
+      <div><b>${esc(name)}</b><span class="chip kind">${esc(spec.label || b.kind)}</span>
+        <div class="muted">loadout: ${esc(b.loadout ?? "—")}
+          ${b.tier != null ? " · tier " + esc(b.tier) : ""}
+          ${b.restart_via_home ? " · restarts via Home" : ""}</div></div>
+      <button class="small" onclick="openEditor('${esc(name)}')">Edit</button>
+    </div>`;
+  }).join("") || '<p class="muted">No run types defined in this profile.</p>';
+}
+
+/* ------------------------------------------------------- global behaviors */
+function renderGlobal(){
+  const body = $("#global-body");
+  if (!S.profile) { body.innerHTML = '<p class="muted">Activate a profile first.</p>'; return; }
+  const choreNames = ((S.vocab || {}).chore_names || {}).values || [];
+  const chores = ((S.profile.policies || {}).chores) || [];
+  const cmap = {}; chores.forEach(c => { if (c && c.name) cmap[c.name] = c.enabled !== false; });
+  const CHORE_LABEL = { quest_scan:"Scan event quests once a day",
+    shatter:"Shatter surplus blue modules once a day",
+    housekeeping:"Housekeeping: prune old logs/screenshots" };
+  body.innerHTML = `
+    <p class="muted">These run <b>between</b> runs, from the Home screen, at
+      most one per gap — never during a battle. Uncheck what this account
+      should never do; each run type can additionally override its own
+      in-run behavior in its editor.</p>
+    ${choreNames.map(n => `
+      <label class="inline"><input type="checkbox" ${cmap[n] !== false ? "checked" : ""}
+        onchange="setChore('${esc(n)}', this.checked)">
+        ${esc(CHORE_LABEL[n] || n)}</label>`).join("")}`;
+}
+function setChore(name, enabled){
+  const choreNames = ((S.vocab || {}).chore_names || {}).values || [];
+  const old = ((S.profile.policies || {}).chores) || [];
+  const cmap = {}; old.forEach(c => { if (c && c.name) cmap[c.name] = c.enabled !== false; });
+  cmap[name] = enabled;
+  const list = choreNames.map(n => ({ name:n, enabled:cmap[n] !== false }));
+  queuePatch(["policies","chores"], list); renderGlobal();
+}
+
+/* ========================================================== FLOW EDITOR */
+function openEditor(bpName){
+  S.editorBp = bpName;
+  const dlg = $("#editor");
+  dlg.innerHTML = editorHtml(bpName);
+  dlg.showModal();
+  syncSaveBar();
+}
+function editorCancel(bpName){
+  dropPending([["blueprints", bpName], ["policies", "gather", bpName + "_gather"]]);
+  $("#editor").close();
+  renderFlows(); renderDay(); renderBehaviors();
+}
+async function editorSave(){
+  if (await saveAll()) $("#editor").close();
+}
+function editorHtml(bpName){
+  const bp = (S.profile.blueprints || {})[bpName];
+  if (!bp) return `<article><p class="bad">no blueprint ${esc(bpName)}</p></article>`;
+  const spec = (S.flows || {})[bp.kind] || {};
+  const pol = S.profile.policies || {};
+  const loadouts = Object.keys((S.config || {}).loadouts || {});
+  const gatherPolicies = Object.keys(pol.gather || {});
+  const localName = bpName + "_gather";
+  const curGather = (bp.policies || {}).gather;
+  const isLocal = curGather === localName;
+  const gatherBody = isLocal ? (pol.gather || {})[localName] || {} : null;
+  const GATHER_LABEL = { flying_gem:"Claim flying gems during the run",
+    ad_gems:"Claim the daily free gems (premium shop)",
+    quests_8h:"Collect the 8-hour quests", quest_rewards:"Claim quest rewards",
+    guild:"Collect guild rewards" };
+  const gatherKeys = Object.keys(GATHER_LABEL);
+
+  const numField = (label, key, extra="") => `
+    <label>${label}</label>
+    <input type="number" ${extra} value="${bp[key] ?? ""}"
+      onchange="setBp('${esc(bpName)}', '${key}',
+        this.value === '' ? null : Number(this.value), false)">`;
+
+  return `<article>
+    <header style="display:flex; justify-content:space-between; align-items:center">
+      <span><b>${esc(bpName)}</b>
+        <span class="chip kind">${esc(spec.label || bp.kind)}</span></span>
+      <span style="display:flex; gap:.4rem">
+        <button class="small ghost" onclick="editorCancel('${esc(bpName)}')">Cancel</button>
+        <button class="small" onclick="editorSave()">Save ✓</button>
+      </span>
+    </header>
+
+    <fieldset><legend>Before the run</legend>
+      <div class="kv">
+        <label>Equip this loadout</label>
+        <select onchange="setBp('${esc(bpName)}', 'loadout', this.value)">
+          ${bp.kind === "coin" ? `<option value="as_is" ${bp.loadout === "as_is" ? "selected" : ""}>
+            (as is — equip nothing)</option>` : ""}
+          ${loadouts.map(l => `<option ${bp.loadout === l ? "selected" : ""}>${esc(l)}</option>`).join("")}
+        </select>
+        ${bp.tier !== undefined || bp.kind === "coin" || bp.kind === "shard"
+          ? numField("Tier to farm", "tier", 'min="1" max="20"') : ""}
+      </div>
+    </fieldset>
+
+    <fieldset><legend>After each run</legend>
+      <label class="inline"><input type="checkbox" ${bp.restart_via_home ? "checked" : ""}
+        onchange="setBp('${esc(bpName)}', 'restart_via_home', this.checked)">
+        Go back to Home between runs (re-selects the tier — recommended)</label>
+      <label class="inline" title="run statistics are always collected in this version">
+        <input type="checkbox" checked disabled>
+        Store run statistics <span class="muted">(always on)</span></label>
+    </fieldset>
+
+    <fieldset><legend>In-run gathering
+      <span class="muted">(global default vs. just this run)</span></legend>
+      <label class="inline"><input type="radio" name="gmode" ${!isLocal ? "checked" : ""}
+        onchange="useGlobalGather('${esc(bpName)}')">
+        Use a shared behavior:
+        <select ${isLocal ? "disabled" : ""} onchange="setBpPolicy('${esc(bpName)}', 'gather', this.value)">
+          <option value="" ${!curGather ? "selected" : ""}>(engine defaults — gather everything)</option>
+          ${gatherPolicies.filter(g => g !== localName).map(g =>
+            `<option value="${esc(g)}" ${curGather === g ? "selected" : ""}>
+              ${esc(polLabel("gather", g))}</option>`).join("")}
+        </select></label>
+      <label class="inline"><input type="radio" name="gmode" ${isLocal ? "checked" : ""}
+        onchange="useLocalGather('${esc(bpName)}')">
+        Customize for this run only</label>
+      ${isLocal ? `<div style="margin-left:1.6rem">${gatherKeys.map(k => `
+        <label class="inline"><input type="checkbox"
+          ${gatherBody[k] !== false ? "checked" : ""}
+          onchange="setLocalGather('${esc(bpName)}', '${k}', this.checked)">
+          ${GATHER_LABEL[k]}</label>`).join("")}</div>` : ""}
+    </fieldset>
+
+    <fieldset><legend>Policies &amp; knobs</legend>
+      <div class="kv">
+        <label>Ultimate-weapon plan</label>
+        <div class="withpen">
+        <select onchange="setBpPolicy('${esc(bpName)}', 'uw', this.value)">
+          <option value="" ${!(bp.policies || {}).uw ? "selected" : ""}>(none)</option>
+          ${Object.keys(pol.uw_policies || {}).map(p =>
+            `<option value="${esc(p)}" ${(bp.policies || {}).uw === p ? "selected" : ""}>
+              ${esc(polLabel("uw_policies", p))}</option>`).join("")}
+        </select>
+        ${(bp.policies || {}).uw ? `<button class="small ghost" title="edit this plan"
+          onclick="openUwEditor('${esc((bp.policies || {}).uw)}', '${esc(bpName)}')">✎</button>` : ""}
+        </div>
+        <label>Rescue plan</label>
+        <div class="withpen">
+        <select onchange="setBpPolicy('${esc(bpName)}', 'rescue', this.value)">
+          <option value="" ${!(bp.policies || {}).rescue ? "selected" : ""}>(no rescue)</option>
+          ${Object.keys(pol.rescue_policies || {}).map(p =>
+            `<option value="${esc(p)}" ${(bp.policies || {}).rescue === p ? "selected" : ""}>
+              ${esc(polLabel("rescue_policies", p))}</option>`).join("")}
+        </select>
+        ${(bp.policies || {}).rescue ? `<button class="small ghost" title="edit its rules"
+          onclick="openRescueEditor('${esc((bp.policies || {}).rescue)}', '${esc(bpName)}')">✎</button>` : ""}
+        </div>
+        ${bp.shopping !== undefined || bp.kind === "coin" || bp.kind === "tournament" ? `
+        <label>Workshop shopping list</label>
+        <div class="withpen">
+        <select onchange="setBp('${esc(bpName)}', 'shopping', this.value || null)">
+          <option value="" ${!bp.shopping ? "selected" : ""}>(no shopping)</option>
+          ${Object.keys(pol.shopping_lists || {}).map(p =>
+            `<option value="${esc(p)}" ${bp.shopping === p ? "selected" : ""}>
+              ${esc(polLabel("shopping_lists", p))}</option>`).join("")}
+        </select>
+        ${bp.shopping ? `<button class="small ghost" title="edit its priorities"
+          onclick="openShopEditor('${esc(bp.shopping)}', '${esc(bpName)}')">✎</button>` : ""}
+        </div>` : ""}
+        ${bp.kind === "coin" ? numField("Surrender at wave (empty = never)", "max_wave", 'min="1"') : ""}
+        ${bp.kind === "shard" ? numField("Runs (0 = unlimited)", "count", 'min="0"') : ""}
+        ${bp.kind === "uw_grant_quest" ? numField("Rides", "rides", 'min="1"') : ""}
+        ${bp.kind === "cycle_quest" ? numField("Cycles", "cycles", 'min="1"') : ""}
+        ${bp.kind === "tournament" ? numField("Max gems for a ticket", "gem_entry_max", 'min="0"') : ""}
+      </div>
+      ${bp.kind === "coin" ? `
+      <label class="inline" style="margin-top:.5rem">
+        <input type="checkbox" ${bp.cancel_sprint ? "checked" : ""}
+          onchange="setBp('${esc(bpName)}', 'cancel_sprint', this.checked)">
+        End the intro sprint at run start
+        <span class="muted">(the sprint locks the ability row)</span></label>` : ""}
+    </fieldset>
+
+    <p class="muted">The ✎ buttons open the full editors for rescue rules,
+      shopping priorities and weapon scheduling. Nothing is written until you
+      press <b>Save</b> — then every change is checked by the same validator
+      the runner uses, and an edit that would misbehave is refused with the
+      reason.</p>
+  </article>`;
+}
+function setBp(bpName, key, value, rebuild = true){
+  if (value === null) queuePatch(["blueprints", bpName, key], null, "delete");
+  else queuePatch(["blueprints", bpName, key], value);
+  refreshEditor(bpName, rebuild);
+}
+function setBpPolicy(bpName, pkey, value){
+  if (value === "") queuePatch(["blueprints", bpName, "policies", pkey], null, "delete");
+  else queuePatch(["blueprints", bpName, "policies", pkey], value);
+  refreshEditor(bpName);
+}
+function useGlobalGather(bpName){
+  queuePatch(["blueprints", bpName, "policies", "gather"], null, "delete");
+  refreshEditor(bpName);
+}
+function useLocalGather(bpName){
+  const localName = bpName + "_gather";
+  const pol = (S.profile.policies || {}).gather || {};
+  if (!pol[localName])
+    queuePatch(["policies", "gather", localName], deep(SEEDS.templates.gather));
+  queuePatch(["blueprints", bpName, "policies", "gather"], localName);
+  refreshEditor(bpName);
+}
+function setLocalGather(bpName, key, value){
+  // whole-policy write: the queue holds one coherent object per policy, so
+  // the eventual save is a single validated patch
+  const localName = bpName + "_gather";
+  const body = deep(((S.profile.policies || {}).gather || {})[localName]
+                    || SEEDS.templates.gather);
+  body[key] = value;
+  queuePatch(["policies", "gather", localName], body);
+  refreshEditor(bpName);
+}
+function refreshEditor(bpName, rebuild = true){
+  // rebuild:false for blur-committed inputs - rebuilding the dialog mid
+  // change event destroys a Save/Cancel button the user is clicking (see
+  // p2Save). The cards behind the dialog always re-render.
+  const ed = $("#editor");
+  if (rebuild && ed && ed.open) ed.innerHTML = editorHtml(bpName);
+  renderFlows(); renderDay(); renderBehaviors();
+}
+
+/* ================================================= POLICY EDITORS (glass)
+   Rescue rules, shopping priorities and ultimate-weapon scheduling, edited
+   in place. All three keep a working DRAFT, write the WHOLE policy object
+   per change, and let the compiler's validator veto - verdict verbatim. */
+const P2 = { kind:null, name:null, bp:null, draft:null };
+const P2_SECTION = { rescue:"rescue_policies", shop:"shopping_lists",
+                     uw:"uw_policies", gather:"gather" };
+
+function p2Load(){
+  P2.draft = JSON.parse(JSON.stringify(
+    ((S.profile.policies || {})[P2_SECTION[P2.kind]] || {})[P2.name] || {}));
+}
+/* stage only - the whole-policy draft goes into the pending queue; the
+   validator sees it once, at Save, as one coherent object.
+
+   `rebuild:false` is for blur-committed fields (text/number inputs): their
+   change event fires BETWEEN mousedown and click when the user goes
+   straight for Save ✓, and rebuilding the dialog's innerHTML right then
+   destroys the pressed button - the click never lands and the edit looks
+   saved but dies with the dialog (the tourney_cl rename, 2026-08-27).
+   Those fields already display what was typed; only structural changes
+   (mode/kind switches, add/move/delete) need the rebuild. */
+function p2Save(rebuild = true){
+  queuePatch(["policies", P2_SECTION[P2.kind], P2.name], P2.draft);
+  if (rebuild) p2Render();
+  if (P2.bp) { const ed = $("#editor"); if (ed.open) ed.innerHTML = editorHtml(P2.bp); }
+  renderBehaviors();
+}
+function p2Cancel(){
+  dropPending([["policies", P2_SECTION[P2.kind], P2.name]]);
+  $("#editor2").close();
+  if (P2.bp) { const ed = $("#editor"); if (ed.open) ed.innerHTML = editorHtml(P2.bp); }
+  renderBehaviors();
+}
+async function p2Commit(){
+  if (await saveAll()) $("#editor2").close();
+}
+function polLabel(sec, name){
+  if (!name) return name;
+  const p = ((S.profile.policies || {})[sec] || {})[name];
+  return (p && p.label) || name;
+}
+function p2SetLabel(v){
+  if (v.trim()) P2.draft.label = v.trim(); else delete P2.draft.label;
+  p2Save(false);
+}
+function p2Render(){
+  const dlg = $("#editor2");
+  dlg.innerHTML = P2.kind === "rescue" ? rescueHtml()
+                : P2.kind === "shop"   ? shopHtml()
+                : P2.kind === "gather" ? gatherHtml() : uwHtml();
+  if (!dlg.open) dlg.showModal();
+  syncSaveBar();
+}
+function openRescueEditor(name, bp){ P2.kind = "rescue"; P2.name = name; P2.bp = bp; p2Load(); p2Render(); }
+function openShopEditor(name, bp){ P2.kind = "shop"; P2.name = name; P2.bp = bp; p2Load(); p2Render(); }
+function openUwEditor(name, bp){ P2.kind = "uw"; P2.name = name; P2.bp = bp; p2Load(); p2Render(); }
+function openGatherEditor(name, bp){ P2.kind = "gather"; P2.name = name; P2.bp = bp; p2Load(); p2Render(); }
+
+function gatherHtml(){
+  const d = P2.draft;
+  const sw = (key, label, hint) => `<label class="inline">
+    <input type="checkbox" ${d[key] ? "checked" : ""}
+      onchange="p2field('${key}', this.checked)"> ${label}
+    ${hint ? `<span class="muted">${hint}</span>` : ""}</label>`;
+  return `<article>${p2Header("gathering")}
+    <fieldset><legend>Pick up while a run is live</legend>
+      ${sw("flying_gem", "Tap the flying gem")}
+      <div class="kv" style="margin-left:1.6rem; margin-bottom:.5rem">
+        <label>Reach delay — min / max whole seconds
+          <span class="muted">(a human wander, not a pounce)</span></label>
+        <span style="display:flex; gap:.4rem">
+          <input type="number" style="width:6rem" value="${(d.gem_delay_sec || [])[0] ?? ""}"
+            onchange="p2gatherDelay(0, this.value)">
+          <input type="number" style="width:6rem" value="${(d.gem_delay_sec || [])[1] ?? ""}"
+            onchange="p2gatherDelay(1, this.value)">
+        </span></div>
+      ${sw("ad_gems", "Claim the daily ad-gem offer")}
+      ${sw("quests_8h", "Claim the 8-hour quest chest")}
+      ${sw("quest_rewards", "Claim finished quests")}
+      ${sw("guild", "Guild collection")}
+    </fieldset>
+    <p class="muted">Reward flows only ever navigate menus the bot itself
+      opened, and back off when a visit claims nothing.</p></article>`;
+}
+function p2gatherDelay(i, v){
+  const arr = [...(P2.draft.gem_delay_sec || [3, 10])];
+  arr[i] = v === "" ? null : Number(v);
+  P2.draft.gem_delay_sec = arr; p2Save(false);
+}
+
+/* ---- generic param rendering off the vocab specs */
+function pInput(spec, val, js){
+  if ((spec.values || []).length && spec.type !== "bool")
+    return `<select onchange="${js}(this.value)">
+      ${spec.values.map(v => `<option ${String(val) === String(v) ? "selected" : ""}>${esc(v)}</option>`).join("")}
+    </select>`;
+  if (spec.type === "bool")
+    return `<input type="checkbox" ${val ? "checked" : ""} onchange="${js}(this.checked)">`;
+  return `<input type="number" step="any" title="${esc(spec.doc || "")}"
+    value="${val ?? ""}" onchange="${js}(this.value === '' ? null : Number(this.value))">`;
+}
+
+/* ---- RULE model: source spellings <-> {kind, params} */
+const TRIG_LABEL = { bar:"a bar is low / falling", wall_collapse:"the wall collapses",
+  fleet_mark:"a fleet spawns", wave_at_least:"wave is reached",
+  wave_between:"between two waves", second_wind:"Second Wind state",
+  death_screen:"the run just ended" };
+const ACT_LABEL = { burst:"emergency burst (sprint→confirm→ability)",
+  fire:"fire an ability", toggle_uw:"switch a weapon on/off",
+  cancel_sprint:"end the intro sprint", surrender_retry:"surrender & retry",
+  stop_after_run:"stop after this run" };
+const FLAG_ACTS = ["cancel_sprint", "surrender_retry", "stop_after_run"];
+
+function trigParse(when){
+  const kinds = Object.keys(S.vocab.rule_triggers.fields);
+  const k = kinds.find(t => t in (when || {})) || (when || {}).kind || "wave_at_least";
+  if (k === "bar") { const p = { ...when }; return { k, p }; }
+  if (k === "wave_at_least") return { k, p:{ wave: when.wave_at_least ?? when.wave } };
+  if (k === "wave_between") { const v = when.wave_between || when.value || [];
+    return { k, p:{ lo:v[0], hi:v[1] } }; }
+  if (k === "death_screen") return { k, p:{} };
+  return { k, p:{ ...(typeof when[k] === "object" ? when[k] : {}) } };
+}
+function trigBuild(k, p){
+  const clean = {}; for (const [key, v] of Object.entries(p))
+    if (v !== null && v !== undefined && v !== "") clean[key] = v;
+  if (k === "bar") return { ...clean };
+  if (k === "wave_at_least") return { wave_at_least: clean.wave };
+  if (k === "wave_between") return { wave_between: [clean.lo, clean.hi] };
+  if (k === "death_screen") return { death_screen: true };
+  return { [k]: clean };
+}
+function actParse(doo){
+  const kinds = Object.keys(S.vocab.rule_actions.fields);
+  const k = kinds.find(a => a in (doo || {})) || "cancel_sprint";
+  if (FLAG_ACTS.includes(k)) return { k, p:{} };
+  return { k, p:{ ...(typeof doo[k] === "object" ? doo[k] : {}) } };
+}
+function actBuild(k, p){
+  if (FLAG_ACTS.includes(k)) return { [k]: true };
+  const clean = {}; for (const [key, v] of Object.entries(p))
+    if (v !== null && v !== undefined && v !== "") clean[key] = v;
+  return { [k]: clean };
+}
+function trigParamsHtml(i, k, p){
+  if (k === "bar") { const f = S.vocab.rule_triggers.fields.bar.fields;
+    return ["bar","below","falling_samples","deadband"].map(key =>
+      `<span class="muted">${key}</span>${pInput(f[key], p[key],
+        `p2trig(${i}, '${key}',`)}`).join(" "); }
+  if (k === "wave_at_least")
+    return `<span class="muted">wave</span>${pInput({ type:"int" }, p.wave, `p2trig(${i}, 'wave',`)}`;
+  if (k === "wave_between")
+    return `<span class="muted">from</span>${pInput({ type:"int" }, p.lo, `p2trig(${i}, 'lo',`)}
+            <span class="muted">to</span>${pInput({ type:"int" }, p.hi, `p2trig(${i}, 'hi',`)}`;
+  const fields = (S.vocab.rule_triggers.fields[k] || {}).fields || {};
+  return Object.entries(fields).map(([key, spec]) =>
+    `<span class="muted">${key}</span>${pInput(spec, p[key], `p2trig(${i}, '${key}',`)}`).join(" ");
+}
+function actParamsHtml(i, k, p){
+  const fields = (S.vocab.rule_actions.fields[k] || {}).fields || {};
+  return Object.entries(fields).map(([key, spec]) =>
+    `<span class="muted">${key}</span>${pInput(spec, p[key], `p2act(${i}, '${key}',`)}`).join(" ");
+}
+
+/* draft mutators wired from the param inputs */
+function p2trig(i, key, val){
+  const r = P2.draft.rules[i]; const { k, p } = trigParse(r.when);
+  p[key] = val; r.when = trigBuild(k, p); p2Save(false);
+}
+function p2act(i, key, val){
+  const r = P2.draft.rules[i]; const { k, p } = actParse(r.do);
+  p[key] = val; r.do = actBuild(k, p); p2Save(false);
+}
+function p2trigKind(i, k){
+  P2.draft.rules[i].when = deep(SEEDS.triggers[k]); p2Save();
+}
+function p2actKind(i, k){
+  // `retaps` is Tier-A-only: it is seeded only under a second_wind arm,
+  // where a bar+burst rule compiles into the sub-second watch
+  const seed = (k === "burst" && typeof P2.draft.arm === "object" && P2.draft.arm)
+    ? SEEDS.actions.burst_tier_a : SEEDS.actions[k];
+  P2.draft.rules[i].do = deep(seed); p2Save();
+}
+function p2rule(i, key, val){ if (val === null) delete P2.draft.rules[i][key];
+  else P2.draft.rules[i][key] = val; p2Save(false); }
+function p2moveRule(i, d){ const [r] = P2.draft.rules.splice(i, 1);
+  P2.draft.rules.splice(i + d, 0, r); p2Save(); }
+function p2delRule(i){ P2.draft.rules.splice(i, 1); p2Save(); }
+function p2addRule(){ (P2.draft.rules = P2.draft.rules || []).push(
+  deep(SEEDS.new_rule)); p2Save(); }
+function p2arm(key, val){
+  // `arm: "always"` is a bare STRING in the schema (no Tier A watch, every
+  // rule at main-loop latency); only the second_wind form is a mapping.
+  if (key === "mode") {
+    P2.draft.arm = deep(SEEDS.arm[val === "always" ? "always" : "second_wind"]);
+  } else {
+    const prev = (typeof P2.draft.arm === "object" && P2.draft.arm) || { on:"second_wind" };
+    P2.draft.arm = { ...prev, [key]: val };
+  }
+  p2Save(key === "mode");   // mode switch shows/hides fields; the rest are numbers
+}
+function p2field(key, val){ P2.draft[key] = val; p2Save(); }
+
+function p2Header(title){
+  return `<header style="display:flex; justify-content:space-between; align-items:center">
+    <span><b>${esc(P2.draft.label || P2.name)}</b><span class="chip kind">${title}</span>
+      <span class="chip" title="the identifier other settings refer to">${esc(P2.name)}</span></span>
+    <span style="display:flex; gap:.4rem">
+      <button class="small ghost" onclick="p2Cancel()">Cancel</button>
+      <button class="small" onclick="p2Commit()">Save ✓</button>
+    </span></header>
+  <div class="kv" style="margin-bottom:.7rem">
+    <label>Display name <span class="muted">(how menus show it)</span></label>
+    <input value="${esc(P2.draft.label || "")}" placeholder="${esc(P2.name)}"
+      onchange="p2SetLabel(this.value)">
+  </div>`;
+}
+
+function rescueHtml(){
+  const d = P2.draft;
+  const sw = typeof d.arm === "object" && d.arm !== null;   // mapping = second_wind watch
+  const arm = sw ? d.arm : {};
+  const trigKinds = Object.keys(S.vocab.rule_triggers.fields);
+  const actKinds = Object.keys(S.vocab.rule_actions.fields)
+    .filter(a => a !== "switch_cards");     // refused everywhere: not offered
+  return `<article>${p2Header("rescue & rules")}
+    <fieldset><legend>When may abilities fire?</legend>
+      <label class="inline"><input type="radio" name="arm" ${sw ? "checked" : ""}
+        onchange="p2arm('mode', 'second_wind')">
+        Hold everything until after a <b>Second Wind</b> (accounts that have it)</label>
+      ${sw ? `<div class="kv" style="margin-left:1.6rem; margin-bottom:.5rem">
+        <label>Watch for how long after it (sec, empty = rest of the run)</label>
+        <input type="number" value="${arm.watch_sec ?? ""}"
+          onchange="p2arm('watch_sec', this.value === '' ? null : Number(this.value))">
+        <label>Immunity backstop (sec)</label>
+        <input type="number" value="${arm.immunity_sec ?? ""}"
+          onchange="p2arm('immunity_sec', this.value === '' ? null : Number(this.value))">
+      </div>` : ""}
+      <label class="inline"><input type="radio" name="arm" ${!sw ? "checked" : ""}
+        onchange="p2arm('mode', 'always')">
+        Always armed — fire on the conditions alone (no Second Wind)</label>
+      <label class="inline"><input type="checkbox" ${d.end_sprint_after_sw ? "checked" : ""}
+        onchange="p2field('end_sprint_after_sw', this.checked)">
+        End the intro sprint the moment a Second Wind window closes</label>
+    </fieldset>
+    <fieldset><legend>If this… then that (top rule wins first)</legend>
+      ${(d.rules || []).map((r, i) => {
+        const t = trigParse(r.when); const a = actParse(r.do);
+        return `<div class="rulecard">
+          <div class="rowline"><b>WHEN</b>
+            <select onchange="p2trigKind(${i}, this.value)">
+              ${trigKinds.map(k => `<option value="${k}" ${t.k === k ? "selected" : ""}>
+                ${esc(TRIG_LABEL[k] || k)}</option>`).join("")}
+            </select>${trigParamsHtml(i, t.k, t.p)}</div>
+          <div class="rowline"><b>THEN</b>
+            <select onchange="p2actKind(${i}, this.value)">
+              ${actKinds.map(k => `<option value="${k}" ${a.k === k ? "selected" : ""}>
+                ${esc(ACT_LABEL[k] || k)}</option>`).join("")}
+            </select>${actParamsHtml(i, a.k, a.p)}</div>
+          <div class="rowline"><b></b>
+            <label class="inline" style="margin:0">
+              <input type="checkbox" ${r.repeat ? "checked" : ""}
+                onchange="p2rule(${i}, 'repeat', this.checked || null)"> may repeat</label>
+            <span class="muted">cooldown s</span>
+            <input type="number" step="any" value="${r.refire_sec ?? ""}"
+              onchange="p2rule(${i}, 'refire_sec', this.value === '' ? null : Number(this.value))">
+            <span style="margin-left:auto">
+              ${i > 0 ? `<button class="small ghost" onclick="p2moveRule(${i},-1)">↑</button>` : ""}
+              ${i < d.rules.length - 1 ? `<button class="small ghost" onclick="p2moveRule(${i},1)">↓</button>` : ""}
+              <button class="small danger" onclick="p2delRule(${i})">✕</button></span></div>
+        </div>`; }).join("")}
+      <button class="small ghost" onclick="p2addRule()">＋ add a rule</button>
+    </fieldset>
+    <p class="muted">A tournament run can never be surrendered by a rule, a
+      wall rule is refused on an account with no wall, and an ability your
+      account doesn't own can't be armed — the validator enforces all of it
+      and explains any refusal.</p></article>`;
+}
+
+function shopHtml(){
+  const d = P2.draft;
+  const tabs = S.vocab.shop_tabs.values, modes = S.vocab.shop_modes.values;
+  const stats = S.vocab.shop_stats.values;
+  return `<article>${p2Header("shopping priorities")}
+    <label class="inline"><input type="checkbox" ${d.enabled !== false ? "checked" : ""}
+      onchange="p2field('enabled', this.checked)">
+      Workshop shopping on <span class="muted">(off = the panel is never opened)</span></label>
+    <fieldset><legend>Buy in this order (top first, every sweep)</legend>
+    ${(d.directives || []).map((dir, i) => `
+      <div class="rulecard">
+        <div class="rowline">
+          <input type="checkbox" ${dir.enabled !== false ? "checked" : ""}
+            onchange="p2dir(${i}, 'enabled', this.checked)">
+          <select onchange="p2dir(${i}, 'tab', this.value)">
+            ${tabs.map(t => `<option ${dir.tab === t ? "selected" : ""}>${esc(t)}</option>`).join("")}
+          </select>
+          <select onchange="p2dir(${i}, 'mode', this.value)">
+            ${modes.map(m => `<option ${dir.mode === m ? "selected" : ""}>${esc(m)}</option>`).join("")}
+          </select>
+          ${dir.mode === "clicks" ? `<input type="number" min="1" value="${dir.clicks ?? 3}"
+            onchange="p2dir(${i}, 'clicks', Number(this.value))">` : ""}
+          <span style="margin-left:auto">
+            ${i > 0 ? `<button class="small ghost" onclick="p2moveDir(${i},-1)">↑</button>` : ""}
+            ${i < d.directives.length - 1 ? `<button class="small ghost" onclick="p2moveDir(${i},1)">↓</button>` : ""}
+            <button class="small danger" onclick="p2delDir(${i})">✕</button></span></div>
+        <div class="statchips">${stats.map(s => `
+          <span class="chip ${(dir.stats || []).includes(s) ? "on" : ""}"
+            onclick="p2statToggle(${i}, '${s}')">${esc(s.replace(/_/g, " "))}</span>`).join("")}
+        </div>
+      </div>`).join("")}
+    <button class="small ghost" onclick="p2addDir()">＋ add a line</button>
+    </fieldset>
+    <p class="muted">“repeat” buys whenever affordable, “once” buys one per
+      run, “best_cost” takes the cheapest first, “clicks” taps a fixed number
+      of times. Unticked lines stay in the list but are skipped.</p></article>`;
+}
+function p2dir(i, key, val){ P2.draft.directives[i][key] = val;
+  p2Save(key !== "clicks"); }   // clicks is a number input; mode/tab restructure
+function p2statToggle(i, s){
+  const d = P2.draft.directives[i]; d.stats = d.stats || [];
+  d.stats = d.stats.includes(s) ? d.stats.filter(x => x !== s) : [...d.stats, s];
+  p2Save();
+}
+function p2moveDir(i, d){ const [x] = P2.draft.directives.splice(i, 1);
+  P2.draft.directives.splice(i + d, 0, x); p2Save(); }
+function p2delDir(i){ P2.draft.directives.splice(i, 1); p2Save(); }
+function p2addDir(){ (P2.draft.directives = P2.draft.directives || []).push(
+  deep(SEEDS.new_directive)); p2Save(); }
+
+function uwHtml(){
+  const d = P2.draft; const cl = d.chain_lightning || {};
+  // ALL ultimate weapons are listed (user ruling 2026-08-29): a preset may
+  // name any UW - ownership (player.uws) only decides what applies on this
+  // account, so unowned ones stay authorable and are marked as skipped.
+  const inv = ((S.profile.player || {}).uws) || {};
+  const all = (((S.vocab.uw_names || {}).values) || Object.keys(inv))
+    .filter(w => w !== "chain_lightning");
+  const ownedSet = new Set(Object.entries(inv)
+    .filter(([, own]) => own).map(([w]) => w));
+  const modes = S.vocab.cl_modes.values;
+  const pair = (label, key, show) => show ? `
+    <label>${label}</label>
+    <span style="display:flex; gap:.4rem">
+      <input type="number" style="width:6rem" value="${(cl[key] || [])[0] ?? ""}"
+        onchange="p2clPair('${key}', 0, this.value)">
+      <input type="number" style="width:6rem" value="${(cl[key] || [])[1] ?? ""}"
+        onchange="p2clPair('${key}', 1, this.value)">
+    </span>` : "";
+  return `<article>${p2Header("weapon plan")}
+    <fieldset><legend>Baseline — forced ON at the start of every run</legend>
+      ${all.length ? all.map(w => `
+        <label class="inline"><input type="checkbox"
+          ${(d.baseline || {})[w] ? "checked" : ""}
+          onchange="p2baseline('${w}', this.checked)">
+          ${esc(w.replace(/_/g, " "))}${ownedSet.has(w) ? ""
+            : ' <span class="muted">(not owned — skipped here)</span>'}</label>`).join("")
+        : '<p class="muted">No ultimate weapons in the vocabulary.</p>'}
+    </fieldset>
+    <fieldset><legend>Chain Lightning choreography</legend>
+      <div class="kv">
+        <label>Mode</label>
+        <select onchange="p2clMode(this.value)">
+          ${modes.map(m => `<option ${cl.mode === m ? "selected" : ""}>${esc(m)}</option>`).join("")}
+        </select>
+        ${pair("Latch ON for good between waves", "always_on_above", cl.mode === "fleet_marks")}
+        ${pair("Turn ON above wave (range)", "on_above", cl.mode === "off_until_wave")}
+        ${pair("ON this many waves before a fleet", "pre_mark_waves", cl.mode === "fleet_marks")}
+        ${pair("OFF this many waves after one", "off_after_waves", cl.mode === "fleet_marks")}
+      </div>
+      <p class="muted">fleet_marks = on around each fleet spawn, then latched
+        on late-run; off_until_wave = dark until the range, then on for good.
+        Ranges are randomized per run so no two runs toggle on the same wave.</p>
+    </fieldset></article>`;
+}
+function p2baseline(w, on){ P2.draft.baseline = { ...(P2.draft.baseline || {}) };
+  P2.draft.baseline[w] = on; p2Save(); }
+function p2cl(key, val){ P2.draft.chain_lightning = { ...(P2.draft.chain_lightning || {}) };
+  P2.draft.chain_lightning[key] = val; p2Save(); }
+function p2clMode(v){
+  // a mode is only valid WITH its required ranges - seed whatever the new
+  // mode needs and is not already set (fleet_marks: pre/off windows;
+  // off_until_wave: the on_above range)
+  const cl = { ...(P2.draft.chain_lightning || {}), mode: v };
+  for (const [k, val] of Object.entries(SEEDS.cl_modes[v] || {}))
+    if (cl[k] == null) cl[k] = deep(val);
+  P2.draft.chain_lightning = cl; p2Save();
+}
+function p2clPair(key, idx, val){
+  const cl = P2.draft.chain_lightning = { ...(P2.draft.chain_lightning || {}) };
+  const arr = [...(cl[key] || [null, null])];
+  arr[idx] = val === "" ? null : Number(val);
+  cl[key] = arr; p2Save(false);
+}
+
+/* ------------------------------------------------------------------ boot */
+(async function boot(){
+  // the save bar hides while a modal editor is open (it would be inert
+  // behind the backdrop); `close` fires for Save, Cancel and Esc alike.
+  for (const d of document.querySelectorAll("dialog"))
+    d.addEventListener("close", syncSaveBar);
+  await loadStatus();
+  setInterval(loadStatus, 2500);
+  route();
+})();
+</script>
+</body>
+</html>

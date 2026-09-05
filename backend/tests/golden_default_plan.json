@@ -1,0 +1,226 @@
+{
+ "week": {
+  "friday": [
+   {
+    "after": "08:00",
+    "after_min": 480,
+    "block": "shards",
+    "blueprint": "shard_daily",
+    "count": 100,
+    "day_plan": "farm_day",
+    "id": "friday#0",
+    "kind": "shard",
+    "preset": "bp_shard_daily",
+    "until": null,
+    "until_min": 1440
+   },
+   {
+    "after": null,
+    "after_min": 0,
+    "block": "coin",
+    "blueprint": "coin_default",
+    "count": null,
+    "day_plan": "farm_day",
+    "id": "friday#1",
+    "kind": "coin",
+    "preset": "bp_coin_default",
+    "until": null,
+    "until_min": 1440
+   }
+  ],
+  "monday": [
+   {
+    "after": "08:00",
+    "after_min": 480,
+    "block": "shards",
+    "blueprint": "shard_daily",
+    "count": 100,
+    "day_plan": "farm_day",
+    "id": "monday#0",
+    "kind": "shard",
+    "preset": "bp_shard_daily",
+    "until": null,
+    "until_min": 1440
+   },
+   {
+    "after": null,
+    "after_min": 0,
+    "block": "coin",
+    "blueprint": "coin_default",
+    "count": null,
+    "day_plan": "farm_day",
+    "id": "monday#1",
+    "kind": "coin",
+    "preset": "bp_coin_default",
+    "until": null,
+    "until_min": 1440
+   }
+  ],
+  "saturday": [
+   {
+    "after": "19:00",
+    "after_min": 1140,
+    "block": "tournament",
+    "blueprint": "tourney_main",
+    "count": 1,
+    "day_plan": "tourney_day",
+    "id": "saturday#0",
+    "kind": "tournament",
+    "preset": "bp_tourney_main",
+    "until": null,
+    "until_min": 1440
+   },
+   {
+    "after": "08:00",
+    "after_min": 480,
+    "block": "shards",
+    "blueprint": "shard_daily",
+    "count": 100,
+    "day_plan": "tourney_day",
+    "id": "saturday#1",
+    "kind": "shard",
+    "preset": "bp_shard_daily",
+    "until": null,
+    "until_min": 1440
+   },
+   {
+    "after": null,
+    "after_min": 0,
+    "block": "coin",
+    "blueprint": "coin_default",
+    "count": null,
+    "day_plan": "tourney_day",
+    "id": "saturday#2",
+    "kind": "coin",
+    "preset": "bp_coin_default",
+    "until": null,
+    "until_min": 1440
+   }
+  ],
+  "sunday": [
+   {
+    "after": "08:00",
+    "after_min": 480,
+    "block": "shards",
+    "blueprint": "shard_daily",
+    "count": 100,
+    "day_plan": "farm_day",
+    "id": "sunday#0",
+    "kind": "shard",
+    "preset": "bp_shard_daily",
+    "until": null,
+    "until_min": 1440
+   },
+   {
+    "after": null,
+    "after_min": 0,
+    "block": "coin",
+    "blueprint": "coin_default",
+    "count": null,
+    "day_plan": "farm_day",
+    "id": "sunday#1",
+    "kind": "coin",
+    "preset": "bp_coin_default",
+    "until": null,
+    "until_min": 1440
+   }
+  ],
+  "thursday": [
+   {
+    "after": "08:00",
+    "after_min": 480,
+    "block": "shards",
+    "blueprint": "shard_daily",
+    "count": 100,
+    "day_plan": "farm_day",
+    "id": "thursday#0",
+    "kind": "shard",
+    "preset": "bp_shard_daily",
+    "until": null,
+    "until_min": 1440
+   },
+   {
+    "after": null,
+    "after_min": 0,
+    "block": "coin",
+    "blueprint": "coin_default",
+    "count": null,
+    "day_plan": "farm_day",
+    "id": "thursday#1",
+    "kind": "coin",
+    "preset": "bp_coin_default",
+    "until": null,
+    "until_min": 1440
+   }
+  ],
+  "tuesday": [
+   {
+    "after": "08:00",
+    "after_min": 480,
+    "block": "shards",
+    "blueprint": "shard_daily",
+    "count": 100,
+    "day_plan": "farm_day",
+    "id": "tuesday#0",
+    "kind": "shard",
+    "preset": "bp_shard_daily",
+    "until": null,
+    "until_min": 1440
+   },
+   {
+    "after": null,
+    "after_min": 0,
+    "block": "coin",
+    "blueprint": "coin_default",
+    "count": null,
+    "day_plan": "farm_day",
+    "id": "tuesday#1",
+    "kind": "coin",
+    "preset": "bp_coin_default",
+    "until": null,
+    "until_min": 1440
+   }
+  ],
+  "wednesday": [
+   {
+    "after": "19:00",
+    "after_min": 1140,
+    "block": "tournament",
+    "blueprint": "tourney_main",
+    "count": 1,
+    "day_plan": "tourney_day",
+    "id": "wednesday#0",
+    "kind": "tournament",
+    "preset": "bp_tourney_main",
+    "until": null,
+    "until_min": 1440
+   },
+   {
+    "after": "08:00",
+    "after_min": 480,
+    "block": "shards",
+    "blueprint": "shard_daily",
+    "count": 100,
+    "day_plan": "tourney_day",
+    "id": "wednesday#1",
+    "kind": "shard",
+    "preset": "bp_shard_daily",
+    "until": null,
+    "until_min": 1440
+   },
+   {
+    "after": null,
+    "after_min": 0,
+    "block": "coin",
+    "blueprint": "coin_default",
+    "count": null,
+    "day_plan": "tourney_day",
+    "id": "wednesday#2",
+    "kind": "coin",
+    "preset": "bp_coin_default",
+    "until": null,
+    "until_min": 1440
+   }
+  ]
+ }
+}

@@ -1,0 +1,6 @@
+# The source tree is LF everywhere; keep it that way on every checkout.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
+*.ps1 text eol=crlf

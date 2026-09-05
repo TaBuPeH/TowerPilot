@@ -1,0 +1,1731 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<title>Tower Autopilot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<!-- Pico CSS v2.1.1, VENDORED (webui/vendor/) - never a CDN: this dashboard
+     has to render on a machine with no internet at all. Everything below the
+     link only does what Pico cannot know: the app's own navy/cyan identity,
+     the status pills, and the density a ~300-control config page needs. -->
+<link rel="stylesheet" href="/ui/vendor/pico.min.css">
+<style>
+  /* ---- the app's identity, expressed as Pico's own tokens ---------------
+     Pico v2 is driven entirely by --pico-* custom properties, so the whole
+     palette and the whole density pass are variable assignments here rather
+     than rules fighting the framework. data-theme="dark" on <html> selects
+     Pico's dark palette; these override it where the dashboard has an
+     opinion. `:root[data-theme="dark"]` outranks Pico's `[data-theme=dark]`. */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* density: 1rem = 14px, so Pico's whole rem scale lands where this page
+       used to sit. Pico's default grows the root font up to 131.25% on wide
+       screens - a 300-control page cannot afford that. */
+    --pico-font-size: 87.5%;
+    --pico-line-height: 1.5;
+    --pico-font-weight: 400;
+    --pico-spacing: 0.7rem;
+    --pico-typography-spacing-vertical: 0.65rem;
+    --pico-block-spacing-vertical: 0.9rem;
+    --pico-block-spacing-horizontal: 1rem;
+    --pico-form-element-spacing-vertical: 0.3rem;
+    --pico-form-element-spacing-horizontal: 0.6rem;
+    --pico-border-radius: 0.5rem;
+    --pico-outline-width: 0.125rem;
+    --pico-transition: 0.12s ease-in-out;
+
+    /* palette: dark navy ground, cyan accent, as before Pico */
+    --pico-background-color: #0f1219;
+    --pico-color: #dfe3f0;
+    --pico-h1-color: #e8ecf7; --pico-h2-color: #dfe3f0; --pico-h3-color: #dfe3f0;
+    --pico-h4-color: #dfe3f0; --pico-h5-color: #c9cfe0; --pico-h6-color: #8b90a5;
+    --pico-muted-color: #8b90a5;
+    --pico-muted-border-color: #262b3c;
+    --pico-primary: #38bdf8;
+    --pico-primary-background: #38bdf8;
+    --pico-primary-border: #38bdf8;
+    --pico-primary-inverse: #06212e;
+    --pico-primary-hover: #7dd3fc;
+    --pico-primary-hover-background: #7dd3fc;
+    --pico-primary-hover-border: #7dd3fc;
+    --pico-primary-focus: rgba(56, 189, 248, 0.32);
+    --pico-primary-underline: rgba(56, 189, 248, 0.5);
+    --pico-secondary: #9aa2b8;
+    --pico-secondary-background: #39415a;
+    --pico-secondary-border: #39415a;
+    --pico-secondary-inverse: #f2f5ff;
+    --pico-secondary-hover: #b6bdd0;
+    --pico-secondary-hover-background: #454e6b;
+    --pico-secondary-hover-border: #454e6b;
+    --pico-secondary-focus: rgba(154, 162, 184, 0.25);
+    --pico-card-background-color: #171b26;
+    --pico-card-border-color: #262b3c;
+    --pico-card-sectioning-background-color: #1b2031;
+    --pico-table-border-color: #262b3c;
+    --pico-table-row-stripped-background-color: rgba(148, 163, 184, 0.045);
+    --pico-form-element-background-color: #0d1017;
+    --pico-form-element-border-color: #2f3549;
+    --pico-form-element-color: #dfe3f0;
+    --pico-form-element-placeholder-color: #6b7285;
+    --pico-form-element-active-background-color: #0d1017;
+    --pico-form-element-active-border-color: #38bdf8;
+    --pico-form-element-focus-color: #38bdf8;
+    --pico-form-element-selected-background-color: #232a3c;
+    --pico-code-background-color: #0d1017;
+    --pico-code-color: #9db4d0;
+    --pico-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 30px rgba(0, 0, 0, 0.22);
+
+    /* KEEP THESE. They are not decoration: JS-authored markup writes
+       var(--line) / var(--acc) into inline styles (the emulator suggestion
+       row, the evidence thumbnails). Renaming or dropping one breaks a
+       rendered view, not just a colour. */
+    --bg: var(--pico-background-color);
+    --panel: var(--pico-card-background-color);
+    --line: var(--pico-muted-border-color);
+    --fg: var(--pico-color);
+    --dim: var(--pico-muted-color);
+    --acc: var(--pico-primary);
+    --ok: #34d399;
+    --bad: #f87171;
+    --ok-soft: rgba(52, 209, 153, 0.14);
+    --bad-soft: rgba(248, 113, 113, 0.14);
+  }
+
+  /* ---- shell ----------------------------------------------------------- */
+  body {
+    min-height: 100vh;
+    background-color: var(--pico-background-color);
+    background-image: radial-gradient(1100px 520px at 50% -240px,
+                      rgba(56, 189, 248, 0.08), transparent 70%);
+    background-attachment: fixed;
+  }
+  /* `body > ...` on purpose: Pico's own `body>header,body>main` padding rule
+     is more specific than a bare element selector and would win. */
+  body > header {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 1.1rem;
+    padding: 0.5rem 1.1rem;
+    background: rgba(23, 27, 38, 0.88);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--pico-muted-border-color);
+  }
+  body > header h1 {
+    margin: 0; font-size: 1.02rem; font-weight: 600;
+    color: var(--pico-primary); white-space: nowrap;
+  }
+  body > header nav {
+    display: flex; flex-wrap: wrap; gap: 0.25rem;
+    justify-content: flex-start; overflow: visible;
+  }
+  body > main {
+    padding: 1.1rem; max-width: 1240px; margin: 0 auto;
+  }
+  section { display: none; }
+  section.active { display: block; }
+
+  /* ---- tab bar (a segmented control, not folder tabs) ------------------- */
+  .tab {
+    padding: 0.34rem 0.85rem; border: 1px solid transparent;
+    border-radius: 999px; font-size: 0.92rem; font-weight: 500;
+    background: transparent; color: var(--pico-muted-color);
+    box-shadow: none; cursor: pointer;
+  }
+  .tab:is(:hover, :focus) {
+    background: rgba(148, 163, 184, 0.12); border-color: transparent;
+    color: var(--pico-color);
+  }
+  .tab.active, .tab.active:is(:hover, :focus) {
+    background: rgba(56, 189, 248, 0.14); color: var(--pico-primary);
+    border-color: rgba(56, 189, 248, 0.38);
+  }
+
+  /* ---- cards. <article class="card"> in the static markup, plain
+     <div class="card"> from the renderers - styled off the class so the two
+     are pixel-identical and no renderer had to change. ---------------------*/
+  .card {
+    background: var(--pico-card-background-color);
+    border: 1px solid var(--pico-card-border-color);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem;
+    margin: 0 0 0.85rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  .card > :last-child { margin-bottom: 0; }
+  .card h2 {
+    margin: 0 0 0.7rem; font-size: 0.78rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--pico-muted-color); line-height: 1.5;
+  }
+  .card h2 b, .card h2 code { color: var(--pico-color); text-transform: none; }
+  .card h2 .note, .card h2 .verdict {
+    text-transform: none; letter-spacing: normal; font-weight: 400;
+  }
+  .card p { margin-bottom: 0.55rem; }
+
+  /* ---- buttons: Pico shapes them, these three keep the app's variants ----*/
+  button, [role=button] {
+    padding: 0.32rem 0.85rem; font-size: 0.92rem; font-weight: 600;
+    line-height: 1.5;
+  }
+  button.ghost {
+    background: transparent; color: var(--pico-primary);
+    border-color: rgba(56, 189, 248, 0.45);
+  }
+  button.ghost:is(:hover, :focus, :active) {
+    background: rgba(56, 189, 248, 0.14); color: var(--pico-primary);
+    border-color: var(--pico-primary);
+  }
+  button.danger {
+    background: transparent; color: var(--bad);
+    border-color: rgba(248, 113, 113, 0.5);
+  }
+  button.danger:is(:hover, :focus, :active) {
+    background: var(--bad); color: #2b0808; border-color: var(--bad);
+  }
+  button:disabled { box-shadow: none; }
+  /* Pico's [role=group] is a joined segmented control - used for the wizard's
+     action cells and the runner bar. Full-width is wrong for a toolbar. */
+  [role=group] { width: auto; margin-bottom: 0; vertical-align: middle; }
+  [role=group] > * { flex: 0 0 auto; }
+  [role=group] > :not(:first-child) { margin-left: -1px; }
+  [role=group] :is(button, [type=button], [role=button]) {
+    --pico-form-element-spacing-horizontal: 0.85rem;
+  }
+  .actionbar {
+    display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;
+    margin-top: 0.65rem;
+  }
+  .actionbar label { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .fps button { padding: 0.1rem 0.55rem; font-size: 0.78rem; }
+
+  /* ---- forms: Pico's controls, this app's density ---------------------- */
+  input:not([type=checkbox]):not([type=radio]), select, textarea {
+    margin-bottom: 0;
+  }
+  select { width: auto; max-width: 100%; }
+  input[type=text], input[type=number] { width: 100%; }
+  input[type=checkbox] { margin-bottom: 0; }
+  label { display: inline-block; margin-bottom: 0; }
+  ::placeholder { color: var(--pico-form-element-placeholder-color); }
+
+  /* ---- tables: dense by decree - config rows have to stay scannable ----- */
+  table { margin-bottom: 0; font-size: 0.92rem; }
+  th, td {
+    padding: 0.36rem 0.6rem; text-align: left; vertical-align: middle;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+  }
+  thead th {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--pico-muted-color);
+    background: rgba(148, 163, 184, 0.05);
+    border-bottom: 1px solid var(--pico-muted-border-color);
+  }
+  thead th .note { text-transform: none; letter-spacing: normal; }
+  tbody tr:last-child > * { border-bottom: none; }
+  tbody tr:hover > * { background: rgba(148, 163, 184, 0.05); }
+  /* the wizard's emulator table: one row = one device, actions on the right.
+     `:not([colspan])` matters - the suggestion / "running now" banners are
+     full-width cells that read as prose and must stay left-aligned. */
+  #emuls td:last-child:not([colspan]), #procs td:last-child:not([colspan]) {
+    text-align: right;
+  }
+  #emuls .acts {
+    display: inline-flex; flex-wrap: wrap; gap: 0.35rem;
+    justify-content: flex-end;
+  }
+  /* the action cells are too narrow for a joined segmented control at this
+     table width - it would wrap mid-group. Separate pills wrap cleanly. */
+  #emuls .acts > * {
+    margin-left: 0; border-radius: var(--pico-border-radius);
+    --pico-form-element-spacing-horizontal: 0.7rem;
+    white-space: nowrap; font-size: 0.86rem;
+  }
+  #emuls .rowmsg { display: block; margin-top: 0.25rem; }
+  #emuls .sugrow > td {
+    border-left: 3px solid var(--pico-primary);
+    background: rgba(56, 189, 248, 0.07);
+  }
+  #emuls .sugrow button { margin-left: 0.5rem; }
+
+  /* ---- app-specific bits Pico knows nothing about ---------------------- */
+  .kv { display: grid; grid-template-columns: 260px 1fr; gap: 0.25rem 0.85rem;
+        align-items: center; }
+  .kv .key { color: var(--pico-muted-color); font-size: 0.8rem;
+             font-family: var(--pico-font-family-monospace);
+             word-break: break-all; }
+  /* the config tree is 121 boxes deep - an unbounded 1fr box per leaf reads
+     as a wall of empty field */
+  .kv input[type=text], .kv input[type=number] { max-width: 34rem; }
+  .tree { margin-left: 0.9rem; padding-left: 0.8rem;
+          border-left: 1px dashed var(--pico-muted-border-color); }
+  .node-title { cursor: pointer; color: var(--pico-primary); font-weight: 600;
+                margin: 0.4rem 0 0.15rem; user-select: none; }
+  .node-title:hover { color: var(--pico-primary-hover); }
+  .events {
+    font-family: var(--pico-font-family-monospace); font-size: 0.8rem;
+    line-height: 1.55; max-height: 340px; overflow: auto; white-space: pre-wrap;
+    background: var(--pico-code-background-color);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 0.5rem; padding: 0.6rem 0.7rem;
+  }
+  .pill {
+    display: inline-block; padding: 0.08rem 0.6rem; border-radius: 999px;
+    font-size: 0.75rem; font-weight: 600; line-height: 1.6; white-space: nowrap;
+    border: 1px solid var(--pico-muted-border-color);
+    background: rgba(148, 163, 184, 0.08); color: var(--pico-muted-color);
+    margin-left: 0.5rem; vertical-align: middle;
+  }
+  .pill.ok { color: var(--ok); border-color: rgba(52, 211, 153, 0.45);
+             background: var(--ok-soft); }
+  .pill.bad { color: var(--bad); border-color: rgba(248, 113, 113, 0.45);
+              background: var(--bad-soft); }
+  #frame { max-width: 270px; background: #000;
+           border: 1px solid var(--pico-muted-border-color);
+           border-radius: 0.5rem; }
+  .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .row > div { flex: 1 1 340px; min-width: 0; }
+  .tplgrid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .tpl {
+    display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+    width: 106px; padding: 0.4rem 0.3rem; overflow: hidden;
+    text-align: center; font-size: 0.7rem; line-height: 1.35;
+    overflow-wrap: anywhere; color: var(--pico-muted-color);
+    background: rgba(148, 163, 184, 0.04);
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 0.5rem;
+  }
+  .tpl img { max-width: 90px; max-height: 60px; background: #000;
+             border: 1px solid var(--pico-muted-border-color);
+             border-radius: 0.3rem; }
+  .note { color: var(--pico-muted-color); font-size: 0.85rem; }
+  #gatenote { padding: 0.6rem 1.1rem 0; }
+
+  /* ---- P6 profile editors: everything is a control, nothing is YAML ----- */
+  .profbar { display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap; }
+  .fgrid { display: grid; grid-template-columns: 210px 1fr; gap: 0.35rem 0.85rem;
+           align-items: center; }
+  .fgrid > label { color: var(--pico-muted-color); font-size: 0.8rem; }
+  .fgrid input[type=number], .fgrid input[type=text] { max-width: 180px; }
+  .fgrid select { max-width: 100%; }
+  .badge {
+    display: inline-block; padding: 0.05rem 0.5rem; border-radius: 0.35rem;
+    font-size: 0.72rem; letter-spacing: 0.04em; text-transform: none;
+    background: rgba(148, 163, 184, 0.14); color: var(--pico-color);
+    margin-left: 0.5rem;
+  }
+  .rule {
+    border: 1px solid var(--pico-muted-border-color); border-radius: 0.6rem;
+    padding: 0.55rem 0.65rem; margin: 0.45rem 0;
+    background: rgba(148, 163, 184, 0.04);
+  }
+  .rule .rowline { display: flex; gap: 0.5rem; align-items: center;
+                   flex-wrap: wrap; margin-bottom: 0.25rem; }
+  /* a rowline is ONE line of controls (plan blocks: block/run/after/until/
+     count). Inputs default to width:100% here, which pushes every box onto a
+     line of its own and hides the fact that they belong to one block. */
+  .rule .rowline input[type=text] { width: auto; max-width: 12rem; }
+  .rule .rowline input[type=number] { width: auto; max-width: 7rem; }
+  .rule .rowline input[size] { width: auto; }
+  .verdict { font-size: 0.82rem; margin-left: 0.5rem; }
+  .verdict.ok { color: var(--ok); }
+  .verdict.bad { color: var(--bad); white-space: pre-wrap; }
+  .savebar {
+    position: sticky; bottom: 0; z-index: 10;
+    display: flex; gap: 0.85rem; align-items: center;
+    padding: 0.7rem 1rem; margin-top: 0.5rem;
+    /* opaque on purpose: it sits over the config tree while scrolling and a
+       translucent bar let input boxes bleed through the Save button */
+    background: var(--pico-card-background-color);
+    border: 1px solid var(--pico-card-border-color);
+    border-radius: 0.75rem;
+    box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.35);
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>&#128508; Tower Autopilot</h1>
+  <nav aria-label="Sections">
+    <button class="tab active" data-tab="status">Status</button>
+    <button class="tab" data-tab="profile">Profile</button>
+    <button class="tab" data-tab="runs">Runs</button>
+    <button class="tab" data-tab="policies">Policies</button>
+    <button class="tab" data-tab="plan">Plan</button>
+    <button class="tab" data-tab="config">Configuration</button>
+    <button class="tab" data-tab="templates">Templates</button>
+    <button class="tab" data-tab="wizard">Setup wizard</button>
+  </nav>
+</header>
+<div id="gatenote" class="note" style="display:none; padding:8px 16px 0">
+  Setup is not finished - finish the wizard below (a device answering at
+  1080&times;2560, or a successful <b>use for config</b>) and the other tabs
+  unlock by themselves.
+</div>
+<main>
+
+<section id="status" class="active">
+  <div class="row">
+    <div>
+      <article class="card">
+        <h2>Runners</h2>
+        <table id="procs"></table>
+        <div class="actionbar">
+          <span role="group">
+            <select id="startPreset"></select>
+            <button onclick="startPreset()">Start</button>
+          </span>
+          <span role="group">
+            <button class="ghost" onclick="control('stop_after_run')">
+              Stop after run</button>
+            <button class="ghost" onclick="control('clear_flag')">
+              Clear stop flag</button>
+          </span>
+          <span id="flag" class="pill"></span>
+        </div>
+        <p class="note">"Stop after run" is the safe stop: the runner leaves at
+        the next run boundary. Kill only when you accept dropping a live
+        run's bookkeeping (the game itself is never touched).</p>
+      </article>
+      <article class="card"><h2>Daily state</h2><div id="daily" class="kv"></div></article>
+    </div>
+    <div>
+      <article class="card">
+        <h2>Live screen</h2>
+        <img id="frame" src="" alt="(no frame)">
+        <p class="note">Live MJPEG stream over the adb-server socket
+        (<span id="fpsLabel">2</span> fps, capped so the runner's own
+        3 fps rescue watch is never starved) - purely read-only.
+        <span role="group" class="fps">
+          <button class="ghost" onclick="setFps(1)">1</button>
+          <button class="ghost" onclick="setFps(2)">2</button>
+          <button class="ghost" onclick="setFps(4)">4</button>
+        </span></p>
+      </article>
+    </div>
+  </div>
+  <article class="card"><h2>Event stream</h2><div id="events" class="events"></div></article>
+</section>
+
+<section id="profile">
+  <article class="card">
+    <h2>Capability scan</h2>
+    <p class="note">Surveys THIS account's cards, guardians and modules from
+    the home screen (read-only taps through menus). The battle phase (UWs +
+    ability row) starts a throwaway Tier-1 run and surrenders it - opt in
+    explicitly. All runners must be stopped first.</p>
+    <div class="actionbar">
+      <label><input type="checkbox" id="scG" checked> guardians</label>
+      <label><input type="checkbox" id="scC" checked> cards</label>
+      <label><input type="checkbox" id="scM" checked> modules</label>
+      <label><input type="checkbox" id="scB"> battle (throwaway T1 run)</label>
+      <label><input type="checkbox" id="scDeep"> deep module sweep</label>
+      <label><input type="checkbox" id="scFresh"> fresh (ignore prior state)</label>
+      <span role="group">
+        <button onclick="startScan()">Start scan</button>
+        <button class="ghost" onclick="stopScan()">Stop</button>
+      </span>
+      <span id="scanState" class="pill"></span>
+    </div>
+  </article>
+  <article class="card"><h2>Draft profile</h2><div id="profTables"></div></article>
+</section>
+
+<section id="runs">
+  <article id="profbar-runs" class="card profbar"></article>
+  <article class="card">
+    <h2>Runs <span class="note">(blueprints - one card per thing the bot can
+    be told to do)</span></h2>
+    <p class="note">Every field here is a dropdown, a checkbox or a number
+    box. Each change is saved on its own and checked by the profile validator
+    first; a refusal is shown word for word and nothing is written.</p>
+  </article>
+  <div id="runsbody"></div>
+</section>
+
+<section id="policies">
+  <article id="profbar-policies" class="card profbar"></article>
+  <div id="polbody"></div>
+</section>
+
+<section id="plan">
+  <article id="profbar-plan" class="card profbar"></article>
+  <div id="planbody"></div>
+</section>
+
+<section id="config">
+  <article class="card">
+    <p class="note">The <b>advanced escape hatch</b>. Normal setup lives in
+    Runs / Policies / Plan; this tree is the raw machine file for the odd
+    case those tabs do not cover.</p>
+    <p class="note">Everything below is <b>config.yaml</b>. Numbers, booleans
+    and text edit in place; lists open as JSON. Save writes a timestamped
+    backup first. Running processes pick changes up on their next (re)start
+    - a live run is never reconfigured mid-flight.</p>
+  </article>
+  <div id="cfgtree"></div>
+  <div class="savebar">
+    <button onclick="saveConfig()">Save config.yaml</button>
+    <span id="savemsg" class="note"></span>
+  </div>
+</section>
+
+<section id="templates">
+  <article class="card">
+    <h2>Missing on this machine <span class="note">(from template_missing
+    events - what the code actually asked for and lacked)</span></h2>
+    <div id="tplmissing"></div>
+  </article>
+  <article class="card"><h2>Template library</h2><div id="tplgrid" class="tplgrid"></div></article>
+</section>
+
+<section id="wizard">
+  <article class="card">
+    <h2>1 &middot; Find your emulator <span id="wizstep1" class="note">pending</span></h2>
+    <p class="note">Scans MuMu, BlueStacks, LDPlayer and PATH adb installs and
+    asks each daemon for connected instances. Whatever answers here can be
+    driven.</p>
+    <div class="actionbar" style="margin-top:0">
+      <button onclick="scanEmulators()">Scan</button>
+    </div>
+    <table id="emuls"></table>
+  </article>
+  <article class="card">
+    <h2>2 &middot; Verify the resolution <span id="wizstep2" class="note">pending</span></h2>
+    <p class="note">Every template and coordinate assumes a 1080&times;2560
+    portrait display. Pick a device above, then check.</p>
+    <div id="reschk"></div>
+  </article>
+  <article class="card">
+    <h2>3 &middot; Point the config at it <span id="wizstep3" class="note">pending</span></h2>
+    <p class="note">Press <b>use for config</b> on the device row in step 1 -
+    the wizard writes <code>adb.exe</code> and the active instance's
+    <code>serial</code> into config.yaml (timestamped backup, as every save
+    here) and runs <code>adb connect</code>. Nothing to copy by hand. Editing
+    those two fields in <b>Configuration</b> still works for odd setups. The
+    live-screen panel on Status confirms the wiring.</p>
+  </article>
+  <article class="card">
+    <h2>5 &middot; Scan the account's capabilities</h2>
+    <p class="note">Once the wiring works: <b>Profile</b> tab &rarr; Start
+    scan. It reads the account's card presets, guardian chips and modules
+    into a draft profile; the battle phase (opt-in) adds Ultimate Weapons
+    and the ability row. Unknown items land in the harvest queue above -
+    template them, rescan, confirm.</p>
+  </article>
+  <article class="card">
+    <h2>4 &middot; Harvest account-specific templates</h2>
+    <p class="note">Buttons and HUD art ship with the engine, but module
+    icons, guardian chips and card art depend on YOUR account (rarity changes
+    the art). Run the game, watch the Templates tab's "missing" list, and
+    crop each flagged item from a native screenshot. Match rarity: build
+    modules are matched at their equipped rarity, spares at theirs.</p>
+  </article>
+</section>
+
+</main>
+<script>
+const $ = s => document.querySelector(s);
+let CFG = null;
+
+// SETUP GATE (user, 2026-08-19: "no other tabs should even be possible until
+// the first config is scanned and we are ready to operate").
+//
+// FAIL CLOSED (audit, 2026-08-19): the page starts LOCKED on the wizard and
+// only an explicit `setup_complete === true` from a 200 status response
+// unlocks it. A failed poll, a 500, or a response missing the field leaves
+// the lock exactly where it was - it must never unlock on ambiguity. The
+// unlock is one-way for the life of the page: once true, later polls cannot
+// relock (an operating machine whose emulator is merely off keeps Status).
+// The brief locked flash on an already-configured machine is accepted.
+let SETUP_OK = false;      // locked until proven otherwise
+function applyGate(ok) {
+  if (SETUP_OK) return;                 // one-way: never relock
+  if (ok !== true) { paintGate(false); return; }
+  SETUP_OK = true;
+  paintGate(true);
+}
+function paintGate(ok) {
+  $("#gatenote").style.display = ok ? "none" : "block";
+  document.querySelectorAll(".tab").forEach(b => {
+    const locked = !ok && b.dataset.tab !== "wizard";
+    b.disabled = locked;                // real disabled state, not just dimming
+    b.style.opacity = locked ? "0.35" : "";
+    b.style.cursor = locked ? "not-allowed" : "pointer";
+    b.title = locked ? "finish setup first" : "";
+  });
+  // Section swap only - the user's saved tab is never overwritten by the
+  // lock, so it comes back the moment setup completes. _setSection (not
+  // showTab) on purpose: the boot-time lock must not fire a wizard scan on
+  // a machine that is about to unlock on its first poll.
+  if (!ok && !document.getElementById("wizard").classList.contains("active"))
+    _setSection("wizard");
+}
+function _setSection(name) {
+  const b = document.querySelector(`.tab[data-tab="${name}"]`);
+  if (!b) return false;
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll("section").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  document.getElementById(name).classList.add("active");
+  return true;
+}
+function showTab(name, remember) {
+  if (!SETUP_OK && name !== "wizard") return;   // gate: wizard only
+  if (!_setSection(name)) return;
+  if (remember !== false) localStorage.setItem("tab", name);
+  if (name === "config" && !CFG) loadConfig();
+  if (name === "templates") loadTemplates();
+  if (name === "profile") pollScan();
+  if (name === "wizard") loadWizardState();
+  if (name === "runs" || name === "policies" || name === "plan") loadProfileTab(name);
+}
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+async function refreshStatus() {
+  try {
+    const res = await fetch("/api/status");
+    if (!res.ok) return;                      // ambiguous: leave the gate alone
+    const st = await res.json();
+    applyGate(st.setup_complete === true);    // unlocks live, no reload needed
+    const rows = st.processes.map(p =>
+      `<tr><td>${p.runner}</td><td class="note">${p.pid}</td>
+       <td><button class="danger" onclick="kill(${p.pid})">kill</button></td></tr>`);
+    $("#procs").innerHTML =
+      "<thead><tr><th>runner</th><th>pid</th><th></th></tr></thead><tbody>" +
+      (rows.join("") || "<tr><td colspan=3 class=note>nothing running</td></tr>") +
+      "</tbody>";
+    $("#flag").textContent = st.stop_flag ? "stop pending" : "no stop flag";
+    $("#flag").className = "pill " + (st.stop_flag ? "bad" : "ok");
+    $("#daily").innerHTML = Object.entries(st.daily_state).map(([k, v]) =>
+      `<div class="key">${k}</div><div>${JSON.stringify(v)}</div>`).join("");
+    $("#events").textContent = st.events.slice().reverse().map(e => {
+      const t = new Date(e.t * 1000).toLocaleTimeString();
+      const rest = Object.entries(e).filter(([k]) => k !== "t" && k !== "kind")
+        .map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(" ");
+      return `${t}  ${e.kind}  ${rest}`;
+    }).join("\n");
+  } catch (e) { /* server briefly away - keep last view */ }
+}
+// A process the server just killed or spawned is not gone/present by the
+// time the POST returns - the OS needs a beat. One immediate refresh shows
+// the stale list and the user thinks the click did nothing. So: refresh
+// now, and again at 400 ms / 1.5 s / 3 s until the list settles.
+function refreshSoon() {
+  refreshStatus();
+  [400, 1500, 3000].forEach(ms => setTimeout(refreshStatus, ms));
+}
+async function post(body) {
+  const r = await fetch("/api/control", {method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(body)});
+  let j = {};
+  try { j = await r.json(); } catch { /* non-JSON error body */ }
+  if (!r.ok || j.ok === false) alert(j.error || ("request failed: " + r.status));
+  return j;
+}
+function kill(pid) {
+  if (!confirm("Kill runner " + pid + "? (The game keeps running; the " +
+      "current run's bookkeeping is dropped.)")) return;
+  // optimistic: grey the row out at once so the click visibly landed
+  const btn = document.querySelector(`button[onclick="kill(${pid})"]`);
+  if (btn) { btn.disabled = true; btn.textContent = "killing..."; }
+  post({action: "kill", pid}).then(refreshSoon);
+}
+function control(action) { post({action}).then(refreshSoon); }
+function startPreset() {
+  post({action: "start", preset: $("#startPreset").value}).then(refreshSoon);
+}
+// Live feed: one persistent MJPEG connection instead of a 5 s poll. If the
+// stream errors (device offline, dashboard restart) fall back to a single
+// still and retry the stream after a pause.
+let STREAM_FPS = 2;
+function startStream() {
+  const img = $("#frame");
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = "/api/frame.png?ts=" + Date.now();
+    setTimeout(startStream, 5000);
+  };
+  img.src = "/api/stream.mjpg?fps=" + STREAM_FPS + "&ts=" + Date.now();
+}
+function setFps(n) { STREAM_FPS = n; $("#fpsLabel").textContent = n; startStream(); }
+
+// ---- config tree editor -------------------------------------------------
+function renderNode(obj, path) {
+  if (obj === null || typeof obj !== "object" || Array.isArray(obj)) {
+    return renderLeaf(obj, path);
+  }
+  const kids = Object.entries(obj).map(([k, v]) => {
+    const p = path.concat(k);
+    if (v !== null && typeof v === "object" && !Array.isArray(v)) {
+      return `<div><div class="node-title" onclick="this.nextElementSibling
+        .style.display = this.nextElementSibling.style.display === 'none' ?
+        '' : 'none'">${k}</div><div class="tree" style="display:none">
+        ${renderNode(v, p)}</div></div>`;
+    }
+    return `<div class="kv"><div class="key">${k}</div>
+            <div>${renderLeaf(v, p)}</div></div>`;
+  });
+  return kids.join("");
+}
+function renderLeaf(v, path) {
+  const id = "f_" + path.join("__").replace(/[^\w]/g, "_");
+  if (typeof v === "boolean")
+    return `<input type="checkbox" id="${id}" data-path='${JSON.stringify(path)}'
+            data-type="bool" ${v ? "checked" : ""}>`;
+  if (typeof v === "number")
+    return `<input type="number" step="any" id="${id}"
+            data-path='${JSON.stringify(path)}' data-type="num" value="${v}">`;
+  if (Array.isArray(v) || v === null || typeof v === "object")
+    return `<input type="text" id="${id}" data-path='${JSON.stringify(path)}'
+            data-type="json" value='${JSON.stringify(v)}'>`;
+  return `<input type="text" id="${id}" data-path='${JSON.stringify(path)}'
+          data-type="str" value="${String(v).replace(/"/g, "&quot;")}">`;
+}
+async function loadConfig() {
+  CFG = await (await fetch("/api/config")).json();
+  const order = ["presets", "loadouts", "instances", "adb", "fleet", "tap",
+                 "rois"];
+  const keys = [...order.filter(k => k in CFG),
+                ...Object.keys(CFG).filter(k => !order.includes(k))];
+  $("#cfgtree").innerHTML = keys.map(k =>
+    `<div class="card"><h2>${k}</h2>${renderNode(CFG[k], [k])}</div>`).join("");
+}
+function collectConfig() {
+  const out = JSON.parse(JSON.stringify(CFG));
+  document.querySelectorAll("#cfgtree [data-path]").forEach(el => {
+    const path = JSON.parse(el.dataset.path);
+    let v;
+    if (el.dataset.type === "bool") v = el.checked;
+    else if (el.dataset.type === "num") v = Number(el.value);
+    else if (el.dataset.type === "json") {
+      try { v = JSON.parse(el.value); }
+      catch { throw new Error("bad JSON at " + path.join(".")); }
+    } else v = el.value;
+    let o = out;
+    for (const k of path.slice(0, -1)) o = o[k];
+    o[path[path.length - 1]] = v;
+  });
+  return out;
+}
+async function saveConfig() {
+  let data;
+  try { data = collectConfig(); }
+  catch (e) { $("#savemsg").textContent = e.message; return; }
+  const r = await (await fetch("/api/config", {method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(data)})).json();
+  $("#savemsg").textContent = r.ok
+    ? "saved (backup: " + r.backup + ")" : "FAILED: " + r.error;
+}
+
+// ---- templates ----------------------------------------------------------
+async function loadTemplates() {
+  const t = await (await fetch("/api/wizard/templates")).json();
+  $("#tplmissing").innerHTML = t.missing_seen.length
+    ? t.missing_seen.map(m => `<span class="pill bad">${m}</span>`).join(" ")
+    : '<span class="pill ok">nothing flagged in recent events</span>';
+  $("#tplgrid").innerHTML = t.have.map(rel =>
+    `<div class="tpl"><img loading="lazy" src="/api/template/${rel}">
+     <div>${rel}</div></div>`).join("");
+}
+
+// ---- profile / scanner --------------------------------------------------
+function scanPhases() {
+  const m = {scG: "g", scC: "c", scM: "m", scB: "b"};
+  return Object.entries(m).filter(([id]) => $("#" + id).checked)
+    .map(([, ph]) => ph).join(",");
+}
+function startScan() {
+  fetch("/api/scan/start", {method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({phases: scanPhases(),
+      battle: $("#scB").checked, deep: $("#scDeep").checked,
+      fresh: $("#scFresh").checked})})
+    .then(r => r.json()).then(j => { if (!j.ok) alert(j.error); pollScan(); });
+}
+function stopScan() {
+  $("#scanState").textContent = "stopping at next step...";
+  fetch("/api/scan/stop", {method: "POST"}).then(() => {
+    [500, 2000, 5000].forEach(ms => setTimeout(pollScan, ms));
+  });
+}
+async function pollScan() {
+  const st = await (await fetch("/api/scan/status")).json();
+  const phases = st.state.phases || {};
+  $("#scanState").textContent = st.running ? "scanning..." :
+    (Object.keys(phases).length ? "idle - " +
+      Object.entries(phases).map(([k, v]) => `${k}:${v.status}`).join(" ")
+      : "no scan yet");
+  $("#scanState").className = "pill " + (st.running ? "bad" : "ok");
+  loadProfile();
+  if (st.running) setTimeout(pollScan, 3000);
+}
+async function loadProfile() {
+  const list = await (await fetch("/api/profiles")).json();
+  const draft = list.find(p => p.draft);
+  if (!draft) { $("#profTables").innerHTML =
+    '<span class="note">no draft profile yet - run a scan</span>'; return; }
+  const prof = await (await fetch("/api/profile/" + draft.name)).json();
+  const pl = prof.player || {};
+  const row = (k, v) => `<div class="key">${k}</div><div>${
+    Array.isArray(v) ? v.join(", ") :
+    (typeof v === "string" && v.includes("scan_evidence"))
+      ? `<a href="/api/evidence/${v.split(/[\\/]/).pop()}" target="_blank">
+         <img src="/api/evidence/${v.split(/[\\/]/).pop()}"
+              style="max-width:220px;border:1px solid var(--line);
+                     border-radius:6px"></a>`
+      : (typeof v === "object" && v !== null) ? JSON.stringify(v) : v}</div>`;
+  $("#profTables").innerHTML = '<div class="kv">' +
+    Object.entries(pl).map(([k, v]) => row(k, v)).join("") + "</div>";
+}
+
+// ---- wizard -------------------------------------------------------------
+// Findings are persisted server-side (logs/wizard_state.json); a page
+// reload re-renders the last scan and last resolution check with their
+// timestamps instead of a blank wizard.
+async function loadWizardState() {
+  const st = await (await fetch("/api/wizard/state")).json();
+  if (st.emulators) renderEmulators(st.emulators);
+  else $("#emuls").innerHTML = "<tr><td class=note>not scanned yet</td></tr>";
+  if (st.resolution) renderRes(st.resolution);
+  wizSteps();
+  // The persisted render is only the INSTANT PAINT (user, 2026-08-19: "it
+  // renders stale findings and does not move forward") - re-probe every time
+  // the tab is opened so what is on screen is what the machine is doing now.
+  scanEmulators(true);
+}
+function stamp(t) {
+  return t ? `<span class=note>(as of ${new Date(t * 1000).toLocaleTimeString()})</span>` : "";
+}
+let WIZ_MSG = "";   // last connect/launch/adopt result, shown above the table
+let WIZ_EMU = null; // last emulators payload (persisted or freshly scanned)
+let WIZ_RES = null; // last resolution result
+let WIZ_ADOPTED = false;   // auto-adopt fires at most once per page load
+
+// Step pills: the wizard has to SHOW that a step is done, otherwise every
+// visit looks like the first one.
+function wizSteps() {
+  const set = (id, html, cls) => {
+    const el = document.getElementById(id);
+    if (el) { el.innerHTML = html; el.className = cls; }
+  };
+  const d = WIZ_EMU, r = WIZ_RES;
+  set("wizstep1", d ? "&#10003; scanned" : "pending", d ? "pill ok" : "note");
+  if (r && r.ok && r.expected)
+    set("wizstep2", `&#10003; ${h(r.serial)} ${h(r.width)}x${h(r.height)}`, "pill ok");
+  else if (r && r.ok) set("wizstep2", "&#10007; wrong resolution", "pill bad");
+  else set("wizstep2", "pending", "note");
+  const reaches = !!(d && (d.configured || []).some(c => c.port_open === true));
+  set("wizstep3", reaches ? "&#10003; config reaches its device" : "pending",
+      reaches ? "pill ok" : "note");
+}
+async function scanEmulators(quiet) {
+  // quiet = re-probe after connect/launch: keep the current table on screen
+  // and swap in the new one, instead of blanking to "scanning..." (user,
+  // 2026-08-18: "on ADB connect we restart the scanning").
+  if (!quiet) { WIZ_MSG = ""; $("#emuls").innerHTML = "<tr><td class=note>scanning...</td></tr>"; }
+  const d = await (await fetch("/api/wizard/emulators")).json();
+  renderEmulators(d);
+  // AUTO-ADOPT ONLY ON A FRESH INSTALL - config_serial_placeholder means no
+  // serial is configured at all. NEVER when one is already set: main is
+  // 16480 on this machine while a second account's VM can be up on 16384,
+  // and a silent repoint would farm the wrong account. Fired from the LIVE
+  // scan only, never from the persisted paint (which can be stale).
+  // The precondition travels WITH the request: the server re-reads config
+  // and 409s unless the active instance is still `active_instance` AND its
+  // serial is still empty. A scan result this old cannot repoint anything.
+  if (d.suggestion && d.config_serial_placeholder && !WIZ_ADOPTED) {
+    WIZ_ADOPTED = true;
+    adopt(d.suggestion.serial, d.suggestion.adb || "",
+          d.active_instance || "main", true);
+  }
+}
+// ESCAPING (audit, 2026-08-19). Everything below lands in innerHTML and none
+// of it is ours: emulator display names, VM names, adb paths, raw daemon
+// output, connect messages. h() is a real HTML escape for text and attribute
+// content. ja() is for a value going into a SINGLE-QUOTED JS STRING inside a
+// double-quoted HTML attribute (onclick="f('here')"): JS-escape first, HTML-
+// escape second - the parser turns &#39; back into ' before JS parses the
+// source, so \' survives in the right order. Doing it the other way round is
+// the classic hole.
+const h = s => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+const ja = s => h(String(s == null ? "" : s)
+  .replace(/\\/g, "\\\\").replace(/'/g, "\\'"));
+function renderEmulators(d) {
+  WIZ_EMU = d;
+  const found = d.scanned || [];
+  const msgRow = WIZ_MSG ? `<tr><td colspan=4>${WIZ_MSG}</td></tr>` : "";
+  // The wizard already knows the path and the serial - step 3 used to ask
+  // the user to retype both into Configuration. One button now. The button
+  // carries the instance it was computed for; the server rejects the write
+  // if config moved underneath us.
+  const s = d.suggestion;
+  const inst = d.active_instance || "main";
+  const sugRow = s ? `<tr class="sugrow"><td colspan=4>
+      <b>Point config '${h(inst)}' at ${h(s.serial)}</b>
+      <span class=note>(${h(s.emulator)} ${h(s.name)})</span>
+      <button onclick="adopt('${ja(s.serial)}', '${ja(s.adb)}', '${ja(inst)}')">use for config</button>
+      </td></tr>` : "";
+  // Three truths, shown separately: what is INSTALLED (adb found), what is
+  // RUNNING (emulator process alive), and what the CONFIG points at (with a
+  // live port probe). "adb devices" alone says "none" whenever the VM is
+  // down, which reads as "no emulator" while the window is plainly open.
+  const runRow = d.running.length
+    ? `<tr><td colspan=4><b>Running now:</b> ${d.running.map(r =>
+        `${h(r.emulator)} <span class=note>(${h(r.process)})</span>`).join(", ")}</td></tr>`
+    : `<tr><td colspan=4 class=note>no emulator process is running</td></tr>`;
+  // Every instance the emulator's manager knows about - stopped ones too.
+  const instRows = (d.instances || []).map(i => i.error
+    ? `<tr><td>${h(i.emulator)}</td><td colspan=3 class="note">${h(i.error)}</td></tr>`
+    : `<tr><td>${h(i.emulator)} #${h(i.index)}: <b>${h(i.name)}</b></td>
+       <td class="note">${i.adb_port ? "127.0.0.1:" + h(i.adb_port) : "port unknown"}
+         ${i.port_source === "expected" ? "(expected)" : ""}</td>
+       <td>${i.running === true ? '<span class="pill ok">android up</span>'
+           : i.running === false ? '<span class="pill bad">stopped</span>'
+           : '<span class=note>state unknown</span>'}</td>
+       <td>${i.emulator === "MuMu" && i.running === false
+           ? `<span class="acts"><button onclick="launchInst('${ja(i.emulator)}', '${ja(i.index)}')">launch</button></span>
+              <span class="note rowmsg">VM is stopped - adb connect cannot succeed until it boots</span>`
+           : i.adb_port ? `<span class="acts" role="group"><button class="ghost" onclick="reconnect('127.0.0.1:${ja(i.adb_port)}')">adb connect</button>
+              <button class="ghost" onclick="checkRes('', '127.0.0.1:${ja(i.adb_port)}')">check resolution</button>
+              ${i.running === true ? `<button class="ghost" onclick="adopt('127.0.0.1:${ja(i.adb_port)}', '', '${ja(inst)}')">use for config</button>` : ""}</span>` : ""}</td></tr>`
+  ).join("");
+  const cfgRows = d.configured.map(c =>
+    `<tr><td>config: <b>${h(c.instance)}</b></td><td class="note">serial ${h(c.serial)}</td>
+     <td>${c.port_open === true ? '<span class="pill ok">port open</span>'
+         : c.port_open === false ? '<span class="pill bad">port refuses - VM down / restarting</span>'
+         : '<span class=note>not a tcp serial</span>'}</td>
+     <td><span class="acts" role="group"><button class="ghost" onclick="reconnect('${ja(c.serial)}')">adb connect</button>
+         ${c.port_open ? `<button class="ghost" onclick="checkRes('', '${ja(c.serial)}')">check resolution</button>` : ""}</span></td></tr>`
+  ).join("");
+  $("#emuls").innerHTML = "<thead><tr><th>emulator " + stamp(d.t) + "</th><th>adb</th><th>devices</th>" +
+    "<th></th></tr></thead><tbody>" + sugRow + msgRow + runRow + instRows + cfgRows + (found.map(f =>
+    `<tr><td>${h(f.emulator)}</td><td class="note">${h(f.adb)}</td>
+     <td>${f.devices.map(h).join("<br>") || `<i class=note>${h(f.note) || "daemon sees no device"}</i>`}</td>
+     <td>${f.devices.map(dv =>
+       `<span class="acts" role="group"><button class="ghost" onclick="checkRes('${ja(f.adb)}', '${ja(dv)}')">check ${h(dv)}</button>
+        <button class="ghost" onclick="adopt('${ja(dv)}', '${ja(f.adb)}', '${ja(inst)}')">use for config</button></span>`
+       ).join(" ")}</td></tr>`).join("") ||
+    "<tr><td colspan=4 class=note>no adb found</td></tr>") + "</tbody>";
+  wizSteps();
+}
+// Step 3 in one click: writes adb.exe + the active instance's serial into
+// config.yaml (server side, with a backup) and runs adb connect.
+//
+// expectInst / expectPlaceholder are the PRECONDITION the server re-checks
+// against a fresh read of config.yaml right before it writes (audit,
+// 2026-08-19). A manual click asserts only "the active instance is still the
+// one this table was drawn for"; the AUTOMATIC path additionally asserts
+// "and it still has no serial at all", so a config that gained a serial
+// between the scan and the POST can never be silently repointed.
+async function adopt(serial, adb, expectInst, expectPlaceholder) {
+  WIZ_MSG = `<span class=note>pointing config at ${h(serial)}...</span>`;
+  $("#emuls").insertAdjacentHTML("afterbegin", `<tr><td colspan=4>${WIZ_MSG}</td></tr>`);
+  const body = {serial, adb: adb || ""};
+  if (expectInst) body.expect_instance = expectInst;
+  if (expectPlaceholder) body.expect_placeholder = true;
+  let r;
+  try {
+    r = await (await fetch("/api/wizard/adopt", {method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)})).json();
+  } catch (e) { r = {ok: false, error: String(e)}; }
+  WIZ_MSG = `<span class="pill ${r.ok ? "ok" : "bad"}">config &rarr; ${h(serial)}</span> ` +
+    (r.ok ? `<span class=note>saved (backup ${h(r.backup)}) &middot; adb: ${h(r.adb)}
+             &middot; ${h(r.message)}${r.warning ? " &middot; " + h(r.warning) : ""}</span>`
+          : `<b>${h(r.error || r.message || "failed")}</b>`);
+  await scanEmulators(true);
+  // Step 2 fills itself off the device we just wired up - but ONLY when the
+  // transport is actually up (audit): after a failed connect there is
+  // nothing to measure and `wm size` would just add a second red error.
+  if (r.ok && r.connected) { checkRes("", serial); refreshStatus(); }
+  else if (r.ok) refreshStatus();
+}
+async function reconnect(serial) {
+  const r = await (await fetch("/api/wizard/reconnect", {method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({serial})})).json();
+  const refused = /refused|10061/.test(r.message || "");
+  WIZ_MSG = `<span class="pill ${r.ok ? "ok" : "bad"}">adb connect ${h(serial)}: ${r.ok ? "connected" : "FAILED"}</span> ` +
+    `<b>${h(r.message || r.error || "")}</b>` +
+    (refused ? ` <span class=note>- the VM behind this port is not running; use launch first.</span>` : "");
+  scanEmulators(true);            // re-probe in place, table stays visible
+}
+async function launchInst(emulator, index) {
+  WIZ_MSG = `<span class=note>launching ${h(emulator)} #${h(index)}...</span>`;
+  scanEmulators(true);
+  const r = await (await fetch("/api/wizard/launch", {method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({emulator, index})})).json();
+  WIZ_MSG = `<span class="pill ${r.ok ? "ok" : "bad"}">launch ${h(emulator)} #${h(index)}</span> ` +
+    `<span class=note>${h(r.message || r.error || "")}</span>`;
+  scanEmulators(true);
+  setTimeout(() => scanEmulators(true), 8000);   // VM boot takes a while
+}
+// `adb` is kept for URL compatibility; the server ignores it and reads the
+// resolution over the adb-server SOCKET (adbclient), never a spawned adb.exe.
+async function checkRes(adb, serial) {
+  $("#reschk").innerHTML = `<span class=note>checking ${h(serial)}...</span>`;
+  const r = await (await fetch("/api/wizard/resolution?adb=" +
+    encodeURIComponent(adb || "") + "&serial=" + encodeURIComponent(serial))).json();
+  renderRes(r);
+  document.getElementById("reschk").scrollIntoView({behavior: "smooth", block: "center"});
+}
+function renderRes(r) {
+  WIZ_RES = r;
+  $("#reschk").innerHTML = (r.ok
+    ? `<span class="pill ${r.expected ? "ok" : "bad"}">${h(r.serial)}:
+       ${h(r.width)}x${h(r.height)}</span> <span class="note">${h(r.note) || "perfect"}
+       </span>`
+    : `<span class="pill bad">${h(r.serial || "")} ${h(r.error)}</span>`) + " " + stamp(r.t);
+  wizSteps();
+  // a confirmed 1080x2560 is one of the two proofs that finishes setup;
+  // the server sets the flag, the next status poll unlocks the tabs
+  if (r.ok && r.expected) refreshStatus();
+}
+
+// ---- P6 profile editors: Runs / Policies / Plan --------------------------
+//
+// THE UX LAW (user, 2026-08-19): all configuration through dropdowns and
+// boxes, never raw YAML. The Configuration tree stays as the escape hatch.
+//
+// VOCAB-DRIVEN AND GENERIC. /api/vocab is a pure-data map
+// {section: {field: {type, values|range, doc}}} and the renderers below
+// dispatch on `type` alone - enum to a <select>, bool to a checkbox,
+// int/float to a number box carrying the stated range, list to an ordered
+// editor. A section this file has never heard of is rendered by the same
+// generic pass rather than dropped, so the editor grows when the profile
+// layer does, with no change here.
+//
+// WHEN VOCAB IS ABSENT the editor still runs: it infers a control from the
+// CURRENT VALUE's type and fills each dropdown with the values in use in
+// this profile, marked as such. It never invents a vocabulary and it never
+// re-implements a validator rule - the server refuses, and the refusal is
+// shown word for word.
+let VOCAB = {}, VOCAB_ERR = null, VOCAB_LOADED = false;
+let PROF = null;            // {name, profile, problems, warnings}
+let PROF_FILES = [], PROF_ACTIVE = null, PROF_SEL = null, LOADOUTS = [];
+let CTL = [];               // control callbacks, indexed by data-ctl
+
+const jt = v => h(JSON.stringify(v));           // JSON into an HTML attribute
+function ctl(fn) { CTL.push(fn); return CTL.length - 1; }
+// VOCAB IS A TREE, walked generically. Each node is a spec
+// {type, values, range, doc} and an `object` spec carries its children under
+// `fields`, recursively - so a trigger's parameters are reached with
+// vres("rule_triggers", "fields", "bar", "fields", "below") and nothing here
+// needs to know what a trigger IS.
+function vres(...path) {
+  let n = VOCAB;
+  for (const k of path) {
+    if (!n || typeof n !== "object") return null;
+    n = n[k];
+  }
+  return (n && typeof n === "object" && n.type) ? n : null;
+}
+function vfields(...path) {                     // an object spec's children
+  const s = vres.apply(null, path);
+  return (s && s.fields && typeof s.fields === "object") ? s.fields : {};
+}
+const vvals = name => ((vres(name) || {}).values) || null;   // a named enum
+// Wire every control the last innerHTML produced. One pass, no user-authored
+// text ever reaching an inline handler.
+function wireCtls(root) {
+  (root || document).querySelectorAll("[data-ctl]").forEach(el => {
+    if (el.dataset.wired === "1") return;
+    el.dataset.wired = "1";
+    const fn = CTL[+el.dataset.ctl];
+    if (!fn) return;
+    if (el.dataset.act === "1") {        // a button: fires on click, no value
+      el.addEventListener("click", () => fn());
+      return;
+    }
+    const read = () => {
+      if (el.type === "checkbox") return el.checked;
+      if (el.tagName === "SELECT") {
+        const vals = JSON.parse(el.dataset.vals || "[]");
+        return el.value === "" ? null : vals[+el.value];
+      }
+      if (el.type === "number") return el.value === "" ? null : Number(el.value);
+      if (el.dataset.json === "1") {
+        try { return JSON.parse(el.value); } catch (e) { return el.value; }
+      }
+      return el.value;
+    };
+    el.addEventListener("change", () => fn(read(), el));
+  });
+}
+
+// One control from a vocab spec (or, with no spec, from the value's own type).
+function fieldCtl(spec, value, onSet, opts) {
+  opts = opts || {};
+  const id = ctl(onSet);
+  const t = (spec && spec.type) || inferType(value);
+  if (t === "enum" || opts.values) {
+    let vals = (opts.values || (spec && spec.values) || []).slice();
+    const derived = !((spec && spec.values) || opts.vocabBacked);
+    if (value !== undefined && value !== null && !vals.some(v => sameVal(v, value)))
+      vals.unshift(value);
+    if (opts.nullable && !vals.some(v => v === null)) vals.push(null);
+    const sel = vals.findIndex(v => sameVal(v, value));
+    return `<select data-ctl="${id}" data-vals="${jt(vals)}">` +
+      vals.map((v, i) => `<option value="${i}"${i === sel ? " selected" : ""}>` +
+        `${v === null ? "(none)" : h(String(v))}</option>`).join("") +
+      `</select>${derived && vals.length ? ' <span class="note">(values in use)</span>' : ""}`;
+  }
+  if (t === "bool")
+    return `<input type="checkbox" data-ctl="${id}"${value === true ? " checked" : ""}>`;
+  if (t === "int" || t === "float") {
+    // range bounds are open-ended one side at a time ([1, null] = "1 or more"),
+    // so each end is emitted only when it is actually stated
+    const r = (spec && spec.range) || [];
+    const lo = r.length === 2 ? r[0] : null, hi = r.length === 2 ? r[1] : null;
+    return `<input type="number" data-ctl="${id}" step="${t === "int" ? "1" : "any"}"` +
+      (lo === null || lo === undefined ? "" : ` min="${h(lo)}"`) +
+      (hi === null || hi === undefined ? "" : ` max="${h(hi)}"`) +
+      ` value="${value === null || value === undefined ? "" : h(value)}">` +
+      (lo === null && hi === null ? "" :
+        ` <span class=note>${lo === null ? "" : h(lo)}..${hi === null ? "" : h(hi)}</span>`);
+  }
+  if (t === "list" || Array.isArray(value))
+    return `<input type="text" data-ctl="${id}" data-json="1" value="${jt(value === undefined ? [] : value)}">`;
+  return `<input type="text" data-ctl="${id}" value="${value === null || value === undefined ? "" : h(value)}">`;
+}
+const sameVal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+function inferType(v) {
+  if (typeof v === "boolean") return "bool";
+  if (typeof v === "number") return Number.isInteger(v) ? "int" : "float";
+  if (Array.isArray(v)) return "list";
+  return "text";
+}
+// Values of `field` already in use - the honest fallback when vocab has not
+// supplied the real value space. Labelled "(values in use)" in the UI.
+function seen(objs, field) {
+  const out = [];
+  (objs || []).forEach(o => {
+    const v = o && o[field];
+    if (v !== undefined && v !== null && !out.some(x => sameVal(x, v))) out.push(v);
+  });
+  return out;
+}
+
+// ---- the one write path -------------------------------------------------
+// Every edit is ONE typed patch. The server validates an in-memory copy and
+// answers with the validator's own words; nothing here decides what is legal.
+async function patch(path, value, opts) {
+  opts = opts || {};
+  const box = document.getElementById(opts.verdict || "v-plan");
+  if (box) { box.className = "verdict"; box.textContent = "saving..."; }
+  let r;
+  const body = {name: PROF_SEL, path};
+  if (opts.op === "delete") body.op = "delete"; else body.value = value;
+  try {
+    r = await (await fetch("/api/profile-patch", {method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(body)})).json();
+  } catch (e) { r = {ok: false, error: String(e)}; }
+  if (box) {
+    box.className = "verdict " + (r.ok ? "ok" : "bad");
+    box.textContent = r.ok
+      ? `saved (backup ${r.backup})` + ((r.warnings || []).length
+          ? " - advisory: " + r.warnings.join("; ") : "")
+      : ((r.problems || []).join("\n") || r.error || "refused");
+  }
+  if (r.ok && PROF) {
+    PROF.profile = r.profile; PROF.warnings = r.warnings || []; PROF.problems = [];
+    const keep = box ? box.textContent : null;
+    renderProfileTabs();
+    const again = document.getElementById(opts.verdict || "v-plan");
+    if (again && keep) { again.className = "verdict ok"; again.textContent = keep; }
+  }
+  return r;
+}
+
+// ---- loading ------------------------------------------------------------
+async function loadProfileTab(which) {
+  if (!VOCAB_LOADED) {
+    VOCAB_LOADED = true;
+    try {
+      const v = await (await fetch("/api/vocab")).json();
+      VOCAB = v.vocab || {}; VOCAB_ERR = v.ok ? null : v.error;
+    } catch (e) { VOCAB_ERR = String(e); }
+    try {
+      const c = await (await fetch("/api/config")).json();
+      LOADOUTS = Object.keys((c && c.loadouts) || {});
+    } catch (e) { LOADOUTS = []; }
+  }
+  try {
+    const f = await (await fetch("/api/profile-files")).json();
+    PROF_FILES = f.profiles || []; PROF_ACTIVE = f.active;
+    // never auto-select a draft: it cannot be patched, so landing on one
+    // would open an editor whose every control answers 409
+    const editable = PROF_FILES.filter(p => p.patchable !== false);
+    if (!PROF_SEL || !editable.some(p => p.name === PROF_SEL))
+      PROF_SEL = (editable.some(p => p.name === PROF_ACTIVE) ? PROF_ACTIVE : null)
+                 || (editable[0] || {}).name || null;
+  } catch (e) { PROF_FILES = []; }
+  if (PROF_SEL) {
+    try {
+      PROF = await (await fetch("/api/profile-src/" + encodeURIComponent(PROF_SEL))).json();
+    } catch (e) { PROF = {ok: false, error: String(e)}; }
+  } else PROF = null;
+  renderProfileTabs();
+}
+function renderProfileTabs() {
+  CTL = [];
+  ["runs", "policies", "plan"].forEach(profbar);
+  renderRuns(); renderPolicies(); renderPlan();
+  wireCtls();
+}
+// The active-profile selector, repeated on all three tabs so the answer to
+// "which profile am I editing, and is it the live one" is never a scroll away.
+function profbar(tab) {
+  const el = document.getElementById("profbar-" + tab);
+  if (!el) return;
+  if (!PROF_FILES.length) {
+    el.innerHTML = `<span class=note>no profiles in profiles/ - nothing to edit</span>`;
+    return;
+  }
+  // DRAFTS ARE LISTED, NOT EDITABLE (audit, 2026-08-19). scan.py writes
+  // `player:` alone, so a draft is missing whole required sections and every
+  // single-field repair still leaves another - the typed editor could only
+  // refuse, forever. The server enforces this too; here it is kept out of
+  // the picker and named, rather than hidden as if profiles/ were empty.
+  const editable = PROF_FILES.filter(p => p.patchable !== false);
+  const drafts = PROF_FILES.filter(p => p.patchable === false);
+  if (!editable.length) {
+    el.innerHTML = `<span class=note>profiles/ holds only scan drafts
+      (${h(drafts.map(p => p.name).join(", "))}) - complete one on the
+      <b>Profile</b> tab before it can be edited here</span>`;
+    return;
+  }
+  const names = editable.map(p => p.name);
+  const editSel = ctl(v => { PROF_SEL = v; loadProfileTab(tab); });
+  const actNames = [null].concat(names);
+  const actSel = ctl(v => activateProfile(v));
+  el.innerHTML =
+    `<b>Editing</b> <select data-ctl="${editSel}" data-vals="${jt(names)}">` +
+      names.map((n, i) => `<option value="${i}"${n === PROF_SEL ? " selected" : ""}>${h(n)}</option>`).join("") +
+    `</select> <b>Active</b> <select data-ctl="${actSel}" data-vals="${jt(actNames)}">` +
+      actNames.map((n, i) => `<option value="${i}"${n === PROF_ACTIVE ? " selected" : ""}>` +
+        `${n === null ? "(none - legacy constants)" : h(n)}</option>`).join("") +
+    `</select>` +
+    (PROF_ACTIVE === PROF_SEL ? `<span class="pill ok">this profile is live</span>`
+                              : `<span class=note>editing a profile that is not the active one</span>`) +
+    `<span id="actverdict" class="verdict"></span>` +
+    (drafts.length ? `<div class=note>not editable here:
+       ${h(drafts.map(p => p.name).join(", "))} -
+       ${h(drafts[0].note || "scan draft")}</div>` : "") +
+    (VOCAB_ERR ? `<div class="note">vocabulary unavailable (${h(VOCAB_ERR)}) -
+       dropdowns fall back to the values already used in this profile</div>` : "") +
+    ((PROF && (PROF.problems || []).length)
+      ? `<div class="verdict bad">${h(PROF.problems.join("\n"))}</div>` : "") +
+    ((PROF && (PROF.warnings || []).length)
+      ? `<div class="note">advisory: ${h(PROF.warnings.join("; "))}</div>` : "");
+}
+async function activateProfile(name) {
+  const box = document.getElementById("actverdict");
+  if (box) { box.className = "verdict"; box.textContent = "activating..."; }
+  let r;
+  try {
+    r = await (await fetch("/api/profile-activate", {method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({name})})).json();
+  } catch (e) { r = {ok: false, error: String(e)}; }
+  if (box) {
+    box.className = "verdict " + (r.ok ? "ok" : "bad");
+    box.textContent = r.ok ? r.message
+      : ((r.problems || []).join("\n") || r.error || "refused");
+  }
+  if (r.ok) {
+    PROF_ACTIVE = r.active;
+    const keep = box ? box.textContent : null;
+    ["runs", "policies", "plan"].forEach(profbar);
+    wireCtls();
+    const again = document.getElementById("actverdict");
+    if (again && keep) { again.className = "verdict ok"; again.textContent = keep; }
+  }
+}
+const P = () => (PROF && PROF.profile) || {};
+const sect = k => (P()[k] && typeof P()[k] === "object") ? P()[k] : {};
+
+// ---- Runs (blueprints) --------------------------------------------------
+function renderRuns() {
+  const el = document.getElementById("runsbody");
+  if (!el) return;
+  if (!PROF || !PROF.ok) {
+    el.innerHTML = `<div class="card note">${h((PROF && PROF.error) || "no profile loaded")}</div>`;
+    return;
+  }
+  const bps = sect("blueprints"), pol = sect("policies");
+  const bpList = Object.entries(bps);
+  const uwNames = Object.keys(pol.uw_policies || {});
+  const rescueNames = Object.keys(pol.rescue_policies || {});
+  const gatherNames = Object.keys(pol.gather || {});
+  const shopNames = Object.keys(pol.shopping_lists || {});
+  const cardPresets = ((sect("player") || {}).card_presets) || [];
+  el.innerHTML = bpList.map(([name, bp]) => {
+    const base = ["blueprints", name], vd = "v-bp-" + name;
+    const kind = (bp || {}).kind;
+    // VOCAB IS KEYED BY KIND (audit, 2026-08-19). blueprint_fields.fields is
+    // the KIND layer - coin/shard/tournament/... - and each kind's `.fields`
+    // is the real field set. Reading the outer layer offered fake fields
+    // called "coin" and "tournament" and hid the legal ones (max_wave,
+    // in_run_actions), which is exactly the "setting nobody can see" this
+    // editor exists to abolish. `kind` decides which fields are LEGAL, so it
+    // is also why the badge is a badge: changing it changes the whole form.
+    const kindFields = vfields("blueprint_fields", "fields", kind);
+    const fields = Object.keys(bp || {}).filter(k => k !== "kind" && k !== "policies");
+    // fields vocab knows about that this blueprint has not set yet - they get
+    // an empty control rather than being invisible until someone types YAML
+    const extra = Object.keys(kindFields)
+      .filter(k => k !== "kind" && k !== "policies" && !fields.includes(k));
+    const rows = fields.concat(extra).map(k => {
+      const spec = kindFields[k] || null;
+      const val = (bp || {})[k];
+      // a composite (object / list-of-objects) gets its own recursive editor
+      if (spec && spec.fields)
+        return `<label title="${h(spec.doc || "")}">${h(k)}</label><div>` +
+          composite(spec, val, base.concat([k]), vd, k, {card_presets: cardPresets}) +
+          `</div>`;
+      let opts = {};
+      if (k === "loadout" && LOADOUTS.length)
+        opts = {values: LOADOUTS.concat(vvals("loadout_specials") || []),
+                vocabBacked: !!vvals("loadout_specials")};
+      if (k === "shopping") opts = {values: shopNames, nullable: true, vocabBacked: true};
+      return `<label title="${h((spec || {}).doc || "")}">${h(k)}</label><div>` +
+        fieldCtl(spec, val, v => patch(base.concat([k]), v, {verdict: vd}), opts) +
+        `</div>`;
+    }).join("");
+    const pol3 = ["uw", "rescue", "gather"].map(slot => {
+      const vals = slot === "uw" ? uwNames : slot === "rescue" ? rescueNames : gatherNames;
+      const cur = ((bp || {}).policies || {})[slot];
+      return `<label>policies.${slot}</label><div>` +
+        fieldCtl({type: "enum", values: vals}, cur,
+          v => patch(base.concat(["policies", slot]), v, {verdict: vd}),
+          {values: vals, nullable: true, vocabBacked: true}) + `</div>`;
+    }).join("");
+    return `<div class="card"><h2>${h(name)}
+      <span class="badge">${h((bp || {}).kind || "no kind")}</span>
+      <span id="${h(vd)}" class="verdict"></span></h2>
+      <div class="fgrid">${rows}${pol3}</div>
+      ${rulesEditor(((bp || {}).policies || {}).rescue, vd)}</div>`;
+  }).join("") || `<div class="card note">this profile has no blueprints</div>`;
+}
+
+// COMPOSITE SPECS, rendered recursively. A vocab spec carrying `fields` is
+// either a nested OBJECT (uw_setup, policies) or an ORDERED LIST of such
+// objects (in_run_actions: "a LIST of these, in fire order"). Both arrive as
+// `type: "object"`, so the shape is taken from the VALUE when there is one
+// and from vocab's own wording when there is not.
+//
+// VOCAB GAP, stated plainly: there is no structural way to say "list of
+// objects" today, so an absent list is detected by its doc. When the profile
+// layer grows a real list type this function reads that instead and the
+// wording check becomes dead code - it is deliberately the last resort.
+function isListSpec(spec, value) {
+  if (Array.isArray(value)) return true;
+  if (value && typeof value === "object") return false;
+  return /\ba list of\b/i.test((spec && spec.doc) || "");
+}
+// A new list item carrying exactly the spec's REQUIRED keys, seeded from the
+// vocabulary itself - first enum value, low end of a stated range, first
+// entry of the profile-owned list vocab points at. Nothing is invented: a
+// null-filled item is refused on arrival, which leaves the user with an
+// "add" button that can only fail, and that is the draft trap again.
+function seedItem(spec, extras) {
+  const out = {};
+  const fields = (spec && spec.fields) || {};
+  (((spec || {}).required) || []).forEach(k => {
+    const f = fields[k] || {};
+    const space = (k === "switch_cards" ? (extras || {}).card_presets : null) ||
+                  f.values;
+    if (Array.isArray(space) && space.length) { out[k] = space[0]; return; }
+    if ((f.type === "int" || f.type === "float") &&
+        Array.isArray(f.range) && f.range[0] !== null && f.range[0] !== undefined) {
+      out[k] = f.range[0]; return;
+    }
+    out[k] = f.type === "bool" ? false : null;
+  });
+  return out;
+}
+// `extras` carries value spaces that live in the PROFILE rather than vocab -
+// vocab asks for them by name ("a name from `player.card_presets`").
+function composite(spec, value, path, vd, label, extras) {
+  extras = extras || {};
+  const fields = (spec && spec.fields) || {};
+  const row = (k, fspec, v, p) => {
+    if (fspec && fspec.fields)                  // nested composite: recurse
+      return `<label title="${h(fspec.doc || "")}">${h(k)}</label><div>` +
+        composite(fspec, v, p, vd, k, extras) + `</div>`;
+    let opts = {};
+    if (k === "switch_cards" && (extras.card_presets || []).length)
+      opts = {values: extras.card_presets, vocabBacked: true};
+    return `<label title="${h((fspec || {}).doc || "")}">${h(k)}</label><div>` +
+      fieldCtl(fspec, v, nv => patch(p, nv, {verdict: vd}), opts) + `</div>`;
+  };
+  if (!isListSpec(spec, value)) {
+    const keys = Object.keys(fields).length ? Object.keys(fields)
+                                            : Object.keys(value || {});
+    return `<div class="fgrid">` + keys.map(k =>
+      row(k, fields[k] || null, (value || {})[k], path.concat([k]))).join("") +
+      `</div>`;
+  }
+  const items = Array.isArray(value) ? value : [];
+  const rows = items.map((it, i) => `<div class="rule">
+    <div class="rowline"><b>#${i}</b>
+      <button class="ghost" data-ctl="${ctl(() => moveItem(path, i, -1, vd))}" data-act="1">up</button>
+      <button class="ghost" data-ctl="${ctl(() => moveItem(path, i, 1, vd))}" data-act="1">down</button>
+      <button class="ghost" data-ctl="${ctl(() => patch(path.concat([i]), null,
+        {op: "delete", verdict: vd}))}" data-act="1">remove</button></div>
+    <div class="fgrid">` + Object.keys(fields).map(k =>
+      row(k, fields[k], (it || {})[k], path.concat([i, k]))).join("") +
+    `</div></div>`).join("");
+  return `<div>${rows}<button class="ghost" data-ctl="${ctl(() =>
+      patch(path.concat([items.length]), seedItem(spec, extras), {verdict: vd}))}"
+      data-act="1">add ${h(label || "item")}</button>
+    ${spec && spec.doc ? `<div class=note>${h(spec.doc)}</div>` : ""}</div>`;
+}
+
+// Rescue rules: a WHEN dropdown, a THEN dropdown, and every parameter of
+// each as its own typed box. Rendered under the blueprint that references
+// the policy, with the sharing spelled out - the policy is ONE object, and
+// two blueprints pointing at it are editing the same rules.
+function rulesEditor(policyName, vd) {
+  if (!policyName) return `<p class=note>no rescue policy on this run</p>`;
+  const pol = (sect("policies").rescue_policies || {})[policyName];
+  if (!pol) return `<p class="verdict bad">rescue policy ${h(policyName)} does not exist</p>`;
+  const users = Object.entries(sect("blueprints"))
+    .filter(([, b]) => ((b || {}).policies || {}).rescue === policyName).map(([n]) => n);
+  const base = ["policies", "rescue_policies", policyName];
+  const rules = Array.isArray(pol.rules) ? pol.rules : [];
+  const wNames = Object.keys(vfields("rule_triggers"));
+  const dNames = Object.keys(vfields("rule_actions"));
+  const whenVals = wNames.length ? wNames
+    : seen(rules.map(r => ({k: Object.keys((r || {}).when || {})[0]})), "k");
+  const thenVals = dNames.length ? dNames
+    : seen(rules.map(r => ({k: Object.keys((r || {}).do || {})[0]})), "k");
+  const armRows = Object.entries(pol.arm || {}).map(([k, v]) =>
+    `<label>arm.${h(k)}</label><div>` +
+    fieldCtl(vfields("rescue_arm")[k] || null, v,
+      nv => patch(base.concat(["arm", k]), nv, {verdict: vd})) + `</div>`).join("");
+  const par = (obj, prefix, label, kind) => Object.entries(obj || {}).map(([k, v]) =>
+    `<label>${h(label)}.${h(k)}</label><div>` +
+    fieldCtl(vfields(label === "trigger" ? "rule_triggers" : "rule_actions",
+                     "fields", kind)[k] || null, v,
+      nv => patch(base.concat(prefix).concat([k]), nv, {verdict: vd})) + `</div>`).join("");
+  const ruleRows = rules.map((r, i) => {
+    const when = (r || {}).when || {}, doo = (r || {}).do || {};
+    // A trigger/action is `{name: params}`, or a FLAT `{bar: wall, below: x}`,
+    // or a bare flag `{death_screen: true}`. All three read the same way here.
+    const wk = Object.keys(when)[0], dk = Object.keys(doo)[0];
+    const wp = (when[wk] && typeof when[wk] === "object") ? when[wk] : null;
+    const dp = (doo[dk] && typeof doo[dk] === "object") ? doo[dk] : null;
+    const wflat = wk && !wp && Object.keys(when).length > 1;
+    return `<div class="rule">
+      <div class="rowline"><b>#${i}</b> <span class=note>WHEN</span>` +
+        fieldCtl({type: "enum", values: whenVals}, wk,
+          nv => reKey(base.concat(["rules", i, "when"]), when, wk, nv, vd),
+          {values: whenVals, vocabBacked: !!wNames.length}) +
+        `<span class=note>THEN</span>` +
+        fieldCtl({type: "enum", values: thenVals}, dk,
+          nv => reKey(base.concat(["rules", i, "do"]), doo, dk, nv, vd),
+          {values: thenVals, vocabBacked: !!dNames.length}) +
+        `<button class="ghost" data-ctl="${ctl(() => patch(base.concat(["rules", i]), null,
+           {op: "delete", verdict: vd}))}" data-act="1">remove</button>
+      </div>
+      <div class="fgrid">
+        ${wflat ? par(Object.fromEntries(Object.entries(when).filter(([k]) => k !== wk)),
+                      ["rules", i, "when"], "trigger", wk)
+                : par(wp, ["rules", i, "when", wk], "trigger", wk)}
+        ${par(dp, ["rules", i, "do", dk], "action", dk)}
+        <label>repeat</label><div>${fieldCtl({type: "bool"}, (r || {}).repeat === true,
+          nv => patch(base.concat(["rules", i, "repeat"]), nv, {verdict: vd}))}</div>
+        <label>refire_sec</label><div>${fieldCtl({type: "float"}, (r || {}).refire_sec,
+          nv => patch(base.concat(["rules", i, "refire_sec"]), nv, {verdict: vd}))}</div>
+      </div></div>`;
+  }).join("");
+  return `<h2 style="margin-top:12px">Rescue policy <b>${h(policyName)}</b>
+      <span class="note">shared by: ${h(users.join(", "))}</span></h2>
+    <div class="fgrid">${armRows}
+      <label>end_sprint_after_sw</label><div>${fieldCtl({type: "bool"},
+        pol.end_sprint_after_sw === true,
+        nv => patch(base.concat(["end_sprint_after_sw"]), nv, {verdict: vd}))}</div>
+    </div>${ruleRows}
+    <button class="ghost" data-ctl="${ctl(() => patch(base.concat(["rules", rules.length]),
+      {when: {}, do: {}}, {verdict: vd}))}" data-act="1">add rule</button>`;
+}
+// Renaming a trigger/action keeps its parameters: the user is saying "same
+// rule, different trigger", and dropping the params would look like the edit
+// did nothing. What survives validation is the validator's call.
+function reKey(path, obj, oldKey, newKey, vd) {
+  if (!newKey || newKey === oldKey) return;
+  const next = {};
+  Object.entries(obj || {}).forEach(([k, v]) => { next[k === oldKey ? newKey : k] = v; });
+  if (!(newKey in next)) next[newKey] = true;
+  patch(path, next, {verdict: vd});
+}
+
+// ---- Policies (uw / gather / shopping / chores + generic pass-through) ---
+function renderPolicies() {
+  const el = document.getElementById("polbody");
+  if (!el) return;
+  if (!PROF || !PROF.ok) {
+    el.innerHTML = `<div class="card note">${h((PROF && PROF.error) || "no profile loaded")}</div>`;
+    return;
+  }
+  const pol = sect("policies");
+  const uws = Object.keys((sect("player") || {}).uws || {});
+  let html = "";
+
+  html += Object.entries(pol.uw_policies || {}).map(([name, body]) => {
+    const base = ["policies", "uw_policies", name], vd = "v-uw-" + name;
+    const bl = (body || {}).baseline || {}, cl = (body || {}).chain_lightning || {};
+    const blRows = (uws.length ? uws : Object.keys(bl)).map(w =>
+      `<label>${h(w)}</label><div>${fieldCtl({type: "bool"}, bl[w] === true,
+        nv => patch(base.concat(["baseline", w]), nv, {verdict: vd}))}</div>`).join("");
+    const modeSpec = vres("cl_modes");
+    const modeVals = vvals("cl_modes") ||
+      seen(Object.values(pol.uw_policies || {}).map(p => (p || {}).chain_lightning || {}), "mode");
+    const clRows = Object.entries(cl).map(([k, v]) =>
+      `<label>chain_lightning.${h(k)}</label><div>` +
+      fieldCtl(k === "mode" ? modeSpec : null, v,
+        nv => patch(base.concat(["chain_lightning", k]), nv, {verdict: vd}),
+        k === "mode" ? {values: modeVals, vocabBacked: !!modeSpec} : {}) + `</div>`).join("");
+    return `<div class="card"><h2>UW policy <b>${h(name)}</b>
+      <span id="${h(vd)}" class="verdict"></span></h2>
+      <p class=note>baseline = the weapons this policy wants ON at wave 1</p>
+      <div class="fgrid">${blRows}${clRows}</div></div>`;
+  }).join("");
+
+  html += Object.entries(pol.gather || {}).map(([name, body]) => {
+    const base = ["policies", "gather", name], vd = "v-g-" + name;
+    const rows = Object.entries(body || {}).map(([k, v]) =>
+      `<label>${h(k)}</label><div>${fieldCtl(vfields("gather_keys")[k] || null, v,
+        nv => patch(base.concat([k]), nv, {verdict: vd}))}</div>`).join("");
+    return `<div class="card"><h2>Gather <b>${h(name)}</b>
+      <span id="${h(vd)}" class="verdict"></span></h2>
+      <div class="fgrid">${rows}</div></div>`;
+  }).join("");
+
+  html += Object.entries(pol.shopping_lists || {}).map(([name, body]) => {
+    const base = ["policies", "shopping_lists", name], vd = "v-s-" + name;
+    const dirs = Array.isArray((body || {}).directives) ? body.directives : [];
+    const tabSpec = vres("shop_tabs"), modeSpec = vres("shop_modes");
+    const tabVals = vvals("shop_tabs") || seen(dirs, "tab");
+    const modeVals = vvals("shop_modes") || seen(dirs, "mode");
+    const statVals = vvals("shop_stats") || [];
+    const rows = dirs.map((dd, i) => {
+      const dp = base.concat(["directives", i]);
+      const statsCtl = statVals.length
+        ? statVals.map(s => `<label class="note" style="margin-right:10px">
+             <input type="checkbox" data-ctl="${ctl(on => {
+               const cur = Array.isArray(dd.stats) ? dd.stats.slice() : [];
+               patch(dp.concat(["stats"]), on ? cur.concat([s]) : cur.filter(x => x !== s),
+                     {verdict: vd});
+             })}"${((dd || {}).stats || []).includes(s) ? " checked" : ""}> ${h(s)}</label>`).join("")
+        : fieldCtl({type: "list"}, (dd || {}).stats,
+                  nv => patch(dp.concat(["stats"]), nv, {verdict: vd}));
+      return `<div class="rule"><div class="rowline"><b>#${i}</b>
+        ${fieldCtl({type: "bool"}, (dd || {}).enabled === true,
+          nv => patch(dp.concat(["enabled"]), nv, {verdict: vd}))}<span class=note>enabled</span>
+        ${fieldCtl({type: "enum", values: tabVals}, (dd || {}).tab,
+          nv => patch(dp.concat(["tab"]), nv, {verdict: vd}),
+          {values: tabVals, vocabBacked: !!tabSpec})}
+        ${fieldCtl({type: "enum", values: modeVals}, (dd || {}).mode,
+          nv => patch(dp.concat(["mode"]), nv, {verdict: vd}),
+          {values: modeVals, vocabBacked: !!modeSpec})}
+        ${(dd || {}).mode === "clicks" ? "<span class=note>clicks</span>" +
+          fieldCtl({type: "int"}, dd.clicks, nv => patch(dp.concat(["clicks"]), nv, {verdict: vd})) : ""}
+        <button class="ghost" data-ctl="${ctl(() => moveItem(base.concat(["directives"]), i, -1, vd))}" data-act="1">up</button>
+        <button class="ghost" data-ctl="${ctl(() => moveItem(base.concat(["directives"]), i, 1, vd))}" data-act="1">down</button>
+        <button class="ghost" data-ctl="${ctl(() => patch(dp, null, {op: "delete", verdict: vd}))}" data-act="1">remove</button>
+      </div><div>${statsCtl}</div></div>`;
+    }).join("");
+    return `<div class="card"><h2>Shopping <b>${h(name)}</b>
+      <span id="${h(vd)}" class="verdict"></span></h2>
+      <div class="fgrid"><label>enabled (master)</label><div>${fieldCtl({type: "bool"},
+        (body || {}).enabled === true,
+        nv => patch(base.concat(["enabled"]), nv, {verdict: vd}))}</div></div>
+      <p class=note>list order IS priority - the sweep walks it top to bottom</p>
+      ${rows}
+      <button class="ghost" data-ctl="${ctl(() => patch(base.concat(["directives", dirs.length]),
+        {enabled: true, tab: tabVals[0] || null, stats: [], mode: modeVals[0] || null},
+        {verdict: vd}))}" data-act="1">add directive</button></div>`;
+  }).join("");
+
+  const chores = Array.isArray(pol.chores) ? pol.chores : [];
+  if (chores.length) html += `<div class="card"><h2>Chores
+    <span id="v-chores" class="verdict"></span></h2><div class="fgrid">` +
+    chores.map((ch, i) => `<label>${h((ch || {}).name)}</label><div>` +
+      fieldCtl({type: "bool"}, (ch || {}).enabled === true,
+        nv => patch(["policies", "chores", i, "enabled"], nv, {verdict: "v-chores"})) +
+      `</div>`).join("") + `</div></div>`;
+
+  // GENERIC PASS-THROUGH. Any policies.* section with no bespoke editor
+  // above, and any other top-level section vocab knows about, still gets
+  // typed controls. Skipping is never an option: a setting nobody can see is
+  // a setting nobody can turn off.
+  const known = ["uw_policies", "rescue_policies", "gather", "shopping_lists", "chores"];
+  html += Object.entries(pol).filter(([k]) => !known.includes(k))
+    .map(([k, v]) => genericCard("policies." + k, ["policies", k], v)).join("");
+  const homed = ["blueprints", "player", "policies", "plan"];
+  html += Object.keys(VOCAB || {})
+    .filter(s => !homed.includes(s) && P()[s] !== undefined)
+    .map(s => genericCard(s, [s], P()[s])).join("");
+  el.innerHTML = html || `<div class="card note">this profile has no policies</div>`;
+}
+function genericCard(title, base, body) {
+  const vd = "v-gen-" + base.join("-");
+  const rows = (obj, pre) => Object.entries(obj || {}).map(([k, v]) => {
+    if (v && typeof v === "object" && !Array.isArray(v))
+      return `<label class=note><b>${h(pre.concat([k]).join("."))}</b></label><div></div>` +
+             rows(v, pre.concat([k]));
+    return `<label>${h(pre.concat([k]).join("."))}</label><div>` +
+      fieldCtl(vfields(base[base.length - 1])[k] || null, v,
+        nv => patch(base.concat(pre).concat([k]), nv, {verdict: vd})) + `</div>`;
+  }).join("");
+  const inner = (body && typeof body === "object" && !Array.isArray(body))
+    ? rows(body, [])
+    : `<label>${h(base[base.length - 1])}</label><div>` +
+      fieldCtl(null, body, nv => patch(base, nv, {verdict: vd})) + `</div>`;
+  return `<div class="card"><h2>${h(title)} <span class="badge">generic</span>
+    <span id="${h(vd)}" class="verdict"></span></h2>
+    <div class="fgrid">${inner}</div></div>`;
+}
+async function moveItem(base, i, delta, vd) {
+  const list = base.reduce((o, k) => (o || {})[k], P());
+  if (!Array.isArray(list)) return;
+  const j = i + delta;
+  if (j < 0 || j >= list.length) return;
+  const next = list.slice();
+  next.splice(j, 0, next.splice(i, 1)[0]);
+  await patch(base, next, {verdict: vd});
+}
+
+// ---- Plan (the tri-state, rendered honestly) ----------------------------
+function renderPlan() {
+  const el = document.getElementById("planbody");
+  if (!el) return;
+  if (!PROF || !PROF.ok) {
+    el.innerHTML = `<div class="card note">${h((PROF && PROF.error) || "no profile loaded")}</div>`;
+    return;
+  }
+  const bps = sect("blueprints"), bpNames = Object.keys(bps);
+  const plan = P().plan;
+  // STATE 1 of the tri-state. No plan section is a REAL state, not an empty
+  // plan, and drawing it as an empty one is the lie this screen exists to
+  // avoid: it means the scheduler runs its own constants.
+  if (plan === undefined || plan === null) {
+    const first = bpNames[0];
+    const kind = ((bps[first] || {}).kind) || "";
+    const blockVals = ((vfields("block_fields").block || {}).values) || (kind ? [kind] : []);
+    el.innerHTML = `<div class="card"><h2>Plan
+      <span class="badge">no plan section</span>
+      <span id="v-plan" class="verdict"></span></h2>
+      <p class="note">This profile has <b>no plan section</b>. That is a real
+      state and not an empty plan: the scheduler runs its own legacy constants
+      (coin by default, the shard block after 08:00, tournament Wed/Sat after
+      19:00) and says so once. Adding a plan replaces those constants
+      entirely, and removing it again is how you go back.</p>
+      <p class="note">${h((vres("plan_tri_state") || {}).doc ||
+        "A plan that resolves to no blocks is refused rather than accepted.")}</p>
+      ${first ? `<button data-ctl="${ctl(() => addPlan(first, blockVals[0]))}" data-act="1">
+        add a plan${kind ? ` (one ${h(kind)} block running ${h(first)})` : ""}</button>`
+        : `<span class=note>add a blueprint first - a plan block has to point at one</span>`}
+      </div>`;
+    return;
+  }
+  const week = plan.week || {}, days = plan.days || {};
+  const dayNames = Object.keys(days);
+  const wdays = vvals("weekdays") ||
+    ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+  const weekRows = ["default"].concat(wdays).map(k =>
+    `<label>${h(k)}</label><div>` +
+    fieldCtl({type: "enum", values: dayNames}, week[k],
+      nv => nv === null
+        ? patch(["plan", "week", k], null, {op: "delete", verdict: "v-plan"})
+        : patch(["plan", "week", k], nv, {verdict: "v-plan"}),
+      {values: dayNames, nullable: true, vocabBacked: true}) + `</div>`).join("");
+  const blockSpec = vfields("block_fields").block || null;
+  const blockVals = (blockSpec || {}).values ||
+    seen([].concat.apply([], Object.values(days).filter(Array.isArray)), "block");
+  const dayCards = dayNames.map(dn => {
+    const blocks = Array.isArray(days[dn]) ? days[dn] : [];
+    const base = ["plan", "days", dn], vd = "v-day-" + dn;
+    const rows = blocks.map((b, i) => {
+      const bp = base.concat([i]);
+      return `<div class="rule"><div class="rowline"><b>#${i}</b>
+        <span class=note>block</span>
+        ${fieldCtl({type: "enum", values: blockVals}, (b || {}).block,
+          nv => patch(bp.concat(["block"]), nv, {verdict: vd}),
+          {values: blockVals, vocabBacked: !!blockSpec})}
+        <span class=note>run</span>
+        ${fieldCtl({type: "enum", values: bpNames}, (b || {}).blueprint,
+          nv => patch(bp.concat(["blueprint"]), nv, {verdict: vd}),
+          {values: bpNames, vocabBacked: true})}
+        <span class=note title="${h((vfields("block_fields").after || {}).doc || "")}">after</span>
+        <input type="text" size="5" placeholder="HH:MM" value="${h((b || {}).after || "")}"
+          data-ctl="${ctl(v => patch(bp.concat(["after"]), v === "" ? null : v, {verdict: vd}))}">
+        <span class=note title="${h((vfields("block_fields").until || {}).doc || "")}">until</span>
+        <input type="text" size="5" placeholder="HH:MM" value="${h((b || {}).until || "")}"
+          data-ctl="${ctl(v => patch(bp.concat(["until"]), v === "" ? null : v, {verdict: vd}))}">
+        <span class=note>count</span>
+        ${fieldCtl(vfields("block_fields").count || {type: "int"}, (b || {}).count,
+          nv => patch(bp.concat(["count"]), nv, {verdict: vd}))}
+        <button class="ghost" data-ctl="${ctl(() => moveItem(base, i, -1, vd))}" data-act="1">up</button>
+        <button class="ghost" data-ctl="${ctl(() => moveItem(base, i, 1, vd))}" data-act="1">down</button>
+        <button class="ghost" data-ctl="${ctl(() => patch(bp, null, {op: "delete", verdict: vd}))}" data-act="1">remove</button>
+      </div></div>`;
+    }).join("");
+    return `<div class="card"><h2>Day plan <b>${h(dn)}</b>
+      <span id="${h(vd)}" class="verdict"></span></h2>
+      <p class=note>ORDER IS PRIORITY, not clock order: the scheduler takes the
+      first block whose window is open and whose runs are not spent. A block
+      with no after/until/count is the day's filler - anything below it can
+      never run.</p>${rows}
+      <button class="ghost" data-ctl="${ctl(() => patch(base.concat([blocks.length]),
+        {block: blockVals[0] || null, blueprint: bpNames[0] || null}, {verdict: vd}))}"
+        data-act="1">add block</button></div>`;
+  }).join("");
+  el.innerHTML = `<div class="card"><h2>Week <span class="badge">plan active</span>
+    <span id="v-plan" class="verdict"></span></h2>
+    <p class=note>Each weekday points at a named day plan; <b>default</b>
+    covers every day not named.</p>
+    <div class="fgrid">${weekRows}</div>
+    <p class=note style="margin-top:10px">To go back to the legacy constants,
+    remove the whole plan section:</p>
+    <button class="danger" data-ctl="${ctl(() => patch(["plan"], null,
+      {op: "delete", verdict: "v-plan"}))}" data-act="1">remove the plan section</button>
+    </div>${dayCards}`;
+}
+function addPlan(bpName, block) {
+  patch(["plan"], {week: {default: "every_day"},
+                   days: {every_day: [{block: block || null, blueprint: bpName}]}},
+        {verdict: "v-plan"});
+}
+
+// ---- boot ---------------------------------------------------------------
+// LOCKED BEFORE ANYTHING ELSE RUNS (audit round 2: the config fetch used to
+// start first, so the tabs were usable for the length of one request). The
+// markup ships with Status active; this is the first statement of boot.
+paintGate(false);
+fetch("/api/config").then(r => r.json()).then(c => {
+  $("#startPreset").innerHTML = Object.keys(c.presets || {})
+    .map(p => `<option>${p}</option>`).join("");
+});
+// The saved tab is restored only after a 200 status response says
+// setup_complete === true; anything else leaves the page on the wizard.
+startStream();
+setInterval(refreshStatus, 2500);
+refreshStatus().then(() => {
+  if (SETUP_OK) showTab(localStorage.getItem("tab") || "status");
+  else showTab("wizard", false);   // still locked: load the wizard for real
+});
+</script>
+</body>
+</html>

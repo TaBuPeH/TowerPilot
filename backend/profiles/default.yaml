@@ -1,0 +1,292 @@
+# Tower Pilot - the GENERIC STARTER profile (schema v1, profiles/SCHEMA.md).
+#
+# This file ships with the repo and is what `active_profile: default` binds
+# on a fresh install. It knows nothing about your account: run the account
+# scan on the dashboard's Setup page and press "Promote to profile" - that
+# writes profiles/<your name>.yaml with the scanned `player:` block on top of
+# everything below, and binds it. Your profile is git-ignored; this one is
+# not - keep it generic.
+#
+# READ THIS BEFORE ARMING ABILITIES: no blueprint below references a rescue
+# policy, because `player.abilities_verified` is false. The validator
+# refuses a rescue reference on an unverified account (a burst taps the
+# Demon Mode coordinate blind when no glyph matches, so an ability that is
+# merely assumed must not arm one). After `scan.py --battle` has seen the
+# buttons (or you set abilities_verified: true by hand having watched them
+# work), add `rescue: high_tier_wall` etc. to the blueprints' policies.
+# The `player:` block below is PLACEHOLDER data for a typical mid-game
+# account, there only so the blueprints validate out of the box. The account
+# scan replaces every line of it with what it actually saw.
+player:
+  seeded_from: starter placeholder (nothing scanned yet)
+  # Ultimate weapons the account owns. Unowned weapons are dropped from every
+  # uw policy automatically; a blueprint that needs an unowned one is refused.
+  uws: {chain_lightning: true, black_hole: true, death_wave: true, golden_tower: true,
+    poison_swamp: true, spotlight: true, chronofield: true, inner_land_mines: false,
+    smart_missiles: false}
+  abilities: {nuke: false, demon_mode: false}
+  abilities_verified: false
+  # Preset names AS YOU NAMED THEM in the game. The loadouts in
+  # config.yaml refer to these names; the scan lists what it found.
+  card_presets: [main_farm, tourney_p1, disco, no_card, 18v300]
+  global_presets: [Farm Run, Tournament]
+  category_presets:
+    workshop: [Preset 1, Preset 2]
+    modules: [Farm, Tourney]
+    guardians: [Farm, Tourney]
+    bots: [Farm, Tourney]
+  guardians: []
+  # Module slugs (player/catalogue.py). A loadout may only name modules that
+  # appear in one of these two lists.
+  modules_equipped: [sharp_fortitude]
+  modules_in_grid: [space_displacer]
+  # The scanner assumes a wall and lets you correct it; the wall rescue
+  # policies below validate only while this is true.
+  wall: true
+  max_tier: 19
+blueprints:
+  coin_default:
+    kind: coin
+    loadout: coin_farm
+    tier: 14
+    restart_via_home: true
+    shop_interval_sec: 90
+    shopping: default_sweep
+    # add `rescue: high_tier_wall` once player.abilities_verified is true
+    policies: {uw: farm_cl_choreo, gather: all_on}
+  coin_t19:
+    kind: coin
+    loadout: coin_farm
+    tier: 19
+    restart_via_home: true
+    shop_interval_sec: 90
+    shopping: default_sweep
+    # add `rescue: t19_fast_drain` once player.abilities_verified is true
+    policies: {uw: farm_cl_choreo, gather: all_on}
+  tourney_main:
+    kind: tournament
+    loadout: tourney_1
+    gem_entry_max: 10
+    tier: 14
+    restart_via_home: true
+    shop_interval_sec: 90
+    shopping: default_sweep
+    # add `rescue: tournament_wall_nuke` once player.abilities_verified is true
+    policies: {uw: tourney_cl, gather: all_on}
+  # Rides along on a tournament run YOU play by hand: no shopping, no UW
+  # toggles, no gem taps - only the rescue abilities. gem_entry_max 0: it
+  # never buys an entry, it adopts the run already on screen. Needs a
+  # rescue policy to do anything: add `rescue: tournament_wall_nuke` once
+  # player.abilities_verified is true.
+  tourney_assist:
+    kind: tournament
+    loadout: tourney_1
+    gem_entry_max: 0
+    tier: 14
+    restart_via_home: false
+    policies: {gather: hands_off}
+  coin_dissonance:
+    kind: coin
+    loadout: dissonance
+    dissonant_tab: utility
+    tier: 14
+    restart_via_home: true
+    shop_interval_sec: 90
+    shopping: no_utility_sweep
+    policies: {uw: tourney_cl, gather: all_on}
+  shard_daily:
+    kind: shard
+    loadout: shard_farm
+    tier: 18
+    count: 100
+    policies: {gather: gems_only}
+  quest_sm:
+    kind: uw_grant_quest
+    loadout: coin_farm
+    tier: 1
+    grant_targets: [smart_missiles]
+    reroll_at_wave: 1000
+    ride_to_wave: 6500
+    rides: 1
+    uw_setup: {chain_lightning: false, death_wave: false, poison_swamp: false, golden_tower: true,
+      black_hole: true, spotlight: true, chronofield: false}
+  quest_ilm: {kind: cycle_quest, loadout: inner_land_mines_quest, tier: 1, cycle_sec: 25,
+    cycles: 40}
+policies:
+  uw_policies:
+    farm_cl_choreo:
+      baseline: {black_hole: true, chronofield: true, death_wave: true, golden_tower: true,
+        poison_swamp: true, spotlight: true}
+      chain_lightning:
+        always_on_above: [6080, 6120]
+        mode: fleet_marks
+        off_after_waves: [53, 72]
+        pre_mark_waves: [5, 25]
+      label: Chain Lightning Farming Choreography
+    tourney_cl:
+      baseline: {black_hole: true, death_wave: true, golden_tower: true, poison_swamp: true,
+        spotlight: true, chronofield: true}
+      chain_lightning:
+        mode: off_until_wave
+        on_above: [500, 550]
+      label: Tournament Chain Lightning
+    tourney_cl_legend:
+      baseline: {black_hole: true, death_wave: true, golden_tower: true, poison_swamp: true,
+        spotlight: true, chronofield: true}
+      chain_lightning:
+        mode: off_until_wave
+        on_above: [300, 330]
+      label: Tournament Chain Lightning (Legend)
+  rescue_policies:
+    # Demon Mode when the wall overheal is nearly gone after Second Wind;
+    # Nuke 3 waves after each fleet.
+    high_tier_wall:
+      label: High Tier Wall
+      arm: {'on': second_wind, immunity_sec: null, watch_sec: 30}
+      end_sprint_after_sw: false
+      rules:
+      - when: {bar: wall, below: 0.02, falling_samples: 2, deadband: 0.01}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          wall_collapse: {from_above: 0.3}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          fleet_mark: {after_waves: 3, window_waves: 60}
+        do:
+          fire: {button: nuke, throttle_sec: 5}
+    # Tiers where the wall drains in seconds: fire at 40% and never stop
+    # watching.
+    t19_fast_drain:
+      label: T19 Fast Drain
+      arm: {'on': second_wind, immunity_sec: null, watch_sec: null}
+      end_sprint_after_sw: false
+      rules:
+      - when: {bar: wall, below: 0.4, falling_samples: 2, deadband: 0.01}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          wall_collapse: {from_above: 0.3}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          fleet_mark: {after_waves: 3, window_waves: 60}
+        do:
+          fire: {button: nuke, throttle_sec: 5}
+    tournament_any_falling:
+      label: Tournament Any Falling
+      arm: {'on': second_wind, immunity_sec: 8, watch_sec: null}
+      end_sprint_after_sw: false
+      rules:
+      - when: {bar: wall, below: 0.5, falling_samples: 2, deadband: 0.01}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          wall_collapse: {from_above: 0.3}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+    # tournament_any_falling plus the fleet-mark Nuke.
+    tournament_wall_nuke:
+      label: Tournament Wall + Fleet Nuke
+      arm: {'on': second_wind, immunity_sec: 8, watch_sec: null}
+      end_sprint_after_sw: false
+      rules:
+      - when: {bar: wall, below: 0.5, falling_samples: 2, deadband: 0.01}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          wall_collapse: {from_above: 0.3}
+        do:
+          burst: {cancel_sprint: true, fire: demon_mode, retaps: 3}
+      - when:
+          fleet_mark: {after_waves: 3, window_waves: 60}
+        do:
+          fire: {button: nuke, throttle_sec: 5}
+  gather:
+    # For a runner riding along on a HUMAN's run: no gem taps, no side flows.
+    hands_off:
+      flying_gem: false
+      gem_delay_sec: [3, 10]
+      ad_gems: false
+      quests_8h: false
+      quest_rewards: false
+      guild: false
+    all_on:
+      flying_gem: true
+      gem_delay_sec: [3, 10]
+      ad_gems: true
+      quests_8h: true
+      quest_rewards: true
+      guild: true
+    gems_only:
+      flying_gem: true
+      gem_delay_sec: [3, 10]
+      ad_gems: false
+      quests_8h: false
+      quest_rewards: false
+      guild: false
+  shopping_lists:
+    no_utility_sweep:
+      label: No-Utility Sweep (Dissonance)
+      enabled: true
+      directives:
+      - enabled: true
+        tab: defense
+        stats: [death_defy, land_mine_radius]
+        mode: once
+      - enabled: true
+        tab: defense
+        stats: [health, health_regen]
+        mode: best_cost
+      - enabled: true
+        tab: attack
+        stats: [critical_factor, damage_per_meter, bounce_shot_range, super_crit_chance,
+          super_crit_mult]
+        mode: once
+      - enabled: true
+        tab: attack
+        stats: [damage]
+        mode: clicks
+        clicks: 3
+    default_sweep:
+      label: Default Sweep
+      enabled: true
+      directives:
+      - enabled: true
+        tab: utility
+        stats: [enemy_attack_level_skip, enemy_health_level_skip]
+        mode: repeat
+      - enabled: true
+        tab: defense
+        stats: [death_defy, land_mine_radius]
+        mode: once
+      - enabled: true
+        tab: defense
+        stats: [health, health_regen]
+        mode: best_cost
+      - enabled: true
+        tab: attack
+        stats: [critical_factor, damage_per_meter, bounce_shot_range, super_crit_chance,
+          super_crit_mult]
+        mode: once
+      - enabled: true
+        tab: attack
+        stats: [damage]
+        mode: clicks
+        clicks: 3
+  chores:
+  - {name: quest_scan, enabled: true}
+  - {name: shatter, enabled: false}
+# The day plan: shards from 08:00, coin the rest of the day, one tournament
+# entry from 19:00 on Wednesday and Saturday.
+plan:
+  week: {default: farm_day, wednesday: tourney_day, saturday: tourney_day}
+  days:
+    farm_day:
+    - {after: '08:00', block: shards, blueprint: shard_daily, count: 100}
+    - {block: coin, blueprint: coin_default}
+    tourney_day:
+    - {block: tournament, blueprint: tourney_main, after: '19:00', count: 1}
+    - {block: shards, blueprint: shard_daily, after: '08:00', count: 100}
+    - {block: coin, blueprint: coin_default}

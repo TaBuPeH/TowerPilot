@@ -1,0 +1,834 @@
+{
+ "coin_default": {
+  "_source": {
+   "blueprint": "coin_default",
+   "profile": "golden_profile"
+  },
+  "abilities": {
+   "burst_cancel_sprint": true,
+   "burst_require_match": false,
+   "burst_require_ready": false,
+   "burst_retaps": 3,
+   "collapse_from": 0.3,
+   "deadband": 0.01,
+   "dm_below": 0.02,
+   "end_sprint_after_sw": false,
+   "falling_samples": 2,
+   "hold_until_second_wind": true,
+   "hp_nuke_require_ready": true,
+   "nuke_below": null,
+   "nuke_on_fleet": {
+    "after_waves": 3,
+    "require_ready": true,
+    "throttle_sec": 5,
+    "window_waves": 60
+   },
+   "post_sw_watch_sec": 30,
+   "refire_guard_sec": 15,
+   "rescue_bar": "wall",
+   "sw_immunity_sec": null
+  },
+  "cancel_sprint": false,
+  "chain_lightning": {
+   "always_on": false,
+   "always_on_above": [
+    6080,
+    6120
+   ],
+   "off_after_waves": [
+    53,
+    72
+   ],
+   "pre_mark_waves": [
+    5,
+    25
+   ]
+  },
+  "dissonant_tab": null,
+  "gather": {
+   "ad_gems": true,
+   "flying_gem": true,
+   "gem_delay_sec": [
+    3,
+    10
+   ],
+   "guild": true,
+   "quest_rewards": true,
+   "quests_8h": true
+  },
+  "gem_delay_sec": [
+   3,
+   10
+  ],
+  "kind": "coin",
+  "label": "Coin Default",
+  "loadout": "coin_farm",
+  "max_wave": null,
+  "restart_via_home": true,
+  "rules": [],
+  "runner": null,
+  "runner_args": null,
+  "shop_interval_sec": 90,
+  "shopping": [
+   {
+    "mode": "repeat",
+    "stats": [
+     "enemy_attack_level_skip",
+     "enemy_health_level_skip"
+    ],
+    "tab": "utility"
+   },
+   {
+    "mode": "once",
+    "stats": [
+     "death_defy",
+     "land_mine_radius"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "best_cost",
+    "stats": [
+     "health",
+     "health_regen"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "once",
+    "stats": [
+     "critical_factor",
+     "damage_per_meter",
+     "bounce_shot_range",
+     "super_crit_chance",
+     "super_crit_mult"
+    ],
+    "tab": "attack"
+   },
+   {
+    "clicks": 3,
+    "mode": "clicks",
+    "stats": [
+     "damage"
+    ],
+    "tab": "attack"
+   }
+  ],
+  "tier": 14,
+  "uw_wanted": {
+   "black_hole": true,
+   "chronofield": true,
+   "death_wave": true,
+   "golden_tower": true,
+   "poison_swamp": true,
+   "spotlight": true
+  }
+ },
+ "coin_dissonance": {
+  "_source": {
+   "blueprint": "coin_dissonance",
+   "profile": "golden_profile"
+  },
+  "abilities": {
+   "burst_cancel_sprint": true,
+   "burst_require_match": false,
+   "burst_require_ready": false,
+   "burst_retaps": 3,
+   "collapse_from": 0.3,
+   "deadband": 0.01,
+   "dm_below": 0.5,
+   "end_sprint_after_sw": false,
+   "falling_samples": 2,
+   "hold_until_second_wind": true,
+   "hp_nuke_require_ready": true,
+   "nuke_below": null,
+   "nuke_on_fleet": null,
+   "post_sw_watch_sec": null,
+   "refire_guard_sec": 15,
+   "rescue_bar": "wall",
+   "sw_immunity_sec": 8
+  },
+  "cancel_sprint": false,
+  "chain_lightning": {
+   "always_on": false,
+   "always_on_above": [
+    500,
+    550
+   ],
+   "off_after_waves": null,
+   "pre_mark_waves": null
+  },
+  "dissonant_tab": "utility",
+  "gather": {
+   "ad_gems": true,
+   "flying_gem": true,
+   "gem_delay_sec": [
+    3,
+    10
+   ],
+   "guild": true,
+   "quest_rewards": true,
+   "quests_8h": true
+  },
+  "gem_delay_sec": [
+   3,
+   10
+  ],
+  "kind": "coin",
+  "label": "Coin Dissonance",
+  "loadout": "dissonance",
+  "max_wave": null,
+  "restart_via_home": true,
+  "rules": [],
+  "runner": null,
+  "runner_args": null,
+  "shop_interval_sec": 90,
+  "shopping": [
+   {
+    "mode": "once",
+    "stats": [
+     "death_defy",
+     "land_mine_radius"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "best_cost",
+    "stats": [
+     "health",
+     "health_regen"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "once",
+    "stats": [
+     "critical_factor",
+     "damage_per_meter",
+     "bounce_shot_range",
+     "super_crit_chance",
+     "super_crit_mult"
+    ],
+    "tab": "attack"
+   },
+   {
+    "clicks": 3,
+    "mode": "clicks",
+    "stats": [
+     "damage"
+    ],
+    "tab": "attack"
+   }
+  ],
+  "tier": 14,
+  "uw_wanted": {
+   "black_hole": true,
+   "chronofield": true,
+   "death_wave": true,
+   "golden_tower": true,
+   "poison_swamp": true,
+   "spotlight": true
+  }
+ },
+ "coin_t18_legend": {
+  "_source": {
+   "blueprint": "coin_t18_legend",
+   "profile": "golden_profile"
+  },
+  "abilities": {
+   "burst_cancel_sprint": true,
+   "burst_require_match": false,
+   "burst_require_ready": false,
+   "burst_retaps": 3,
+   "collapse_from": 0.3,
+   "deadband": 0.01,
+   "dm_below": 0.5,
+   "end_sprint_after_sw": false,
+   "falling_samples": 2,
+   "hold_until_second_wind": true,
+   "hp_nuke_require_ready": true,
+   "nuke_below": null,
+   "nuke_on_fleet": null,
+   "post_sw_watch_sec": null,
+   "refire_guard_sec": 15,
+   "rescue_bar": "wall",
+   "sw_immunity_sec": 8
+  },
+  "cancel_sprint": false,
+  "chain_lightning": {
+   "always_on": false,
+   "always_on_above": [
+    300,
+    330
+   ],
+   "off_after_waves": null,
+   "pre_mark_waves": null
+  },
+  "dissonant_tab": null,
+  "gather": {
+   "ad_gems": true,
+   "flying_gem": true,
+   "gem_delay_sec": [
+    3,
+    10
+   ],
+   "guild": true,
+   "quest_rewards": true,
+   "quests_8h": true
+  },
+  "gem_delay_sec": [
+   3,
+   10
+  ],
+  "kind": "coin",
+  "label": "Coin T18 Legend",
+  "loadout": null,
+  "max_wave": null,
+  "restart_via_home": true,
+  "rules": [],
+  "runner": null,
+  "runner_args": null,
+  "shop_interval_sec": 90,
+  "shopping": [
+   {
+    "mode": "repeat",
+    "stats": [
+     "enemy_attack_level_skip",
+     "enemy_health_level_skip"
+    ],
+    "tab": "utility"
+   },
+   {
+    "mode": "once",
+    "stats": [
+     "death_defy",
+     "land_mine_radius"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "best_cost",
+    "stats": [
+     "health",
+     "health_regen"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "once",
+    "stats": [
+     "critical_factor",
+     "damage_per_meter",
+     "bounce_shot_range",
+     "super_crit_chance",
+     "super_crit_mult"
+    ],
+    "tab": "attack"
+   },
+   {
+    "clicks": 3,
+    "mode": "clicks",
+    "stats": [
+     "damage"
+    ],
+    "tab": "attack"
+   }
+  ],
+  "tier": 18,
+  "uw_wanted": {
+   "black_hole": true,
+   "chronofield": true,
+   "death_wave": true,
+   "golden_tower": true,
+   "poison_swamp": true,
+   "spotlight": true
+  }
+ },
+ "coin_t19": {
+  "_source": {
+   "blueprint": "coin_t19",
+   "profile": "golden_profile"
+  },
+  "abilities": {
+   "burst_cancel_sprint": true,
+   "burst_require_match": false,
+   "burst_require_ready": false,
+   "burst_retaps": 3,
+   "collapse_from": 0.3,
+   "deadband": 0.01,
+   "dm_below": 0.4,
+   "end_sprint_after_sw": false,
+   "falling_samples": 2,
+   "hold_until_second_wind": true,
+   "hp_nuke_require_ready": true,
+   "nuke_below": null,
+   "nuke_on_fleet": {
+    "after_waves": 3,
+    "require_ready": true,
+    "throttle_sec": 5,
+    "window_waves": 60
+   },
+   "post_sw_watch_sec": null,
+   "refire_guard_sec": 15,
+   "rescue_bar": "wall",
+   "sw_immunity_sec": null
+  },
+  "cancel_sprint": false,
+  "chain_lightning": {
+   "always_on": false,
+   "always_on_above": [
+    6080,
+    6120
+   ],
+   "off_after_waves": [
+    53,
+    72
+   ],
+   "pre_mark_waves": [
+    5,
+    25
+   ]
+  },
+  "dissonant_tab": null,
+  "gather": {
+   "ad_gems": true,
+   "flying_gem": true,
+   "gem_delay_sec": [
+    3,
+    10
+   ],
+   "guild": true,
+   "quest_rewards": true,
+   "quests_8h": true
+  },
+  "gem_delay_sec": [
+   3,
+   10
+  ],
+  "kind": "coin",
+  "label": "Coin T19",
+  "loadout": "coin_farm",
+  "max_wave": null,
+  "restart_via_home": true,
+  "rules": [],
+  "runner": null,
+  "runner_args": null,
+  "shop_interval_sec": 90,
+  "shopping": [
+   {
+    "mode": "repeat",
+    "stats": [
+     "enemy_attack_level_skip",
+     "enemy_health_level_skip"
+    ],
+    "tab": "utility"
+   },
+   {
+    "mode": "once",
+    "stats": [
+     "death_defy",
+     "land_mine_radius"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "best_cost",
+    "stats": [
+     "health",
+     "health_regen"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "once",
+    "stats": [
+     "critical_factor",
+     "damage_per_meter",
+     "bounce_shot_range",
+     "super_crit_chance",
+     "super_crit_mult"
+    ],
+    "tab": "attack"
+   },
+   {
+    "clicks": 3,
+    "mode": "clicks",
+    "stats": [
+     "damage"
+    ],
+    "tab": "attack"
+   }
+  ],
+  "tier": 19,
+  "uw_wanted": {
+   "black_hole": true,
+   "chronofield": true,
+   "death_wave": true,
+   "golden_tower": true,
+   "poison_swamp": true,
+   "spotlight": true
+  }
+ },
+ "quest_ilm": {
+  "_source": {
+   "blueprint": "quest_ilm",
+   "profile": "golden_profile"
+  },
+  "abilities": {
+   "burst_cancel_sprint": true,
+   "burst_require_match": false,
+   "burst_require_ready": false,
+   "burst_retaps": 3,
+   "collapse_from": 0.3,
+   "deadband": 0.01,
+   "dm_below": null,
+   "end_sprint_after_sw": false,
+   "falling_samples": 2,
+   "hold_until_second_wind": false,
+   "hp_nuke_require_ready": true,
+   "nuke_below": null,
+   "nuke_on_fleet": null,
+   "post_sw_watch_sec": null,
+   "refire_guard_sec": 15,
+   "rescue_bar": null,
+   "sw_immunity_sec": null
+  },
+  "chain_lightning": {
+   "always_on": false,
+   "always_on_above": null,
+   "enabled": false,
+   "off_after_waves": null,
+   "pre_mark_waves": null
+  },
+  "cycle_sec": 25,
+  "cycles": 40,
+  "gather": {},
+  "gem_delay_sec": [
+   3,
+   10
+  ],
+  "kind": "cycle_quest",
+  "label": "Quest Ilm",
+  "loadout": "inner_land_mines_quest",
+  "restart_via_home": false,
+  "rules": [],
+  "runner": "flows/quest_ilm.py",
+  "runner_args": [
+   "--cycles",
+   "40"
+  ],
+  "shop_interval_sec": 90,
+  "shopping": [],
+  "tier": 1,
+  "uw_wanted": {}
+ },
+ "quest_sm": {
+  "_source": {
+   "blueprint": "quest_sm",
+   "profile": "golden_profile"
+  },
+  "abilities": {
+   "burst_cancel_sprint": true,
+   "burst_require_match": false,
+   "burst_require_ready": false,
+   "burst_retaps": 3,
+   "collapse_from": 0.3,
+   "deadband": 0.01,
+   "dm_below": null,
+   "end_sprint_after_sw": false,
+   "falling_samples": 2,
+   "hold_until_second_wind": false,
+   "hp_nuke_require_ready": true,
+   "nuke_below": null,
+   "nuke_on_fleet": null,
+   "post_sw_watch_sec": null,
+   "refire_guard_sec": 15,
+   "rescue_bar": null,
+   "sw_immunity_sec": null
+  },
+  "chain_lightning": {
+   "always_on": false,
+   "always_on_above": null,
+   "enabled": false,
+   "off_after_waves": null,
+   "pre_mark_waves": null
+  },
+  "gather": {},
+  "gem_delay_sec": [
+   3,
+   10
+  ],
+  "grant_targets": [
+   "smart_missiles"
+  ],
+  "kind": "uw_grant_quest",
+  "label": "Quest Sm",
+  "loadout": "coin_farm",
+  "reroll_at_wave": 1000,
+  "restart_via_home": false,
+  "ride_to_wave": 6500,
+  "rides": 1,
+  "rules": [],
+  "runner": "flows/quest_sm.py",
+  "runner_args": [
+   "--rides",
+   "1"
+  ],
+  "shop_interval_sec": 90,
+  "shopping": [],
+  "tier": 1,
+  "uw_setup": {
+   "black_hole": true,
+   "chain_lightning": false,
+   "chronofield": false,
+   "death_wave": false,
+   "golden_tower": true,
+   "poison_swamp": false,
+   "spotlight": true
+  },
+  "uw_wanted": {}
+ },
+ "shard_daily": {
+  "_source": {
+   "blueprint": "shard_daily",
+   "profile": "golden_profile"
+  },
+  "abilities": {
+   "burst_cancel_sprint": true,
+   "burst_require_match": false,
+   "burst_require_ready": false,
+   "burst_retaps": 3,
+   "collapse_from": 0.3,
+   "deadband": 0.01,
+   "dm_below": null,
+   "end_sprint_after_sw": false,
+   "falling_samples": 2,
+   "hold_until_second_wind": false,
+   "hp_nuke_require_ready": true,
+   "nuke_below": null,
+   "nuke_on_fleet": null,
+   "post_sw_watch_sec": null,
+   "refire_guard_sec": 15,
+   "rescue_bar": null,
+   "sw_immunity_sec": null
+  },
+  "chain_lightning": {
+   "always_on": false,
+   "always_on_above": null,
+   "enabled": false,
+   "off_after_waves": null,
+   "pre_mark_waves": null
+  },
+  "gather": {
+   "ad_gems": false,
+   "flying_gem": true,
+   "gem_delay_sec": [
+    3,
+    10
+   ],
+   "guild": false,
+   "quest_rewards": false,
+   "quests_8h": false
+  },
+  "gem_delay_sec": [
+   3,
+   10
+  ],
+  "kind": "shard",
+  "label": "Shard Daily",
+  "loadout": "shard_farm",
+  "restart_via_home": false,
+  "rules": [],
+  "runner": "flows/shard.py",
+  "runner_args": [
+   "--loops",
+   "100",
+   "--tier",
+   "18"
+  ],
+  "shop_interval_sec": 90,
+  "shopping": [],
+  "tier": 18,
+  "uw_wanted": {}
+ },
+ "tourney_assist": {
+  "_source": {
+   "blueprint": "tourney_assist",
+   "profile": "golden_profile"
+  },
+  "abilities": {
+   "burst_cancel_sprint": true,
+   "burst_require_match": false,
+   "burst_require_ready": false,
+   "burst_retaps": 3,
+   "collapse_from": 0.3,
+   "deadband": 0.01,
+   "dm_below": 0.5,
+   "end_sprint_after_sw": false,
+   "falling_samples": 2,
+   "hold_until_second_wind": true,
+   "hp_nuke_require_ready": true,
+   "nuke_below": null,
+   "nuke_on_fleet": {
+    "after_waves": 3,
+    "require_ready": true,
+    "throttle_sec": 5,
+    "window_waves": 60
+   },
+   "post_sw_watch_sec": null,
+   "refire_guard_sec": 15,
+   "rescue_bar": "wall",
+   "sw_immunity_sec": 8
+  },
+  "chain_lightning": {
+   "always_on": false,
+   "always_on_above": null,
+   "enabled": false,
+   "off_after_waves": null,
+   "pre_mark_waves": null
+  },
+  "gather": {
+   "ad_gems": false,
+   "flying_gem": false,
+   "gem_delay_sec": [
+    3,
+    10
+   ],
+   "guild": false,
+   "quest_rewards": false,
+   "quests_8h": false
+  },
+  "gem_delay_sec": [
+   3,
+   10
+  ],
+  "gem_entry_max": 0,
+  "in_run_actions": [],
+  "kind": "tournament",
+  "label": "Tourney Assist",
+  "loadout": "tourney_1",
+  "restart_via_home": false,
+  "rules": [],
+  "runner": null,
+  "runner_args": null,
+  "shop_interval_sec": 90,
+  "shopping": [],
+  "tier": 14,
+  "tournament_setup": true,
+  "uw_wanted": {}
+ },
+ "tourney_main": {
+  "_source": {
+   "blueprint": "tourney_main",
+   "profile": "golden_profile"
+  },
+  "abilities": {
+   "burst_cancel_sprint": true,
+   "burst_require_match": false,
+   "burst_require_ready": false,
+   "burst_retaps": 3,
+   "collapse_from": 0.3,
+   "deadband": 0.01,
+   "dm_below": 0.5,
+   "end_sprint_after_sw": false,
+   "falling_samples": 2,
+   "hold_until_second_wind": true,
+   "hp_nuke_require_ready": true,
+   "nuke_below": null,
+   "nuke_on_fleet": null,
+   "post_sw_watch_sec": null,
+   "refire_guard_sec": 15,
+   "rescue_bar": "wall",
+   "sw_immunity_sec": 8
+  },
+  "chain_lightning": {
+   "always_on": false,
+   "always_on_above": [
+    500,
+    550
+   ],
+   "off_after_waves": null,
+   "pre_mark_waves": null
+  },
+  "gather": {
+   "ad_gems": true,
+   "flying_gem": true,
+   "gem_delay_sec": [
+    3,
+    10
+   ],
+   "guild": true,
+   "quest_rewards": true,
+   "quests_8h": true
+  },
+  "gem_delay_sec": [
+   3,
+   10
+  ],
+  "gem_entry_max": 10,
+  "in_run_actions": [],
+  "kind": "tournament",
+  "label": "Tourney Main",
+  "loadout": "tourney_1",
+  "restart_via_home": true,
+  "rules": [],
+  "runner": null,
+  "runner_args": null,
+  "shop_interval_sec": 90,
+  "shopping": [
+   {
+    "mode": "repeat",
+    "stats": [
+     "enemy_attack_level_skip",
+     "enemy_health_level_skip"
+    ],
+    "tab": "utility"
+   },
+   {
+    "mode": "once",
+    "stats": [
+     "death_defy",
+     "land_mine_radius"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "best_cost",
+    "stats": [
+     "health",
+     "health_regen"
+    ],
+    "tab": "defense"
+   },
+   {
+    "mode": "once",
+    "stats": [
+     "critical_factor",
+     "damage_per_meter",
+     "bounce_shot_range",
+     "super_crit_chance",
+     "super_crit_mult"
+    ],
+    "tab": "attack"
+   },
+   {
+    "clicks": 3,
+    "mode": "clicks",
+    "stats": [
+     "damage"
+    ],
+    "tab": "attack"
+   }
+  ],
+  "tier": 14,
+  "tournament_setup": true,
+  "uw_wanted": {
+   "black_hole": true,
+   "chronofield": true,
+   "death_wave": true,
+   "golden_tower": true,
+   "poison_swamp": true,
+   "spotlight": true
+  }
+ }
+}

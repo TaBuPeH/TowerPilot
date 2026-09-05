@@ -1,0 +1,219 @@
+# Tower Pilot - MACHINE config template.
+#
+# On first start the dashboard (and every runner) copies this file to
+# backend/config.yaml when that file does not exist. config.yaml describes
+# YOUR machine and account (adb path, emulator serial, preset names) and is
+# git-ignored - edit it through the dashboard's Configuration page or by hand;
+# never commit it. This template stays generic.
+#
+# Everything below is in NATIVE 1080x2560 portrait pixels. The emulator
+# display must be exactly 1080x2560 at 360 dpi (the layout every template was
+# cut at) - see docs/BLUESTACKS.md for the emulator side.
+
+# The adb binary of YOUR emulator. The Setup wizard writes the right path once
+# it finds the emulator (MuMu: nx_main\adb.exe, BlueStacks: HD-Adb.exe,
+# LDPlayer: adb.exe). Never mix emulators: two different adb builds kill each
+# other's daemon. Runners never spawn this binary per command - they talk to
+# the adb server socket (device/adbclient.py); it is used only to start the
+# daemon and to `connect`.
+adb: {exe: adb}
+
+instances:
+  main:
+    label: My Tower
+    # adb serial of the emulator instance, e.g. 127.0.0.1:5555 (BlueStacks)
+    # or 127.0.0.1:16384 (MuMu). Filled in by the Setup wizard.
+    serial: ''
+    # READ-ONLY until you flip this: with allow_taps false every runner
+    # refuses every tap (device/act.py) and only watches. Turn it on after the
+    # first read-only run recognized your screens and templates.
+    allow_taps: false
+    preset: normal_run
+    autostart: false
+    # MuMu Player runs the game on a SECONDARY display: add
+    #   display: '<physical display id>'   (screencap -d)
+    #   input_display: <logical display id> (input -d)
+    # capture.refresh_display() re-derives them at runtime. BlueStacks and
+    # LDPlayer use the default display - leave both keys out.
+    #
+    # Per-instance overrides of the global blocks below (rois, tabs, loop,
+    # missions, side_menu, fleet) go here, e.g. a wall_bar ROI once your
+    # account has a wall:
+    # rois:
+    #   wall_bar: [84, 1559, 424, 44]
+active_instance: main
+# The player profile (backend/profiles/<name>.yaml) that defines run types.
+# `default` is the generic starter; the account scan + "Promote to profile"
+# on the dashboard writes yours.
+active_profile: default
+
+screen: {width: 1080, height: 2560}
+
+# Screen regions [x, y, w, h]. wall_bar stays null until the account has a
+# wall (then calibrate it per instance, above).
+rois:
+  wave_box: [690, 1678, 170, 45]
+  intro_sprint: [10, 240, 110, 110]
+  ability_row: [10, 1495, 420, 120]
+  wall_bar: null
+  hp_bar: [34, 1696, 478, 64]
+  upgrade_panel: [0, 1800, 1080, 660]
+  cash_box: [30, 34, 320, 60]
+  wave_progress: [566, 1734, 482, 25]
+  field: [0, 300, 1080, 1330]
+# Fleet waves: 2495 + k*1000. Chain Lightning choreography and the fleet Nuke
+# key off these marks.
+fleet: {first_wave: 2495, interval: 1000, hold_window: 100, post_window: 150}
+# dry_run true = every tap is logged but never sent (the strongest read-only
+# rail, independent of allow_taps).
+loop: {fps: 2, dry_run: false}
+missions:
+  visit_delay_sec: [60, 600]
+side_menu:
+  toggle: [1030, 65]
+  slot_roi: [985, 20, 90, 90]
+# Bottom tab strip of the in-run upgrade panel.
+tabs:
+  attack: [136, 2507]
+  defense: [402, 2507]
+  utility: [672, 2507]
+  uw: [943, 2507]
+
+# LOADOUTS - what to equip before a run. Every name here is a preset AS YOU
+# NAMED IT IN THE GAME (cards presets, global presets, module/guardian/bot
+# category presets) or a module slug from player/catalogue.py. Rename to
+# match your account; the account scan lists what it found. A template is
+# needed for each name: cards/preset_<name>.png, presets/gp_<slug>.png,
+# presets/<category>_<slug>.png, modules/<slug>.png - the Calibrate page
+# lists exactly which ones are still missing.
+loadouts:
+  # Coin farming enters with a global preset (v29 Global Presets lab).
+  coin_farm: {global_preset: Farm Run}
+  # Shard farming: a fixed deck plus the tournament module/bot presets;
+  # cards_restore is re-selected when the shard block ends.
+  shard_farm: {cards: 18v300, module_preset: Tourney, bot_preset: Tourney,
+               cards_restore: main_farm}
+  # The no-card quest enters with the tournament build and an empty deck.
+  quest_nocard: {cards: no_card, module_preset: Tourney,
+                 guardian_preset: Tourney, bot_preset: Tourney}
+  # Dissonance event: tournament-like presets, a dedicated deck.
+  dissonance: {cards: disco, module_preset: Tourney,
+               guardian_preset: Tourney, bot_preset: Tourney}
+  # Tournament entry: one global preset does all the equipping.
+  tourney_1: {global_preset: Tournament}
+  # Explicit module lists (equip order is load-bearing: displaced modules
+  # read Lv.1 - always answer Transfer Yes).
+  tourney_2:
+    cards: tourney_p1
+    modules:
+    - [dimension_core, assist]
+    - [primordial_collapse, primary]
+    - [pulsar_harvester, assist]
+    - [galaxy_compressor, primary]
+  smart_missiles_quest: {defined: false}
+  # Inner Land Mines quest: Space Displacer goes into the health slot for the
+  # quest; modules_restore puts the farm's health module back afterwards.
+  inner_land_mines_quest:
+    cards: main_farm
+    guardian_preset: Farm
+    module_preset: Farm
+    modules:
+    - [space_displacer, primary]
+    modules_restore:
+    - [sharp_fortitude, primary]
+  chronofield_quest: {defined: false}
+
+# LEGACY PRESETS - the pre-profile run definitions. Kept because the tray and
+# the scheduler still start runs by these keys; behavior knobs for profile-
+# driven runs live in backend/profiles/<name>.yaml instead.
+preset: normal_run
+presets:
+  normal_run:
+    label: High Tier
+    shopping:
+    - tab: utility
+      stats: [enemy_attack_level_skip, enemy_health_level_skip]
+      mode: repeat
+    - tab: defense
+      stats: [death_defy, land_mine_radius]
+      mode: once
+    - tab: defense
+      stats: [health, health_regen]
+      mode: best_cost
+    - tab: attack
+      stats: [critical_factor, damage_per_meter, bounce_shot_range, super_crit_chance,
+        super_crit_mult]
+      mode: once
+    - tab: attack
+      stats: [damage]
+      mode: clicks
+      clicks: 3
+    shop_interval_sec: 90
+    restart_via_home: true
+    tier: 14
+    # Ultimate weapons forced to this state at wave 1 (only the ones you own
+    # apply). chain_lightning is driven dynamically below.
+    uw_wanted: {death_wave: true, golden_tower: true, poison_swamp: true, black_hole: true,
+      spotlight: true, chronofield: true}
+    chain_lightning:
+      always_on: false
+      always_on_above: [4080, 4120]
+      pre_mark_waves: [5, 25]
+      off_after_waves: [53, 72]
+    gem_delay_sec: [3, 10]
+    abilities:
+      hold_until_second_wind: true
+      post_sw_watch_sec: 30
+      rescue_bar: wall
+      nuke_below: null
+      nuke_on_fleet: {after_waves: 3, window_waves: 60}
+      dm_below: 0.02
+  t19_test:
+    label: T19 rescue test
+    base: normal_run
+    tier: 19
+    abilities: {dm_below: 0.4, post_sw_watch_sec: null}
+  tournament:
+    label: Tournament
+    base: normal_run
+    tournament_setup: true
+    gem_entry_max: 10
+    chain_lightning:
+      always_on: false
+      always_on_above: [500, 550]
+    abilities: {nuke_below: null, nuke_on_fleet: null, hold_until_second_wind: true,
+      sw_immunity_sec: 8, rescue_bar: wall, post_sw_watch_sec: null, dm_below: 0.5,
+      end_sprint_after_sw: false}
+  shard_farm:
+    label: Shard Farming
+    runner: flows/shard.py
+    runner_args: [--loops, '0']
+  quest_nocard:
+    label: 'Quest: No Cards (T14 w60)'
+    runner: runtime/harness.py
+    runner_args: [--run, quest_nocard, --repeat, '1']
+  shatter_blue:
+    label: Shatter Blue Modules
+    runner: interactions/shatter.py
+    runner_args: [--batches, '0']
+  quest_smart_missiles:
+    label: 'Quest: Smart Missiles'
+    runner: flows/quest_sm.py
+    runner_args: [--rides, '1']
+    tier: 1
+  quest_inner_land_mines:
+    label: 'Quest: Inner Land Mines'
+    runner: flows/quest_ilm.py
+    runner_args: [--cycles, '40']
+    tier: 1
+  quest_chronofield: {label: 'Quest: Chrono Field', defined: false}
+  combo: {label: Combo (day plan), runner: scheduling/combo.py, tier: 14}
+  full_auto_high: {label: Full Auto High, defined: false}
+
+# Human-like tap timing: random delay before each tap, positional jitter, and
+# a hard rate cap.
+tap:
+  jitter_ms: [15, 50]
+  jitter_px: 4
+  max_rate_per_sec: 12
+logging: {dir: logs, screenshot_on_trigger: true, bench_interval_sec: 30}

@@ -1,0 +1,23 @@
+# --- machine / account state (never commit) ---------------------------
+backend/config.yaml
+backend/config.yaml.bak-*
+backend/profiles/*.yaml
+!backend/profiles/default.yaml
+backend/profiles/*.bak-*
+backend/profiles/*.draft.yaml
+backend/logs/
+backend/runs/
+backend/captures/
+
+# --- python ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# --- editors / os ------------------------------------------------------
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
