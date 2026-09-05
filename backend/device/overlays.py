@@ -44,10 +44,11 @@ EXPECTED_PREFIXES = (
     "Splash Screen",                # transient app-launch window
     "app.lawnchair",                # MuMu 12's stock launcher
     "com.android.launcher",         # AOSP launcher family (other emulators)
-    "com.bluestacks.",              # BlueStacks 5's Home tab / launcher apps
-                                    # (prefix assumed from the vendor id -
-                                    # confirm from the first overlay_unknown
-                                    # event if a BlueStacks window is refused)
+    "com.uncube.launcher3",         # BlueStacks 5's launcher (its Home tab):
+                                    # com.uncube.launcher3/com.bluestacks.
+                                    # launcher.activity.HomeActivity, read from
+                                    # dumpsys window on Pie64, 2026-09-06
+    "com.bluestacks.",              # BlueStacks' own helper apps
     "com.android.systemui",         # wallpaper, decor
     "StatusBar",
     "NotificationShade",

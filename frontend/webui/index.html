@@ -638,7 +638,8 @@ async function renderSetup(){
     const serial = i.adb_port ? `127.0.0.1:${i.adb_port}` : null;
     rows.push(`<tr>
       <td>${esc(i.emulator || "?")}</td><td>${esc(i.name || "")}</td>
-      <td>${i.running ? '<span class="ok">running</span>' : '<span class="muted">off</span>'}</td>
+      <td>${i.running ? '<span class="ok">running</span>' : '<span class="muted">off</span>'}
+          ${i.adb_enabled === false ? '<div class="bad" style="font-size:.85em">ADB switch off in BlueStacks (Settings › Advanced)</div>' : ""}</td>
       <td>${esc(serial || "")}</td>
       <td style="white-space:nowrap">
         ${serial && i.running ? `<button class="small" onclick='adopt(${JSON.stringify(serial)}, ${JSON.stringify(adbFor(i.emulator))})'>Use this one</button>` : ""}
