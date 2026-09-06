@@ -991,10 +991,40 @@ def validate(profile: dict) -> list[str]:
         problems += _validate_blueprint(f"blueprints.{name}", _d(body), player,
                                         uw_policies, rescue_policies, gathers,
                                         shopping_lists, owned)
+    problems += _check_blueprint_labels(blueprints)
 
     if profile.get("plan") is not None:
         problems += _validate_plan(_d(profile.get("plan")), blueprints)
     return problems
+
+
+def _check_blueprint_labels(blueprints: dict) -> list[str]:
+    """Blueprint labels are what menus show - the day plan's run picker, the
+    tray, the run log - so two run types with the same name cannot be told
+    apart there. A label that repeats another blueprint's label, or another
+    blueprint's fallback name (its identifier, title-cased, which is what
+    the compiler shows when there is no label), is refused. Compared
+    case- and whitespace-insensitively: 'Farm run' and ' farm RUN ' are one
+    name to a person."""
+    out: list[str] = []
+    shown: dict[str, tuple[str, str]] = {}
+    for name, body in blueprints.items():
+        body = _d(body)
+        _check_label(body, f"blueprints.{name}", out)
+        label = body.get("label")
+        explicit = isinstance(label, str) and bool(label.strip())
+        text = label.strip() if explicit else name.replace("_", " ").title()
+        key = " ".join(text.casefold().split())
+        if key in shown:
+            other, how = shown[key]
+            where = f"blueprints.{name}" + (".label" if explicit else "")
+            out.append(f"{where}: {text!r} is also what blueprints.{other} is "
+                       f"called ({how}) - run types are picked by this name in "
+                       f"menus, so each needs its own")
+        else:
+            shown[key] = (name, "its label" if explicit else
+                          "its identifier, title-cased, as it has no label")
+    return out
 
 
 def warnings(profile: dict) -> list[str]:

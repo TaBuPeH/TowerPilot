@@ -31,13 +31,14 @@ machine.
    `HD-Player.exe`), points the config at it on a fresh install, and runs
    the boot pipeline that waits for Android, clears overlays and starts
    the game. Then check the display resolution.
-5. **Calibrate** page: the generic buttons and screens ship with the repo;
-   the pictures only your account can provide - card preset tabs, global
-   and category preset rows as you named them, your modules at your rarity
-   - do not, and the page says what to cut and how to name each one. Open
-   the screen in the game, drag a box on the live frame, save. Once the
-   loadouts and the scanned profile refer to names, the *Required for your
-   account* list tracks which of them still lack a picture.
+5. **Calibrate** page, with the game on its home screen: press **Calibrate
+   now**. The bot walks Cards, the preset picker, Modules, Guild, Event and
+   Workshop, finds every preset control by its outline, reads the name you
+   gave it, cuts the template and verifies it (`player/calibrate.py`).
+   Those pictures - card preset tabs, global and category preset rows, your
+   modules at your rarity - are the game's art and yours, so the repo never
+   ships them; the generic buttons and screens do ship. The cropper on the
+   same page is the manual fallback for a cut that came out weak.
 6. **Analyze the account**: *Scan account* on the Setup page reads the
    guardians, card presets and modules (add the battle phase for ultimate
    weapons and abilities) into `profiles/<instance>.draft.yaml`, then
@@ -67,14 +68,14 @@ in the folder it belongs to, never a patch inside a monolith.
 | [backend/orchestrator.py](backend/orchestrator.py) | The engine: the observe-decide-act loop that schedules everything below. Deliberately the one root-level module. |
 | [backend/flows/](backend/flows/) | **One file per type of run** (coin, tournament, shard, quests). Each declares a `FLOW` spec; the registry makes it schedulable everywhere ([guide](backend/flows/README.md)). |
 | [backend/device/](backend/device/) | Talking to the emulator: adb socket client, screen capture, taps/swipes, boot pipeline, ad-overlay cleanup. |
-| [backend/vision/](backend/vision/) | Reading pixels: template matching, screen identification, wave-counter OCR. |
+| [backend/vision/](backend/vision/) | Reading pixels: template matching, screen identification, wave-counter OCR, structural pill detection (`pills.py`) and Windows text OCR (`textocr.py`) for the calibrator. |
 | [backend/interactions/](backend/interactions/) | Scripted menu flows: reward missions, guild store, workshop shopping, loadout equipping, v29 preset selection, tournament navigation, module shattering. |
 | [backend/scheduling/](backend/scheduling/) | Time: the day scheduler (combo), between-run chores, daily counters, the stop-flag contract. |
 | [backend/player/](backend/player/) | The account: profile compiler + validator, account scanner (`scan.py`), module/card catalogue. |
 | [backend/runtime/](backend/runtime/) | Process plumbing: event log, run-stats collector, tray launcher, test harness. |
 | [backend/BEHAVIORS.md](backend/BEHAVIORS.md) | **The in-run behavior map**: every click family (rescue, gems, rewards, UW toggles, sprint, chores), why it exists, and which knob configures it. |
 | [backend/config.example.yaml](backend/config.example.yaml) | The machine config template. Copied to `config.yaml` (git-ignored) on first start; the dashboard edits it with timestamped backups. |
-| [backend/profiles/](backend/profiles/) | Player profiles ([schema](backend/profiles/SCHEMA.md)). `default.yaml` is the generic starter; yours is written by *Promote* and git-ignored. |
+| [backend/profiles/](backend/profiles/) | Player profiles ([schema](backend/profiles/SCHEMA.md)). `default.yaml` is the generic starter; yours is written by *Promote* (or *Copy the starter* on the Home page) and git-ignored; the dashboard refuses to edit the starter in place. |
 | [backend/templates/](backend/templates/) | Image templates the vision layer matches against, cut at native 1080x2560. `cards/preset_*`, `presets/*` and `modules/*` are account-specific. |
 | [docs/](docs/) | Emulator setup guides. |
 
@@ -86,6 +87,7 @@ in the folder it belongs to, never a patch inside a monolith.
 |---|---|
 | `backend/config.yaml` (+ `.bak-*`) | adb path, emulator serial, preset names |
 | `backend/profiles/<name>.yaml`, `*.draft.yaml` | what your account owns, your run types |
+| `backend/catalogue_local.yaml` | module names the calibrator read off the game that the shipped catalogue lacks |
 | `backend/logs/` | event logs, screenshots, daily counters |
 | `backend/runs/`, `backend/captures/` | run statistics, calibration captures |
 | `backend/templates/cards/preset_*`, `presets/{gp,modules,guardians,workshop,bots}_*`, `modules/<slug>.png`, `modules/equipped/` | your card tabs, preset rows and module icons, cut by the cropper |

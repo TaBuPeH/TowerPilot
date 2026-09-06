@@ -32,6 +32,7 @@ import numpy as np
 from device import act
 from device import capture
 from runtime import logger
+from vision import pills
 
 COL_X = [126, 329, 533, 736, 939]
 ROW_Y = [1082, 1285, 1488, 1691, 1894, 2097]
@@ -71,6 +72,23 @@ SCRIM_PROBE = (110, 150, 20, 300)
 SCRIM_DARK = 90.0
 
 GRID_BAND = (1000, 2260)
+# Where a fling may TOUCH. y=1000 is the Inventory/Merge tab bar, and a swipe
+# that starts on it goes to the bar, not the grid: the "park at the top"
+# fling was swallowed that way and the walk began on the LAST page while
+# labelling it page 0 (BlueStacks, 2026-09-06). Both ends stay on tiles.
+GRID_TOUCH = (1130, 2230)
+# At the top of the list there is a dark gap between the tab bar and the
+# first tile row; scrolled by any amount, the cut-off row touches the bar
+# and fuses with it in the lit-row projection (vision.pills.grid_row_spans).
+GRID_GAP_Y = 1090
+MAX_PAGES = 10
+# One page on: a slow 600 px drag. Measured 2026-09-06 (BlueStacks): 597 px
+# at release, gliding to a settled 794 px (3.9 rows) within ~2 s, so two
+# rows overlap between pages and the previous frame's last rows can still
+# be located to MEASURE the scroll. The old 1100 px / 180 ms fling glided
+# ~9 rows and skipped three rows between pages.
+PAGE_DRAG = (2130, 1530, 1500)          # y from, y to, ms
+SETTLE_S = 6.0
 PANEL_WAIT = 0.45
 CLOSE_WAIT = 0.35
 
@@ -131,34 +149,101 @@ def _same_icon(a, b) -> bool:
 
 
 def _fling(y0, y1, ms=180):
+    lo, hi = GRID_TOUCH
+    y0, y1 = (min(max(int(y), lo), hi) for y in (y0, y1))
     act.swipe(538, y0, 538, y1, ms, reason="inventory page")
     time.sleep(0.7)
+
+
+def at_top(frame=None) -> bool:
+    """Is the grid scrolled to its top? True when no lit run covers the gap
+    under the tab bar - a positional walk must PROVE where row 0 is."""
+    frame = frame if frame is not None else capture.grab()
+    return not any(a <= GRID_GAP_Y < b for a, b in pills.grid_row_spans(frame))
+
+
+def settle(max_s: float = SETTLE_S, quiet: float = 0.5):
+    """Wait until the grid stops moving (two grabs alike) and return that
+    frame. The scroll glides for 2-4 s after a drag (measured 2026-09-06);
+    tiles read off a gliding grid land on the wrong row."""
+    top, bottom = GRID_BAND
+    prev = capture.grab()
+    t0 = time.monotonic()
+    while time.monotonic() - t0 < max_s:
+        time.sleep(0.3)
+        cur = capture.grab()
+        if float(cv2.absdiff(prev[top:bottom], cur[top:bottom]).mean()) < quiet:
+            return cur
+        prev = cur
+    logger.event("inventory_unsettled", after_s=max_s)
+    return prev
+
+
+def park_top(tries: int = 5) -> None:
+    """Scroll the grid to its top and verify it (at_top on a settled frame).
+    Raises when the grid will not park - walking from an unknown row is
+    worse than a gap."""
+    top, bottom = GRID_BAND
+    for _ in range(tries):
+        if at_top(settle()):
+            return
+        _fling(top, bottom)
+    if not at_top(settle()):
+        raise RuntimeError("inventory grid would not park at the top")
+
+
+def scroll_delta(prev, cur):
+    """How far the grid content moved UP between two settled frames, px,
+    located by the last full tile rows of `prev` inside `cur`. 0 = it did
+    not move (the end of the list); None = no overlap (a jump past a page,
+    or two identical rows disagreeing) - the caller must not guess."""
+    top, bottom = GRID_BAND
+    rows = [(a, b) for a, b in pills.grid_row_spans(prev) if b - a > 100 and b <= bottom]
+    found = []
+    for a, b in rows[-2:]:
+        strip = prev[a:b, 40:1040]
+        res = cv2.matchTemplate(cur[top:bottom, 40:1040], strip, cv2.TM_CCOEFF_NORMED)
+        _, best, _, loc = cv2.minMaxLoc(res)
+        if best >= 0.9:
+            found.append((a - top) - int(loc[1]))
+    if not found:
+        return None
+    if len(found) == 2 and abs(found[0] - found[1]) > 3:
+        return None
+    return found[-1]
+
+
+def next_page():
+    """Drag one page on (PAGE_DRAG), wait for the glide to end and return
+    the MEASURED scroll in px: 0 = the end of the list, None = overlap lost.
+    A page of already-seen icons is not the end - five identical tiles in a
+    row are normal here - which is why the movement is what decides."""
+    prev = settle()
+    y0, y1, ms = PAGE_DRAG
+    act.swipe(538, y0, 538, y1, ms, reason="inventory page")
+    return scroll_delta(prev, settle())
 
 
 def sweep(out_dir: str) -> list:
     """Tap every inventory tile, record name + rarity + grid icon."""
     os.makedirs(out_dir, exist_ok=True)
-    top, bottom = GRID_BAND
     # Never fling with a panel up: the drag goes to the panel's effect list
     # instead of the grid, so the grid does not move while the code believes it
     # has paged - which is how the last sweep ended up reading a bottom page
     # while labelling it page 0.
     if not _close_panel():
         raise RuntimeError("a modal is open and will not close - not sweeping")
-    # park at the top: the sweep is positional, so it must know where row 0 is
-    for _ in range(3):
-        prev = capture.grab()
-        _fling(top, bottom)
-        if float(cv2.absdiff(prev[top:bottom],
-                             capture.grab()[top:bottom]).mean()) < 1.0:
-            break
+    park_top()                  # positional: it must know where row 0 is
 
     seen, records = [], []
-    for page in range(3):
-        grid = capture.grab()
+    for page in range(MAX_PAGES):
+        grid = settle()
         cv2.imwrite(f"{out_dir}/page{page}_grid.png", grid)
         new_on_page = 0
-        for r, cy in enumerate(ROW_Y):
+        # rows read off THIS frame: the lattice sits one row lower while
+        # "New" badges are shown above it (BlueStacks, 2026-09-06); rows
+        # half behind a bar are skipped and come whole on the next page
+        for r, cy in enumerate(pills.grid_rows(grid)):
             for c, cx in enumerate(COL_X):
                 icon = _tile_icon(grid, cx, cy)
                 if _blank_tile(icon):
@@ -201,11 +286,13 @@ def sweep(out_dir: str) -> list:
                     raise RuntimeError(
                         f"panel stuck open after tile p{page}r{r}c{c}")
 
+        moved = next_page()
         logger.event("inventory_page", page=page, new=new_on_page,
-                     total=len(records))
-        if new_on_page == 0:
+                     total=len(records), moved=moved)
+        if moved is None:
+            raise RuntimeError("inventory scroll lost its overlap - rows may have been skipped")
+        if moved == 0:
             break
-        _fling(bottom, top)
 
     with open(f"{out_dir}/index.json", "w") as fh:
         json.dump(records, fh, indent=1)

@@ -3975,3 +3975,27 @@ def test_the_documented_p6_blueprints_validate_and_compile(prof):
     assert prof["blueprints"]["tourney_swap"]["in_run_actions"] == []
     assert profile_mod.compile_preset(
         prof, "tourney_swap")["in_run_actions"] == []
+
+
+def test_blueprint_labels_are_unique_display_names():
+    """Run types are picked by their label in menus (day plan, tray), so two
+    blueprints may not share one - nor may a label repeat the fallback name
+    (identifier, title-cased) of a blueprint that has none."""
+    import copy
+    from player import playerprofile as pp
+    prof = copy.deepcopy(_base_profile())
+    a, b = list(prof["blueprints"])[:2]
+    labels = lambda: [p for p in pp.validate(prof) if "label" in p or "is also what" in p]
+    prof["blueprints"][a]["label"] = "Farm run"
+    prof["blueprints"][b]["label"] = "  farm   RUN "
+    probs = labels()
+    assert len(probs) == 1 and f"blueprints.{b}.label" in probs[0] \
+        and f"blueprints.{a}" in probs[0], probs
+    prof["blueprints"][b]["label"] = "Something else"
+    assert labels() == []
+    prof["blueprints"][a].pop("label")
+    prof["blueprints"][b]["label"] = a.replace("_", " ").title()   # a's fallback name
+    probs = labels()
+    assert len(probs) == 1 and "title-cased" in probs[0], probs
+    prof["blueprints"][b]["label"] = "   "
+    assert any(f"blueprints.{b}.label: must be a non-empty" in p for p in labels())

@@ -52,6 +52,7 @@ blueprints:
   # player.abilities_verified is true.
   coin_default:
     kind: coin
+    label: Coin farming (as is)
     loadout: as_is
     tier: 1
     restart_via_home: true
@@ -63,6 +64,7 @@ blueprints:
   # `rescue: tournament_wall_nuke` the same way as above.
   tourney_main:
     kind: tournament
+    label: Tournament
     loadout: tourney_1
     gem_entry_max: 10
     tier: 1
@@ -76,6 +78,7 @@ blueprints:
   # already on screen.
   tourney_assist:
     kind: tournament
+    label: Tournament assist (you play)
     loadout: tourney_1
     gem_entry_max: 0
     tier: 1
@@ -83,6 +86,7 @@ blueprints:
     policies: {gather: hands_off}
   coin_dissonance:
     kind: coin
+    label: 'Achievement: Utility Dissonance'
     loadout: dissonance
     dissonant_tab: utility
     tier: 1
@@ -92,12 +96,14 @@ blueprints:
     policies: {gather: all_on}
   shard_daily:
     kind: shard
+    label: Shard farming
     loadout: shard_farm
     tier: 1
     count: 100
     policies: {gather: gems_only}
   quest_sm:
     kind: uw_grant_quest
+    label: 'Quest: Smart Missiles'
     loadout: coin_farm
     tier: 1
     grant_targets: [smart_missiles]
@@ -109,8 +115,8 @@ blueprints:
     # tower, black hole and spotlight on).
     uw_setup: {chain_lightning: false, death_wave: false, poison_swamp: false, golden_tower: false,
       black_hole: false, spotlight: false, chronofield: false}
-  quest_ilm: {kind: cycle_quest, loadout: inner_land_mines_quest, tier: 1, cycle_sec: 25,
-    cycles: 40}
+  quest_ilm: {kind: cycle_quest, label: 'Quest: Inner Land Mines', loadout: inner_land_mines_quest,
+    tier: 1, cycle_sec: 25, cycles: 40}
 policies:
   uw_policies:
     farm_cl_choreo:

@@ -57,6 +57,8 @@ stay runnable without it.
 blueprints:
   coin_default:
     kind: coin                    # -> orchestrator.py --preset bp_coin_default
+    label: Coin farming (T14)     # optional display name: menus, tray, run log;
+                                  # must differ between blueprints (validated)
     loadout: coin_farm            # config.yaml loadouts key, or `as_is`
     tier: 14
     restart_via_home: true

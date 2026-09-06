@@ -30,6 +30,7 @@ import time
 from device import capture, act
 from interactions import tourney
 from runtime import logger
+from vision import pills
 
 # The picker popup on the home screen ("SELECT A PRESET"). `None` is a
 # first-class choice: the game reads it as "enter with the currently
@@ -65,11 +66,12 @@ def _close_modules() -> None:
 
 def _open_guardians() -> None:
     frame = capture.grab()
-    # Already on the guardian screen (its preset tab row is visible)? Then
-    # navigate nothing - this is also the recovery path after an Abort left
-    # the guild overlay open (the closer never runs on an Abort).
-    if (tourney.find(frame, "presets/guardians_farm.png", 0.85)
-            or tourney.find(frame, "presets/guardians_tourney.png", 0.85)):
+    # Already inside the guild overlay (its own tab strip is visible)? Then
+    # only the tab tap, which is idempotent - this is also the recovery path
+    # after an Abort left the overlay open (the closer never runs on an
+    # Abort). The strip is generic: no account template is assumed.
+    if tourney.find(frame, "guardian/tab_guardian.png", 0.90):
+        tourney.tap_at(tourney.GUARDIAN_TAB, "guardian tab")
         return
     hit = tourney.find(frame, "home/tile_guild.png", 0.90)
     if not hit:
@@ -92,9 +94,8 @@ def _open_bots() -> None:
     from a dialog-dimmed frame - CCOEFF matching is normalized, but the
     threshold stays at 0.85 for it until a clean-frame harvest replaces it."""
     frame = capture.grab()
-    if (tourney.find(frame, "presets/bots_farm.png", 0.85)
-            or tourney.find(frame, "presets/bots_tourney.png", 0.85)):
-        return                          # already on the bots screen
+    if not tourney.on_home(frame) and pills.pills(frame, *pills.TAB_BANDS["bots"]):
+        return                          # already on the bots screen (tab row up)
     if not tourney.on_home(frame):
         raise tourney.Abort("bots preset screen needs the home screen "
                             "(event tile route)")
@@ -112,17 +113,22 @@ def _close_bots() -> None:
 
 def _open_workshop() -> None:
     """Workshop is a bottom-nav tab like modules. The landmark is its own
-    preset tab row: nothing else on that screen is harvested, and the tab
-    row is exactly what select_category reads next anyway. This account's
-    workshop presets are named "Full Upgraded" and "Devo" (harvested
-    2026-08-28, self-match 1.0/next 0.46) - NOT Farm/Tourney like the
-    other categories."""
+    preset tab row, found STRUCTURALLY (vision.pills) rather than by a
+    template: the tab labels are the player's own names, so no template of
+    them can be assumed to exist before calibration."""
     frame = capture.grab()
-    if (tourney.find(frame, "presets/workshop_full_upgraded.png", 0.85)
-            or tourney.find(frame, "presets/workshop_devo.png", 0.85)):
+    band = pills.TAB_BANDS["workshop"]
+    if not tourney.on_home(frame) and pills.pills(frame, *band):
         return                          # already on the workshop screen
-    tourney.open_nav("workshop", "presets/workshop_full_upgraded.png",
-                     "workshop preset tab row")
+    tourney.tap_at(tourney.NAV["workshop"], "nav workshop")
+    deadline = time.monotonic() + 6.0
+    while time.monotonic() < deadline:
+        frame = capture.grab()
+        if pills.pills(frame, *band):
+            return
+        time.sleep(0.4)
+    logger.shot(frame, "tourney_missing_workshop preset tab row")
+    raise tourney.Abort("workshop screen did not show its preset tab row")
 
 
 def _close_workshop() -> None:

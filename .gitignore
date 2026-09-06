@@ -1,6 +1,7 @@
 # --- machine / account state (never commit) ---------------------------
 backend/config.yaml
 backend/config.yaml.bak-*
+backend/catalogue_local.yaml
 backend/profiles/*.yaml
 !backend/profiles/default.yaml
 backend/profiles/*.bak-*

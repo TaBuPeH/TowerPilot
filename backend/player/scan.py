@@ -129,7 +129,8 @@ def preflight(adopt_battle: bool) -> None:
         if pr.info["pid"] == mine or "python" not in (pr.info["name"] or "").lower():
             continue
         if any(f"{r}.py" in cl for r in ("orchestrator", "shard", "combo", "tourney",
-                                         "quest_sm", "quest_ilm", "harness")):
+                                         "quest_sm", "quest_ilm", "harness",
+                                         "scan", "calibrate")):
             # P3 CLONE (2026-08-19): two trees may run side by side (main
             # farm in ../autopilot, this clone on its own instance). A
             # runner only conflicts with this scan if it can touch the SAME

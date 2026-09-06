@@ -29,7 +29,9 @@ portrait at 360 dpi.
    (`backend/scheduling/runflag.py`): write the flag, the runner leaves at
    its death handler. Never kill a live run to switch activities.
 6. **Detectors never overwrite their own templates.** The only template
-   writer is the dashboard cropper, driven by a person.
+   writers are the dashboard cropper and `player/calibrate.py`, both
+   started by a person; the calibrator writes only account-specific names
+   and never replaces a file unless told to (`--overwrite`).
 7. **An Abort means the screen was not what the code expected.** Stop and
    log; never blind-tap into an unknown screen.
 8. **Machine and account state stay out of git**: `backend/config.yaml`,
@@ -56,8 +58,10 @@ portrait at 360 dpi.
   picker rows and module icons (`templates/cards/preset_*`,
   `templates/presets/{gp,modules,guardians,workshop,bots}_*`,
   `templates/modules/<slug>.png`, `templates/modules/equipped/`) and are
-  NOT shipped: the player cuts them on the Calibrate page and git ignores
-  them. Missing ones surface as `template_missing` events and on that page.
+  NOT shipped: the Calibrate button cuts them from the player's own screens
+  (structural pill detection in `vision/pills.py`, names by Windows OCR in
+  `vision/textocr.py`) and git ignores them. Missing ones surface as
+  `template_missing` events and on that page.
 - Ownership is validated where a blueprint BINDS a policy, not where the
   policy is defined: the policy library ships in full for an account that
   has scanned nothing.

@@ -770,6 +770,7 @@ async function renderCalibrate(){
   S.required = await api("/api/wizard/required").catch(e => ({ required:[], missing:[] }));
   S.catalogue = await api("/api/catalogue/modules").catch(() => ({ modules:[] }));
   S.calibTs = Date.now();
+  setTimeout(() => api("/api/calibrate/status").then(calibReport).catch(() => {}), 300);
   const missing = (S.calib.missing_seen || []);
   const have = S.calib.have || [];
   const req = S.required.required || [];
@@ -784,6 +785,23 @@ async function renderCalibrate(){
   $("#view").innerHTML = `
   <div class="grid2">
   <div>
+    <article>
+      <header>Calibrate from the game
+        <span id="calib-state" class="muted" style="font-weight:normal; font-size:.85em"></span></header>
+      <p class="muted">The pictures only your account can provide - card preset
+        tabs, global and category preset rows as you named them, your modules
+        at your own rarity - are never shipped. With the game on its HOME
+        screen, press the button: the bot walks Cards, the preset picker,
+        Modules, Guild, Event and Workshop, finds every preset control, reads
+        its name and cuts the template. About three minutes; hands off the
+        emulator meanwhile. Needs allow_taps on (Configuration).</p>
+      <div style="display:flex; gap:.6rem; align-items:center; flex-wrap:wrap">
+        <button onclick="startCalibrate()">Calibrate now</button>
+        <label style="margin:0; white-space:nowrap"><input type="checkbox" id="calib-over"> overwrite existing cuts</label>
+        <button class="small ghost" onclick="stopCalibrate()">Stop</button>
+      </div>
+      <div id="calib-report"></div>
+    </article>
     <article>
       <header>What the eyes are missing</header>
       <p class="muted">The autopilot recognizes the game purely by matching
@@ -831,7 +849,7 @@ async function renderCalibrate(){
             rarity: the grid tile <code>modules/&lt;slug&gt;.png</code> and the
             equipped header art <code>modules/equipped/&lt;slug&gt;.png</code>.
             Slugs: ${((S.catalogue || {}).modules || []).map(m =>
-              `<code title="${esc(m.name)}">${esc(m.slug)}</code>`).join(" ")}</li>
+              `<code title="${esc(m.name)}${m.learned ? " (learned from the game)" : ""}">${esc(m.slug)}</code>`).join(" ")}</li>
           <li><b>Guardian chips</b> and every button ship with the repo - their
             art is the same on every account.</li>
         </ul>
@@ -846,6 +864,7 @@ async function renderCalibrate(){
             <div><b>${r.have ? '<span class="ok">✓</span>' : '<span class="bad">✗</span>'}
               ${esc(r.rel)}</b>
               <div class="muted">${esc(r.feature)} — ${esc(r.used_by.join(", "))}</div>
+              ${r.note ? `<div class="muted" style="font-size:.85em">${esc(r.note)}</div>` : ""}
             </div></div>`).join("")}
     </article>
     <article>
@@ -930,6 +949,53 @@ function cropInfo(msg){
   el.textContent = msg || (n ? `box ${n.x},${n.y} ${n.w}×${n.h} native px — name it and save`
                              : "Drag a box on the live screen.");
 }
+async function startCalibrate(){
+  try {
+    const r = await post("/api/calibrate/start", { overwrite: $("#calib-over").checked, fresh: true });
+    toast("calibrating: " + r.phases);
+    pollCalibrate();
+  } catch(e){ toast(e.message, true); }
+}
+async function stopCalibrate(){
+  try { await post("/api/calibrate/stop", {}); toast("stop requested - it finishes the current step"); }
+  catch(e){ toast(e.message, true); }
+}
+function calibReport(st){
+  const el = $("#calib-report"); if (!el) return;
+  const entries = ((st.report || {}).entries) || [];
+  const phases = ((st.state || {}).phases) || {};
+  const ph = Object.entries(phases).map(([k, v]) => `${k}: ${v.status}${v.error ? " (" + esc(v.error) + ")" : ""}`).join(" · ");
+  const stEl = $("#calib-state"); if (stEl) stEl.textContent = (st.running ? "running… " : "") + ph;
+  if (!entries.length) {
+    el.innerHTML = st.taps_allowed === false
+      ? '<p class="bad">allow_taps is off for this instance - switch it on in Configuration, then calibrate.</p>' : "";
+    return;
+  }
+  el.innerHTML = `<table style="width:100%; font-size:.85em"><tr><th></th><th>template</th><th>read as</th><th>status</th><th>self</th><th>next</th></tr>
+    ${entries.map(e => `<tr>
+      <td><img src="/api/template/${esc(e.rel)}?t=${Math.round(e.t || 0)}" style="max-height:44px; max-width:150px" alt=""></td>
+      <td><code>${esc(e.rel)}</code></td>
+      <td>${esc(e.name || "")}${e.rarity ? ' <span class="muted">' + esc(e.rarity) + '</span>' : ""}</td>
+      <td class="${e.status === "written" ? "ok" : e.status === "exists" ? "muted" : "bad"}">${esc(e.status)}</td>
+      <td class="${Number(e.self || 0) < 0.9 ? "bad" : ""}"
+          title="${e.fresh != null && e.fresh > Number(e.self || 0) + 0.05 ? "the existing file scores " + Number(e.self || 0).toFixed(2) + " on this screen; a fresh cut would score " + Number(e.fresh).toFixed(2) + " - tick Overwrite and calibrate again" : ""}">${Number(e.self || 0).toFixed(2)}${e.fresh != null && e.fresh > Number(e.self || 0) + 0.05 ? ` <span class="muted">→ ${Number(e.fresh).toFixed(2)}</span>` : ""}</td>
+      <td class="${Number(e.next || 0) > 0.85 && !(e.copies_on_page > 1) ? "bad" : ""}"
+          title="${e.copies_on_page > 1 ? e.copies_on_page + " identical tiles on screen - the next-best is another copy" : ""}">${Number(e.next || 0).toFixed(2)}${e.copies_on_page > 1 ? ` <span class="muted">×${e.copies_on_page}</span>` : ""}</td></tr>`).join("")}
+  </table>
+  <p class="muted">A good cut matches itself at 1.00 and nothing else above 0.85. "exists" = a file was already there and was kept (tick overwrite to replace it); the names are in the draft profile for Promote.</p>`;
+}
+function pollCalibrate(){
+  clearInterval(S.calPoll);
+  const tick = async () => {
+    try {
+      const st = await api("/api/calibrate/status");
+      calibReport(st);
+      if (!st.running) { clearInterval(S.calPoll); toast("calibration finished"); renderCalibrate(); }
+    } catch(e){ clearInterval(S.calPoll); }
+  };
+  tick();
+  S.calPoll = setInterval(tick, 2500);
+}
 function cropRefresh(){
   S.calibTs = Date.now();
   const img = $("#calib-frame"); if (img) img.src = "/api/frame.png?ts=" + S.calibTs;
@@ -958,6 +1024,7 @@ async function renderHome(){
   <div class="grid2">
     <div>
       <article id="card-runner"><header>Runner</header><div id="runner-body"></div></article>
+      ${starterBanner()}
       <article id="card-day"><header>The day plan
         <span class="muted" style="font-weight:400">— what runs when; first open window wins</span>
       </header><div id="day-body"></div></article>
@@ -1040,7 +1107,7 @@ function renderLoadouts(){
       <b>${esc(n)}</b>
       <span class="chip kind">${esc(loMode(lo))}</span>
       <span class="muted">${esc(loSummary(lo))}${used.length
-        ? " · used by " + used.map(esc).join(", ") : ""}</span>
+        ? " · used by " + used.map(n => esc(bpLabel(n))).join(", ") : ""}</span>
       <span style="margin-left:auto">
         ${lo.defined === false ? "" :
           `<button class="small ghost" onclick="openLoadout('${esc(n)}')">✎ edit</button>`}
@@ -1171,7 +1238,7 @@ function renderBehaviors(){
           <b>${esc(label)}</b>
           ${label !== n ? `<span class="chip" title="identifier">${esc(n)}</span>` : ""}
           <span class="muted">${used.length
-            ? "used by " + used.map(esc).join(", ")
+            ? "used by " + used.map(n => esc(bpLabel(n))).join(", ")
             : "not used by any run type"}</span>
           <span style="margin-left:auto; display:flex; gap:.3rem">
             <button class="small ghost" onclick="${f.open}('${esc(n)}', '')">✎ edit</button>
@@ -1302,6 +1369,33 @@ async function ctl(action){
 }
 
 /* ------------------------------------------------------------- day plan */
+function starterBanner(){
+  // the shipped starter is read-only in every editor (its comments are the
+  // guide, and a save would land in the tracked file) - say so up front
+  if (((S.profiles || {}).active || "").toLowerCase() !== "default") return "";
+  return `<article><header>You are on the shipped starter profile</header>
+    <p class="muted">It stays generic, so edits to it are refused. Copy it into a
+      profile of your own to name run types, bind policies and set tiers - or run
+      the account scan (Setup page) and Promote its draft.</p>
+    <button class="small" onclick="copyStarter()">Copy the starter into my own profile</button>
+  </article>`;
+}
+async function copyStarter(){
+  const name = window.prompt("Name for your profile (profiles/<name>.yaml):",
+                             (S.config || {}).active_instance || "mine");
+  if (!name) return;
+  try {
+    await post("/api/profile-copy", { from:"default", name });
+    await post("/api/profile-activate", { name });
+    toast(`profiles/${name}.yaml written and activated`);
+    await loadHomeData(); renderHome();
+  } catch(e){
+    if (/exists/.test(e.message) && window.confirm(e.message + "\n\nActivate that one instead?")) {
+      try { await post("/api/profile-activate", { name }); await loadHomeData(); renderHome(); }
+      catch(e2){ toast(e2.message, true); }
+    } else toast(e.message, true);
+  }
+}
 function activeProfileBox(){
   const ready = (S.profiles.list || []).filter(p => !p.draft);
   const drafts = (S.profiles.list || []).filter(p => p.draft);
@@ -1313,6 +1407,7 @@ function activeProfileBox(){
       <select id="prof-pick" style="margin:0; width:auto">${ready.map(p =>
         `<option>${esc(p.name)}</option>`).join("")}</select>
       <button class="small" onclick="activateProfile()">Activate</button></div>` : ""}
+    <p><button class="small ghost" onclick="copyStarter()">Copy the starter into my own profile</button></p>
     ${drafts.length ? `<p class="muted">Drafts from the account scan hold only
       what was seen (<code>player:</code>). Promote one to get a runnable
       profile: the scanned block on top of the starter's run types, written
@@ -1386,8 +1481,8 @@ function blueprintOptions(selected, kindFilter){
   const bps = Object.entries((S.profile || {}).blueprints || {});
   return bps
     .filter(([n, b]) => !kindFilter || (b || {}).kind === kindFilter)
-    .map(([n, b]) => `<option value="${esc(n)}" ${n === selected ? "selected" : ""}>
-        ${esc(n)} (${esc((b || {}).kind)})</option>`).join("");
+    .map(([n, b]) => `<option value="${esc(n)}" title="${esc(n)}" ${n === selected ? "selected" : ""}>
+        ${esc(bpOptionText(n, b))}</option>`).join("");
 }
 function blockRow(b, i, total){
   return `<div class="blockrow">
@@ -1453,9 +1548,10 @@ function renderFlows(){
   if (!S.profile) { body.innerHTML = '<p class="muted">Activate a profile to edit run types.</p>'; return; }
   const bps = Object.entries(S.profile.blueprints || {});
   body.innerHTML = bps.map(([name, b]) => {
-    const spec = (S.flows || {})[(b || {}).kind] || {};
+    const label = bpLabel(name);
     return `<div class="flowcard">
-      <div><b>${esc(name)}</b><span class="chip kind">${esc(spec.label || b.kind)}</span>
+      <div><b>${esc(label)}</b>${label !== name
+          ? `<span class="chip" title="identifier">${esc(name)}</span>` : ""}<span class="chip kind">${esc(bpKindLabel(b))}</span>
         <div class="muted">loadout: ${esc(b.loadout ?? "—")}
           ${b.tier != null ? " · tier " + esc(b.tier) : ""}
           ${b.restart_via_home ? " · restarts via Home" : ""}</div></div>
@@ -1534,13 +1630,23 @@ function editorHtml(bpName){
 
   return `<article>
     <header style="display:flex; justify-content:space-between; align-items:center">
-      <span><b>${esc(bpName)}</b>
-        <span class="chip kind">${esc(spec.label || bp.kind)}</span></span>
+      <span><b>${esc(bpLabel(bpName))}</b>
+        ${bp.label ? `<span class="chip" title="identifier">${esc(bpName)}</span>` : ""}
+        <span class="chip kind">${esc(bpKindLabel(bp))}</span></span>
       <span style="display:flex; gap:.4rem">
         <button class="small ghost" onclick="editorCancel('${esc(bpName)}')">Cancel</button>
         <button class="small" onclick="editorSave()">Save ✓</button>
       </span>
     </header>
+
+    <fieldset><legend>Name</legend>
+      <div class="kv">
+        <label>Shown in menus and the run log</label>
+        <input value="${esc(bp.label || "")}" placeholder="${esc(bpName)}"
+          title="a name of your own - the identifier ${esc(bpName)} stays the key; names must differ between run types"
+          onchange="setBpLabel('${esc(bpName)}', this.value)">
+      </div>
+    </fieldset>
 
     <fieldset><legend>Before the run</legend>
       <div class="kv">
@@ -1647,6 +1753,15 @@ function setBp(bpName, key, value, rebuild = true){
   else queuePatch(["blueprints", bpName, key], value);
   refreshEditor(bpName, rebuild);
 }
+function setBpLabel(bpName, v){
+  // blur-committed text field: no dialog rebuild (see refreshEditor)
+  const bp = (S.profile.blueprints || {})[bpName] || {};
+  const val = (v || "").trim();
+  if (val) queuePatch(["blueprints", bpName, "label"], val);
+  else if (bp.label !== undefined) queuePatch(["blueprints", bpName, "label"], null, "delete");
+  else dropPending([["blueprints", bpName, "label"]]);
+  refreshEditor(bpName, false);
+}
 function setBpPolicy(bpName, pkey, value){
   if (value === "") queuePatch(["blueprints", bpName, "policies", pkey], null, "delete");
   else queuePatch(["blueprints", bpName, "policies", pkey], value);
@@ -1719,6 +1834,29 @@ function p2Cancel(){
 }
 async function p2Commit(){
   if (await saveAll()) $("#editor2").close();
+}
+function bpKindLabel(b){
+  // what the badge says: the flow's label - except that a coin-flow run
+  // with a dissonant workshop tab is an ACHIEVEMENT run, not coin farming
+  // (user, 2026-09-06)
+  const spec = (S.flows || {})[(b || {}).kind] || {};
+  if ((b || {}).kind === "coin" && b.dissonant_tab)
+    return `Achievement run (${b.dissonant_tab} dissonance)`;
+  return spec.label || (b || {}).kind || "";
+}
+function bpOptionText(name, b){
+  // "Shard farming (daily) · Shard farming" - the kind after the name,
+  // unless the name already IS the kind's label
+  const kind = bpKindLabel(b);
+  const label = bpLabel(name);
+  return label.toLowerCase() === kind.toLowerCase() ? label : `${label} · ${kind}`;
+}
+function bpLabel(name){
+  // a run type's display name (blueprint `label`, what the tray and the run
+  // log already call it); the identifier when it has none
+  if (!name) return name;
+  const b = ((S.profile || {}).blueprints || {})[name];
+  return (b && b.label) || name;
 }
 function polLabel(sec, name){
   if (!name) return name;

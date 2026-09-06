@@ -21,6 +21,7 @@ import datetime
 import glob
 import json
 import os
+import shutil
 import re
 import struct
 import subprocess
@@ -193,7 +194,7 @@ def _scan_procs():
         for row in data:
             cl = row.get("CommandLine") or ""
             m = re.search(r"(orchestrator|shard|combo|tourney|quest_\w+|hp_probe|"
-                          r"scan|boot|dashboard)\.py", cl)
+                          r"scan|calibrate|boot|dashboard)\.py", cl)
             if m and m.group(1) != "dashboard":
                 pid = int(row["ProcessId"])
                 if not _proc_in_tree(pid):
@@ -211,7 +212,7 @@ def _scan_procs():
             except Exception:                   # noqa: BLE001
                 continue
             m = re.search(r"(orchestrator|shard|combo|tourney|quest_\w+|hp_probe|"
-                          r"scan|boot|dashboard)\.py", cl)
+                          r"scan|calibrate|boot|dashboard)\.py", cl)
             if m and m.group(1) != "dashboard":
                 if not _proc_in_tree(p.info["pid"]):
                     continue
@@ -605,6 +606,73 @@ def api_scan_start():
     return jsonify({"ok": True, "phases": phases})
 
 
+# ------------------------------------------------------------ calibrator
+def _taps_allowed(cfg: dict) -> bool:
+    inst = cfg.get("active_instance", "main")
+    return bool(((cfg.get("instances") or {}).get(inst) or {}).get("allow_taps"))
+
+
+@app.post("/api/calibrate/start")
+def api_calibrate_start():
+    """Run player/calibrate.py detached: it walks the menus and cuts this
+    account's own templates (card tabs, preset rows, module icons) - the
+    pictures the repo never ships. Same guards as the scan, plus taps: the
+    calibrator navigates, so a read-only instance cannot run it."""
+    body = request.get_json(force=True) or {}
+    others = [pr for pr in _procs() if pr["runner"] != "calibrate"]
+    if others:
+        return jsonify({"ok": False,
+                        "error": "runners alive: " +
+                                 ", ".join(pr["runner"] for pr in others) +
+                                 " - stop them first"}), 409
+    if any(pr["runner"] == "calibrate" for pr in _procs()):
+        return jsonify({"ok": False, "error": "a calibration is already running"}), 409
+    cfg = load_config()
+    if not _taps_allowed(cfg):
+        return jsonify({"ok": False,
+                        "error": "allow_taps is off for this instance - the "
+                                 "calibrator walks the game's menus; switch it "
+                                 "on in Configuration first"}), 409
+    inst = cfg.get("active_instance", "main")
+    phases = str(body.get("phases") or "c,g,m,u,b,w")
+    args = [os.path.join(ROOT, "player", "calibrate.py"), "--instance", inst,
+            "--phases", phases]
+    if body.get("overwrite"):
+        args.append("--overwrite")
+    if body.get("fresh"):
+        args.append("--fresh")
+    pyw = sys.executable.replace("python.exe", "pythonw.exe")
+    subprocess.Popen([pyw] + args, cwd=ROOT,
+                     creationflags=subprocess.DETACHED_PROCESS | NO_WINDOW)
+    return jsonify({"ok": True, "phases": phases})
+
+
+@app.post("/api/calibrate/stop")
+def api_calibrate_stop():
+    cfg = load_config()
+    inst = cfg.get("active_instance", "main")
+    os.makedirs(os.path.join(ROOT, "logs", inst), exist_ok=True)
+    with open(os.path.join(ROOT, "logs", inst, "calibrate_stop"), "w") as fh:
+        fh.write("dashboard")
+    return jsonify({"ok": True})
+
+
+@app.get("/api/calibrate/status")
+def api_calibrate_status():
+    cfg = load_config()
+    inst = cfg.get("active_instance", "main")
+    out = {"state": {}, "report": {}}
+    for fname, key in (("calibrate_state.json", "state"),
+                       ("calibrate_report.json", "report")):
+        try:
+            with open(os.path.join(ROOT, "logs", inst, fname), encoding="utf-8") as fh:
+                out[key] = json.load(fh)
+        except (OSError, ValueError):
+            pass
+    return jsonify({"running": any(pr["runner"] == "calibrate" for pr in _procs_cached()),
+                    "taps_allowed": _taps_allowed(cfg), **out})
+
+
 @app.post("/api/scan/stop")
 def api_scan_stop():
     cfg = load_config()
@@ -700,6 +768,21 @@ def _profile_lock(path: str) -> threading.Lock:
 
 def _profiles_dir() -> str:
     return os.path.join(ROOT, "profiles")
+
+
+STARTER_PROFILE = "default"
+_STARTER_READ_ONLY = (
+    "profiles/default.yaml is the shipped starter and stays generic - its comments "
+    "are the guide for every install and a save would drop them. Make your own "
+    "profile first: copy the starter (Home page) or Promote a scan draft, then "
+    "activate it")
+
+
+def _is_starter(name) -> bool:
+    """The one profile that ships with the repo. Never written by the
+    dashboard: an edit while it is active (a fresh install) would land in
+    the tracked file, comments gone (2026-09-06)."""
+    return isinstance(name, str) and name.casefold() == STARTER_PROFILE
 
 
 def _is_draft(name: str) -> bool:
@@ -930,6 +1013,8 @@ def api_profile_patch():
     path = _profile_path(name)
     if not path:
         return jsonify({"ok": False, "error": f"bad profile name: {name!r}"}), 400
+    if _is_starter(name):
+        return jsonify({"ok": False, "error": _STARTER_READ_ONLY, "starter": True}), 409
     if not os.path.exists(path):
         return jsonify({"ok": False, "error": f"no such profile: {name}"}), 404
     # A DRAFT IS NOT A PROFILE YET. scan.py writes `player:` alone, so it is
@@ -1047,6 +1132,29 @@ def api_loadout_patch():
         LIVE_CONFIG["loadouts"] = patched
     return jsonify({"ok": True, "backup": backup, "loadouts": patched,
                     "warnings": warns})
+
+
+@app.post("/api/profile-copy")
+def api_profile_copy():
+    """Copy a profile file VERBATIM to profiles/<name>.yaml: the way to get
+    an editable profile of your own before any scan exists. The starter's
+    comments come along (a yaml dump would drop them), the copy is
+    git-ignored, every editor works on it. Nothing is activated here."""
+    body = request.get_json(force=True) or {}
+    src_name = str(body.get("from") or STARTER_PROFILE).strip()
+    name = str(body.get("name") or "").strip()
+    src = _profile_path(src_name)
+    dest = _profile_path(name)
+    if not src or _is_draft(src_name) or not os.path.exists(src):
+        return jsonify({"ok": False, "error": f"no profile {src_name!r} to copy"}), 404
+    if not dest or _is_draft(name):
+        return jsonify({"ok": False, "error": "name: letters, digits, _ - . only"}), 400
+    if _is_starter(name):
+        return jsonify({"ok": False, "error": _STARTER_READ_ONLY, "starter": True}), 409
+    if os.path.exists(dest) and not body.get("overwrite"):
+        return jsonify({"ok": False, "error": f"profiles/{name}.yaml exists"}), 409
+    shutil.copyfile(src, dest)
+    return jsonify({"ok": True, "name": name, "copied_from": src_name})
 
 
 @app.post("/api/profile-activate")
@@ -2004,11 +2112,19 @@ def _required_templates(cfg: dict, profile: dict | None) -> list[dict]:
              "scanned account")
     if player.get("global_presets"):
         need("presets/picker_icon.png", "global preset picker button", "scanned account")
+    equipped = set(player.get("modules_equipped") or [])
     out = []
     for rel in sorted(want):
         path = _template_path(rel)
         row = want[rel]
         row["have"] = bool(path and os.path.exists(path))
+        stem = rel[len("modules/"):-4]
+        if not row["have"] and rel.startswith("modules/") and "/" not in stem \
+                and stem in equipped:
+            # an equipped module is absent from the inventory grid, so its
+            # grid tile cannot be cut until it is unequipped
+            row["note"] = ("equipped right now - its inventory tile can only be "
+                           "cut while it sits in the grid; re-run Calibrate then")
         out.append(row)
     return out
 
@@ -2036,8 +2152,10 @@ def api_catalogue_modules():
     Calibrate page's naming help for a fresh account (game knowledge only,
     player/catalogue.py; nothing about any account)."""
     from player import catalogue
-    return jsonify({"modules": [{"slug": s, "name": n, "abbrevs": list(a)}
-                                for s, (n, a) in catalogue.MODULES.items()]})
+    learned = catalogue.local_modules()
+    return jsonify({"modules": [{"slug": s, "name": n, "abbrevs": list(a),
+                                 "learned": s in learned}
+                                for s, (n, a) in catalogue.all_modules().items()]})
 
 
 @app.post("/api/template/<path:rel>")
@@ -2118,6 +2236,8 @@ def api_profile_promote():
         return jsonify({"ok": False, "error": "draft: instance name expected"}), 400
     if not _PROFILE_NAME_RE.fullmatch(name) or name.casefold().endswith(".draft"):
         return jsonify({"ok": False, "error": "name: letters, digits, _ - . only"}), 400
+    if _is_starter(name):
+        return jsonify({"ok": False, "error": _STARTER_READ_ONLY, "starter": True}), 409
     draft_path = os.path.join(_profiles_dir(), f"{draft}.draft.yaml")
     base_path = _profile_path(base)
     dest = _profile_path(name)

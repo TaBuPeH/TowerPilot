@@ -317,3 +317,57 @@ def test_start_engine_preset_keeps_preset_argv(dash, start_cmds):
     cmd = next(c for c in start_cmds if "--instance" in c)
     assert cmd[cmd.index("--preset") + 1] == "normal_run"
     assert any(c.endswith("orchestrator.py") for c in cmd)
+
+
+def test_run_types_have_editable_display_names():
+    """Run types get what the behavior library has: a display name (the
+    blueprint `label` the compiler and tray already read) edited in the run
+    type's editor, shown in the list with the identifier as a chip, and used
+    in the day plan's run picker with the identifier as the tooltip."""
+    with open(INDEX, encoding="utf-8") as fh:
+        html = fh.read()
+    for needle in ("function bpLabel", "function setBpLabel",
+                   "setBpLabel('${esc(bpName)}', this.value)",
+                   "function bpOptionText", "${esc(bpOptionText(n, b))}",
+                   'title="${esc(n)}"', "used.map(n => esc(bpLabel(n)))",
+                   "<legend>Name</legend>", "function bpKindLabel",
+                   "Achievement run (${b.dissonant_tab} dissonance)"):
+        assert needle in html, needle
+
+
+def test_starter_profile_is_read_only_in_the_dashboard(dash):
+    """profiles/default.yaml ships with the repo: a UI edit while it is the
+    active profile (every fresh install) would rewrite the tracked file with
+    its comments gone (2026-09-06). Patch and Promote refuse it; the way to
+    an editable profile is a VERBATIM copy."""
+    r = _patch(dash, "default", ["blueprints", "coin_default", "label"], "Mine")
+    assert r.status_code == 409 and r.get_json()["starter"] is True
+    starter = os.path.join(BACKEND, "profiles", "default.yaml")
+    dst = os.path.join(BACKEND, "profiles", "zz_copytest.yaml")
+    with dash.app.test_client() as c:
+        r = c.post("/api/profile-promote", json={"draft": "main", "name": "default"})
+        assert r.status_code == 409, r.get_json()
+        r = c.post("/api/profile-copy", json={"from": "default", "name": "default"})
+        assert r.status_code == 409
+        r = c.post("/api/profile-copy", json={"from": "default", "name": "zz_copytest"})
+        assert r.status_code == 200, r.get_json()
+        try:
+            with open(dst, encoding="utf-8") as a, open(starter, encoding="utf-8") as b:
+                assert a.read() == b.read()                     # comments and all
+            r = c.post("/api/profile-copy", json={"from": "default", "name": "zz_copytest"})
+            assert r.status_code == 409                          # never silently clobbers
+            r = _patch(dash, "zz_copytest", ["blueprints", "coin_default", "label"], "Mine")
+            assert r.status_code == 200, r.get_json()
+        finally:
+            for f in glob.glob(dst + "*"):
+                os.remove(f)
+    with open(starter, encoding="utf-8") as fh:
+        assert fh.read().lstrip().startswith("#")                # the starter kept its guide
+
+
+def test_home_page_offers_the_starter_copy():
+    with open(INDEX, encoding="utf-8") as fh:
+        html = fh.read()
+    for needle in ("function starterBanner", "function copyStarter", "/api/profile-copy",
+                   "${starterBanner()}", "Copy the starter into my own profile"):
+        assert needle in html, needle

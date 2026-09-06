@@ -3,7 +3,7 @@
 > **Status:** Active
 > **Type:** Knowledge
 > **Created:** 2026-09-05
-> **Updated:** 2026-09-05
+> **Updated:** 2026-09-06
 > **Tags:** bluestacks, emulator, setup
 
 The autopilot was built against MuMu Player. Everything it needs from an
@@ -121,9 +121,11 @@ python backend/vision/screen.py --instance main -v
 
 It prints the screen name and every template score for one capture. On
 the game's home screen it must say `home`; in a run it must say `battle`
-with the wave number. Then open the Calibrate page and work through the
-*Required for your account* list with the cropper. When the scores are
-clean, set `allow_taps: true` in Configuration.
+with the wave number. Then set `allow_taps: true` in Configuration and
+press **Calibrate now** on the Calibrate page: the bot cuts your card tabs,
+preset rows and module icons from your own screens (verified on BlueStacks
+2026-09-06 - every pill found, every label read). The cropper on the same
+page is the manual fallback.
 
 ---
 
