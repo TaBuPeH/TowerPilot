@@ -41,6 +41,14 @@ def _frame_with_digits(digits: str, x0: int, y0: int = 6) -> np.ndarray:
 @pytest.fixture(autouse=True)
 def _closed_layout(monkeypatch):
     monkeypatch.setattr(capture, "layout_offset", 0)
+    # Synthetic connected glyphs test layout rejection without any game artwork.
+    rng = np.random.default_rng(712)
+    glyphs = {}
+    for digit in range(10):
+        glyph = np.full((32, 16), 255, np.uint8)
+        glyph[2:-2, 2:-2] = rng.integers(0, 2, (28, 12), dtype=np.uint8) * 255
+        glyphs[digit] = glyph
+    monkeypatch.setattr(wave_reader, "_templates", glyphs)
 
 
 def test_counter_at_hud_position_reads():

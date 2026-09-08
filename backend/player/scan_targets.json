@@ -1,0 +1,1196 @@
+[
+  {
+    "rel": "buttons/demon_mode.png",
+    "reference_size": [
+      125,
+      78
+    ]
+  },
+  {
+    "rel": "buttons/end_round.png",
+    "reference_size": [
+      154,
+      45
+    ]
+  },
+  {
+    "rel": "buttons/event_bots_tab.png",
+    "reference_size": [
+      120,
+      55
+    ]
+  },
+  {
+    "rel": "buttons/exit_battle.png",
+    "reference_size": [
+      194,
+      62
+    ]
+  },
+  {
+    "rel": "buttons/gem_claim.png",
+    "reference_size": [
+      236,
+      132
+    ]
+  },
+  {
+    "rel": "buttons/guild_members_tab.png",
+    "reference_size": [
+      203,
+      50
+    ]
+  },
+  {
+    "rel": "buttons/menu_closed_tile.png",
+    "reference_size": [
+      65,
+      65
+    ]
+  },
+  {
+    "rel": "buttons/menu_collapsed.png",
+    "reference_size": [
+      80,
+      65
+    ]
+  },
+  {
+    "rel": "buttons/more_stats.png",
+    "reference_size": [
+      320,
+      105
+    ]
+  },
+  {
+    "rel": "buttons/nuke.png",
+    "reference_size": [
+      114,
+      78
+    ]
+  },
+  {
+    "rel": "buttons/perks.png",
+    "reference_size": [
+      322,
+      105
+    ]
+  },
+  {
+    "rel": "buttons/quest_claim.png",
+    "reference_size": [
+      160,
+      50
+    ]
+  },
+  {
+    "rel": "buttons/retry.png",
+    "reference_size": [
+      407,
+      129
+    ]
+  },
+  {
+    "rel": "buttons/return_to_game.png",
+    "reference_size": [
+      600,
+      50
+    ]
+  },
+  {
+    "rel": "buttons/reward_skip.png",
+    "reference_size": [
+      253,
+      102
+    ]
+  },
+  {
+    "rel": "buttons/store_owned.png",
+    "reference_size": [
+      170,
+      45
+    ]
+  },
+  {
+    "rel": "cards/active_label.png",
+    "reference_size": [
+      300,
+      120
+    ]
+  },
+  {
+    "rel": "cards/cash.png",
+    "reference_size": [
+      230,
+      250
+    ]
+  },
+  {
+    "rel": "cards/death_ray.png",
+    "reference_size": [
+      230,
+      250
+    ]
+  },
+  {
+    "rel": "cards/extra_orb.png",
+    "reference_size": [
+      230,
+      250
+    ]
+  },
+  {
+    "rel": "cards/ultimate_crit.png",
+    "reference_size": [
+      230,
+      250
+    ]
+  },
+  {
+    "rel": "dialogs/dissonant_battle.png",
+    "reference_size": [
+      215,
+      58
+    ]
+  },
+  {
+    "rel": "dialogs/dissonant_header.png",
+    "reference_size": [
+      400,
+      48
+    ]
+  },
+  {
+    "rel": "dialogs/dissonant_tile_utility.png",
+    "reference_size": [
+      120,
+      42
+    ]
+  },
+  {
+    "rel": "dialogs/dissonant_x.png",
+    "reference_size": [
+      90,
+      80
+    ]
+  },
+  {
+    "rel": "digits/0.png",
+    "reference_size": [
+      18,
+      27
+    ]
+  },
+  {
+    "rel": "digits/1.png",
+    "reference_size": [
+      14,
+      32
+    ]
+  },
+  {
+    "rel": "digits/2.png",
+    "reference_size": [
+      22,
+      32
+    ]
+  },
+  {
+    "rel": "digits/3.png",
+    "reference_size": [
+      17,
+      27
+    ]
+  },
+  {
+    "rel": "digits/4.png",
+    "reference_size": [
+      27,
+      32
+    ]
+  },
+  {
+    "rel": "digits/5.png",
+    "reference_size": [
+      21,
+      32
+    ]
+  },
+  {
+    "rel": "digits/6.png",
+    "reference_size": [
+      22,
+      32
+    ]
+  },
+  {
+    "rel": "digits/7.png",
+    "reference_size": [
+      17,
+      25
+    ]
+  },
+  {
+    "rel": "digits/8.png",
+    "reference_size": [
+      17,
+      27
+    ]
+  },
+  {
+    "rel": "digits/9.png",
+    "reference_size": [
+      22,
+      32
+    ]
+  },
+  {
+    "rel": "floaters/gem_a.png",
+    "reference_size": [
+      65,
+      65
+    ]
+  },
+  {
+    "rel": "floaters/gem_b.png",
+    "reference_size": [
+      65,
+      65
+    ]
+  },
+  {
+    "rel": "floaters/gem_c.png",
+    "reference_size": [
+      90,
+      78
+    ]
+  },
+  {
+    "rel": "floaters/gem_v29_orbit.png",
+    "reference_size": [
+      84,
+      84
+    ]
+  },
+  {
+    "rel": "floaters/gem_v29_orbit_b.png",
+    "reference_size": [
+      89,
+      84
+    ]
+  },
+  {
+    "rel": "floaters/gem_v29_orbit_b_lr.png",
+    "reference_size": [
+      82,
+      86
+    ]
+  },
+  {
+    "rel": "floaters/gem_v29_orbit_b_ul.png",
+    "reference_size": [
+      82,
+      81
+    ]
+  },
+  {
+    "rel": "floaters/gem_v29_orbit_b_ul2.png",
+    "reference_size": [
+      82,
+      82
+    ]
+  },
+  {
+    "rel": "floaters/second_wind.png",
+    "reference_size": [
+      75,
+      73
+    ]
+  },
+  {
+    "rel": "guardian/chip_ally.png",
+    "reference_size": [
+      230,
+      180
+    ]
+  },
+  {
+    "rel": "guardian/chip_attack.png",
+    "reference_size": [
+      230,
+      180
+    ]
+  },
+  {
+    "rel": "guardian/chip_bounty.png",
+    "reference_size": [
+      230,
+      180
+    ]
+  },
+  {
+    "rel": "guardian/chip_fetch.png",
+    "reference_size": [
+      230,
+      180
+    ]
+  },
+  {
+    "rel": "guardian/chip_scout.png",
+    "reference_size": [
+      230,
+      180
+    ]
+  },
+  {
+    "rel": "guardian/chip_summon.png",
+    "reference_size": [
+      230,
+      180
+    ]
+  },
+  {
+    "rel": "guardian/equipped_check.png",
+    "reference_size": [
+      90,
+      80
+    ]
+  },
+  {
+    "rel": "guardian/slot_empty.png",
+    "reference_size": [
+      210,
+      200
+    ]
+  },
+  {
+    "rel": "guardian/tab_guardian.png",
+    "reference_size": [
+      300,
+      90
+    ]
+  },
+  {
+    "rel": "home/battle_btn.png",
+    "reference_size": [
+      520,
+      110
+    ]
+  },
+  {
+    "rel": "home/dissonant_run.png",
+    "reference_size": [
+      480,
+      52
+    ]
+  },
+  {
+    "rel": "home/end_round_dialog.png",
+    "reference_size": [
+      330,
+      70
+    ]
+  },
+  {
+    "rel": "home/end_round_yes.png",
+    "reference_size": [
+      250,
+      80
+    ]
+  },
+  {
+    "rel": "home/exit_battle_dialog.png",
+    "reference_size": [
+      420,
+      110
+    ]
+  },
+  {
+    "rel": "home/game_stats_home.png",
+    "reference_size": [
+      300,
+      120
+    ]
+  },
+  {
+    "rel": "home/intro_sprint_dialog.png",
+    "reference_size": [
+      560,
+      130
+    ]
+  },
+  {
+    "rel": "home/intro_sprint_yes.png",
+    "reference_size": [
+      300,
+      120
+    ]
+  },
+  {
+    "rel": "home/speed_x5_mask.png",
+    "reference_size": [
+      71,
+      26
+    ]
+  },
+  {
+    "rel": "home/surrender.png",
+    "reference_size": [
+      300,
+      110
+    ]
+  },
+  {
+    "rel": "home/tile_event.png",
+    "reference_size": [
+      120,
+      95
+    ]
+  },
+  {
+    "rel": "home/tile_guild.png",
+    "reference_size": [
+      190,
+      170
+    ]
+  },
+  {
+    "rel": "home/tourney_open_dialog.png",
+    "reference_size": [
+      660,
+      40
+    ]
+  },
+  {
+    "rel": "home/welcome_back_dialog.png",
+    "reference_size": [
+      425,
+      45
+    ]
+  },
+  {
+    "rel": "home/welcome_back_resume.png",
+    "reference_size": [
+      250,
+      90
+    ]
+  },
+  {
+    "rel": "icons/chest_lock.png",
+    "reference_size": [
+      60,
+      55
+    ]
+  },
+  {
+    "rel": "icons/daily_missions.png",
+    "reference_size": [
+      430,
+      40
+    ]
+  },
+  {
+    "rel": "icons/event_calendar.png",
+    "reference_size": [
+      138,
+      124
+    ]
+  },
+  {
+    "rel": "icons/event_missions_tab.png",
+    "reference_size": [
+      230,
+      56
+    ]
+  },
+  {
+    "rel": "icons/free_gems.png",
+    "reference_size": [
+      130,
+      48
+    ]
+  },
+  {
+    "rel": "icons/game_stats.png",
+    "reference_size": [
+      418,
+      55
+    ]
+  },
+  {
+    "rel": "icons/guild_coin.png",
+    "reference_size": [
+      66,
+      66
+    ]
+  },
+  {
+    "rel": "icons/guild_header.png",
+    "reference_size": [
+      159,
+      45
+    ]
+  },
+  {
+    "rel": "icons/intro_sprint.png",
+    "reference_size": [
+      61,
+      64
+    ]
+  },
+  {
+    "rel": "icons/premium_store.png",
+    "reference_size": [
+      176,
+      45
+    ]
+  },
+  {
+    "rel": "icons/store_cosmetics.png",
+    "reference_size": [
+      323,
+      43
+    ]
+  },
+  {
+    "rel": "icons/store_currencies.png",
+    "reference_size": [
+      364,
+      45
+    ]
+  },
+  {
+    "rel": "icons/store_relics.png",
+    "reference_size": [
+      207,
+      44
+    ]
+  },
+  {
+    "rel": "icons/store_tower_guardian.png",
+    "reference_size": [
+      525,
+      45
+    ]
+  },
+  {
+    "rel": "icons/tile_cart.png",
+    "reference_size": [
+      56,
+      56
+    ]
+  },
+  {
+    "rel": "icons/tile_guild.png",
+    "reference_size": [
+      56,
+      56
+    ]
+  },
+  {
+    "rel": "icons/tile_quests.png",
+    "reference_size": [
+      56,
+      56
+    ]
+  },
+  {
+    "rel": "icons/title_background.png",
+    "reference_size": [
+      337,
+      49
+    ]
+  },
+  {
+    "rel": "icons/title_banner.png",
+    "reference_size": [
+      404,
+      46
+    ]
+  },
+  {
+    "rel": "icons/title_guardian.png",
+    "reference_size": [
+      251,
+      49
+    ]
+  },
+  {
+    "rel": "icons/title_menu.png",
+    "reference_size": [
+      157,
+      46
+    ]
+  },
+  {
+    "rel": "icons/title_tower.png",
+    "reference_size": [
+      173,
+      49
+    ]
+  },
+  {
+    "rel": "modules/assist_btn.png",
+    "reference_size": [
+      250,
+      105
+    ]
+  },
+  {
+    "rel": "modules/buy_module.png",
+    "reference_size": [
+      470,
+      110
+    ]
+  },
+  {
+    "rel": "modules/equip_btn.png",
+    "reference_size": [
+      240,
+      100
+    ]
+  },
+  {
+    "rel": "modules/primary_btn.png",
+    "reference_size": [
+      250,
+      105
+    ]
+  },
+  {
+    "rel": "modules/shatter_dialog.png",
+    "reference_size": [
+      380,
+      55
+    ]
+  },
+  {
+    "rel": "modules/shatter_rare_text.png",
+    "reference_size": [
+      477,
+      55
+    ]
+  },
+  {
+    "rel": "modules/transfer_yes.png",
+    "reference_size": [
+      250,
+      110
+    ]
+  },
+  {
+    "rel": "modules/v29_dialog_close.png",
+    "reference_size": [
+      53,
+      55
+    ]
+  },
+  {
+    "rel": "modules/v29_equip_btn.png",
+    "reference_size": [
+      215,
+      70
+    ]
+  },
+  {
+    "rel": "overlays/ad_close_x.png",
+    "reference_size": [
+      39,
+      38
+    ]
+  },
+  {
+    "rel": "overlays/return_to_game_bar.png",
+    "reference_size": [
+      560,
+      80
+    ]
+  },
+  {
+    "rel": "presets/close_x.png",
+    "reference_size": [
+      57,
+      57
+    ]
+  },
+  {
+    "rel": "presets/gp_none.png",
+    "reference_size": null
+  },
+  {
+    "rel": "presets/picker_icon.png",
+    "reference_size": [
+      70,
+      70
+    ]
+  },
+  {
+    "rel": "presets/picker_icon_large.png",
+    "reference_size": [
+      95,
+      97
+    ]
+  },
+  {
+    "rel": "presets/select_header.png",
+    "reference_size": [
+      460,
+      60
+    ]
+  },
+  {
+    "rel": "screens/hdr_battle.png",
+    "reference_size": [
+      215,
+      62
+    ]
+  },
+  {
+    "rel": "screens/hdr_cards.png",
+    "reference_size": [
+      190,
+      62
+    ]
+  },
+  {
+    "rel": "screens/hdr_guild.png",
+    "reference_size": [
+      180,
+      62
+    ]
+  },
+  {
+    "rel": "screens/hdr_modules.png",
+    "reference_size": [
+      270,
+      62
+    ]
+  },
+  {
+    "rel": "screens/hdr_tournament.png",
+    "reference_size": [
+      375,
+      62
+    ]
+  },
+  {
+    "rel": "stats/bounce_shot_range.png",
+    "reference_size": [
+      231,
+      108
+    ]
+  },
+  {
+    "rel": "stats/critical_factor.png",
+    "reference_size": [
+      145,
+      105
+    ]
+  },
+  {
+    "rel": "stats/damage.png",
+    "reference_size": [
+      240,
+      64
+    ]
+  },
+  {
+    "rel": "stats/damage_per_meter.png",
+    "reference_size": [
+      197,
+      98
+    ]
+  },
+  {
+    "rel": "stats/death_defy.png",
+    "reference_size": [
+      220,
+      75
+    ]
+  },
+  {
+    "rel": "stats/enemy_attack_level_skip.png",
+    "reference_size": [
+      235,
+      142
+    ]
+  },
+  {
+    "rel": "stats/enemy_health_level_skip.png",
+    "reference_size": [
+      233,
+      134
+    ]
+  },
+  {
+    "rel": "stats/health.png",
+    "reference_size": [
+      235,
+      70
+    ]
+  },
+  {
+    "rel": "stats/health_regen.png",
+    "reference_size": [
+      135,
+      105
+    ]
+  },
+  {
+    "rel": "stats/land_mine_radius.png",
+    "reference_size": [
+      205,
+      100
+    ]
+  },
+  {
+    "rel": "stats/max_label.png",
+    "reference_size": [
+      140,
+      36
+    ]
+  },
+  {
+    "rel": "stats/super_crit_chance.png",
+    "reference_size": [
+      251,
+      108
+    ]
+  },
+  {
+    "rel": "stats/super_crit_mult.png",
+    "reference_size": [
+      192,
+      102
+    ]
+  },
+  {
+    "rel": "storefont/0.png",
+    "reference_size": [
+      33,
+      45
+    ]
+  },
+  {
+    "rel": "storefont/1.png",
+    "reference_size": [
+      18,
+      40
+    ]
+  },
+  {
+    "rel": "storefont/2.png",
+    "reference_size": [
+      27,
+      40
+    ]
+  },
+  {
+    "rel": "storefont/5.png",
+    "reference_size": [
+      28,
+      35
+    ]
+  },
+  {
+    "rel": "storefont/7.png",
+    "reference_size": [
+      18,
+      35
+    ]
+  },
+  {
+    "rel": "tourney/battle_btn.png",
+    "reference_size": [
+      520,
+      150
+    ]
+  },
+  {
+    "rel": "tourney/battle_btn_preset.png",
+    "reference_size": [
+      595,
+      202
+    ]
+  },
+  {
+    "rel": "tourney/battle_btn_preset_tryagain.png",
+    "reference_size": [
+      516,
+      158
+    ]
+  },
+  {
+    "rel": "tourney/battle_btn_rerun.png",
+    "reference_size": [
+      530,
+      145
+    ]
+  },
+  {
+    "rel": "tourney/buy_ticket_cancel.png",
+    "reference_size": [
+      300,
+      120
+    ]
+  },
+  {
+    "rel": "tourney/buy_ticket_title.png",
+    "reference_size": [
+      380,
+      90
+    ]
+  },
+  {
+    "rel": "tourney/buy_ticket_video.png",
+    "reference_size": [
+      90,
+      90
+    ]
+  },
+  {
+    "rel": "tourney/header.png",
+    "reference_size": [
+      680,
+      110
+    ]
+  },
+  {
+    "rel": "tourney/heat_icon.png",
+    "reference_size": [
+      110,
+      110
+    ]
+  },
+  {
+    "rel": "tourney/heat_tabs.png",
+    "reference_size": [
+      910,
+      85
+    ]
+  },
+  {
+    "rel": "tourney/heat_title.png",
+    "reference_size": [
+      610,
+      70
+    ]
+  },
+  {
+    "rel": "tourney/in_tournament.png",
+    "reference_size": [
+      70,
+      70
+    ]
+  },
+  {
+    "rel": "tourney/leaderboard.png",
+    "reference_size": [
+      680,
+      80
+    ]
+  },
+  {
+    "rel": "tourney/ticket_claim.png",
+    "reference_size": [
+      340,
+      110
+    ]
+  },
+  {
+    "rel": "tourney/ticket_skip.png",
+    "reference_size": [
+      200,
+      90
+    ]
+  },
+  {
+    "rel": "tourney/tournament_stats.png",
+    "reference_size": [
+      700,
+      70
+    ]
+  },
+  {
+    "rel": "tourney/tournament_stats_ok.png",
+    "reference_size": [
+      320,
+      110
+    ]
+  },
+  {
+    "rel": "tourney/trophy_tile.png",
+    "reference_size": [
+      190,
+      170
+    ]
+  },
+  {
+    "rel": "uw/black_hole.png",
+    "reference_size": [
+      210,
+      55
+    ]
+  },
+  {
+    "rel": "uw/chain_lightning.png",
+    "reference_size": [
+      290,
+      55
+    ]
+  },
+  {
+    "rel": "uw/chronofield.png",
+    "reference_size": [
+      250,
+      58
+    ]
+  },
+  {
+    "rel": "uw/chronofield_grant.png",
+    "reference_size": [
+      290,
+      70
+    ]
+  },
+  {
+    "rel": "uw/death_wave.png",
+    "reference_size": [
+      235,
+      55
+    ]
+  },
+  {
+    "rel": "uw/golden_tower.png",
+    "reference_size": [
+      270,
+      55
+    ]
+  },
+  {
+    "rel": "uw/inner_land_mines.png",
+    "reference_size": [
+      300,
+      100
+    ]
+  },
+  {
+    "rel": "uw/poison_swamp.png",
+    "reference_size": [
+      280,
+      55
+    ]
+  },
+  {
+    "rel": "uw/smart_missiles.png",
+    "reference_size": [
+      340,
+      60
+    ]
+  },
+  {
+    "rel": "uw/spotlight.png",
+    "reference_size": [
+      185,
+      55
+    ]
+  },
+  {
+    "rel": "uw/toggle_off.png",
+    "reference_size": [
+      94,
+      50
+    ]
+  },
+  {
+    "rel": "uw/toggle_on.png",
+    "reference_size": [
+      90,
+      50
+    ]
+  },
+  {
+    "rel": "valuefont/0.png",
+    "reference_size": [
+      26,
+      39
+    ]
+  },
+  {
+    "rel": "valuefont/1.png",
+    "reference_size": [
+      15,
+      37
+    ]
+  },
+  {
+    "rel": "valuefont/2.png",
+    "reference_size": [
+      24,
+      38
+    ]
+  },
+  {
+    "rel": "valuefont/3.png",
+    "reference_size": [
+      23,
+      39
+    ]
+  },
+  {
+    "rel": "valuefont/5.png",
+    "reference_size": [
+      23,
+      38
+    ]
+  },
+  {
+    "rel": "valuefont/6.png",
+    "reference_size": [
+      25,
+      39
+    ]
+  },
+  {
+    "rel": "valuefont/7.png",
+    "reference_size": [
+      24,
+      37
+    ]
+  },
+  {
+    "rel": "valuefont/9.png",
+    "reference_size": [
+      24,
+      39
+    ]
+  },
+  {
+    "rel": "valuefont/K.png",
+    "reference_size": [
+      25,
+      37
+    ]
+  },
+  {
+    "rel": "valuefont/M.png",
+    "reference_size": [
+      39,
+      37
+    ]
+  },
+  {
+    "rel": "valuefont/dollar.png",
+    "reference_size": [
+      25,
+      50
+    ]
+  },
+  {
+    "rel": "valuefont/dot.png",
+    "reference_size": [
+      5,
+      7
+    ]
+  }
+]

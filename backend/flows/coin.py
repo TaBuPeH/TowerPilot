@@ -12,6 +12,10 @@ way for every flow file in this folder.
 """
 
 FLOW = {
+    "templates": ['buttons/retry.png',
+     'home/game_stats_home.png',
+     'home/battle_btn.png',
+     'buttons/return_to_game.png'],
     "kind": "coin",
     "label": "Coin farming",
     # None = the orchestrator engine runs the compiled preset directly;

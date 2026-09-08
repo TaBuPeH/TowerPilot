@@ -1,0 +1,1446 @@
+{
+  "version": 3,
+  "layout": {
+    "width": 1080,
+    "height": 2560,
+    "dpi": 360
+  },
+  "navigation": {
+    "battle": [
+      85,
+      2470
+    ],
+    "workshop": [
+      265,
+      2470
+    ],
+    "cards": [
+      448,
+      2470
+    ],
+    "modules": [
+      630,
+      2470
+    ],
+    "lab": [
+      812,
+      2470
+    ],
+    "shop": [
+      995,
+      2470
+    ]
+  },
+  "return_strip": [
+    538,
+    2455
+  ],
+  "tab_bands": {
+    "cards": [
+      330,
+      560
+    ],
+    "modules": [
+      150,
+      340
+    ],
+    "guardians": [
+      330,
+      520
+    ],
+    "bots": [
+      440,
+      640
+    ],
+    "workshop": [
+      140,
+      330
+    ],
+    "picker": [
+      1380,
+      1760
+    ]
+  },
+  "module_slots": {
+    "large": [
+      [
+        307,
+        518
+      ],
+      [
+        307,
+        755
+      ],
+      [
+        768,
+        518
+      ],
+      [
+        768,
+        755
+      ]
+    ],
+    "small": [
+      [
+        115,
+        518
+      ],
+      [
+        115,
+        755
+      ],
+      [
+        954,
+        518
+      ],
+      [
+        954,
+        755
+      ]
+    ],
+    "radius": {
+      "large": 86,
+      "small": 64
+    }
+  },
+  "screens": {
+    "home": {
+      "anchors": [
+        {
+          "text": "BATTLE",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        {
+          "text": "Difficulty",
+          "rect": [
+            300,
+            1200,
+            560,
+            160
+          ]
+        },
+        {
+          "text": "BATTLE",
+          "rect": [
+            300,
+            1970,
+            510,
+            160
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "rel": "screens/hdr_battle.png",
+          "text": "BATTLE",
+          "rect": [
+            25,
+            105,
+            260,
+            65
+          ]
+        },
+        {
+          "rel": "home/battle_btn.png",
+          "text": "BATTLE",
+          "rect": [
+            435,
+            2015,
+            235,
+            65
+          ]
+        },
+        {
+          "rel": "home/dissonant_run.png",
+          "text": "Dissonant Run",
+          "rect": [
+            402,
+            2175,
+            290,
+            65
+          ]
+        }
+      ]
+    },
+    "cards": {
+      "anchors": [
+        {
+          "text": "CARDS",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        {
+          "text": "ACTIVE",
+          "rect": [
+            400,
+            475,
+            290,
+            90
+          ]
+        },
+        {
+          "text": "INVENTORY",
+          "rect": [
+            320,
+            945,
+            470,
+            80
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "rel": "screens/hdr_cards.png",
+          "text": "CARDS",
+          "rect": [
+            25,
+            105,
+            270,
+            65
+          ]
+        },
+        {
+          "rel": "cards/active_label.png",
+          "text": "ACTIVE",
+          "rect": [
+            422,
+            480,
+            240,
+            65
+          ]
+        }
+      ]
+    },
+    "modules": {
+      "anchors": [
+        {
+          "text": "MODULES",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        {
+          "text": "Buy Module",
+          "rect": [
+            370,
+            325,
+            410,
+            100
+          ]
+        },
+        {
+          "text": "Inventory",
+          "rect": [
+            0,
+            990,
+            360,
+            90
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "rel": "screens/hdr_modules.png",
+          "text": "MODULES",
+          "rect": [
+            25,
+            105,
+            365,
+            65
+          ]
+        },
+        {
+          "rel": "modules/buy_module.png",
+          "text": "Buy Module",
+          "rect": [
+            420,
+            337,
+            290,
+            65
+          ]
+        }
+      ]
+    },
+    "guild": {
+      "anchors": [
+        {
+          "text": "GUILD",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        {
+          "text": "Members",
+          "rect": [
+            30,
+            275,
+            300,
+            80
+          ]
+        },
+        {
+          "text": "Guardian",
+          "rect": [
+            350,
+            275,
+            300,
+            80
+          ]
+        },
+        {
+          "text": "Tap To Return To Game",
+          "rect": [
+            220,
+            2430,
+            640,
+            65
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "rel": "screens/hdr_guild.png",
+          "text": "GUILD",
+          "rect": [
+            25,
+            105,
+            260,
+            65
+          ]
+        },
+        {
+          "rel": "icons/guild_header.png",
+          "text": "GUILD",
+          "rect": [
+            25,
+            105,
+            260,
+            65
+          ]
+        },
+        {
+          "rel": "buttons/guild_members_tab.png",
+          "text": "Members",
+          "rect": [
+            45,
+            288,
+            265,
+            60
+          ]
+        },
+        {
+          "rel": "guardian/tab_guardian.png",
+          "text": "Guardian",
+          "rect": [
+            365,
+            288,
+            270,
+            60
+          ]
+        },
+        {
+          "rel": "buttons/return_to_game.png",
+          "text": "Tap To Return To Game",
+          "rect": [
+            220,
+            2430,
+            640,
+            65
+          ]
+        }
+      ]
+    },
+    "guardians": {
+      "anchors": [
+        {
+          "text": "GUILD",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        {
+          "text": "CHIPS INVENTORY",
+          "rect": [
+            20,
+            1100,
+            700,
+            90
+          ]
+        }
+      ],
+      "targets": []
+    },
+    "guild_store": {
+      "anchors": [
+        {
+          "text": "GUILD",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        {
+          "text": "CURRENCIES",
+          "rect": [
+            320,
+            400,
+            470,
+            90
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "rel": "icons/store_currencies.png",
+          "text": "CURRENCIES",
+          "rect": [
+            345,
+            415,
+            400,
+            70
+          ]
+        },
+        {
+          "rel": "icons/title_tower.png",
+          "text": "Tower",
+          "rect": [
+            170,
+            1430,
+            160,
+            60
+          ]
+        },
+        {
+          "rel": "icons/title_background.png",
+          "text": "Background",
+          "rect": [
+            620,
+            1430,
+            300,
+            60
+          ]
+        },
+        {
+          "rel": "icons/title_menu.png",
+          "text": "Menu",
+          "rect": [
+            175,
+            2190,
+            170,
+            60
+          ]
+        },
+        {
+          "rel": "icons/title_banner.png",
+          "text": "Profile Banner",
+          "rect": [
+            590,
+            2190,
+            340,
+            65
+          ]
+        }
+      ]
+    },
+    "events": {
+      "anchors": [
+        {
+          "text": "EVENT",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        {
+          "text": "Missions",
+          "rect": [
+            30,
+            270,
+            300,
+            90
+          ]
+        },
+        {
+          "text": "Event Shop",
+          "rect": [
+            360,
+            270,
+            370,
+            90
+          ]
+        },
+        {
+          "text": "Bots",
+          "rect": [
+            820,
+            270,
+            230,
+            90
+          ]
+        },
+        {
+          "text": "Tap To Return To Game",
+          "rect": [
+            220,
+            2430,
+            640,
+            65
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "rel": "icons/event_missions_tab.png",
+          "text": "Missions",
+          "rect": [
+            45,
+            280,
+            250,
+            60
+          ]
+        },
+        {
+          "rel": "buttons/event_bots_tab.png",
+          "text": "Bots",
+          "rect": [
+            838,
+            280,
+            155,
+            60
+          ]
+        },
+        {
+          "rel": "buttons/return_to_game.png",
+          "text": "Tap To Return To Game",
+          "rect": [
+            220,
+            2430,
+            640,
+            65
+          ]
+        }
+      ]
+    },
+    "bots": {
+      "anchors": [
+        {
+          "text": "EVENT",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        {
+          "text": "BOTS",
+          "rect": [
+            430,
+            390,
+            270,
+            90
+          ]
+        },
+        {
+          "text": "Tap To Return To Game",
+          "rect": [
+            220,
+            2430,
+            640,
+            65
+          ]
+        }
+      ],
+      "targets": []
+    },
+    "shop": {
+      "anchors": [
+        {
+          "text": "STORE",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "rel": "icons/premium_store.png",
+          "text": "STORE",
+          "rect": [
+            25,
+            105,
+            275,
+            65
+          ]
+        }
+      ]
+    },
+    "picker": {
+      "anchors": [
+        {
+          "text": "SELECT A PRESET",
+          "rect": [
+            270,
+            1080,
+            560,
+            110
+          ]
+        },
+        {
+          "text": "Select a Global Preset",
+          "rect": [
+            150,
+            1200,
+            800,
+            110
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "rel": "presets/select_header.png",
+          "text": "SELECT A PRESET",
+          "rect": [
+            290,
+            1100,
+            520,
+            75
+          ]
+        }
+      ]
+    }
+  },
+  "routes": [
+    {
+      "name": "Cards",
+      "from": "home",
+      "to": "cards",
+      "optional": false,
+      "nav": "cards"
+    },
+    {
+      "name": "Cards return",
+      "from": "cards",
+      "to": "home",
+      "optional": false,
+      "nav": "battle"
+    },
+    {
+      "name": "Modules",
+      "from": "home",
+      "to": "modules",
+      "optional": false,
+      "nav": "modules"
+    },
+    {
+      "name": "Modules return",
+      "from": "modules",
+      "to": "home",
+      "optional": false,
+      "nav": "battle"
+    },
+    {
+      "name": "Guild",
+      "from": "home",
+      "to": "guild",
+      "optional": true,
+      "point": [
+        120,
+        965
+      ],
+      "icon": {
+        "rect": [
+          45,
+          900,
+          150,
+          135
+        ],
+        "hue": "red",
+        "rel": "home/tile_guild.png"
+      }
+    },
+    {
+      "name": "Guardian",
+      "from": "guild",
+      "to": "guardians",
+      "optional": false,
+      "point": [
+        472,
+        315
+      ]
+    },
+    {
+      "name": "Guild Store",
+      "from": "guardians",
+      "to": "guild_store",
+      "optional": false,
+      "point": [
+        791,
+        314
+      ]
+    },
+    {
+      "name": "Guild return",
+      "from": "guild_store",
+      "to": "home",
+      "optional": false,
+      "point": [
+        538,
+        2455
+      ]
+    },
+    {
+      "name": "Events",
+      "from": "home",
+      "to": "events",
+      "optional": true,
+      "point": [
+        120,
+        700
+      ],
+      "icon": {
+        "rect": [
+          45,
+          630,
+          150,
+          140
+        ],
+        "hue": "cyan",
+        "rel": "home/tile_event.png"
+      }
+    },
+    {
+      "name": "Bots",
+      "from": "events",
+      "to": "bots",
+      "optional": false,
+      "point": [
+        895,
+        306
+      ]
+    },
+    {
+      "name": "Events return",
+      "from": "bots",
+      "to": "home",
+      "optional": false,
+      "point": [
+        538,
+        2455
+      ]
+    },
+    {
+      "name": "Store",
+      "from": "home",
+      "to": "shop",
+      "optional": false,
+      "nav": "shop"
+    },
+    {
+      "name": "Store return",
+      "from": "shop",
+      "to": "home",
+      "optional": false,
+      "nav": "battle"
+    },
+    {
+      "name": "Preset picker",
+      "from": "home",
+      "to": "picker",
+      "optional": true,
+      "point": [
+        854,
+        2030
+      ],
+      "icon": {
+        "rect": [
+          812,
+          1980,
+          100,
+          100
+        ],
+        "hue": "purple",
+        "rel": "presets/picker_icon.png"
+      }
+    },
+    {
+      "name": "Preset picker close",
+      "from": "picker",
+      "to": "home",
+      "optional": false,
+      "point": [
+        944,
+        930
+      ],
+      "icon": {
+        "rect": [
+          908,
+          895,
+          73,
+          73
+        ],
+        "hue": "cyan",
+        "rel": "presets/close_x.png"
+      }
+    }
+  ],
+  "module_descriptor": {
+    "icon_search": [
+      100,
+      400,
+      320,
+      550
+    ],
+    "text_gap": 35,
+    "text_above": 65,
+    "text_below": 200,
+    "text_right": 985,
+    "minimum_inliers": 8,
+    "minimum_inlier_fraction": 0.3,
+    "icon_search_from_close": {
+      "x": 100,
+      "dy": -40,
+      "width": 320,
+      "height": 340
+    }
+  },
+  "dynamic_targets": [
+    {
+      "rel": "modules/v29_dialog_close.png",
+      "screen": "module_detail",
+      "verifier": "inventory icon registration, then structural cyan close"
+    },
+    {
+      "rel": "modules/v29_equip_btn.png",
+      "screen": "module_detail",
+      "verifier": "inventory icon registration, then exact Equip label"
+    },
+    {
+      "rel": "icons/intro_sprint.png",
+      "screen": "battle",
+      "verifier": "consented flow: left-rail glyph, confirmed by the dialog its tap opens"
+    },
+    {
+      "rel": "home/intro_sprint_dialog.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'END INTRO SPRINT' dialog title, then cancelled"
+    },
+    {
+      "rel": "home/intro_sprint_yes.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR confirm button on the intro-sprint dialog"
+    },
+    {
+      "rel": "buttons/end_round.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'END ROUND' on the in-run side menu"
+    },
+    {
+      "rel": "home/exit_battle_dialog.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'EXIT BATTLE' surrender dialog"
+    },
+    {
+      "rel": "home/surrender.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'SURRENDER' on the exit dialog"
+    },
+    {
+      "rel": "home/end_round_dialog.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'END ROUND?' confirm dialog"
+    },
+    {
+      "rel": "home/end_round_yes.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'YES' on the end-round dialog"
+    },
+    {
+      "rel": "buttons/reward_skip.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'SKIP' on the post-run reward animation"
+    },
+    {
+      "rel": "icons/game_stats.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'GAME STATS' header after the run"
+    },
+    {
+      "rel": "buttons/more_stats.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'MORE STATS' on the GAME STATS screen"
+    },
+    {
+      "rel": "buttons/perks.png",
+      "screen": "battle",
+      "verifier": "consented flow: OCR 'PERKS' on the GAME STATS screen"
+    },
+    {
+      "rel": "buttons/quest_claim.png",
+      "screen": "events",
+      "verifier": "consented flow: OCR 'CLAIM' on the events/missions screen"
+    },
+    {
+      "rel": "icons/event_calendar.png",
+      "screen": "events",
+      "verifier": "consented flow: OCR 'CALENDAR' on the events screen"
+    },
+    {
+      "rel": "icons/free_gems.png",
+      "screen": "shop",
+      "verifier": "consented flow: OCR 'FREE' gems control in the store"
+    },
+    {
+      "rel": "icons/store_tower_guardian.png",
+      "screen": "shop",
+      "verifier": "consented flow: OCR store section header"
+    },
+    {
+      "rel": "icons/store_relics.png",
+      "screen": "shop",
+      "verifier": "consented flow: OCR store section header"
+    },
+    {
+      "rel": "icons/store_cosmetics.png",
+      "screen": "shop",
+      "verifier": "consented flow: OCR store section header"
+    },
+    {
+      "rel": "buttons/store_owned.png",
+      "screen": "shop",
+      "verifier": "consented flow: OCR 'OWNED' label in the store"
+    },
+    {
+      "rel": "icons/guild_coin.png",
+      "screen": "guild",
+      "verifier": "consented flow: OCR guild coin control"
+    },
+    {
+      "rel": "buttons/retry.png",
+      "screen": "battle",
+      "verifier": "consented flow: LEFT button of the RETRY / HOME row on GAME STATS, by position (RETRY)"
+    },
+    {
+      "rel": "home/game_stats_home.png",
+      "screen": "battle",
+      "verifier": "consented flow: RIGHT button of the RETRY / HOME row on GAME STATS, by position (HOME)"
+    }
+  ],
+  "asset_bindings": {
+    "home/tile_guild.png": {
+      "names": [
+        "Guild Icon"
+      ],
+      "screen": "home",
+      "search": [
+        10,
+        300,
+        215,
+        1400
+      ],
+      "locate_navigation": true
+    },
+    "home/tile_event.png": {
+      "names": [
+        "event icon"
+      ],
+      "screen": "home",
+      "search": [
+        10,
+        300,
+        215,
+        1400
+      ],
+      "locate_navigation": true
+    },
+    "presets/picker_icon.png": {
+      "names": [
+        "GlobalPresets",
+        "presets"
+      ],
+      "screen": "home",
+      "search": [
+        780,
+        1930,
+        180,
+        270
+      ],
+      "locate_navigation": false
+    },
+    "presets/close_x.png": {
+      "names": [
+        "close",
+        "close-50"
+      ],
+      "screen": "picker",
+      "search": [
+        860,
+        500,
+        160,
+        1400
+      ],
+      "locate_navigation": false
+    },
+    "modules/v29_dialog_close.png": {
+      "names": [
+        "close",
+        "close-50"
+      ],
+      "screen": "module_detail",
+      "search": [
+        870,
+        450,
+        120,
+        550
+      ],
+      "locate_navigation": false
+    },
+    "tourney/trophy_tile.png": {
+      "names": [
+        "trophy"
+      ],
+      "screen": "home",
+      "search": [
+        10,
+        300,
+        215,
+        1400
+      ],
+      "locate_navigation": false
+    },
+    "cards/death_ray.png": {
+      "names": [
+        "death ray"
+      ],
+      "screen": "cards",
+      "search": [
+        20,
+        1030,
+        1040,
+        1200
+      ],
+      "locate_navigation": false
+    },
+    "cards/extra_orb.png": {
+      "names": [
+        "Extra Orb"
+      ],
+      "screen": "cards",
+      "search": [
+        20,
+        1030,
+        1040,
+        1200
+      ],
+      "locate_navigation": false
+    },
+    "guardian/chip_attack.png": {
+      "names": [
+        "Attack"
+      ],
+      "screen": "guardians",
+      "search": [
+        25,
+        1160,
+        1020,
+        1140
+      ],
+      "locate_navigation": false
+    },
+    "guardian/chip_ally.png": {
+      "names": [
+        "Ally"
+      ],
+      "screen": "guardians",
+      "search": [
+        25,
+        1160,
+        1020,
+        1140
+      ],
+      "locate_navigation": false
+    },
+    "guardian/chip_fetch.png": {
+      "names": [
+        "Fetch"
+      ],
+      "screen": "guardians",
+      "search": [
+        25,
+        1160,
+        1020,
+        1140
+      ],
+      "locate_navigation": false
+    },
+    "guardian/chip_scout.png": {
+      "names": [
+        "Scout"
+      ],
+      "screen": "guardians",
+      "search": [
+        25,
+        1160,
+        1020,
+        1140
+      ],
+      "locate_navigation": false
+    },
+    "guardian/chip_summon.png": {
+      "names": [
+        "Summon"
+      ],
+      "screen": "guardians",
+      "search": [
+        25,
+        1160,
+        1020,
+        1140
+      ],
+      "locate_navigation": false
+    },
+    "icons/chest_lock.png": {
+      "names": [
+        "lock"
+      ],
+      "screen": "missions",
+      "search": [
+        10,
+        170,
+        1060,
+        2180
+      ],
+      "locate_navigation": false
+    },
+    "uw/black_hole.png": {
+      "names": [
+        "weapon_blackHole"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        0,
+        1080,
+        2560
+      ],
+      "locate_navigation": false
+    },
+    "uw/chain_lightning.png": {
+      "names": [
+        "weapon_chainLightning"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        0,
+        1080,
+        2560
+      ],
+      "locate_navigation": false
+    },
+    "uw/chronofield.png": {
+      "names": [
+        "weapon_chronoField"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        0,
+        1080,
+        2560
+      ],
+      "locate_navigation": false
+    },
+    "uw/death_wave.png": {
+      "names": [
+        "weapon_deathWave"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        0,
+        1080,
+        2560
+      ],
+      "locate_navigation": false
+    },
+    "uw/golden_tower.png": {
+      "names": [
+        "weapon_goldenTower"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        0,
+        1080,
+        2560
+      ],
+      "locate_navigation": false
+    },
+    "uw/inner_land_mines.png": {
+      "names": [
+        "weapon_landMines"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        0,
+        1080,
+        2560
+      ],
+      "locate_navigation": false
+    },
+    "uw/smart_missiles.png": {
+      "names": [
+        "weapon_smartMissilies"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        0,
+        1080,
+        2560
+      ],
+      "locate_navigation": false
+    },
+    "uw/spotlight.png": {
+      "names": [
+        "weapon_spotlight"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        0,
+        1080,
+        2560
+      ],
+      "locate_navigation": false
+    },
+    "uw/poison_swamp.png": {
+      "names": [
+        "weapon_swamp"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        0,
+        1080,
+        2560
+      ],
+      "locate_navigation": false
+    },
+    "buttons/nuke.png": {
+      "names": [
+        "protector-nuke"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        1440,
+        600,
+        920
+      ],
+      "locate_navigation": false,
+      "note": "HUD ability row, both panel layouts (+679 when the upgrade panel is closed); cut by the Tier-1 battle pass"
+    },
+    "buttons/demon_mode.png": {
+      "names": [
+        "DemonMode"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        1440,
+        600,
+        920
+      ],
+      "locate_navigation": false,
+      "note": "HUD ability row; cut by the Tier-1 battle pass"
+    },
+    "uw/toggle_on.png": {
+      "names": [
+        "switch-on"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        1780,
+        1080,
+        780
+      ],
+      "locate_navigation": false,
+      "note": "in-run panel, ULTIMATE WEAPONS tab: any ON switch (not unique on screen)"
+    },
+    "uw/toggle_off.png": {
+      "names": [
+        "switch-off"
+      ],
+      "screen": "battle",
+      "search": [
+        0,
+        1780,
+        1080,
+        780
+      ],
+      "locate_navigation": false,
+      "note": "in-run panel, ULTIMATE WEAPONS tab: any OFF switch (not unique on screen)"
+    },
+    "icons/tile_quests.png": {
+      "names": [
+        "MissionsIcon"
+      ],
+      "screen": "battle_menu",
+      "search": [
+        840,
+        0,
+        240,
+        820
+      ],
+      "locate_navigation": false,
+      "note": "the checkbox tile in the open in-run side menu; found by the game's own MissionsIcon sprite"
+    },
+    "floaters/second_wind.png": {
+      "names": [
+        "SecondWind"
+      ],
+      "screen": "battle",
+      "search": [
+        10,
+        1300,
+        170,
+        140
+      ],
+      "locate_navigation": false,
+      "note": "the badge above the ability row while Death Defied holds (vision.detect.SW_BAND); the sprite is the glyph only - the cyan ring erodes"
+    }
+  },
+  "asset_strategy": {
+    "package": "com.TechTreeGames.TheTower",
+    "source": "installed_apks",
+    "mapping": "explicit_sprite_names",
+    "verification": "native_screen_feature_registration",
+    "runtime_images": "captured_after_source_and_screen_verification",
+    "unmapped": "rendered labels and composed controls use screen capture; never treated as extracted sprites"
+  },
+  "card_inventory": {
+    "viewport": [
+      20,
+      1030,
+      1040,
+      1350
+    ],
+    "columns": [
+      32,
+      289,
+      546,
+      803
+    ],
+    "tile_width": 244,
+    "tile_height": 301,
+    "swipe_down": [
+      535,
+      1900,
+      535,
+      1650
+    ],
+    "swipe_up": [
+      535,
+      1650,
+      535,
+      1900
+    ],
+    "max_pages": 30
+  },
+  "side_menu": {
+    "screen": "battle",
+    "toggle": {
+      "rect": [
+        965,
+        18,
+        95,
+        92
+      ],
+      "closed_hue": "bars",
+      "open_hue": "green"
+    },
+    "column": [
+      840,
+      0,
+      240,
+      820
+    ],
+    "note": "The in-run side menu behind the hamburger: its tiles (quests, guild, ...) are what the reward flows tap. The Tier-1 battle pass opens it when found shut, cuts the column's artwork-bound tiles and the X, and shuts it again; found open it reads and leaves it."
+  },
+  "hud": {
+    "note": "In-run HUD controls at fixed native positions (measured 2026-09-08 on MuMu: cart box 862,17 96x96; hamburger 963,16 99x96). Not on Home - Home's top-right is a chevron and the Missions box. Cut by the Tier-1 battle pass and by the screen capture when a battle is on screen.",
+    "battle": {
+      "targets": [
+        {
+          "rel": "icons/tile_cart.png",
+          "rect": [
+            864,
+            19,
+            92,
+            92
+          ],
+          "icon": true,
+          "hue": "gold",
+          "note": "gold cart tile, left of the hamburger; the free-gems flow taps it"
+        },
+        {
+          "rel": "buttons/menu_closed_tile.png",
+          "rect": [
+            965,
+            18,
+            95,
+            92
+          ],
+          "icon": true,
+          "hue": "bars",
+          "note": "the hamburger (three white bars) while the side menu is shut; the runner taps it to reach the reward tiles"
+        }
+      ]
+    },
+    "battle_menu": {
+      "targets": [
+        {
+          "rel": "buttons/menu_collapsed.png",
+          "rect": [
+            965,
+            18,
+            95,
+            92
+          ],
+          "icon": true,
+          "hue": "green",
+          "note": "the green X in the hamburger's place while the side menu is open"
+        }
+      ]
+    }
+  }
+}

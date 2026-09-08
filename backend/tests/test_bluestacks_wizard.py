@@ -142,7 +142,10 @@ def test_resolution_check_reads_the_captured_frame_not_the_panel(dash, tmp_path,
         r = c.get("/api/wizard/resolution?serial=127.0.0.1:5555").get_json()
         assert (r["width"], r["height"], r["expected"]) == (2560, 1080, False)
         assert "2560x1080 landscape" in r["note"]
-    assert calls and all(cmd == "screencap" for cmd in calls)
+    # the frame comes from screencap; the only other shell traffic is the
+    # read-only display lookup (MuMu puts the game on a secondary display)
+    assert calls and all(cmd == "screencap" or cmd.startswith("dumpsys SurfaceFlinger") for cmd in calls)
+    assert calls.count("screencap") >= 2
 
 
 def test_ui_offers_prepare_for_bluestacks():

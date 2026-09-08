@@ -117,3 +117,31 @@ def reconnect(serial: str) -> bool:
         return False
     finally:
         sock.close()
+
+
+def exec_to(serial, command, sink, *, timeout=30, progress=None, check_stop=None):
+    """Stream binary stdout to a local file through the existing ADB socket.
+
+    Used for installed APK acquisition. No ADB subprocess or game input.
+    Cancellation is checked between chunks; callers own atomic publication.
+    """
+    if not serial:
+        raise ConnectionError("No adb serial configured")
+    total = 0
+    with socket.create_connection(_HOST, timeout=timeout) as sock:
+        sock.settimeout(timeout)
+        _send(sock, f"host:transport:{serial}")
+        _status(sock, "transport")
+        _send(sock, f"exec:{command}")
+        _status(sock, "exec")
+        while True:
+            if check_stop:
+                check_stop()
+            chunk = sock.recv(1 << 20)
+            if not chunk:
+                break
+            sink.write(chunk)
+            total += len(chunk)
+            if progress:
+                progress(total)
+    return total

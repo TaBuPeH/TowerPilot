@@ -577,19 +577,23 @@ def test_check_capabilities_catches_a_player_that_lost_a_capability(prof):
     compiled = profile_mod.compile_preset(prof, "coin_default")
     assert profile_mod.check_capabilities(compiled, prof["player"]) == []
     stripped = copy.deepcopy(prof["player"])
-    stripped["abilities"]["demon_mode"] = False
-    stripped["wall"] = False
+    stripped["abilities"]["demon_mode"] = False      # verified inventory says NO
+    stripped["wall"] = False                         # not knowledge: readiness gates rois.wall_bar
     problems = profile_mod.check_capabilities(compiled, stripped)
     assert any("demon_mode" in p for p in problems)
-    assert any("no wall" in p for p in problems)
+    assert not any("wall" in p for p in problems)
     assert all("coin_default" in p for p in problems)   # names the blueprint
 
 
-def test_check_capabilities_refuses_unverified_abilities(prof):
+def test_check_capabilities_refuses_only_verified_missing_abilities(prof):
     compiled = profile_mod.compile_preset(prof, "coin_default")
     player = copy.deepcopy(prof["player"])
     player["abilities_verified"] = False
-    assert any("unverified" in p
+    player["wall"] = False
+    assert profile_mod.check_capabilities(compiled, player) == []
+    player["abilities_verified"] = True
+    player["abilities"]["demon_mode"] = False
+    assert any("'demon_mode'" in p and "does not have" in p
                for p in profile_mod.check_capabilities(compiled, player))
 
 
@@ -1690,12 +1694,17 @@ def test_wall_collapse_outside_a_wall_rescue_is_tier_b(prof):
     assert p["rules"][0]["requires"]["wall"] is True
 
 
-def test_a_wall_rule_still_needs_a_wall(prof):
-    """The gate that does NOT move with the tier: no wall on the account means
-    the ROI holds something else entirely, at 3Hz or at 1Hz."""
+def test_a_wall_rule_without_a_confirmed_wall_is_advised_not_refused(prof):
+    """The wall gate moved out of the compiler (2026-09-08): the starter's
+    `wall: false` is no knowledge, so the binding is accepted and advised;
+    what the watch really needs - the wall bar REGION (config rois.wall_bar) -
+    is a per-run readiness requirement that greys the run out instead."""
     prof["player"]["wall"] = False
     prof["policies"]["rescue_policies"]["high_tier_wall"]["arm"] = "always"
-    assert any("no wall" in p for p in profile_mod.validate(prof))
+    assert not [p for p in profile_mod.validate(prof)
+                if "no wall" in p or "player.wall" in p]
+    assert any("watches the wall" in w and "rois.wall_bar" in w
+               for w in profile_mod.warnings(prof))
 
 
 def test_wall_collapse_is_accepted_on_a_wall_policy(prof):
@@ -1853,11 +1862,15 @@ def test_refuse_nuke_when_unowned(prof):
                for p in profile_mod.validate(prof))
 
 
-def test_missing_player_abilities_section_is_a_refusal_not_a_permit(prof):
+def test_missing_player_abilities_section_is_advised_not_refused(prof):
+    """2026-09-08: an unknown inventory is not knowledge. The fence against
+    the fixed-coordinate tap is readiness (`buttons/<ability>.png`, cut from
+    this account's HUD), which greys the run out; the compiler only advises."""
     del prof["player"]["abilities"]
-    problems = profile_mod.validate(prof)
-    assert any("player.abilities" in p and "cannot be verified" in p
-               for p in problems)
+    del prof["player"]["abilities_verified"]
+    assert not [p for p in profile_mod.validate(prof) if "abilit" in p]
+    advice = [w for w in profile_mod.warnings(prof) if "abilities_verified" in w]
+    assert advice and "buttons/demon_mode.png" in advice[0]
 
 
 def test_refuse_unverified_ability_ownership(prof):
@@ -1866,22 +1879,31 @@ def test_refuse_unverified_ability_ownership(prof):
     has never looked at the account. A fabricated `true` is indistinguishable
     from a scanned one, so ownership only counts once something has checked."""
     prof["player"]["abilities_verified"] = False
-    problems = profile_mod.validate(prof)
-    assert any("unverified" in p and "scan.py --battle" in p
-               for p in problems)
+    assert not [p for p in profile_mod.validate(prof) if "abilit" in p]
+    assert any("nothing has verified" in w for w in profile_mod.warnings(prof))
+    # verified knowledge that says NO is still a refusal
+    prof["player"]["abilities_verified"] = True
+    prof["player"]["abilities"]["demon_mode"] = False
+    assert any("'demon_mode'" in p and "does not have" in p
+               for p in profile_mod.validate(prof))
 
 
 def test_missing_abilities_verified_is_unverified(prof):
     """Absent must read as false, not as consent."""
     del prof["player"]["abilities_verified"]
-    assert any("unverified" in p for p in profile_mod.validate(prof))
+    assert not [p for p in profile_mod.validate(prof) if "abilit" in p]
+    assert any("nothing has verified" in w for w in profile_mod.warnings(prof))
 
 
 @pytest.mark.parametrize("value", ["true", 1, "yes"])
 def test_abilities_verified_must_be_the_boolean_true(prof, value):
     """A truthy string is how a hand-edited YAML quietly disarms the gate."""
     prof["player"]["abilities_verified"] = value
-    assert any("unverified" in p for p in profile_mod.validate(prof))
+    prof["player"]["abilities"]["demon_mode"] = False
+    # a truthy string is NOT verification: the inventory's "no" is not honoured
+    # as knowledge (no refusal), and the advisory says nothing has verified it
+    assert not [p for p in profile_mod.validate(prof) if "abilit" in p]
+    assert any("nothing has verified" in w for w in profile_mod.warnings(prof))
 
 
 def test_unverified_abilities_only_gate_rescue_blueprints(prof):
@@ -2248,12 +2270,13 @@ def test_refuse_cl_policy_when_cl_unowned(prof):
                for p in problems)
 
 
-def test_refuse_bar_wall_when_player_has_no_wall(prof):
+def test_bar_wall_without_a_confirmed_wall_compiles_and_names_the_binding(prof):
     prof["player"]["wall"] = False
-    problems = profile_mod.validate(prof)
-    assert any("bar: wall" in p and "no wall" in p for p in problems)
-    assert any("policies.rescue_policies.high_tier_wall" in p
-               for p in problems)
+    assert profile_mod.validate(prof) == []
+    advice = [w for w in profile_mod.warnings(prof) if "watches the wall" in w]
+    assert advice and "coin_default.policies.rescue -> high_tier_wall" in advice[0]
+    prof["player"]["wall"] = True
+    assert not [w for w in profile_mod.warnings(prof) if "watches the wall" in w]
 
 
 def test_refuse_wall_and_hp_in_one_policy(prof):
@@ -2377,10 +2400,22 @@ def test_refuse_loadout_with_unowned_cards(prof, monkeypatch):
                for p in problems)
 
 
-def test_refuse_tier_above_max(prof):
+def test_tier_above_max_is_never_refused_only_advised(prof):
+    """No max tier (user ruling 2026-09-08): player.max_tier is a hint from
+    setup's top-tier climb or the operator, and the starter's 1 is not even
+    that. The compiler accepts any tier >= 1; a tier above a SEEN ceiling is
+    a warning, never a refusal."""
     prof["blueprints"]["coin_default"]["tier"] = 25
-    problems = profile_mod.validate(prof)
-    assert any("above the player's unlocked maximum" in p for p in problems)
+    assert not [p for p in profile_mod.validate(prof) if "tier" in p]
+    prof["player"]["max_tier"] = 19
+    prof["player"].pop("max_tier_verified_by", None)
+    assert not [w for w in profile_mod.warnings(prof) if "coin_default.tier" in w]
+    prof["player"]["max_tier_verified_by"] = "setup"
+    advice = [w for w in profile_mod.warnings(prof) if "coin_default.tier" in w]
+    assert advice and "player.max_tier = 19, per setup" in advice[0]
+    assert not [p for p in profile_mod.validate(prof) if "tier" in p]
+    prof["blueprints"]["coin_default"]["tier"] = 0
+    assert any("must be an integer >= 1" in p for p in profile_mod.validate(prof))
 
 
 def test_refuse_unknown_kind(prof):
@@ -2623,8 +2658,8 @@ def test_refuse_grant_target_already_owned(prof):
 
 def test_validate_collects_every_problem_not_just_the_first(prof):
     prof["blueprints"]["coin_default"]["loadout"] = "ghost"
-    prof["blueprints"]["coin_default"]["tier"] = 99
-    prof["player"]["wall"] = False
+    prof["blueprints"]["coin_default"]["tier"] = "nine"
+    prof["blueprints"]["coin_default"]["policies"]["gather"] = "nobody"
     problems = profile_mod.validate(prof)
     assert len(problems) >= 3
 
@@ -3182,14 +3217,14 @@ def test_select_profile_binds_and_materializes(profile_dir, prof, monkeypatch):
 def test_select_profile_raises_listing_every_problem(profile_dir, prof,
                                                      monkeypatch):
     monkeypatch.setattr(profile_mod, "PROFILE", None)
-    prof["player"]["wall"] = False
+    prof["blueprints"]["coin_default"]["tier"] = "nine"
     prof["blueprints"]["coin_default"]["loadout"] = "ghost"
     _write(profile_dir, "broken", prof)
     before = set(CONFIG["presets"])
     with pytest.raises(ProfileError) as e:
         profile_mod.select_profile("broken")
     msg = str(e.value)
-    assert "no wall" in msg and "ghost" in msg
+    assert "integer >= 1" in msg and "ghost" in msg
     assert set(CONFIG["presets"]) == before      # nothing installed on refusal
 
 

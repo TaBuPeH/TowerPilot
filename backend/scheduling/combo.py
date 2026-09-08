@@ -41,6 +41,7 @@ from scheduling import daystate
 import flows
 from runtime import logger
 from scheduling import runflag
+import settings
 from settings import CONFIG
 
 STATE = "logs/daily_state.json"
@@ -930,6 +931,8 @@ def _block_handoff(b, instance: str) -> None:
     # owns its setup end to end - walking Home underneath it takes work
     # away), "home_only" (tourney.setup() equips and enters by itself), or
     # "loadout" (equip the blueprint's loadout and set its tier below).
+    from player import readiness
+    readiness.require(settings.ROOT, CONFIG, CONFIG["presets"].get(b["preset"]) or {})
     handoff = flows.flow(b["kind"])["handoff"]
     if handoff == "none":
         logger.event("combo_handoff_skipped", block=b["id"], kind=b["kind"],
@@ -943,7 +946,7 @@ def _block_handoff(b, instance: str) -> None:
         return
     body = CONFIG["presets"].get(b["preset"]) or {}
     name, tier = body.get("loadout"), body.get("tier")
-    if not name or tier is None:
+    if tier is None or (not name and b["kind"] != "coin"):
         # NO GUESSING HERE EITHER. The constants can fall back to
         # `loadouts[name].tier or 18` because those names are fixed; a
         # blueprint that states neither is a compiler gap, and farming the
@@ -957,7 +960,8 @@ def _block_handoff(b, instance: str) -> None:
     # farming with the wrong modules is a bad night while a dead scheduler is a
     # dead weekend. The event log records what was left wrong.
     try:
-        loadout.apply(name)
+        if name:
+            loadout.apply(name)
     except tourney.Abort as e:
         logger.event("combo_loadout_partial", phase=b["block"],
                      block=b["id"], error=str(e))
@@ -987,6 +991,14 @@ def _handoff(phase: str, instance: str) -> None:
     # run()'s try/except, which logs combo_handoff_failed, marks non-coin
     # phases done for the day and re-raises for coin.
     _require_blueprint(phase)
+
+    from player import readiness
+    legacy_kind = "shard" if phase == "shards" else phase
+    legacy_key = flows.flow(legacy_kind).get("legacy_preset")
+    legacy_body = dict(CONFIG["presets"].get(legacy_key) or {}, kind=legacy_kind)
+    if phase in ("coin", "shards"):
+        legacy_body["loadout"] = "coin_farm" if phase == "coin" else "shard_farm"
+    readiness.require(settings.ROOT, CONFIG, legacy_body)
 
     if phase == "tournament":
         tourney.ensure_home()

@@ -53,6 +53,7 @@ from runtime import logger
 from scheduling import runflag
 from vision import screen
 from vision import wave_reader
+import settings
 from settings import CONFIG
 
 from interactions import loadout
@@ -63,6 +64,10 @@ from interactions.tourney import (Abort, find, require, tap_at, ensure_home, on_
 # What this flow is, for the registry (flows/__init__.py). The scheduler,
 # compiler, tray and dashboard all read THIS instead of hardcoded tables.
 FLOW = {
+    "templates": ['buttons/retry.png',
+     'home/game_stats_home.png',
+     'home/battle_btn.png',
+     'buttons/return_to_game.png'],
     "kind": "shard",
     "label": "Shard farming",
     "runner": "flows/shard.py",
@@ -123,6 +128,22 @@ WAVE_TIMEOUT = 240.0            # generous: the sprint to wave 100 took ~77s
 GEM_DELAY_SEC = (3, 10)         # human pause before claiming, as in orchestrator.py
 GEM_STALE_SEC = 10.0            # give a drifting gem this long to reappear
 
+# Orbiting-gem BLIND HARVEST (measured live 2026-09-07 on BlueStacks Pie64):
+# the collectible gem (a magenta square + pink diamond) circles the tower CORE
+# on a fixed path. Template matching on it is flaky under heavy effects (1/4 hit,
+# a false positive at that), so instead we periodically tap the 135deg (top-left)
+# arc - clear of the ability row - and a pass of the continuously-orbiting gem
+# lands under a tap over a session. Centre is the tower core, NOT the field-ROI
+# centre (which sits ~160px lower). Camera zoom shifts these per install, so all
+# are overridable via gather.gem_orbit in a blueprint.
+GEM_ORBIT_CENTER = (510, 805)   # tower core (orbit centre), native px
+GEM_ORBIT_RADIUS = 170          # orbit radius (gem square ~70px wide forgives the band)
+GEM_ORBIT_ANGLE = 135.0         # degrees above +x, the safe top-left quadrant
+GEM_ORBIT_INTERVAL = 25.0       # seconds between tap-sets
+GEM_ORBIT_TAPS = 3              # points per set, spread over the arc
+GEM_ORBIT_JITTER = 0.03         # +-3% radius/position randomisation
+GEM_ORBIT_SPREAD = 6.0          # degrees between adjacent points in a set
+
 # The game-speed widget ("- x5.0 +"), panel-open layout; rides the shifting
 # bottom HUD, so capture.layout_offset applies to every y here.
 SPEED_BAND = (1535, 1615)       # y-band of the label
@@ -167,8 +188,12 @@ class GemWatch:
         # GemWatch() and gets gem claiming with the 3-10s human pause.
         self.enabled = bool(enabled)
         self.delay = tuple(delay)
+        # The detection-free orbit harvest rides along on every GemWatch poll,
+        # inert unless a blueprint turns gather.gem_orbit on.
+        self.orbit = GemOrbitTapper(**gem_orbit_opts())
 
     def poll(self, frame) -> None:
+        self.orbit.poll(frame)          # blind harvest (opt-in, self-gated)
         if not self.enabled:
             return
         gem = detect.floating_gem(frame)
@@ -198,6 +223,75 @@ class GemWatch:
                 except act.TapRefused as e:
                     logger.event("tap_refused", button="gem", error=str(e))
             self.due = None
+
+
+def _orbit_points(center, radius, angle, taps, jitter, spread):
+    """The tap points for one harvest set: `taps` points spread symmetrically
+    over the arc around `angle`, each with +-`jitter` radius and a small angular
+    wobble. Screen y is DOWN, so `angle` degrees measured up from +x maps to
+    (cos, -sin). Pure + deterministic-shaped (randomness only in the wobble) so
+    it is unit-testable."""
+    import math
+    cx, cy = center
+    pts = []
+    for k in range(taps):
+        a = angle + spread * (k - (taps - 1) / 2.0) + random.uniform(-2.0, 2.0)
+        r = radius * (1.0 + random.uniform(-jitter, jitter))
+        x = cx + r * math.cos(math.radians(a))
+        y = cy - r * math.sin(math.radians(a))           # up-left => smaller y
+        pts.append((int(round(x)), int(round(y))))
+    return pts
+
+
+class GemOrbitTapper:
+    """Detection-free harvest of the orbiting gem: every `interval` seconds tap a
+    few points on the top-left (135deg) arc it circles, clear of the ability row,
+    and a pass of the continuously-orbiting gem eventually lands under a tap.
+
+    Fires ONLY in a bot-owned battle (a readable wave), never over the ability
+    row, and only when explicitly enabled (gather.gem_orbit.enabled) - so it is
+    inert for every existing preset. The cadence carries its own jitter so the
+    tap phase drifts across the ~15s orbit and reliably coincides over a session.
+    """
+
+    def __init__(self, enabled=False, center=GEM_ORBIT_CENTER,
+                 radius=GEM_ORBIT_RADIUS, angle=GEM_ORBIT_ANGLE,
+                 interval=GEM_ORBIT_INTERVAL, taps=GEM_ORBIT_TAPS,
+                 jitter=GEM_ORBIT_JITTER, spread=GEM_ORBIT_SPREAD):
+        self.enabled = bool(enabled)
+        self.center = tuple(center)
+        self.radius = float(radius)
+        self.angle = float(angle)
+        self.interval = float(interval)
+        self.taps = int(taps)
+        self.jitter = float(jitter)
+        self.spread = float(spread)
+        self.next_at = 0.0
+
+    def points(self):
+        return _orbit_points(self.center, self.radius, self.angle, self.taps,
+                             self.jitter, self.spread)
+
+    def poll(self, frame) -> None:
+        """Tap the arc if enabled, in a battle, and due. Reads the wave only when
+        the timer is due (cheap), and REFUSES if none is on screen - a menu or
+        dialog is not ours to tap into (rule 4/7)."""
+        if not self.enabled:
+            return
+        now = time.monotonic()
+        if now < self.next_at:
+            return
+        if wave_reader.read_wave(frame) is None:
+            return                                   # not a live battle - hands off
+        self.next_at = now + self.interval * (1.0 + random.uniform(-0.12, 0.12))
+        for (x, y) in self.points():
+            if _in_ability_row((x, y)):
+                logger.event("gem_orbit_skip", reason="ability_row", x=x, y=y)
+                continue
+            try:
+                logger.event("gem_orbit_tap", **act.tap(x, y, reason="gem_orbit"))
+            except act.TapRefused as e:
+                logger.event("tap_refused", button="gem_orbit", error=str(e))
 
 
 def _kick_adb():
@@ -334,6 +428,25 @@ def gem_opts() -> dict:
     g = (CONFIG["presets"].get(name) or {}).get("gather") or {}
     return {"enabled": bool(g.get("flying_gem", True)),
             "delay": tuple(g.get("gem_delay_sec", GEM_DELAY_SEC))}
+
+
+def gem_orbit_opts() -> dict:
+    """GemOrbitTapper kwargs from the active blueprint's gather.gem_orbit policy.
+    Off unless a compiled preset sets gather.gem_orbit.enabled true; geometry
+    defaults to the measured module constants, each overridable per-account."""
+    name = CONFIG.get("preset") or ""
+    o = {}
+    if name.startswith("bp_"):
+        o = ((CONFIG["presets"].get(name) or {}).get("gather") or {}).get("gem_orbit") or {}
+    kw = {"enabled": bool(o.get("enabled", False))}
+    if "center" in o:
+        kw["center"] = tuple(o["center"])
+    for src, dst in (("radius", "radius"), ("angle_deg", "angle"),
+                     ("interval_sec", "interval"), ("taps", "taps"),
+                     ("jitter_frac", "jitter"), ("spread_deg", "spread")):
+        if src in o:
+            kw[dst] = o[src]
+    return kw
 
 
 def setup(tier: int | None = None):
@@ -678,7 +791,7 @@ def _speed_maxed(frame) -> bool:
         return False
     live = (crop.min(axis=2) > 190).astype("uint8") * 255
     from settings import ROOT
-    tpl = cv2.imread(str(ROOT / "templates" / "home/speed_x5_mask.png"),
+    tpl = cv2.imread(str(settings.template_path("home/speed_x5_mask.png")),
                      cv2.IMREAD_GRAYSCALE)
     if tpl is None or live.shape[0] < tpl.shape[0] or live.shape[1] < tpl.shape[1]:
         return False
@@ -853,6 +966,8 @@ if __name__ == "__main__":
                              f"(nothing was captured or tapped)")
     else:
         settings.select_instance(_a.instance)
+    from player import readiness
+    readiness.require(settings.ROOT, CONFIG, dict(CONFIG["presets"].get(CONFIG["preset"]) or {}, kind="shard"))
     print(f"shard farming on {CONFIG['active_instance']} "
           f"(loops={_a.loops or 'forever'}, dry_run={CONFIG['loop']['dry_run']})")
     try:

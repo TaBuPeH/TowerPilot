@@ -11,6 +11,17 @@ escalates in gem cost. The guards live in tourney.end_round / ensure_home.
 """
 
 FLOW = {
+    "templates": ['buttons/retry.png',
+     'home/game_stats_home.png',
+     'home/battle_btn.png',
+     'buttons/return_to_game.png',
+     'tourney/header.png',
+     'tourney/trophy_tile.png',
+     'tourney/tournament_stats_ok.png',
+     ('tourney/battle_btn.png',
+      'tourney/battle_btn_preset.png',
+      'tourney/battle_btn_preset_tryagain.png',
+      'tourney/battle_btn_rerun.png')],
     "kind": "tournament",
     "label": "Tournament",
     # None = the orchestrator engine runs the compiled preset directly.

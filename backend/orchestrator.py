@@ -140,6 +140,10 @@ class RunState:
         self.cl_always_above: int | None = None   # rolled per run from a range
         self.cl_blocked_logged = False   # edge-log for "toggle wanted but gated"
         self.gem_due: tuple[float, tuple[int, int]] | None = None
+        from flows import shard
+        # Detection-free orbiting-gem harvest, inert unless gather.gem_orbit is
+        # enabled; rides along on the gem block below (see flows/shard.py).
+        self.gem_orbit = shard.GemOrbitTapper(**shard.gem_orbit_opts())
         self.last_shop = 0.0
         self.sprint_prev: bool | None = None
         self.no_wave = 0              # consecutive frames without a wave read
@@ -1992,6 +1996,10 @@ def watch_frame(rs: "RunState", frame) -> str | None:
                     rs.last_fire["nuke"] = now
     # not watching: abilities are HELD (never fired pre-SW)
 
+    # ---- orbiting-gem BLIND HARVEST (opt-in): tap the 135deg arc on a cadence,
+    # detection-free. Self-gated (enabled + a readable wave), inert by default.
+    rs.gem_orbit.poll(frame)
+
     # ---- gem CLAIM with human delay (3-10 s)
     # gather.flying_gem: a blueprint may switch gem collection off. Absent
     # (every legacy preset) = True. When off, `gem` is never truthy, so the
@@ -2115,7 +2123,28 @@ def _gate_preset() -> bool:
     return True
 
 
+def _prepare_coin_start():
+    """A person's direct Start from Home uses the same equipment/tier route
+    as a scheduled handoff. A battle already on screen is adopted untouched.
+    """
+    body = preset()
+    if body.get("kind") != "coin":
+        return
+    from vision import screen
+    if screen.identify(capture.grab()).name != "home":
+        return
+    from interactions import loadout
+    from flows import shard
+    if body.get("loadout"):
+        loadout.apply(body["loadout"])
+    shard.set_tier(body["tier"])
+    shard.start_battle()
+    logger.event("coin_start_prepared", tier=body["tier"], loadout=body.get("loadout"))
+
+
 def main():
+    from player import readiness
+    readiness.require(settings.ROOT, CONFIG, preset())
     rs = RunState()
     period = 1.0 / CONFIG["loop"]["fps"]
     logger.event("start", instance=CONFIG["active_instance"],
@@ -2146,6 +2175,7 @@ def main():
     # so it never reaches the helper.
     if is_compiled_preset() and not _gate_preset():
         return
+    _prepare_coin_start()
 
     # ---- one-shot pre-battle setup (Tournament preset only). It runs BEFORE
     # the observe loop and only on process start: after a death the loop's own

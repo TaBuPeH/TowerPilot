@@ -50,6 +50,8 @@ CONFIG = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
 # account that has no wall.
 _OVERRIDABLE = ("rois", "tabs", "loop", "missions", "side_menu", "fleet")
 _DEFAULTS = {k: copy.deepcopy(CONFIG[k]) for k in _OVERRIDABLE if k in CONFIG}
+_ACCOUNT_DEFAULTS = {k: copy.deepcopy(CONFIG.get(k)) for k in
+                     ("loadouts", "active_profile", "tourney_card_tweaks")}
 
 
 def instance(name: str | None = None) -> dict:
@@ -75,6 +77,14 @@ def select_instance(name: str, preset: str | None = None) -> None:
                        f"(have: {', '.join(CONFIG['instances'])})")
     CONFIG["active_instance"] = name
     inst = CONFIG["instances"][name]
+    from player import accounts
+    for key, value in _ACCOUNT_DEFAULTS.items():
+        if value is not None:
+            CONFIG[key] = copy.deepcopy(value)
+    scoped = accounts.effective(CONFIG)
+    for key in accounts.FIELDS:
+        if key in scoped:
+            CONFIG[key] = scoped[key]
     for key, pristine in _DEFAULTS.items():
         CONFIG[key].clear()
         CONFIG[key].update(copy.deepcopy(pristine))
@@ -103,6 +113,16 @@ def select_instance(name: str, preset: str | None = None) -> None:
         raise ValueError(f"preset '{chosen}' is a placeholder with no settings "
                          f"yet - define it in config.yaml first")
     CONFIG["preset"] = chosen
+
+
+def template_path(rel: str, *, write=False):
+    from player import accounts
+    return accounts.template_path(ROOT, CONFIG, rel, write=write)
+
+
+def template_files(pattern="*/*.png"):
+    from player import accounts
+    return accounts.template_files(ROOT, CONFIG, pattern)
 
 
 def preset_menu() -> list[tuple[str, str, bool]]:

@@ -52,6 +52,13 @@ LEGACY_PRESET = "quest_inner_land_mines"
 
 # What this flow is, for the registry (flows/__init__.py).
 FLOW = {
+    "templates": ['buttons/retry.png',
+     'home/game_stats_home.png',
+     'home/battle_btn.png',
+     'buttons/return_to_game.png',
+     'uw/inner_land_mines.png',
+     'uw/toggle_on.png',
+     'uw/toggle_off.png'],
     "kind": "cycle_quest",
     "label": "Quest: short cycles (Inner Land Mines)",
     "runner": "flows/quest_ilm.py",
@@ -177,6 +184,8 @@ def _cli(argv=None):
 def main() -> None:
     a = _cli()
     _bind_preset(a.instance, a.preset)
+    from player import readiness
+    readiness.require(settings.ROOT, settings.CONFIG, _preset())
     # PRECEDENCE: explicit CLI > blueprint > module constant. The tray passes
     # --cycles 40 in runner_args, so the legacy launch is unchanged.
     cycles = (a.cycles if a.cycles is not None else

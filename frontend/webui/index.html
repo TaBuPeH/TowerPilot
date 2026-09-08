@@ -188,6 +188,17 @@
     margin-bottom:.5rem; background:var(--glass-inner);
   }
   .flowcard b { font-size:.9rem; }
+  /* an image a run still needs: red-flagged so it is identifiable at a glance */
+  .flowcard.outstanding { border-color:rgba(255,69,58,.55); background:rgba(255,69,58,.07); align-items:flex-start; }
+  .flowcard.outstanding.focus { box-shadow:0 0 0 2px #ff453a; }
+  .flowcard .artwork { width:56px; height:56px; object-fit:contain; flex:none; background:rgba(255,255,255,.07); border-radius:8px; }
+  /* Art / Screenshot pair: the installed game's artwork next to what was cut
+     from this screen, on a green (identified) or red (failing) ground */
+  .artpair { display:inline-flex; gap:.3rem; align-items:center; padding:.2rem; border-radius:8px; vertical-align:middle; margin-right:.4rem; }
+  .artpair.ok { background:rgba(48,209,88,.28); } .artpair.bad { background:rgba(255,69,58,.28); }
+  .artpair .artwork { width:44px; height:44px; }
+  .artpair .artwork.shot { outline:1px solid rgba(255,255,255,.25); }
+  tr.row-ok td { background:rgba(48,209,88,.10); } tr.row-bad td { background:rgba(255,69,58,.10); }
 
   .blockrow { display:grid; grid-template-columns:1.4fr 5.2rem 5.2rem 4.2rem auto;
               gap:.4rem; align-items:center; margin-bottom:.4rem; }
@@ -242,6 +253,29 @@
   .daytabs { display:flex; gap:.45rem; flex-wrap:wrap; margin-bottom:.75rem; }
   .weekmap { display:grid; grid-template-columns:repeat(4,1fr); gap:.4rem .8rem; font-size:.8rem; }
   .weekmap select { margin:0; padding:.2rem .5rem; height:2rem; font-size:.8rem; }
+
+  .scan-progress { margin:1rem 0; padding:1rem; border:1px solid var(--glass-border); border-radius:14px; background:rgba(10,132,255,.045); min-width:0; }
+  .scan-progress-heading { display:flex; justify-content:space-between; flex-wrap:wrap; gap:.5rem; }
+  .scan-progress progress { width:100%; height:.6rem; margin:.6rem 0; accent-color:var(--ios-blue); }
+  .scan-action { margin:.2rem 0 .5rem; font-weight:600; overflow-wrap:anywhere; }
+  .scan-stops { display:flex; overflow-x:auto; padding:.5rem 0 1rem; margin:0; list-style:none; gap:0; }
+  .scan-stops li { list-style:none; flex:0 0 9.2rem; position:relative; padding:.25rem .65rem; text-align:center; font-size:.85rem; }
+  .scan-stops li:not(:last-child)::after { content:""; position:absolute; top:1.15rem; left:calc(50% + 1rem); width:calc(100% - 2rem); height:2px; background:var(--glass-border); }
+  .scan-dot { display:block; margin:0 auto .5rem; width:1.9rem; height:1.9rem; line-height:1.7rem; border:2px solid var(--glass-border); border-radius:50%; background:#151b30; }
+  .scan-stops small { display:block; margin-top:.3rem; }
+  .scan-step-done .scan-dot { border-color:#30d158; color:#30d158; }
+  .scan-step-running .scan-dot { border-color:#64b5ff; color:#64b5ff; box-shadow:0 0 0 4px rgba(10,132,255,.18); }
+  .scan-step-running { color:#b4dcff; }
+  .scan-step-error .scan-dot { border-color:#ff6961; color:#ff6961; }
+  .scan-step-skipped .scan-dot, .scan-step-needs_attention .scan-dot, .scan-step-stopped .scan-dot { border-color:#ffcc66; color:#ffcc66; }
+  .scan-history { max-height:13rem; overflow:auto; margin:.4rem 0 0; padding-left:1.2rem; font-size:.85rem; }
+  .scan-history li { margin:.4rem 0; overflow-wrap:anywhere; }
+  .scan-history time { color:var(--pico-muted-color); margin-right:.6rem; font-variant-numeric:tabular-nums; }
+  /* Vertical at every viewport: extraction has many named steps. */
+    .scan-stops { display:block; max-height:20rem; overflow:auto; }
+    .scan-stops li { text-align:left; padding:.4rem 0 .4rem 2.7rem; min-height:3.6rem; }
+    .scan-dot { position:absolute; left:0; top:.4rem; }
+    .scan-stops li:not(:last-child)::after { left:.9rem; top:2.35rem; width:2px; height:calc(100% - 1.9rem); }
 </style>
 </head>
 <body>
@@ -333,6 +367,10 @@ function esc(s){ return String(s ?? "").replace(/[&<>"']/g,
   c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 
 function toast(msg, err=false){
+  // one toast per message: a refusal repeated by every retry stacks the same
+  // verdict four times high and hides the page behind it
+  for (const old of $("#toasts").children)
+    if (old.textContent === msg) { old.remove(); break; }
   const d = document.createElement("div");
   d.className = "toast" + (err ? " err" : "");
   d.textContent = msg;
@@ -450,6 +488,7 @@ function rerenderEdits(){
 async function loadStatus(){
   try { S.status = await api("/api/status"); } catch(e){ S.status = null; }
   applyGate();
+  renderBootStatus();
   const el = $("#brand-inst");
   if (el && S.status) el.textContent = "· " + S.status.instance;
   if (S.view === "home") renderHomeLive();
@@ -483,20 +522,23 @@ async function loadHomeData(){
 
 /* ------------------------------------------------------------------ gate */
 function calibOk(){
-  return !!(S.status && (S.status.calibrate_missing || []).length === 0);
+  return S.status?.calibration?.ready === true;
 }
 function applyGate(){
   if (!S.status) return;   // never RE-lock on a transient status failure
   const done = !!S.status.setup_complete;
   $("#nav-calibrate").classList.toggle("locked", !done);
   $("#nav-home").classList.toggle("locked", !done || !calibOk());
+  $("#nav-home").setAttribute("aria-disabled", String(!done || !calibOk()));
+  $("#nav-home").title = calibOk() ? "Control" : "Complete the scan and capture navigation images first";
+  if (S.view === "home" && (!done || !calibOk())) route();
   syncConnectOverlay();
 }
-/* Control is the landing screen; each unfinished step walks back one page */
+/* Setup, then recognition scan, then Control. Direct hashes use the same gate. */
 function defaultView(){
   if (!(S.status && S.status.setup_complete)) return "setup";
-  if (!calibOk()) return "calibrate";
-  return "home";
+
+  return calibOk() ? "home" : "calibrate";
 }
 
 /* ---------------------------------------------------------------- router */
@@ -509,7 +551,8 @@ async function route(){
   const done = !!(S.status && S.status.setup_complete);
   let v = (location.hash || "").replace("#","") || defaultView();
   if (!done && v !== "setup") v = "setup";
-  if (v === "home" && !calibOk()) v = "calibrate";   // Control stays locked
+  else if (v === "home" && !calibOk()) v = "calibrate";
+
   // keep the hash honest after a bounce, or the next click on the same nav
   // item fires no hashchange and the page looks dead
   if (location.hash !== "#" + v) history.replaceState(null, "", "#" + v);
@@ -613,7 +656,37 @@ async function reconnect(btn){
 }
 
 /* ========================================================== VIEW 1: SETUP */
+function accountSetupHtml(){
+  const a = S.accounts || {};
+  return `<article><header>Your account</header>
+    <p class="muted">Choose the account open in this emulator. Equipment settings and calibration are kept separately for each account.</p>
+    <select id="account-select"><option value="">Choose an account</option>${(a.accounts || []).map(x => `<option value="${esc(x.id)}" ${a.active === x.id ? "selected" : ""}>${esc(x.label)}</option>`).join("")}</select>
+    <button class="small" onclick="selectAccount()">Use this account</button>
+    ${a.active ? `<label>Highest tier you have unlocked in the game<input type="number" id="account-tier" min="1" max="20" value="${a.max_tier || 1}"></label><button class="small ghost" onclick="saveAccountTier()">Save unlocked tier</button>` : ""}
+    <details ${a.active ? "" : "open"}><summary>${a.active ? "Add another account" : "Set up my account"}</summary>
+      <label>Account name<input id="account-name" placeholder="My Tower" maxlength="60"></label>
+      <label class="inline"><input id="account-import" type="checkbox" ${a.has_personal_settings ? "checked" : ""}> Keep this installation’s current settings and calibration</label>
+      <button onclick="selectAccount(true)">Create account</button>
+    </details></article>`;
+}
+async function saveAccountTier(){
+  try { await post("/api/account-tier", {max_tier:Number($("#account-tier").value)}); await loadHomeData(); toast("Unlocked tier saved. Choose your farming tier in the run editor."); }
+  catch(e) { toast(e.message,true); }
+}
+async function selectAccount(create=false){
+  const label = create ? $("#account-name").value.trim() : "";
+  const id = create ? label.toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"") : $("#account-select").value;
+  if (!id) { toast("Enter a name using letters or numbers.", true); return; }
+  try {
+    await post("/api/accounts", {id, label, create, import_current:create && $("#account-import").checked});
+    S.pending.clear();
+    await loadHomeData();
+    toast("Account selected. Check the emulator display, then calibrate.");
+    await renderSetup();
+  } catch(e) { toast(e.message, true); }
+}
 async function renderSetup(){
+  S.accounts = await api("/api/accounts").catch(() => ({accounts:[]}));
   [S.wizard, S.emus] = await Promise.all([
     api("/api/wizard/state").catch(() => ({})),
     api("/api/wizard/emulators").catch(e => ({ error:e.message }))]);
@@ -633,6 +706,12 @@ async function renderSetup(){
   // its own adb.exe (mixing them kills the shared daemon)
   const adbFor = fam => ((e.scanned || []).find(s => s.adb && !/^adb$/i.test(s.adb)
     && (s.emulator || "").startsWith((fam || "").split(" ")[0])) || {}).adb || "";
+  // the emulator config already points at gets a status, not a button: "Use
+  // this one" on it was a visible no-op (user, 2026-09-08)
+  const inUse = new Set((e.configured || []).map(c => c.serial).filter(Boolean));
+  const useOrStatus = (serial, adb) => inUse.has(serial)
+    ? '<span class="chip ok" title="config.yaml points at this emulator">In use ✓</span>'
+    : `<button class="small" onclick='adopt(${JSON.stringify(serial)}, ${JSON.stringify(adb)})'>Use this one</button>`;
   const rows = [];
   for (const i of (e.instances || [])) {
     const serial = i.adb_port ? `127.0.0.1:${i.adb_port}` : null;
@@ -643,7 +722,7 @@ async function renderSetup(){
           ${i.display && i.display_ok === false ? `<div class="bad" style="font-size:.85em">display ${esc(i.display)}, needs 2560x1080@360 landscape</div>` : ""}</td>
       <td>${esc(serial || "")}</td>
       <td style="white-space:nowrap">
-        ${serial && i.running ? `<button class="small" onclick='adopt(${JSON.stringify(serial)}, ${JSON.stringify(adbFor(i.emulator))})'>Use this one</button>` : ""}
+        ${serial && i.running ? useOrStatus(serial, adbFor(i.emulator)) : ""}
         ${!i.running && i.index !== undefined
           && ((i.emulator||"").startsWith("MuMu") || (i.emulator||"").startsWith("BlueStacks"))
           ? `<button class="small ghost" onclick="launchVM('${esc(i.emulator)}', '${esc(String(i.index))}')">Start it</button>` : ""}
@@ -655,7 +734,7 @@ async function renderSetup(){
     for (const dv of (f.devices || []))
       rows.push(`<tr><td>${esc(f.emulator)}</td><td class="muted">adb device</td><td></td>
         <td>${esc(dv)}</td>
-        <td><button class="small" onclick="adopt('${esc(dv)}', '${esc(f.adb || "")}')">Use this one</button></td></tr>`);
+        <td>${useOrStatus(dv, f.adb || "")}</td></tr>`);
 
   const sug = e.suggestion ? `
     <p><b class="warn">Suggestion:</b> exactly one emulator is up
@@ -664,6 +743,7 @@ async function renderSetup(){
         connect to it</button></p>` : "";
 
   $("#view").innerHTML = `
+  ${accountSetupHtml()}
   <article>
     <header><span class="step-num">1</span>Connect your emulator
       ${done ? '<span class="chip ok">setup complete ✓</span>' : ""}</header>
@@ -678,6 +758,7 @@ async function renderSetup(){
     <h6 style="margin-bottom:.3rem">Currently configured</h6>
     <table><tbody>${configured}</tbody></table>
     <button class="ghost" onclick="renderSetup()">↻ Re-scan</button>
+    <p id="boot-state" role="status" aria-live="polite"></p>
   </article>
 
   <article>
@@ -703,9 +784,8 @@ async function renderSetup(){
       <span id="scan-state" class="muted"></span></div>
   </article>
 
-  ${done ? `<article><p><b class="ok">Setup is complete.</b>
-     Continue to <a href="#calibrate">Calibrate</a> to verify the vision
-     templates, or go straight to <a href="#home">Control</a>.</p></article>` : ""}`;
+  ${done ? `<article><p><b class="ok">Emulator connection is configured.</b>
+     ${calibOk() ? 'Recognition setup is complete. Continue to <a href="#home">Control</a>.' : 'Next: <a href="#calibrate">scan the game and capture recognition images</a>. Control unlocks after the scan is complete.'}</p></article>` : ""}`;
 }
 
 async function adopt(serial, adb){
@@ -724,6 +804,15 @@ async function prepareBS(index){
     toast(r.message || "prepared");
     renderSetup();
   } catch(e){ toast(e.message, true); }
+}
+function renderBootStatus(){
+  const el = $("#boot-state"); if (!el || !S.status) return;
+  const running = (S.status.processes || []).some(p => p.runner === "boot");
+  const event = (S.status.events || []).filter(e => ["boot_stage","boot_done"].includes(e.kind) || (e.kind === "runner_crashed" && e.flow === "boot")).at(-1);
+  el.textContent = running ? `Starting emulator${event?.stage ? ": " + event.stage : ""}…`
+    : event?.kind === "boot_done" && event.ok ? (event.calibration_required ? "Game started — scan required. Continue to Calibrate; no recognition images have been assumed." : "Game started and screen recognized.")
+    : event && (event.ok === false || event.kind === "runner_crashed") ? `Boot stopped: ${event.error || event.stage || "check the emulator"}.`
+    : "No emulator launch in progress.";
 }
 async function launchVM(emulator, index){
   try {
@@ -765,12 +854,74 @@ function pollScan(){
 }
 
 /* ====================================================== VIEW 2: CALIBRATE */
+function calibrationPreferences(){
+  const cfg = S.config || {}, inst = cfg.instances?.[cfg.active_instance] || {};
+  const key = JSON.stringify([cfg.active_instance, inst.account, inst.serial]);
+  S.calibrationChoices ||= {};
+  if (!S.calibrationChoices[key]) {
+    let saved;
+    try { saved = JSON.parse(localStorage.getItem("calibration:" + key)); } catch {}
+    S.calibrationChoices[key] = saved?.phases instanceof Array ? saved : {phases:["c","m"], taps:false, overwrite:false};
+  }
+  return S.calibrationChoices[key];
+}
+function rememberCalibration(){
+  const prefs = calibrationPreferences();
+  prefs.phases = [...document.querySelectorAll('[name="calibration-phase"]:checked')].map(el => el.value);
+  prefs.taps = $("#calib-taps").checked;
+  prefs.overwrite = $("#calib-over").checked;
+  renderCalibrationIntent();
+  const cfg = S.config || {}, inst = cfg.instances?.[cfg.active_instance] || {};
+  try { localStorage.setItem("calibration:" + JSON.stringify([cfg.active_instance, inst.account, inst.serial]), JSON.stringify(prefs)); } catch {}
+}
+function renderCalibrationIntent(){
+  const el = $("#calib-intent"); if (!el) return;
+  const prefs = calibrationPreferences();
+  const labels = {c:"Cards and presets",m:"Modules",g:"Global presets",u:"Guardians",b:"Bots",w:"Workshop presets"};
+  const selected = prefs.phases.map(id => labels[id]).filter(Boolean);
+  el.textContent = `${selected.length ? "Basic scan will update: " + selected.join(", ") : "No features selected for the basic scan"}. ${prefs.overwrite ? "Existing recognition images will be replaced when a new capture passes validation." : "Existing recognition images will be kept; mismatches will be reported."}`;
+}
+function calibrationKnowledge(st){
+  const phases = st.state?.phases || {}, entries = st.report?.entries || [];
+  const features = [["cards","Cards and presets","names"],["modules","Modules","preset_tabs"],["global","Global presets","global_presets"],["guardians","Guardians","guardians"],["bots","Bots","bots"],["workshop","Workshop presets","workshop"]];
+  const player = st.report?.player || {}, manifest = st.manifest;
+  return features.map(([key,label,field]) => {
+    const phase = phases[key], results = phase?.results || {};
+    const evidence = entries.filter(e => e.phase === key || (key === "modules" && e.rel?.startsWith("modules/")));
+    const verified = evidence.filter(e => e.verified === true).length;
+    const attention = evidence.filter(e => ["stale","rejected","unverified_copy"].includes(e.status)).length;
+    const unverified = evidence.filter(e => e.verified !== true && !["stale","rejected","unverified_copy"].includes(e.status)).length;
+    const observedNames = key === "cards" ? evidence.filter(e=>e.rel?.startsWith("cards/preset_")).map(e=>e.name)
+      : key === "global" ? player.global_presets : player.category_presets?.[key];
+    let found = (results[field] || observedNames || []).join(", ");
+    if (key === "cards") {
+      const inventory = st.card_manifest || results.inventory;
+      const cards = inventory?.cards || player.cards_observed || [];
+      const presets = results.names || observedNames || [];
+      const active = inventory?.active ?? cards.filter(c=>c.active).length;
+      const mastered = inventory?.mastered ?? cards.filter(c=>c.mastery).length;
+      found = `${cards.length} cards identified; ${inventory?.complete ? 'full inventory verified' : 'full inventory not yet confirmed'}; ${presets.length} presets`;
+      if(active) found += `; ${active} active`;
+      if(mastered) found += `; ${mastered} mastered`;
+      if(cards.length) found += ': ' + cards.map(c=>c.name + (c.active ? ' ✓' : '') + (c.mastery ? ' ★' : '')).join(', ');
+    }
+    if (key === "modules" && (phase || manifest?.slots?.length || evidence.length)) {
+      const total = manifest?.inventory_complete ? `${manifest.inventory.length} modules recorded in the full scan` : "Full inventory not yet confirmed";
+      found = `${total}; ${(player.modules_equipped || []).length} equipped; ${(player.modules_copies || []).length} inventory copies recorded`;
+      if (manifest?.slots) found += `; ${manifest.slots.filter(r => r.state === "locked").length} locked slots`;
+    }
+    return `<tr><th scope="row">${label}</th><td>${esc(phase?.status === "done" ? "Scanned" : phase?.status || (evidence.length ? "Saved evidence" : "Not scanned"))}${found ? `<div class="muted">${esc(found)}</div>` : ""}${phase?.error ? `<div class="bad">${esc(phase.error)}</div>` : ""}</td><td>${evidence.length ? `${verified} verified${attention ? `<div class="bad">${attention} need attention</div>` : ""}${unverified ? `<div class="muted">${unverified} not yet verified</div>` : ""}` : "No image verification recorded"}</td></tr>`;
+  }).join("");
+}
 async function renderCalibrate(){
+  const prefs = calibrationPreferences();
+  S.calibrationRuns = (await api("/api/runs").catch(() => ({runs:{}}))).runs || {};
+  S.readiness = await api("/api/readiness" + (S.calibrationPreset ? "?preset=" + encodeURIComponent(S.calibrationPreset) : "")).catch(e => ({error:e.message}));
   S.calib = await api("/api/wizard/templates").catch(e => ({ error:e.message }));
   S.required = await api("/api/wizard/required").catch(e => ({ required:[], missing:[] }));
   S.catalogue = await api("/api/catalogue/modules").catch(() => ({ modules:[] }));
   S.calibTs = Date.now();
-  setTimeout(() => api("/api/calibrate/status").then(calibReport).catch(() => {}), 300);
+
   const missing = (S.calib.missing_seen || []);
   const have = S.calib.have || [];
   const req = S.required.required || [];
@@ -786,34 +937,58 @@ async function renderCalibrate(){
   <div class="grid2">
   <div>
     <article>
-      <header>Calibrate from the game
-        <span id="calib-state" class="muted" style="font-weight:normal; font-size:.85em"></span></header>
-      <p class="muted">The pictures only your account can provide - card preset
-        tabs, global and category preset rows as you named them, your modules
-        at your own rarity - are never shipped. With the game on its HOME
-        screen, press the button: the bot walks Cards, the preset picker,
-        Modules, Guild, Event and Workshop, finds every preset control, reads
-        its name and cuts the template. About three minutes; hands off the
-        emulator meanwhile. Needs allow_taps on (Configuration).</p>
+      <header>What to scan next <span id="calib-state" class="muted" style="font-weight:normal; font-size:.85em"></span></header>
+      <p id="observe-progress" role="status" aria-live="polite"></p>
+      <p><button class="small" onclick="observeNow()">Capture from the screen now (no taps)</button> <button class="small ghost" onclick="observeNow(120)">Watch the screen for 2 min (no taps)</button></p>
+      <p class="muted">Switch on the unlocked features you want to scan. Off means “skip in the next basic scan”; it does not mean unknown or locked. Choices are remembered for this account and emulator.</p>
+      <section><h3>Prepare recognition from your installed game</h3><p>Extract the installed artwork, map it to the shipped manifest, then verify it on Home and the available menus. Full setup goes further: it starts and cancels a normal battle and opens Events, Store and Guild to capture the controls that only appear during play — you'll see it tap around your own profile. It never touches a tournament. Images stay on this computer. Open Home and allow navigation below to begin.</p><button id="bootstrap-start" onclick="startBootstrap()">Full setup: extract, verify and capture live screens</button><p id="bootstrap-progress" role="status" aria-live="polite"></p><div id="bootstrap-timeline"></div><div id="asset-library-summary"></div></section>
+      <section><h3>Understand the current screen</h3><p>Take one snapshot and compare it with the installed artwork. This only observes; it does not navigate or change equipment.</p><button id="analyze-screen" onclick="analyzeScreen()">Analyze this screen</button><p id="analysis-progress" role="status" aria-live="polite"></p><div id="analysis-result"></div></section>
+      <div id="scan-plan"><p>Loading the image acquisition plan…</p></div>
+      <fieldset><legend>Include in the next basic scan</legend>
+        ${[["c","Cards and presets"],["m","Modules"],["g","Global presets"],["u","Guardians"],["b","Bots"],["w","Workshop presets"]].map(([id,label]) => `<label class="inline"><input type="checkbox" name="calibration-phase" value="${id}" ${prefs.phases.includes(id) ? "checked" : ""} onchange="rememberCalibration()">${label}</label>`).join("")}
+      </fieldset>
+      <p id="calib-intent" class="muted"></p>
+      <p class="muted">Open the game’s Home screen and keep the emulator free while the scan navigates its menus.</p>
+      <label class="inline"><input type="checkbox" id="calib-taps" ${prefs.taps ? "checked" : ""} onchange="rememberCalibration()"> Allow calibration to navigate this emulator’s menus</label>
       <div style="display:flex; gap:.6rem; align-items:center; flex-wrap:wrap">
-        <button onclick="startCalibrate()">Calibrate now</button>
-        <label style="margin:0; white-space:nowrap"><input type="checkbox" id="calib-over"> overwrite existing cuts</label>
+        <button disabled onclick="startCalibrate()">Phase 1: basic scan</button><button disabled class="ghost" onclick="startCalibrate(true)">Resume unfinished steps</button>
+        <label style="margin:0; white-space:nowrap"><input type="checkbox" id="calib-over" ${prefs.overwrite ? "checked" : ""} onchange="rememberCalibration()"> Replace existing recognition images</label>
         <button class="small ghost" onclick="stopCalibrate()">Stop</button>
       </div>
-      <div id="calib-report"></div>
+      <p class="muted">Phase 2 completes the equipped-module images. It first records all eight slots, including locked assists. Then it unequips the occupied slots, scans the full inventory once, and restores the saved setup. Stop waits for restoration.</p>
+      <button disabled id="calib-phase2" onclick="startEquippedCalibration()">Phase 2: scan and restore equipped modules</button>
+      <p class="muted">Phase 2 always scans modules, regardless of the basic-scan switches above.</p>
+      <p id="calib-progress" role="status" aria-live="polite">Checking calibration status…</p><div id="calib-timeline"></div>
     </article>
     <article>
-      <header>What the eyes are missing</header>
+      <header>What we know about this account</header>
+      <p class="muted">Saved discoveries for this account and emulator. “Scanned” means names and equipment were recorded; recognition images have a separate verification status. These results do not depend on the scan switches above.</p>
+      <div id="calib-knowledge">Loading saved discoveries…</div>
+      <div id="calib-manifest"></div>
+      <details><summary>Recognition images and diagnostic scores</summary><div id="calib-report"></div></details>
+      <button class="ghost" onclick="applyCalibration()">Use discovered presets in my profile</button>
+      <p class="muted">Applying discoveries is separate from scanning. Your run settings are preserved.</p>
+      <label>Run to prepare<select onchange="S.calibrationPreset=this.value; renderCalibrate()">${Object.entries(S.calibrationRuns).filter(([k]) => k !== "combo").map(([k,v]) => `<option value="${esc(k)}" ${S.readiness.preset === k ? "selected" : ""}>${esc(v.label || k)}</option>`).join("")}</select></label>
+      <div id="calibration-readiness">${S.readiness.error ? `<p class="bad">${esc(S.readiness.error)}</p>` : `<p class="${S.readiness.ready ? "ok" : "bad"}">${S.readiness.ready ? "Required images are present. Verify recognition on your emulator before relying on it." : `Outstanding — ${(S.readiness.missing || []).length} image${(S.readiness.missing || []).length === 1 ? "" : "s"} this run still needs. Each card says what to look for, where, and how to capture it.`}</p>`}
+        ${(S.readiness.missing || []).length ? `<p class="muted">Open the screen that shows the missing control, then use Capture or Watch at the top of this page. Both inspect screenshots without tapping the game.</p>` : ""}
+        ${(S.readiness.missing || []).map(row => outstandingCard(row, "calibrate")).join("")}
+        ${(S.readiness.advisory || []).length ? `<details><summary class="muted">${(S.readiness.advisory || []).length} optional recognition images - capture when the screen appears (a live tournament, the welcome-back resume, a reward skip); this run starts without them</summary>
+          ${(S.readiness.advisory || []).map(row => `<div class="flowcard"><div>${row.alternatives.map(rel => `${artPair(rel, "")}<button class="small ghost" data-template="${esc(rel)}" onclick="cropPick(this.dataset.template)">${esc(rel)}</button>`).join(" or ")}</div></div>`).join("")}</details>` : ""}
+      </div>
+    </article>
+    <details open><summary>Advanced: missing images, manual repair and template library</summary>
+    <article>
+      <header>Previously missing images</header>
       <p class="muted">The autopilot recognizes the game purely by matching
         small screenshots ("templates"). This lists every template the code
         looked for <b>on this machine</b> and could not find — each one is a
         feature that silently isn't working until its picture exists.</p>
       ${missing.length === 0
-        ? '<p class="ok">✓ Nothing missing — every template the runs asked for was found.</p>'
+        ? '<p class="ok">No missing-image events recorded. This is not a completeness check; use the Scan plan above.</p>'
         : missing.map(rel => `
           <div class="flowcard"><div><b>${esc(rel)}</b>
             ${accountSpecific(rel)
-              ? '<div class="muted">account-specific: crop it from YOUR account (card/module art differs per rarity)</div>'
+              ? '<div class="muted">Capture from your game; nothing is bundled</div>'
               : '<div class="muted">crop it from a screenshot of the named screen</div>'}
           </div></div>`).join("")}
       <p class="muted">To add one: open that screen in the game, refresh the
@@ -824,12 +999,7 @@ async function renderCalibrate(){
     <article>
       <header>Required for your account
         <span class="chip">${reqMissing.length} missing / ${req.length}</span></header>
-      <p class="muted">The generic buttons and screens ship with the repo.
-        These are the pictures only <b>your</b> account can provide - the
-        card presets, the global and category presets as you named them, and
-        your modules at your own rarity - derived from the loadouts in
-        config.yaml and the scanned profile. Click a missing one to name the
-        crop, then draw it on the live screen.</p>
+      <p class="muted">No game images ship with this application. Buttons, screen headers, fonts and equipment art must all be captured from your game using the Scan plan.</p>
       <details ${req.length ? "" : "open"}>
         <summary>What a fresh account has to cut, and how to name it</summary>
         <ul class="muted" style="font-size:.9em; line-height:1.5">
@@ -850,8 +1020,7 @@ async function renderCalibrate(){
             equipped header art <code>modules/equipped/&lt;slug&gt;.png</code>.
             Slugs: ${((S.catalogue || {}).modules || []).map(m =>
               `<code title="${esc(m.name)}${m.learned ? " (learned from the game)" : ""}">${esc(m.slug)}</code>`).join(" ")}</li>
-          <li><b>Guardian chips</b> and every button ship with the repo - their
-            art is the same on every account.</li>
+          <li><b>Guardian chips and all buttons</b> must also be captured from your game using the Scan plan. No game artwork ships.</li>
         </ul>
         <p class="muted">Then run the account scan (Setup page): it records the
           tabs, rows and modules these templates find, and the loadouts you fill
@@ -876,19 +1045,21 @@ async function renderCalibrate(){
               <figcaption>${esc(rel.split("/").pop())}</figcaption></figure>`).join("")}
           </div></details>`).join("")}
     </article>
+    </details>
   </div>
   <div>
     <article class="stream-box">
       <header>Live screen</header>
-      <div id="crop-wrap" style="position:relative; display:inline-block; max-width:100%; line-height:0">
-        <img id="calib-frame" src="/api/frame.png?ts=${S.calibTs}"
+      <div id="crop-wrap" style="position:relative; display:inline-block; max-width:100%; line-height:0; overflow:hidden">
+        <img id="calib-frame" src="/api/frame.png?ts=${S.calibTs}" style="display:block; max-width:100%; height:auto"
              onload="cropInit()" onerror="this.alt='no frame — emulator offline?'">
-        <canvas id="crop-canvas" style="position:absolute; left:0; top:0; cursor:crosshair"></canvas>
+        <canvas id="crop-canvas" style="position:absolute; left:0; top:0; width:100%; height:100%; cursor:crosshair"></canvas>
       </div>
       <div style="display:flex; gap:.5rem; margin-top:.5rem; flex-wrap:wrap">
         <button class="small ghost" onclick="cropRefresh()">↻ Refresh</button>
         <a role="button" class="small ghost" href="/api/frame.png" target="_blank">Open full size ↗</a>
       </div>
+      <details id="manual-crop" open><summary>Advanced: repair an image manually</summary>
       <div style="display:flex; gap:.5rem; margin-top:.5rem; flex-wrap:wrap; align-items:center">
         <input id="crop-name" placeholder="folder/name.png (e.g. modules/my_module.png)"
                style="margin:0; flex:1; min-width:16rem">
@@ -897,9 +1068,101 @@ async function renderCalibrate(){
       </div>
       <p id="crop-info" class="muted">Drag a box on the live screen. The box is
         cut from this exact frame at native 1080×2560 resolution.</p>
+      </details>
     </article>
   </div>
   </div>`;
+  pollCalibrate();
+  pollScreenAnalysis();
+  renderScanPlan();
+  if (S.calibrationFocus) {
+    const card = document.getElementById("out-" + slugRel(S.calibrationFocus));
+    S.calibrationFocus = null;
+    if (card) { card.classList.add("focus"); card.scrollIntoView({behavior:"smooth", block:"center"}); }
+  }
+}
+
+/* ---- outstanding images: the SAME card on Control (next to Start) and on
+   Calibrate (the red Outstanding list). What the image is, where it shows in
+   the game, why THIS run needs it, the installed game's own artwork for it
+   (extracted from the APK by Full setup) so the person knows what to find,
+   and the action: "Scan now" jumps to the Calibrate card, "Crop it" opens
+   the cropper on it. Names alone are obscure (user, 2026-09-08). */
+function slugRel(rel){ return String(rel).replace(/[^a-z0-9]+/gi, "-"); }
+/* Art / Screenshot: the installed artwork (what to find) beside the image
+   cut from this emulator (what was found), so the two can be compared at a
+   glance; green when the target is identified, red when it is failing or
+   missing (user, 2026-09-08). Either picture simply stays away when absent. */
+function artPair(rel, state){
+  if (!rel || String(rel).startsWith("config:")) return "";
+  const r = encodeURI(rel), t = S.artTs || 0;
+  return `<span class="artpair ${state || ""}" title="left: the game's artwork · right: cut from your screen">` +
+    `<img class="artwork" src="/api/artwork/${r}" alt="" onerror="this.remove()">` +
+    `<img class="artwork shot" src="/api/template/${r}?t=${t}" alt="" onerror="this.remove()"></span>`;
+}
+function rowState(status){
+  const s = String(status || "").toLowerCase();
+  if (s === "verified" || s.startsWith("verified")) return "ok";
+  if (["missing", "not_seen", "unstable", "missing_source", "needs_attention", "stale", "unverified_copy"].some(k => s.includes(k))) return "bad";
+  return "";
+}
+function outstandingCard(row, mode, preset){
+  const docs = row.docs || [];
+  const rels = row.alternatives || [];
+  const isConfig = rels.length && rels.every(r => String(r).startsWith("config:"));
+  const first = rels[0] || "";
+  const art = isConfig ? "" : artPair(first, "bad");
+  const cards = (docs.length ? docs : rels.map(r => ({rel:r, label:r}))).map((d, i) => `
+      <div style="margin-top:${i ? ".35rem" : "0"}">
+        <b>${esc(d.label || d.rel)}</b> <span class="muted" style="font-size:.8em">${esc(d.rel)}</span>${i ? ' <span class="muted">(alternative)</span>' : ""}
+        ${d.what ? `<div>${esc(d.what)}</div>` : ""}
+        ${d.where ? `<div class="muted">Where: ${esc(d.where)}</div>` : ""}
+        ${(row.learned || {})[d.rel] ? `<div class="muted">Learned: last cut on ${esc((row.learned[d.rel].screen || "").replace("_", " "))} at ${row.learned[d.rel].rect.join(",")} — setup and the screen capture cut it there themselves.</div>` : ""}
+        ${mode === "calibrate" && d.how ? `<div class="muted">How: ${esc(d.how)}</div>` : ""}
+        ${mode === "calibrate" && d.step ? `<div class="muted">Scan plan step: ${esc(d.step.title)}</div>` : ""}
+      </div>`).join("");
+  const why = (row.reasons || []).length ? `<div class="muted">Needed for: ${esc(row.reasons.join(", "))}</div>` : "";
+  const actions = isConfig
+    ? `<p class="muted" style="margin:0">Not an image: run Full setup (it detects the wall bar during its battle and "Use discovered presets" writes the region), or set it in Configuration.</p>`
+    : mode === "calibrate"
+      ? rels.map(r => `<button class="small" data-template="${esc(r)}" onclick="cropPick(this.dataset.template)">Crop it${rels.length > 1 ? ` (${esc(r.split("/").pop())})` : ""}</button>`).join(" ")
+      : `<button class="small" onclick='goOutstanding(${JSON.stringify(preset || "")}, ${JSON.stringify(first)})'>Scan now</button>`;
+  return `<div class="flowcard outstanding" id="${mode === "calibrate" ? "out-" + slugRel(first) : ""}">
+    ${art}<div style="flex:1">${cards}${why}</div><div style="flex:none">${actions}</div></div>`;
+}
+function observationFeedback(st){
+  const observing = st.running && calibrationMode(st) === "observe";
+  const record = st.state?.observation;
+  document.querySelectorAll('[onclick^="observeNow"]').forEach(el => el.disabled = !!st.running);
+  const el = $("#observe-progress");
+  if (el) el.textContent = observing ? `Screen capture running — ${record?.message || "Preparing screenshots…"}`
+    : record ? `Screen capture ${record.status === "done" ? "finished" : "stopped before completion"} — ${record.message}` : "";
+}
+async function observeNow(watch){
+  // read-only: the screen the person is showing right now, searched with the
+  // installed artwork; results land in the calibrate state a few seconds later.
+  // `watch` seconds keeps looking (still no taps) for controls up only briefly.
+  try {
+    if (S.observePending) return;
+    S.observePending = true;
+    document.querySelectorAll('[onclick^="observeNow"]').forEach(el => el.disabled = true);
+    await post("/api/calibrate/observe", watch ? {watch} : {});
+    S.scanLaunchPending = Date.now();
+    toast(watch ? `Watching the screen for ${watch}s for the missing controls…` : "Looking at the screen for the missing controls…");
+    S.artTs = Date.now();
+    // Keep the form intact, and follow the actual worker instead of guessing
+    // completion from a fixed timeout. The Calibrate view already polls status.
+    if (location.hash !== "#calibrate") location.hash = "#calibrate";
+    else pollCalibrate();
+  } catch(e){
+    toast(e.message, true);
+    document.querySelectorAll('[onclick^="observeNow"]').forEach(el => el.disabled = false);
+  } finally { S.observePending = false; }
+}
+function goOutstanding(preset, rel){
+  if (preset) S.calibrationPreset = preset;
+  S.calibrationFocus = rel;
+  location.hash = "#calibrate";
 }
 
 /* ---- the cropper: drag a box on the live frame, save it as a template.
@@ -907,11 +1170,28 @@ async function renderCalibrate(){
    naturalWidth/clientWidth; the frame's ts is posted back so the server
    cuts from the very frame the box was drawn on. */
 const CROP = { rect:null, drag:null };
+function cropSizeCanvas(){
+  // Match the drawing buffer to the *displayed* image size. The CSS keeps the
+  // canvas at 100% of the image, so a stale/natural measurement can never make
+  // it overflow onto the controls below; this only keeps the pixels crisp and
+  // the drag coordinates aligned with the cursor.
+  const img = $("#calib-frame"), cv = $("#crop-canvas");
+  if (!img || !cv || !img.clientWidth) return;
+  if (cv.width !== img.clientWidth || cv.height !== img.clientHeight){
+    cv.width = img.clientWidth; cv.height = img.clientHeight;
+    CROP.rect = null; CROP.drag = null;   // old selection no longer maps to the new size
+  }
+  cropDraw();
+}
 function cropInit(){
   const img = $("#calib-frame"), cv = $("#crop-canvas");
   if (!img || !cv) return;
-  cv.width = img.clientWidth; cv.height = img.clientHeight;
-  CROP.rect = null; cropDraw();
+  CROP.rect = null;
+  cropSizeCanvas();
+  if (!CROP._ro && window.ResizeObserver){   // keep the canvas synced as the layout reflows
+    CROP._ro = new ResizeObserver(() => cropSizeCanvas());
+    CROP._ro.observe(img);
+  }
   const pos = ev => {
     const b = cv.getBoundingClientRect();
     return [Math.max(0, Math.min(cv.width, ev.clientX - b.left)),
@@ -949,58 +1229,285 @@ function cropInfo(msg){
   el.textContent = msg || (n ? `box ${n.x},${n.y} ${n.w}×${n.h} native px — name it and save`
                              : "Drag a box on the live screen.");
 }
-async function startCalibrate(){
+async function startBootstrap(){
+  // Consent gate for the action-capture stage: this scan will drive the game,
+  // not just watch it. The user has to know before it taps.
+  const flows = window.confirm(
+    "Full setup will control the game to capture the screens that only appear during play.\n\n" +
+    "It will:\n" +
+    "• start a normal battle, open the Intro Sprint prompt and cancel it,\n" +
+    "• surrender that battle and read the results/dialog screens,\n" +
+    "• open Events, Store and Guild and read their controls.\n\n" +
+    "You'll see it tap around your own profile. It never enters or cancels a TOURNAMENT, " +
+    "and it only ends the battle it starts itself (a normal run costs nothing).\n\n" +
+    "Please watch the progress and let it finish — keep the emulator free while it runs.\n\n" +
+    "OK: run full setup (with the battle capture).\n" +
+    "Cancel: extract artwork and read the still menus only (no battle).");
   try {
-    const r = await post("/api/calibrate/start", { overwrite: $("#calib-over").checked, fresh: true });
+    rememberCalibration();
+    S.scanLaunchPending = Date.now();
+    calibrationBusy(true);
+    $("#bootstrap-progress").textContent = flows
+      ? "Starting full setup: artwork, menus, then the guided battle capture…"
+      : "Starting artwork extraction and screen verification…";
+    await post("/api/calibrate/start", {bootstrap:true, flows, phases:"c,m", fresh:true,
+      overwrite:$("#calib-over").checked, allow_navigation:$("#calib-taps").checked});
+  } catch(e){ S.scanLaunchPending = null; toast(e.message, true); }
+  pollCalibrate();
+}
+async function startCalibrate(resume=false){
+  try {
+    const phases = [...document.querySelectorAll('[name="calibration-phase"]:checked')].map(el => el.value).join(",");
+    if (!phases) { toast("Select at least one unlocked feature.", true); return; }
+    rememberCalibration();
+    clearTimeout(S.calPoll);
+    S.calPollGeneration = (S.calPollGeneration || 0) + 1;
+    S.scanLaunchPending = Date.now();
+    calibrationBusy(true);
+    $("#calib-progress").textContent = "Starting calibration…";
+    const r = await post("/api/calibrate/start", {phases, overwrite: $("#calib-over").checked, fresh: !resume, allow_navigation:$("#calib-taps").checked});
     toast("calibrating: " + r.phases);
     pollCalibrate();
-  } catch(e){ toast(e.message, true); }
+  } catch(e){ S.scanLaunchPending = null; toast(e.message, true); pollCalibrate(); }
+}
+async function startEquippedCalibration(){
+  try {
+    clearTimeout(S.calPoll);
+    S.calPollGeneration = (S.calPollGeneration || 0) + 1;
+    S.scanLaunchPending = Date.now();
+    calibrationBusy(true);
+    await post("/api/calibrate/start", {phases:"e", fresh:true, overwrite:$("#calib-over").checked, allow_navigation:$("#calib-taps").checked});
+  } catch(e){ S.scanLaunchPending = null; toast(e.message, true); }
+  pollCalibrate();
+}
+async function applyCalibration(){
+  try { await post("/api/calibrate/apply", {}); await loadHomeData(); toast("Discovered presets are ready to use in Equipment."); }
+  catch(e) { toast(e.message, true); }
 }
 async function stopCalibrate(){
   try { await post("/api/calibrate/stop", {}); toast("stop requested - it finishes the current step"); }
   catch(e){ toast(e.message, true); }
 }
+async function analyzeScreen(){
+  try { await post('/api/screen-analysis/start',{}); pollScreenAnalysis(); }
+  catch(e){toast(e.message,true);}
+}
+async function pollScreenAnalysis(){
+  clearTimeout(S.analysisPoll);
+  const status=$('#analysis-progress'), result=$('#analysis-result');
+  if(!status || !result) return;
+  try {
+    const r=await api('/api/screen-analysis/status');
+    $('#analyze-screen').disabled=r.status==='running';
+    status.textContent=r.message || (r.status==='done' ? `Screen: ${r.screen.name}. Compared ${r.tested} artwork images.` : '');
+    if(r.status==='running'){
+      result.innerHTML=r.total ? `<progress max="${r.total}" value="${r.completed}"></progress><p>${r.completed} / ${r.total} artwork images checked</p>` : '';
+      S.analysisPoll=setTimeout(pollScreenAnalysis,1500);
+    } else if(r.status==='done'){
+      const matches=r.matches || [];
+      result.innerHTML=`<p class="muted">Snapshot from ${esc(new Date(r.captured_at*1000).toLocaleTimeString())}. Artwork names are source labels; only confirmed manifest roles explain their purpose. Unmatched objects and repeated copies may be missed.</p>
+      <div style="position:relative;max-width:420px"><img style="display:block;width:100%" src="/api/screen-analysis/frame.png?t=${r.captured_at}" alt="Analyzed snapshot">
+      <svg viewBox="0 0 ${r.width} ${r.height}" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none">${matches.map((m,i)=>`<rect x="${m.rect[0]}" y="${m.rect[1]}" width="${m.rect[2]}" height="${m.rect[3]}" fill="none" stroke="${m.ambiguous?'#ffcc66':'#30d158'}" stroke-width="5"/><text x="${m.rect[0]}" y="${Math.max(30,m.rect[1])}" fill="white" stroke="black" stroke-width="1" font-size="32">${i+1}</text>`).join('')}</svg></div>
+      <ol>${matches.map(m=>`<li><b>${esc(m.names.join(' / '))}</b> — ${m.ambiguous?'Competing artwork matches; identity uncertain':m.roles.length?esc(m.roles.map(role=>role.replace(/\.png$/,'').split('/').pop().replaceAll('_',' ')).join(', ')):'Artwork matched; manifest role unknown'} <small>(${m.inliers} matching details)</small></li>`).join('')}</ol>${matches.length?'':'<p>No artwork passed the geometric checks.</p>'}`;
+    }
+  }catch(e){status.textContent=e.message;$('#analyze-screen').disabled=false;}
+}
+function scanTimelineHTML(record, running=false, title="Scan progress"){
+  const labels = {pending:"Waiting",running:"In progress",done:"Done",skipped:"Skipped",needs_attention:"Needs attention",error:"Failed",stopped:"Stopped"};
+  const symbols = {pending:"○",running:"●",done:"✓",skipped:"–",needs_attention:"!",error:"!",stopped:"■"};
+  const steps = record?.steps || [];
+  if (!steps.length) return record ? `<p class="muted">Step history will appear on the next scan. The previous scan's result is shown above.</p>` : '<p class="muted">Progress and step history will appear here when a scan starts.</p>';
+  const complete = steps.filter(s=>["done","skipped","needs_attention"].includes(s.status)).length;
+  const skipped = steps.filter(s=>s.status === "skipped").length;
+  const interrupted = !running && record.status === "running";
+  const state = interrupted ? "Stopped before completion" : labels[record.status] || "Ready";
+  const history = record.history || [];
+  const units = steps.find(s=>s.status === "running")?.units;
+  const clock = t=>new Date(t*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const elapsed = step=>step.started_at && step.finished_at ? ` · ${Math.max(0,Math.round(step.finished_at-step.started_at))}s` : "";
+  return `<section class="scan-progress" aria-label="${esc(title)}">
+    <div class="scan-progress-heading"><b>${esc(title)}</b><span>${complete}/${steps.length} steps finished${skipped ? ` · ${skipped} skipped` : ""}</span></div>
+    <progress value="${complete}" max="${steps.length}" aria-label="${esc(title)}: finished steps"></progress>
+    <p class="scan-action" role="status" aria-live="polite">${esc(state)}${record.message ? ` — ${esc(record.message)}` : ""}</p>
+    <p class="muted" style="font-size:.8rem">Progress tracks finished steps; their durations vary. ${record.updated_at ? `Last update ${esc(clock(record.updated_at))}.` : ""}</p>
+    ${units && units.total>0 ? `<p class="muted">${esc(units.label)}: ${Number(units.completed).toLocaleString()} / ${Number(units.total).toLocaleString()}</p><progress aria-label="${esc(units.label)}" value="${Math.max(0,Math.min(units.completed,units.total))}" max="${units.total}"></progress>` : ""}
+    <ol class="scan-stops" aria-label="Scan steps">${steps.map((step,i)=>{
+      const status = interrupted && step.status === "running" ? "stopped" : (labels[step.status] ? step.status : "pending");
+      return `<li class="scan-step-${status}" data-step="${esc(step.id || i)}" ${status === "running" ? 'aria-current="step"' : ""} title="${esc(step.message || step.label)}"><span class="scan-dot" aria-hidden="true">${symbols[status]}</span><b>${esc(step.label)}</b><small>${labels[status]}${elapsed(step)}</small></li>`;
+    }).join("")}</ol>
+    ${history.length ? `<details open><summary>Activity history (${history.length})</summary><ol class="scan-history" reversed>${[...history].reverse().map(e=>`<li><time>${esc(clock(e.at))}</time>${esc(e.message)}</li>`).join("")}</ol></details>` : ""}
+    ${record.skipped?.length ? `<details open><summary>Skipped captures and menus (${record.skipped.length})</summary><ul>${record.skipped.map(e=>`<li>${esc(e.screen || e.target)}: ${esc(e.reason)}</li>`).join("")}</ul></details>` : ""}
+  </section>`;
+}
+function renderScanTimeline(selector, record, running, title){
+  const el=$(selector); if (!el) return;
+  const html=scanTimelineHTML(record,running,title);
+  if (el._timelineHTML === html) return;
+  const previous=el.querySelector('.scan-stops');
+  const left=previous?.scrollLeft || 0, top=previous?.scrollTop || 0;
+  const oldActive=el.dataset.active;
+  const active=running ? record?.active_step || '' : '';
+  el.innerHTML=html; el._timelineHTML=html; el.dataset.active=active;
+  const track=el.querySelector('.scan-stops');
+  if (track) { track.scrollLeft=left; track.scrollTop=top; }
+  if (track && active && active !== oldActive) {
+    const current=track.querySelector('[aria-current="step"]');
+    if (current) {
+      if (track.scrollWidth>track.clientWidth) track.scrollLeft=current.offsetLeft-track.offsetLeft-track.clientWidth/2+current.clientWidth/2;
+      else track.scrollTop=current.offsetTop-track.offsetTop;
+    }
+  }
+}
+function assetLibraryHTML(assets){
+  if (!assets?.images) return '<p class="muted">The next setup reads artwork directly from the game installed on this emulator.</p>';
+  const labels={pending:"Awaiting screen verification",verified:"Verified on screen",not_seen:"Source match not confirmed",unstable:"Screen changed; retry",needs_attention:"Recognition needs attention"};
+  return `<section class="scan-progress" aria-label="Installed artwork"><b>Installed artwork — game ${esc(assets.version)}</b>
+    <p>${assets.images.toLocaleString()} image objects extracted · ${assets.unique_images.toLocaleString()} distinct images<br>${assets.mapped} manifest targets mapped · ${assets.verified} verified on screen</p>
+    <p class="muted">Extracted artwork does not establish what your account owns or has unlocked. Rendered labels and composed controls are verified from the game screen.</p>
+    ${assets.empty_placeholders ? `<p class="muted">${assets.empty_placeholders} empty texture placeholders contain no source pixels. Rendered text is checked on screen.</p>` : ""}
+    ${assets.decode_errors ? `<p class="muted">${assets.decode_errors} image objects could not be decoded; their source records remain in the local extraction report.</p>` : ""}
+    <details open><summary>Mapped artwork and verification</summary><table><thead><tr><th>Target</th><th>Installed source</th><th>Screen check</th></tr></thead><tbody>${(assets.targets || []).map(t=>`<tr class="row-${rowState(t.verification) || "none"}"><td>${artPair(t.rel, rowState(t.verification))}${esc(t.rel)}</td><td>${esc(t.names.join(", ") || "Source not found")}</td><td>${esc(labels[t.verification] || t.verification)}</td></tr>`).join("")}</tbody></table></details></section>`;
+}
+function calibrationMode(st){
+  return st.selection?.mode || (st.running && st.state?.phases?.bootstrap?.status === "running" ? "bootstrap" : "basic");
+}
+function basicScanProgress(st){
+  if (calibrationMode(st) === "observe") return null;
+  const phases=st.state?.phases || {};
+  const names={c:"cards",m:"modules",g:"global",u:"guardians",b:"bots",w:"workshop",e:"equipped_modules"};
+  const labels={cards:"Cards and presets",modules:"Module inventory",global:"Global presets",guardians:"Guardians",bots:"Bots",workshop:"Workshop presets",equipped_modules:"Scan and restore modules"};
+  const keys=calibrationMode(st) === "basic" && st.running ? (st.selection?.phases || []).map(k=>names[k]).filter(Boolean) : Object.keys(phases).filter(k=>k !== "bootstrap");
+  if (!keys.length) return null;
+  const steps=keys.map(key=>({id:key,label:labels[key] || key,status:phases[key]?.status || "pending",message:phases[key]?.error || phases[key]?.at,started_at:phases[key]?.started_at,finished_at:phases[key]?.finished_at}));
+  const history=steps.flatMap(step=>[
+    ...(step.started_at ? [{at:step.started_at,message:`Started ${step.label}`}] : []),
+    ...(step.finished_at ? [{at:step.finished_at,message:`${step.label}: ${step.status}${step.message ? ` — ${step.message}` : ""}`}] : [])
+  ]).sort((a,b)=>a.at-b.at);
+  const activity=calibrationMode(st) === "bootstrap" ? null : st.activity;
+  const message=activity?.kind === "calibrate_cut" ? `Checking ${activity.name}` : activity?.message;
+  return {steps,history,status:st.running && calibrationMode(st) !== "bootstrap" ? "running" : steps.every(s=>s.status === "done") ? "done" : "stopped",active_step:steps.find(s=>s.status === "running")?.id,message:message || "",updated_at:activity?.t};
+}
 function calibReport(st){
   const el = $("#calib-report"); if (!el) return;
+  const stateKey=JSON.stringify(st.state);
+  if (S.scanLaunchPending && !st.running && stateKey === S.lastCalibrationState && Date.now()-S.scanLaunchPending < 15000) return;
+  S.scanLaunchPending=null;
+  S.lastCalibrationState=stateKey;
+  calibrationBusy(st.running);
+  observationFeedback(st);
+  $("#calib-phase2").disabled = st.running || st.state?.phases?.modules?.status !== "done";
+  renderCalibrationIntent();
+  const starter = st.state?.phases?.bootstrap;
+  const starterEl = $("#bootstrap-progress");
+  if (starterEl && starter) starterEl.textContent = `${starter.completed || 0}/${starter.total || 1} steps - ${starter.status}: ${starter.message || ""}${starter.skipped?.length ? ` ${starter.skipped.length} captures or menus need another pass.` : ""}`;
+  const starterRunning=st.running && calibrationMode(st) === "bootstrap";
+  renderScanTimeline("#bootstrap-timeline", starter || (S.starterPlan ? {steps:S.starterPlan.map(s=>({...s,status:"pending"}))} : null), starterRunning, "Extract, map and verify");
+  const libraryEl=$("#asset-library-summary");
+  if (libraryEl) libraryEl.innerHTML=assetLibraryHTML(starter?.assets);
+  const basic=basicScanProgress(st);
+  if (basic) renderScanTimeline("#calib-timeline",basic,st.running && !starterRunning,"Account scan");
+  else if (calibrationMode(st) === "observe" && $("#calib-timeline")) $("#calib-timeline").innerHTML = "";
+  if (S.bootstrapWasRunning && !st.running) renderScanPlan();
+  S.bootstrapWasRunning = st.running;
+  const known = $("#calib-knowledge");
+  if (known) known.innerHTML = `<table><thead><tr><th>Feature</th><th>Saved discoveries</th><th>Recognition images</th></tr></thead><tbody>${calibrationKnowledge(st)}</tbody></table>`;
+  const manifest = $("#calib-manifest");
+  if (manifest && st.manifest?.slots?.length && manifest.dataset.snapshot !== JSON.stringify(st.manifest)) {
+    manifest.dataset.snapshot = JSON.stringify(st.manifest);
+    manifest.innerHTML = `<details ${st.restore_pending ? "open" : ""}><summary>Equipment manifest — ${esc(st.manifest.stage || "snapshot")}</summary><table><tr><th>Slot</th><th>Original module</th><th>Level</th><th>Status</th></tr>${st.manifest.slots.map(r => `<tr><td>${esc(r.slot.id.replaceAll("_"," "))}</td><td>${esc(r.identity?.slug?.replaceAll("_"," ") || r.state)}</td><td>${esc(r.identity?.level || "—")}</td><td>${esc(r.error || (r.restored ? "restored" : r.state))}</td></tr>`).join("")}</table><p class="muted">${(st.manifest.inventory || []).length} inventory modules recorded.</p></details>`;
+  }
+  const activity = st.activity;
+  const progress = $("#calib-progress");
+  if (progress) {
+    const age = activity ? Math.max(0, Math.round(Date.now()/1000 - activity.t)) : null;
+    const detail = activity?.kind === "calibrate_cut" ? `Checking ${activity.name}`
+      : activity?.kind === "calibrate_grid_page" ? `Module page ${activity.page + 1}: ${activity.tiles} tiles inspected`
+      : activity?.message || "Preparing or navigating to the next screen";
+    progress.textContent = st.running
+      ? `Calibration running. ${detail}.${age !== null ? ` Last activity ${age}s ago.` : ""} Large inventories can take several minutes.`
+      : Object.keys(st.state?.phases || {}).length && Object.values(st.state.phases).every(p => p.status === "done")
+        ? `Calibration finished. ${(st.report?.entries || []).filter(e => ["stale","rejected"].includes(e.status)).length} images need attention; review the saved discoveries below.`
+        : "Calibration is stopped. Review the saved discoveries below; unfinished steps can be resumed.";
+  }
+  if (st.restore_pending && !st.running && progress) progress.textContent = "Original equipment restoration is pending. Keep the game on Home, then resume calibration. Other runs are blocked until restoration is verified.";
   const entries = ((st.report || {}).entries) || [];
   const phases = ((st.state || {}).phases) || {};
-  const ph = Object.entries(phases).map(([k, v]) => `${k}: ${v.status}${v.error ? " (" + esc(v.error) + ")" : ""}`).join(" · ");
-  const stEl = $("#calib-state"); if (stEl) stEl.textContent = (st.running ? "running… " : "") + ph;
+  const preflight = (st.state || {}).preflight;
+  if (preflight?.status === "error") { el.innerHTML = `<p class="bad">${esc(preflight.error)}</p>`; return; }
+  const stEl = $("#calib-state");
+  if (stEl) stEl.textContent = st.running ? "Scan running" : st.restore_pending ? "Restoration pending" : "Choose captures or scans below";
   if (!entries.length) {
     el.innerHTML = st.taps_allowed === false
-      ? '<p class="bad">allow_taps is off for this instance - switch it on in Configuration, then calibrate.</p>' : "";
+      ? '<p class="muted">No recognition images recorded yet. Choose features in “What to scan next” to begin.</p>' : "";
     return;
   }
   el.innerHTML = `<table style="width:100%; font-size:.85em"><tr><th></th><th>template</th><th>read as</th><th>status</th><th>self</th><th>next</th></tr>
-    ${entries.map(e => `<tr>
-      <td><img src="/api/template/${esc(e.rel)}?t=${Math.round(e.t || 0)}" style="max-height:44px; max-width:150px" alt=""></td>
+    ${entries.map(e => `<tr class="row-${(e.verified ? "ok" : rowState(e.status)) || "none"}">
+      <td>${artPair(e.rel, e.verified ? "ok" : rowState(e.status))}</td>
       <td><code>${esc(e.rel)}</code></td>
       <td>${esc(e.name || "")}${e.rarity ? ' <span class="muted">' + esc(e.rarity) + '</span>' : ""}</td>
-      <td class="${e.status === "written" ? "ok" : e.status === "exists" ? "muted" : "bad"}">${esc(e.status)}</td>
-      <td class="${Number(e.self || 0) < 0.9 ? "bad" : ""}"
-          title="${e.fresh != null && e.fresh > Number(e.self || 0) + 0.05 ? "the existing file scores " + Number(e.self || 0).toFixed(2) + " on this screen; a fresh cut would score " + Number(e.fresh).toFixed(2) + " - tick Overwrite and calibrate again" : ""}">${Number(e.self || 0).toFixed(2)}${e.fresh != null && e.fresh > Number(e.self || 0) + 0.05 ? ` <span class="muted">→ ${Number(e.fresh).toFixed(2)}</span>` : ""}</td>
+      <td title="${esc(e.reason || "")}" class="${e.status === "written" ? "ok" : ["exists","unverified_copy"].includes(e.status) ? "muted" : "bad"}">${e.status === "unverified_copy" ? "Different copy — unverified" : esc(e.status)}${e.reason ? `<div class="muted">${esc(e.reason)}</div>` : ""}</td>
+      <td class="${e.status !== "unverified_copy" && Number(e.self || 0) < 0.9 ? "bad" : ""}"
+          title="${e.status !== "unverified_copy" && e.fresh != null && e.fresh > Number(e.self || 0) + 0.05 ? "the existing file scores " + Number(e.self || 0).toFixed(2) + " on this screen; a fresh cut would score " + Number(e.fresh).toFixed(2) + " - tick Overwrite and calibrate again" : ""}">${Number(e.self || 0).toFixed(2)}${e.status !== "unverified_copy" && e.fresh != null && e.fresh > Number(e.self || 0) + 0.05 ? ` <span class="muted">→ ${Number(e.fresh).toFixed(2)}</span>` : ""}</td>
       <td class="${Number(e.next || 0) > 0.85 && !(e.copies_on_page > 1) ? "bad" : ""}"
           title="${e.copies_on_page > 1 ? e.copies_on_page + " identical tiles on screen - the next-best is another copy" : ""}">${Number(e.next || 0).toFixed(2)}${e.copies_on_page > 1 ? ` <span class="muted">×${e.copies_on_page}</span>` : ""}</td></tr>`).join("")}
   </table>
   <p class="muted">A good cut matches itself at 1.00 and nothing else above 0.85. "exists" = a file was already there and was kept (tick overwrite to replace it); the names are in the draft profile for Promote.</p>`;
 }
+function calibrationBusy(running){
+  document.querySelectorAll('#bootstrap-start, [onclick^="startCalibrate"], [onclick^="observeNow"], #calib-phase2, [name="calibration-phase"], #calib-taps, #calib-over, [onclick="applyCalibration()"]')
+    .forEach(el => el.disabled = running);
+  const stop = document.querySelector('[onclick="stopCalibrate()"]');
+  if (stop) stop.disabled = !running;
+}
 function pollCalibrate(){
-  clearInterval(S.calPoll);
+  clearTimeout(S.calPoll);
+  const generation = S.calPollGeneration = (S.calPollGeneration || 0) + 1;
   const tick = async () => {
+    if (generation !== S.calPollGeneration || !$("#calib-report")) return;
     try {
       const st = await api("/api/calibrate/status");
+      if (generation !== S.calPollGeneration || !$("#calib-report")) return;
       calibReport(st);
-      if (!st.running) { clearInterval(S.calPoll); toast("calibration finished"); renderCalibrate(); }
-    } catch(e){ clearInterval(S.calPoll); }
+    } catch(e){
+      const progress = $("#calib-progress");
+      if (progress) progress.textContent = "Connection interrupted. Retrying calibration status…";
+      const action = $("#bootstrap-timeline .scan-action");
+      if (action) action.textContent = "Connection interrupted. Retrying; showing the last known steps...";
+      const timeline = $("#bootstrap-timeline");
+      if (timeline) timeline._timelineHTML = null;
+    }
+    if (generation === S.calPollGeneration && $("#calib-report")) S.calPoll = setTimeout(tick, 2500);
   };
   tick();
-  S.calPoll = setInterval(tick, 2500);
+}
+async function renderScanPlan(){
+  const el = $("#scan-plan"); if (!el) return;
+  try {
+    const plan = await api("/api/wizard/scan-plan" + (S.readiness?.preset ? "?preset=" + encodeURIComponent(S.readiness.preset) : ""));
+    S.starterPlan = plan.bootstrap?.steps;
+    S.learned = Object.fromEntries(plan.steps.flatMap(s => s.targets).filter(t => t.learned).map(t => [t.rel, t.learned]));
+    el.innerHTML = `<details open><summary>Advanced: remaining captures and reference manifest</summary><p>${esc(plan.note)}</p><p><b>${plan.captured} / ${plan.total} reference targets captured locally</b>. This is a catalogue of supported appearances, not a requirement to capture every variant. Required alternatives depend on your selected run.</p><p>Use the starter scan above for supported Home and menu controls. For remaining or unsupported appearances, open the screen yourself and capture the named target below. Manual captures do not tap the game.</p>${plan.steps.map((step,i) => `<details ${i === 0 ? "open" : ""}><summary>${esc(step.title)} — ${step.targets.filter(t=>t.status !== "Missing").length}/${step.targets.length} reference captures</summary><p>${esc(step.instructions)}</p>${step.id === "cards" ? '<p>These are navigation and runtime reference images, not your card count. <b>Cards and presets</b> scans the full inventory and discovers its size.</p>' : ""}<table><tr><th>Target</th><th>Local evidence</th><th>Capture</th></tr>${step.targets.map(t => `<tr class="row-${rowState(t.status) || "none"}"><td>${artPair(t.rel, rowState(t.status))}${esc(t.label)}${t.required ? '<div class="muted">Required by selected run (may have alternatives)</div>' : ''}${t.learned ? `<div class="muted">Learned: ${esc(String(t.learned.screen).replace("_", " "))} at ${t.learned.rect.join(",")} (${t.learned.rect[2]}×${t.learned.rect[3]})</div>` : ''}<details><summary>Image reference</summary><code>${esc(t.rel)}</code>${t.reference_size ? `<p>Reference crop: ${t.reference_size.join(" × ")} native pixels. Never resize a capture.</p>` : ''}</details></td><td>${esc(t.status)}</td><td><button class="small ghost" data-template="${esc(t.rel)}" onclick="cropPick(this.dataset.template)">Choose target</button></td></tr>`).join('')}</table></details>`).join('')}<p class="muted">After navigation images are captured, use the basic scan below for account names and inventory. Observe rare screens as they occur; missing requirements keep the affected runs blocked.</p></details>`;
+  } catch(e) { el.textContent = "Scan plan unavailable: " + e.message; }
 }
 function cropRefresh(){
   S.calibTs = Date.now();
   const img = $("#calib-frame"); if (img) img.src = "/api/frame.png?ts=" + S.calibTs;
 }
-function cropPick(rel){ const i = $("#crop-name"); if (i) i.value = rel; cropInfo(); }
+function cropPick(rel){
+  if ($("#manual-crop")) $("#manual-crop").open=true;
+  const i = $("#crop-name"); i?.scrollIntoView({behavior:"smooth",block:"center"}); if (i) i.value = rel;
+  // the learned manifest knows where this control was cut before: pre-draw
+  // that box at the same size, so the person only confirms (or adjusts)
+  const row = (S.learned || {})[rel], img = $("#calib-frame");
+  if (row && row.rect && img && img.naturalWidth) {
+    const k = img.clientWidth / img.naturalWidth;
+    CROP.rect = row.rect.map(v => v * k); cropDraw();
+    cropInfo(`box pre-drawn where ${rel} was last cut (${row.screen}, ${row.rect[0]},${row.rect[1]} ${row.rect[2]}×${row.rect[3]} native) — show that screen, adjust if needed, save`);
+    return;
+  }
+  cropInfo();
+}
 async function cropSave(){
   const n = cropNative(), name = ($("#crop-name").value || "").trim();
   if (!n) { toast("draw a box first", true); return; }
@@ -1013,31 +1520,36 @@ async function cropSave(){
              + `(≥0.9 means another spot looks the same — crop tighter)`);
     S.required = await api("/api/wizard/required").catch(() => S.required);
     S.calib = await api("/api/wizard/templates").catch(() => S.calib);
+    await renderScanPlan();
   } catch(e){ toast(e.message, true); }
 }
 
 /* ========================================================== VIEW 3: HOME */
 async function renderHome(){
   await loadHomeData();
+  const runResponse = await api("/api/runs").catch(e => ({error:e.message}));
+  S.runs = runResponse.runs || {};
+  S.runReadiness = runResponse.readiness || {};   // per run: {ready, missing[], advisory[]}
+  if (runResponse.error) toast(runResponse.error, true);
   const active = S.profiles.active;
   $("#view").innerHTML = `
   <div class="grid2">
     <div>
       <article id="card-runner"><header>Runner</header><div id="runner-body"></div></article>
       ${starterBanner()}
-      <article id="card-day"><header>The day plan
+      <details><summary>Schedule runs automatically</summary><article id="card-day"><header>The day plan
         <span class="muted" style="font-weight:400">— what runs when; first open window wins</span>
-      </header><div id="day-body"></div></article>
+      </header><div id="day-body"></div></article></details>
       <article id="card-flows"><header>Run types
-        <span class="muted" style="font-weight:400">— each is one file in backend/flows/</span>
+        <span class="muted" style="font-weight:400">— choose equipment and a tier</span>
       </header><div id="flows-body"></div></article>
-      <article id="card-behaviors"><header>Behavior library
+      <details open><summary>Advanced behaviour library</summary><article id="card-behaviors"><header>Behavior library
         <span class="muted" style="font-weight:400">— shared plans the run types pick from</span>
-      </header><div id="behaviors-body"></div></article>
-      <article id="card-loadouts"><header>Loadouts
+      </header><div id="behaviors-body"></div></article></details>
+      <article id="card-loadouts"><header>Equipment presets
         <span class="muted" style="font-weight:400">— what gets equipped before a run</span>
       </header><div id="loadouts-body"></div></article>
-      <article id="card-global"><header>Global behaviors</header><div id="global-body"></div></article>
+      <details open><summary>Advanced global settings</summary><article id="card-global"><header>Global behaviors</header><div id="global-body"></div></article></details>
     </div>
     <div>
       <article class="stream-box"><header>Live
@@ -1318,15 +1830,33 @@ function renderRunner(){
   const ae = document.activeElement;
   if (ae && body.contains(ae) && ae.matches("select, input, textarea")) return;
   const procs = S.status.processes || [];
+  const ready = S.runReadiness || {};
   const key = JSON.stringify([procs.map(p => [p.pid, p.runner]),
-                              !!S.status.stop_flag]);
+                              !!S.status.stop_flag,
+                              Object.entries(ready).map(([n, r]) => [n, r.ready, (r.missing || []).length])]);
   if (body.dataset.key === key) return;
   body.dataset.key = key;
   const chosen = ($("#start-preset") || {}).value;
-  const presets = Object.entries(S.config.presets || {})
+  // Each run type needs its own images to click (its flow's templates, the
+  // gather features, its presets, the shared recognition guards). A run whose
+  // images exist can start; one that lacks some is greyed out with the list
+  // to scan - what another run type still lacks does not hold this one back.
+  const presets = Object.entries(S.runs || {})
     .filter(([n, b]) => (b || {}).defined !== false)
-    .map(([n, b]) => ({ name:n, label:(b || {}).label || n }));
+    .map(([n, b]) => {
+      const r = ready[n];                       // undefined for combo: not gated here
+      const ok = !r || r.ready;
+      const miss = (r && r.missing) || [];
+      const title = ok ? "" : `Needs ${miss.length} image${miss.length === 1 ? "" : "s"} before it can start:\n` +
+        miss.slice(0, 8).map(m => " - " + m).join("\n") + (miss.length > 8 ? `\n   … and ${miss.length - 8} more` : "") +
+        "\nOpen Calibrate (Check setup) to scan or crop them.";
+      return { name:n, label:(b || {}).label || n, ok, miss, title };
+    });
+  const firstReady = (presets.find(p => p.name === "bp_coin_default" && p.ok) || presets.find(p => p.ok) || presets[0] || {}).name;
+  const tapsAllowed = !!S.config.instances?.[S.config.active_instance]?.allow_taps;
   body.innerHTML = `
+    <label class="inline"><input type="checkbox" ${tapsAllowed ? "checked" : ""} ${procs.length ? "disabled" : ""} onchange="setAutomationAccess(this.checked)"> Allow automation to tap this emulator</label>
+    ${!tapsAllowed ? '<p class="muted">Read-only: the game will not be controlled until you enable taps.</p>' : ""}
     ${procs.length ? procs.map(p => `
       <div class="flowcard"><div><b>${esc(p.runner)}</b>
         <span class="chip">pid ${p.pid}</span>
@@ -1335,27 +1865,59 @@ function renderRunner(){
       </div>`).join("")
       : '<p class="muted">Nothing is running.</p>'}
     <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-top:.6rem">
-      <select id="start-preset" style="margin:0; width:auto; padding:.3rem .6rem">
-        ${presets.map(p => `<option value="${esc(p.name)}"
-            ${p.name === "combo" ? "selected" : ""}>${esc(p.label)}</option>`).join("")}
+      <select id="start-preset" style="margin:0; width:auto; padding:.3rem .6rem" onchange="renderRunReady()">
+        ${presets.map(p => `<option value="${esc(p.name)}" title="${esc(p.title)}" ${p.ok ? "" : "disabled"}
+            ${p.name === firstReady ? "selected" : ""}>${esc(p.label)}${p.ok ? "" : ` — needs scan (${p.miss.length})`}</option>`).join("")}
       </select>
-      <button onclick="startPreset()">▶ Start</button>
+      <button onclick="checkRun()">Check setup</button><button id="start-run" onclick="startPreset()">▶ Start</button>
       ${S.status.stop_flag
         ? `<button class="small ghost" onclick="ctl('clear_flag')">✋ will stop after this run — cancel?</button>`
         : `<button class="small ghost" onclick="ctl('stop_after_run')">Finish current run, then stop</button>`}
     </div>
+    <div id="run-ready" class="muted" style="margin-top:.4rem"></div>
     <p class="muted" style="margin-top:.4rem">“Combo (day plan)” runs the whole
       day plan below. “Stop now” never touches the game — a live run keeps
       playing; prefer “finish current run, then stop”.</p>`;
   if (chosen) {
     const sel = $("#start-preset");
-    if (sel && [...sel.options].some(o => o.value === chosen)) sel.value = chosen;
+    if (sel && [...sel.options].some(o => o.value === chosen && !o.disabled)) sel.value = chosen;
+  }
+  renderRunReady();
+}
+function renderRunReady(){
+  // The chosen run's own calibration state, next to the Start button: what it
+  // still needs to click is listed here and in the option's tooltip; Start is
+  // disabled until those images exist. Runs whose images are complete start.
+  const sel = $("#start-preset"), out = $("#run-ready"), btn = $("#start-run");
+  if (!sel || !out) return;
+  const r = (S.runReadiness || {})[sel.value];
+  if (!r) { out.innerHTML = ""; if (btn) btn.disabled = false; return; }
+  const miss = r.missing || [], adv = r.advisory || [];
+  if (btn) btn.disabled = !r.ready;
+  if (r.ready) {
+    out.innerHTML = `<span class="ok">Ready to start.</span>` + (adv.length
+      ? ` <span class="muted">${adv.length} optional screen${adv.length === 1 ? "" : "s"} still to capture when they appear (tournament, welcome-back, reward skip).</span>` : "");
+  } else {
+    const details = r.details || miss.map(m => ({alternatives:[m], reasons:[], docs:[]}));
+    out.innerHTML = `<p class="bad" style="margin:.4rem 0">Cannot start yet - ${miss.length} image${miss.length === 1 ? "" : "s"} missing. ` +
+      `<a href="#calibrate" onclick='goOutstanding(${JSON.stringify(sel.value)}, ${JSON.stringify((details[0] || {alternatives:[""]}).alternatives[0])})'>Open the outstanding list in Calibrate</a> ` +
+      `<button class="small" onclick="observeNow()" title="Two screenshots, searched with the game's artwork for every missing control on screen. No taps.">Capture from the screen now</button> ` +
+      `<button class="small ghost" onclick="observeNow(120)" title="Keeps looking for two minutes, about once a second. No taps. For controls that are only up for moments, like the Second Wind badge during your own run.">Watch the screen for 2 min</button></p>` +
+      details.map(d => outstandingCard(d, "control", sel.value)).join("");
   }
 }
 async function killPid(pid){
   if (!confirm("Stop this runner process? The game itself is never touched.")) return;
   try { await post("/api/control", { action:"kill", pid }); toast("stopped"); loadStatus(); }
   catch(e){ toast(e.message, true); }
+}
+async function setAutomationAccess(enabled){
+  try { await post("/api/automation-access", {enabled}); await loadHomeData(); const rb=$("#runner-body"); if(rb) rb.dataset.key=""; renderRunner(); }
+  catch(e){ toast(e.message,true); }
+}
+async function checkRun(){
+  S.calibrationPreset = $("#start-preset").value;
+  location.hash = "#calibrate";
 }
 async function startPreset(){
   try {
@@ -1552,7 +2114,7 @@ function renderFlows(){
     return `<div class="flowcard">
       <div><b>${esc(label)}</b>${label !== name
           ? `<span class="chip" title="identifier">${esc(name)}</span>` : ""}<span class="chip kind">${esc(bpKindLabel(b))}</span>
-        <div class="muted">loadout: ${esc(b.loadout ?? "—")}
+        <div class="muted">equipment: ${b.loadout === "as_is" ? "use current equipment" : esc(b.loadout ?? "—")}
           ${b.tier != null ? " · tier " + esc(b.tier) : ""}
           ${b.restart_via_home ? " · restarts via Home" : ""}</div></div>
       <button class="small" onclick="openEditor('${esc(name)}')">Edit</button>
@@ -1653,7 +2215,7 @@ function editorHtml(bpName){
         <label>Equip this loadout</label>
         <select onchange="setBp('${esc(bpName)}', 'loadout', this.value)">
           ${bp.kind === "coin" ? `<option value="as_is" ${bp.loadout === "as_is" ? "selected" : ""}>
-            (as is — equip nothing)</option>` : ""}
+            (use what is already equipped)</option>` : ""}
           ${loadouts.map(l => `<option ${bp.loadout === l ? "selected" : ""}>${esc(l)}</option>`).join("")}
         </select>
         ${bp.tier !== undefined || bp.kind === "coin" || bp.kind === "shard"
@@ -1661,6 +2223,8 @@ function editorHtml(bpName){
       </div>
     </fieldset>
 
+    ${bp.kind === "tournament" ? `<fieldset><legend>Entry spending limit</legend><div class="kv">${numField("Maximum gems per ticket (0 = no purchase)", "gem_entry_max", 'min="0"')}</div></fieldset>` : ""}
+    <details id="run-advanced" open><summary>Advanced settings — gathering, policies, repeat counts and timing</summary>
     <fieldset><legend>After each run</legend>
       <label class="inline"><input type="checkbox" ${bp.restart_via_home ? "checked" : ""}
         onchange="setBp('${esc(bpName)}', 'restart_via_home', this.checked)">
@@ -1691,15 +2255,16 @@ function editorHtml(bpName){
           ${GATHER_LABEL[k]}</label>`).join("")}</div>` : ""}
     </fieldset>
 
-    <fieldset><legend>Policies &amp; knobs</legend>
+    <fieldset><legend>Run behaviour and limits</legend>
       <div class="kv">
         <label>Ultimate-weapon plan</label>
         <div class="withpen">
         <select onchange="setBpPolicy('${esc(bpName)}', 'uw', this.value)">
           <option value="" ${!(bp.policies || {}).uw ? "selected" : ""}>(none)</option>
-          ${Object.keys(pol.uw_policies || {}).map(p =>
-            `<option value="${esc(p)}" ${(bp.policies || {}).uw === p ? "selected" : ""}>
-              ${esc(polLabel("uw_policies", p))}</option>`).join("")}
+          ${Object.keys(pol.uw_policies || {}).map(p => { const why = uwPlanBlocked(p); return `
+            <option value="${esc(p)}" title="${esc(why)}" ${why && (bp.policies || {}).uw !== p ? "disabled" : ""}
+              ${(bp.policies || {}).uw === p ? "selected" : ""}>
+              ${esc(polLabel("uw_policies", p))}${why ? " — needs Chain Lightning" : ""}</option>`; }).join("")}
         </select>
         ${(bp.policies || {}).uw ? `<button class="small ghost" title="edit this plan"
           onclick="openUwEditor('${esc((bp.policies || {}).uw)}', '${esc(bpName)}')">✎</button>` : ""}
@@ -1731,7 +2296,7 @@ function editorHtml(bpName){
         ${bp.kind === "shard" ? numField("Runs (0 = unlimited)", "count", 'min="0"') : ""}
         ${bp.kind === "uw_grant_quest" ? numField("Rides", "rides", 'min="1"') : ""}
         ${bp.kind === "cycle_quest" ? numField("Cycles", "cycles", 'min="1"') : ""}
-        ${bp.kind === "tournament" ? numField("Max gems for a ticket", "gem_entry_max", 'min="0"') : ""}
+
       </div>
       ${bp.kind === "coin" ? `
       <label class="inline" style="margin-top:.5rem">
@@ -1741,6 +2306,7 @@ function editorHtml(bpName){
         <span class="muted">(the sprint locks the ability row)</span></label>` : ""}
     </fieldset>
 
+    </details>
     <p class="muted">The ✎ buttons open the full editors for rescue rules,
       shopping priorities and weapon scheduling. Nothing is written until you
       press <b>Save</b> — then every change is checked by the same validator
@@ -1761,6 +2327,21 @@ function setBpLabel(bpName, v){
   else if (bp.label !== undefined) queuePatch(["blueprints", bpName, "label"], null, "delete");
   else dropPending([["blueprints", bpName, "label"]]);
   refreshEditor(bpName, false);
+}
+/* A weapon plan is a library entry; what it NEEDS is decided where a run
+   binds it (the compiler refuses the binding, never the definition). Grey
+   the plans this account cannot bind yet and say why, before the validator
+   has to: a Chain Lightning schedule (any mode but off) needs the weapon
+   (player.uws.chain_lightning), which Full setup proves from the in-run UW
+   panel and "Use discovered presets" writes into the profile. */
+function uwPlanBlocked(name){
+  const plan = (((S.profile || {}).policies || {}).uw_policies || {})[name] || {};
+  const mode = (plan.chain_lightning || {}).mode;
+  if (mode == null || mode === "off") return "";
+  if ((((S.profile || {}).player || {}).uws || {}).chain_lightning) return "";
+  return `Schedules Chain Lightning (mode ${mode}), which this account does not own yet ` +
+    `(player.uws.chain_lightning). If the account has it: run Full setup, then ` +
+    `"Use discovered presets in my profile" on Calibrate.`;
 }
 function setBpPolicy(bpName, pkey, value){
   if (value === "") queuePatch(["blueprints", bpName, "policies", pkey], null, "delete");
@@ -1794,7 +2375,11 @@ function refreshEditor(bpName, rebuild = true){
   // change event destroys a Save/Cancel button the user is clicking (see
   // p2Save). The cards behind the dialog always re-render.
   const ed = $("#editor");
-  if (rebuild && ed && ed.open) ed.innerHTML = editorHtml(bpName);
+  if (rebuild && ed && ed.open) {
+    const advanced = !!$("#run-advanced")?.open;
+    ed.innerHTML = editorHtml(bpName);
+    if ($("#run-advanced")) $("#run-advanced").open = advanced;
+  }
   renderFlows(); renderDay(); renderBehaviors();
 }
 

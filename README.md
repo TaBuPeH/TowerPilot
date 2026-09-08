@@ -13,6 +13,11 @@ machine.
 
 ## Quick start
 
+For the guided account workflow, see [Account setup and calibration](docs/ACCOUNT_SETUP.md).
+Setup can create a personal account with a single coin run, keep calibration
+separate for each emulator, and import an existing installation without deleting
+its files. Advanced run tuning and schedules are collapsed by default.
+
 1. Install [Python 3.12](https://www.python.org/downloads/) (3.10 is the
    floor) and an Android emulator with The Tower installed. The frame the
    autopilot sees must be **1080 x 2560 portrait at 360 dpi** - every
@@ -31,14 +36,13 @@ machine.
    `HD-Player.exe`), points the config at it on a fresh install, and runs
    the boot pipeline that waits for Android, clears overlays and starts
    the game. Then check the display resolution.
-5. **Calibrate** page, with the game on its home screen: press **Calibrate
-   now**. The bot walks Cards, the preset picker, Modules, Guild, Event and
-   Workshop, finds every preset control by its outline, reads the name you
-   gave it, cuts the template and verifies it (`player/calibrate.py`).
-   Those pictures - card preset tabs, global and category preset rows, your
-   modules at your rarity - are the game's art and yours, so the repo never
-   ships them; the generic buttons and screens do ship. The cropper on the
-   same page is the manual fallback for a cut that came out weak.
+5. **Calibrate → Scan plan** starts without any images. Open the listed game
+   screens yourself and use the live-frame cropper to capture the named controls.
+   **No game images ship**, including shared buttons, digits and screen headers.
+   After the navigation images are captured, the basic scan can discover preset
+   names and module inventory. Battle, tournament and spending dialogs are
+   observation-only: setup never triggers them to obtain an image.
+   See [the acquisition plan](docs/SCAN_PLAN.md) for capture and verification steps.
 6. **Analyze the account**: *Scan account* on the Setup page reads the
    guardians, card presets and modules (add the battle phase for ultimate
    weapons and abilities) into `profiles/<instance>.draft.yaml`, then

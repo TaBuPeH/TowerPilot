@@ -43,13 +43,14 @@ import settings
 def _paths():
     from settings import CONFIG
     inst = CONFIG.get("active_instance", "main")
-    logs = os.path.join("logs", inst)
+    from player import accounts
+    logs = str(accounts.calibration_dir(settings.ROOT, CONFIG))
     os.makedirs(logs, exist_ok=True)
     os.makedirs("profiles", exist_ok=True)
     return {
         "state": os.path.join(logs, "scan_state.json"),
         "stop": os.path.join(logs, "scan_stop"),
-        "draft": os.path.join("profiles", f"{inst}.draft.yaml"),
+        "draft": os.path.join("profiles", f"{accounts.draft_name(CONFIG)}.draft.yaml"),
         "evidence": os.path.join(logs, "scan_evidence"),
     }
 
@@ -95,7 +96,7 @@ def _tpl_names(subdir: str, prefix: str = "") -> list[str]:
     """Slugs derived from the template library - the scanner's vocabulary
     is exactly what the engine can recognize, nothing invented."""
     out = []
-    for f in glob.glob(os.path.join("templates", subdir, f"{prefix}*.png")):
+    for f in [str(p) for p in settings.template_files(f"{subdir}/{prefix}*.png")]:
         out.append(os.path.basename(f)[len(prefix):-4])
     return sorted(out)
 
@@ -120,6 +121,18 @@ def preflight(adopt_battle: bool) -> None:
     import psutil
     from vision import screen
     from vision import wave_reader
+    from device import adbclient, layout
+    frame = capture.grab()
+    device = settings.instance()
+    density_command = "wm density"
+    if device.get("input_display") is not None:
+        density_command += f" -d {int(device['input_display'])}"
+    dpi = layout.density(adbclient.shell(device["serial"], density_command).decode(errors="replace"))
+    layout.require_native(frame.shape[1], frame.shape[0], dpi)
+    from player.scan_plan import missing_navigation
+    missing = missing_navigation(settings.ROOT, settings.CONFIG, [])
+    if missing:
+        raise SystemExit("Capture navigation and wave digits using the Scan plan first: " + ", ".join(missing))
     mine = os.getpid()
     for pr in psutil.process_iter(["pid", "name", "cmdline"]):
         try:
@@ -310,7 +323,7 @@ def phase_battle(p, adopt: bool) -> dict:
     from flows import shard
     from interactions import shopper
     from vision import wave_reader
-    from quest_sm import GRANT_UWS, KNOWN_UWS
+    from flows.quest_sm import GRANT_UWS, KNOWN_UWS
     started_here = False
     _dismiss_tourney_open()   # can reappear on any home return - cheap check
     if wave_reader.read_wave(capture.grab()) is None:
@@ -335,7 +348,7 @@ def phase_battle(p, adopt: bool) -> dict:
         frames.append(capture.grab())
         for name in KNOWN_UWS + GRANT_UWS:
             rel = f"uw/{name}.png"
-            if not os.path.exists(os.path.join("templates", rel)):
+            if not settings.template_path(rel).exists():
                 uws.setdefault(name, {"owned": None})
                 continue
             for i, f in enumerate(frames):

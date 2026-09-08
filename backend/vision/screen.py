@@ -173,6 +173,12 @@ def identify(frame) -> Screen:
     ev["dissonant_run"] = round(home, 3)
     if home >= OVERLAY_THRESH:
         return Screen("home", home, evidence=ev)
+    # Early accounts may not have unlocked Dissonant Runs. The ordinary
+    # Battle button is another positive Home landmark under this header.
+    home, _ = _match(frame, "home/battle_btn.png", ((2000, 2400), (0, 1080)))
+    ev["battle_button"] = round(home, 3)
+    if home >= OVERLAY_THRESH:
+        return Screen("home", home, evidence=ev)
     return Screen("unknown", best_s, evidence=ev)
 
 

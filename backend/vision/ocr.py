@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from pathlib import Path
 
+import settings
 from settings import ROOT
 
 # The Tower's measure units, in game order (Settings > notation):
@@ -27,7 +28,7 @@ def _load(font: str = "value") -> dict[str, np.ndarray]:
         glyphs: dict[str, np.ndarray] = {}
         names = {"dot": ".", "dollar": "$"}
         for d in _FONT_DIRS[font]:
-            for p in (ROOT / "templates" / d).glob("*.png"):
+            for p in settings.template_files(f"{d}/*.png"):
                 ch = names.get(p.stem, p.stem)
                 if ch not in glyphs:
                     img = cv2.imread(str(p), cv2.IMREAD_GRAYSCALE)

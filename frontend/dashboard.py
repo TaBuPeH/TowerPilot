@@ -27,6 +27,7 @@ import struct
 import subprocess
 import sys
 import threading
+from functools import wraps
 import time
 
 import yaml
@@ -78,6 +79,121 @@ def runnable_presets(cfg: dict) -> list[str]:
             if isinstance(body, dict) and body.get("defined", True)]
 
 
+_COMPILER_LOCK = threading.RLock()
+_CONFIG_WRITE_LOCK = threading.RLock()
+
+
+def _serialize_config(fn):
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        with _CONFIG_WRITE_LOCK:
+            return fn(*args, **kwargs)
+    return wrapped
+
+
+def _profile_check(profile, cfg=None, warnings=False):
+    from player import playerprofile as pp
+    with _COMPILER_LOCK:
+        previous = pp.CONFIG
+        pp.CONFIG = cfg if cfg is not None else load_config()
+        try:
+            return (pp.warnings if warnings else pp.validate)(profile)
+        finally:
+            pp.CONFIG = previous
+
+
+def _profile_warnings(profile):
+    return _profile_check(profile, warnings=True)
+
+
+def _compiled_runs(cfg):
+    """Compile the active account without binding settings to its device."""
+    from player import playerprofile as pp
+    import flows
+    name = cfg.get("active_profile")
+    if not name:
+        return dict(cfg.get("presets") or {})
+    path = _profile_path(name)
+    if not path or not os.path.isfile(path):
+        raise ValueError("Choose a valid profile in Setup")
+    with open(path, encoding="utf-8") as fh:
+        profile = yaml.safe_load(fh)
+    profile["_name"] = name
+    with _COMPILER_LOCK:
+        previous = pp.CONFIG
+        pp.CONFIG = cfg
+        try:
+            problems = pp.validate(profile)
+            if problems:
+                raise ValueError("; ".join(problems))
+            out = dict(cfg.get("presets") or {})
+            for key in profile.get("blueprints") or {}:
+                compiled = pp.compile_preset(profile, key)
+                compiled["runner"] = flows.script(compiled["kind"])
+                out["bp_" + key] = compiled
+            if profile.get("plan") and "combo" in (cfg.get("presets") or {}):
+                out["combo"] = cfg["presets"]["combo"]
+            else:
+                out.pop("combo", None)
+            return out
+        finally:
+            pp.CONFIG = previous
+
+
+@app.get("/api/runs")
+def api_runs():
+    try:
+        cfg = load_config()
+        runs = _compiled_runs(cfg)
+        if cfg.get("active_profile"):
+            runs = {k: v for k, v in runs.items() if k.startswith("bp_") or k == "combo"}
+        return jsonify({"runs": runs, "readiness": _runs_readiness(cfg, runs)})
+    except Exception as e:
+        return jsonify({"runs": {}, "error": str(e)}), 400
+
+
+def _runs_readiness(cfg, runs):
+    """Per-run calibration state for the run picker: each run type needs its
+    own set of images to click (its flow templates, gather features, presets,
+    plus the shared recognition guards), so a run whose images exist starts
+    and one whose images are missing is greyed out with the list to scan -
+    independent of what any OTHER run type still lacks. `combo` schedules the
+    others and is not checked here."""
+    from player import readiness
+    out = {}
+    for name, body in runs.items():
+        if name == "combo" or not isinstance(body, dict):
+            continue
+        try:
+            r = readiness.check(ROOT, cfg, body)
+            out[name] = {"ready": r["ready"],
+                         "missing": [" or ".join(row["alternatives"]) or "; ".join(row["reasons"])
+                                     for row in r["missing"]],
+                         # one row per missing image for the Control card: the
+                         # plain-language card (what / where / how), why this
+                         # run needs it, and which scan step covers it
+                         "details": [{"alternatives": row["alternatives"], "reasons": row["reasons"],
+                                      "docs": row.get("docs") or []} for row in r["missing"]],
+                         "advisory": [" or ".join(row["alternatives"]) for row in r.get("advisory", [])]}
+        except Exception as e:                  # noqa: BLE001 - one bad run must not hide the rest
+            out[name] = {"ready": False, "missing": [f"readiness check failed: {e}"], "advisory": []}
+    return out
+
+
+@app.get("/api/readiness")
+def api_readiness():
+    from player import readiness
+    cfg = load_config()
+    try:
+        runs = _compiled_runs(cfg)
+        name = request.args.get("preset") or next((n for n in runs if n.startswith("bp_")), None) or next((n for n in runs if n != "combo"), None)
+        if not name or name not in runs or name == "combo":
+            raise ValueError("Choose an individual run to check calibration")
+        return jsonify(dict(readiness.check(ROOT, cfg, runs[name]), preset=name))
+    except Exception as e:
+        return jsonify({"ready": False, "error": str(e), "missing": []}), 400
+
+
 # ------------------------------------------------------------------ config io
 CONFIG_EXAMPLE = os.path.join(ROOT, "config.example.yaml")
 
@@ -100,28 +216,158 @@ def seed_config() -> bool:
 def load_config() -> dict:
     seed_config()
     with open(CONFIG_PATH, encoding="utf-8") as fh:
-        return yaml.safe_load(fh)
+        from player import accounts
+        return accounts.effective(yaml.safe_load(fh))
 
 
 def save_config(data: dict) -> str:
-    stamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup = CONFIG_PATH + f".bak-{stamp}"
+    from player import accounts
     with open(CONFIG_PATH, encoding="utf-8") as fh:
-        old = fh.read()
-    with open(backup, "w", encoding="utf-8") as fh:
-        fh.write(old)
-    # Round-trip through yaml BEFORE touching config.yaml: a value the yaml
-    # writer cannot represent must fail here, with the old file untouched.
-    text = yaml.safe_dump(data, sort_keys=False, allow_unicode=True,
-                          default_flow_style=None)
-    yaml.safe_load(text)
-    with open(CONFIG_PATH, "w", encoding="utf-8") as fh:
-        fh.write(text)
-    # keep the last 20 backups, drop older ones
-    baks = sorted(glob.glob(CONFIG_PATH + ".bak-*"))
-    for b in baks[:-20]:
-        os.remove(b)
-    return os.path.basename(backup)
+        original = yaml.safe_load(fh)
+    data = accounts.persist(data, original)
+    return _save_yaml_backup(CONFIG_PATH, data)
+
+
+def _calibration_dir(cfg=None):
+    from player import accounts
+    return str(accounts.calibration_dir(ROOT, cfg if cfg is not None else load_config()))
+
+
+@app.get("/api/accounts")
+def api_accounts():
+    from player import accounts
+    cfg = load_config()
+    max_tier = 1
+    try:
+        with open(_profile_path(cfg.get("active_profile")), encoding="utf-8") as fh:
+            max_tier = (yaml.safe_load(fh).get("player") or {}).get("max_tier", 1)
+    except (OSError, TypeError, ValueError):
+        pass
+    return jsonify({"active": accounts.identity(cfg),
+                    "max_tier": max_tier,
+                    "has_personal_settings": cfg.get("active_profile") not in (None, "default") or any(isinstance(v, dict) and any(k != "defined" for k in v) for v in cfg.get("loadouts", {}).values()),
+                    "instance": cfg.get("active_instance", "main"),
+                    "accounts": [{"id": k, "label": v.get("label", k)}
+                                 for k, v in (cfg.get("accounts") or {}).items()]})
+
+
+@app.post("/api/accounts")
+@_serialize_config
+def api_account_select():
+    """Create/bind an account only while automation is idle. Never moves files."""
+    import copy
+    from pathlib import Path
+    from player import accounts
+    if _procs():
+        return jsonify({"ok": False, "error": "Stop automation before changing accounts."}), 409
+    body = request.get_json(force=True) or {}
+    try:
+        name = accounts.valid_id(body.get("id")).lower()
+        cfg = load_config()
+        library = cfg.setdefault("accounts", {})
+        if body.get("create"):
+            if name in library:
+                raise ValueError("An account with that identifier already exists")
+            if body.get("import_current"):
+                record = {k: copy.deepcopy(cfg.get(k)) for k in accounts.FIELDS}
+                profile_name = f"account_{name}"
+                source_profile = _profile_path(cfg.get("active_profile") or "default")
+                target_profile = Path(ROOT) / "profiles" / f"{profile_name}.yaml"
+                if target_profile.exists():
+                    raise ValueError("The account's profile already exists; choose another identifier")
+                if not source_profile or not Path(source_profile).is_file():
+                    raise ValueError("The current profile is missing; create a fresh account instead")
+                shutil.copy2(source_profile, target_profile)
+                record["active_profile"] = profile_name
+            else:
+                profile_name = f"account_{name}"
+                path = Path(ROOT) / "profiles" / f"{profile_name}.yaml"
+                if path.exists():
+                    raise ValueError("The new account's profile already exists; choose another identifier")
+                starter = yaml.safe_load((Path(ROOT) / "profiles" / "default.yaml").read_text(encoding="utf-8"))
+                starter["blueprints"] = {"coin_default": {
+                    "kind": "coin", "label": "Coin farming", "loadout": "as_is",
+                    "tier": 1, "restart_via_home": True, "policies": {"gather": "hands_off"}}}
+                starter.pop("plan", None)
+                starter["policies"]["chores"] = []
+                path.write_text(yaml.safe_dump(starter, sort_keys=False, allow_unicode=True), encoding="utf-8")
+                record = {"active_profile": profile_name, "loadouts": {"my_equipment": {}}, "tourney_card_tweaks": {}}
+            record["label"] = str(body.get("label") or name).strip()[:100]
+            library[name] = record
+            if body.get("import_current"):
+                # Copy this installation's current assets; do not take them
+                # away from a running process or the legacy configuration.
+                source_cfg = copy.deepcopy(cfg)
+                target_cfg = copy.deepcopy(cfg)
+                target_cfg["instances"][cfg["active_instance"]]["account"] = name
+                target = accounts.template_dir(ROOT, target_cfg)
+                target.mkdir(parents=True, exist_ok=True)
+                for source in accounts.template_files(ROOT, source_cfg, "**/*.png"):
+                    base = accounts.template_dir(ROOT, source_cfg)
+                    try:
+                        rel = source.relative_to(base)
+                    except ValueError:
+                        rel = source.relative_to(Path(ROOT) / "templates")
+                    dest = target / rel
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, dest)
+                history = accounts.calibration_dir(ROOT, source_cfg)
+                destination = accounts.calibration_dir(ROOT, target_cfg)
+                for filename in ("scan_state.json", "calibrate_state.json", "calibrate_report.json"):
+                    if (history / filename).is_file():
+                        shutil.copy2(history / filename, destination / filename)
+                for dirname in ("scan_evidence", "calibrate_evidence"):
+                    if (history / dirname).is_dir():
+                        shutil.copytree(history / dirname, destination / dirname)
+        elif name not in library:
+            raise ValueError("Choose an existing account or create one first")
+        cfg["instances"][cfg["active_instance"]]["account"] = name
+        cfg = accounts.effective(cfg)
+        save_config(cfg)
+        with _FRAME_CACHE_LOCK:
+            _FRAME_CACHE.clear()
+        _CALIB_CACHE.update(t=0, missing=[])
+        return jsonify({"ok": True, "active": name})
+    except (ValueError, OSError) as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
+
+
+@app.post("/api/automation-access")
+def api_automation_access():
+    if _procs():
+        return jsonify({"ok": False, "error": "Stop automation before changing its tap permission."}), 409
+    body = request.get_json(force=True) or {}
+    if type(body.get("enabled")) is not bool:
+        return jsonify({"ok": False, "error": "Choose whether to allow automation to tap."}), 400
+    with _CONFIG_WRITE_LOCK:
+        cfg = load_config()
+        cfg["instances"][cfg["active_instance"]]["allow_taps"] = body["enabled"]
+        save_config(cfg)
+    return jsonify({"ok": True, "enabled": body["enabled"]})
+
+
+@app.post("/api/account-tier")
+def api_account_tier():
+    if _procs():
+        return jsonify({"ok": False, "error": "Stop automation before changing account capabilities."}), 409
+    cfg = load_config()
+    tier = (request.get_json(force=True) or {}).get("max_tier")
+    if type(tier) is not int or not 1 <= tier <= 20:
+        return jsonify({"ok": False, "error": "Enter an unlocked tier from 1 to 20."}), 400
+    name = cfg.get("active_profile")
+    path = _profile_path(name)
+    if _is_starter(name) or not path or not os.path.isfile(path):
+        return jsonify({"ok": False, "error": "Create your account first."}), 409
+    with _profile_lock(path):
+        with open(path, encoding="utf-8") as fh:
+            profile = yaml.safe_load(fh)
+        profile.setdefault("player", {})["max_tier"] = tier
+        profile["player"]["max_tier_verified_by"] = "operator"
+        problems = _profile_check(profile, cfg)
+        if problems:
+            return jsonify({"ok": False, "error": problems[0]}), 409
+        _save_yaml_backup(path, profile)
+    return jsonify({"ok": True, "max_tier": tier})
 
 
 @app.get("/")
@@ -325,6 +571,7 @@ def _newest_events(instance: str = "main", n: int = 60):
 @app.get("/api/status")
 def api_status():
     cfg = load_config()
+    from player.scan_plan import control_gate
     daily = {}
     try:
         with open(os.path.join(ROOT, "logs", "daily_state.json")) as fh:
@@ -342,11 +589,50 @@ def api_status():
         # setup gate: false hides every tab but the wizard (see _setup_complete;
         # sticky once true, and the grandfather probe runs only while false)
         "setup_complete": _setup_complete(),
+        "calibration": control_gate(ROOT, cfg),
         # nav gates: Control is locked until calibration has nothing missing,
         # and shows a connect overlay while the emulator port is not answering
         "connected": _connected(),
         "calibrate_missing": _calibrate_missing(),
     })
+
+
+_DISPLAY_CACHE: dict = {}          # serial -> (game display id or None, derived at)
+_DISPLAY_TTL = 300.0
+
+
+def _game_display(serial, configured=None):
+    """The display the dashboard's own captures must ask for.
+
+    MuMu runs the game on a secondary display whose id CHANGES on every
+    emulator restart, and adopt writes only serial + adb - so the preview,
+    the live stream and the screen check all read the default display (the
+    landscape launcher, prefixed by a text warning) until this derived it
+    (2026-09-08: "no frame", a stream that never refreshed, a resolution of
+    "[War" x "ning"). Same derivation as capture.refresh_display, cached
+    briefly per serial; `_forget_display` drops it when a capture stops
+    making sense so the next call re-derives. None = single display."""
+    if configured:
+        return configured
+    hit = _DISPLAY_CACHE.get(serial)
+    if hit and time.time() - hit[1] < _DISPLAY_TTL:
+        return hit[0]
+    from device import adbclient, displays
+    try:
+        disp, _logical = displays.game_display(
+            lambda cmd: adbclient.shell(serial, cmd, timeout=10).decode(errors="replace"))
+    except Exception:                           # noqa: BLE001 - offline: no display
+        return None
+    _DISPLAY_CACHE[serial] = (disp, time.time())
+    return disp
+
+
+def _forget_display(serial):
+    _DISPLAY_CACHE.pop(serial, None)
+
+
+def _screencap_cmd(serial, display, png=True):
+    return ("screencap -p" if png else "screencap") + (f" -d {display}" if display else "")
 
 
 @app.get("/api/frame.png")
@@ -356,8 +642,8 @@ def api_frame():
     serial = request.args.get("serial") or inst["serial"]
     # -d: MuMu runs the game on a secondary display; without the id the
     # screencap answers with a warning instead of pixels (same as capture.py)
-    display = request.args.get("display") or inst.get("display")
-    cmd = "screencap -p" + (f" -d {display}" if display else "")
+    display = request.args.get("display") or _game_display(serial, inst.get("display"))
+    cmd = _screencap_cmd(serial, display)
     # SOCKET FIRST, adb.exe NEVER on the hot path (user, 2026-08-18: "we
     # also have a Stream why running new ADB?"): this endpoint fires every
     # 5 s per open tab, and spawning adb.exe for each was both the console-
@@ -371,11 +657,15 @@ def api_frame():
     except Exception:                           # noqa: BLE001 - server down?
         adb = request.args.get("adb") or cfg["adb"]["exe"]
         try:
-            raw = _run([adb, "-s", serial, "exec-out"] + cmd.split(),
-                       capture_output=True, timeout=15).stdout
+            _run([adb, "start-server"], capture_output=True, timeout=15)
+            adbclient.reconnect(serial)
+            raw = adbclient.exec_out(serial, cmd, timeout=15)
         except Exception as e:                  # noqa: BLE001
             return Response(f"capture failed: {e}", status=502)
-    if not raw.startswith(b"\x89PNG"):
+    from device import displays
+    raw = displays.strip_warning(raw)
+    if not raw.startswith(displays.PNG_MAGIC):
+        _forget_display(serial)                 # display churn: re-derive next time
         return Response("no PNG from adb (device offline?)", status=502)
     ts = request.args.get("ts")
     if ts:
@@ -403,14 +693,13 @@ def api_stream():
     cfg = load_config()
     inst = cfg["instances"][cfg.get("active_instance", "main")]
     serial = request.args.get("serial") or inst["serial"]
-    display = request.args.get("display") or inst.get("display")
+    asked_display = request.args.get("display") or inst.get("display")
     fps = max(0.5, min(float(request.args.get("fps", 2)), 4.0))
     quality = max(30, min(int(request.args.get("q", 70)), 90))
     scale = max(0.2, min(float(request.args.get("scale", 0.5)), 1.0))
-    cmd = "screencap -p" + (f" -d {display}" if display else "")
 
     def gen():
-        from device import adbclient
+        from device import adbclient, displays
         import cv2
         import numpy as np
         period = 1.0 / fps
@@ -442,9 +731,15 @@ def api_stream():
             try:
                 if not _port_up():
                     raise OSError("emulator port closed")
-                raw = adbclient.exec_out(serial, cmd, timeout=2.0)
+                # the game display is derived per frame (cached): MuMu's ids
+                # change across restarts and a stale one shows the launcher
+                cmd = _screencap_cmd(serial, _game_display(serial, asked_display))
+                raw = displays.strip_warning(adbclient.exec_out(serial, cmd, timeout=2.0))
                 fails = 0
-                if raw.startswith(b"\x89PNG"):
+                if not raw.startswith(displays.PNG_MAGIC):
+                    _forget_display(serial)
+                    raise OSError("no PNG from the device (display changed?)")
+                if raw.startswith(displays.PNG_MAGIC):
                     img = cv2.imdecode(np.frombuffer(raw, np.uint8),
                                        cv2.IMREAD_COLOR)
                     if img is not None:
@@ -533,6 +828,17 @@ def api_control():
         return jsonify({"ok": False, "error": "not a runner pid"}), 400
     if action == "start":
         preset = body.get("preset")
+        if _procs():
+            return jsonify({"ok": False, "error": "Automation is already running. Finish or stop it before starting another run."}), 409
+        try:
+            from player import readiness
+            cfg["presets"] = _compiled_runs(cfg)
+            if preset in cfg["presets"] and preset != "combo":
+                result = readiness.check(ROOT, cfg, cfg["presets"][preset])
+                if not result["ready"]:
+                    return jsonify(dict(result, ok=False, error="Calibration is needed for this run. Open Calibrate to see the missing steps.")), 409
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 400
         if preset not in runnable_presets(cfg):
             return jsonify({"ok": False, "error": "unknown preset"}), 400
         runner = cfg["presets"].get(preset, {}).get("runner") or "orchestrator.py"
@@ -612,6 +918,48 @@ def _taps_allowed(cfg: dict) -> bool:
     return bool(((cfg.get("instances") or {}).get(inst) or {}).get("allow_taps"))
 
 
+_analysis_jobs = {}
+_analysis_lock = threading.Lock()
+
+
+@app.post("/api/screen-analysis/start")
+def api_screen_analysis_start():
+    cfg = load_config()
+    directory = _calibration_dir(cfg)
+    with _analysis_lock:
+        previous = _analysis_jobs.get(directory)
+        if previous and previous.poll() is None:
+            return jsonify({"error": "Screen analysis is already running"}), 409
+        os.makedirs(directory, exist_ok=True)
+        from player.asset_library import atomic_json
+        from pathlib import Path
+        atomic_json(Path(directory)/"screen_analysis.json", {"status":"running", "message":"Starting screen analysis"})
+        pyw = sys.executable.replace("python.exe", "pythonw.exe")
+        process = subprocess.Popen([pyw, "-m", "player.screen_analysis", "--instance", cfg.get("active_instance", "main")],
+                                   cwd=ROOT, creationflags=NO_WINDOW)
+        _analysis_jobs[directory] = process
+    return jsonify({"ok":True})
+
+
+@app.get("/api/screen-analysis/status")
+def api_screen_analysis_status():
+    directory = _calibration_dir(load_config())
+    try:
+        with open(os.path.join(directory, "screen_analysis.json"), encoding="utf-8") as fh:
+            result = json.load(fh)
+    except (OSError, ValueError):
+        result = {"status":"idle"}
+    process = _analysis_jobs.get(directory)
+    if result.get("status") == "running" and (process is None or process.poll() is not None):
+        result.update(status="error", message="Analysis was interrupted. Start a new screen analysis.")
+    return jsonify(result)
+
+
+@app.get("/api/screen-analysis/frame.png")
+def api_screen_analysis_frame():
+    return send_file(os.path.join(_calibration_dir(load_config()), "screen_analysis.png"), mimetype="image/png", max_age=0)
+
+
 @app.post("/api/calibrate/start")
 def api_calibrate_start():
     """Run player/calibrate.py detached: it walks the menus and cuts this
@@ -628,31 +976,83 @@ def api_calibrate_start():
     if any(pr["runner"] == "calibrate" for pr in _procs()):
         return jsonify({"ok": False, "error": "a calibration is already running"}), 409
     cfg = load_config()
-    if not _taps_allowed(cfg):
+    if not _taps_allowed(cfg) and not body.get("allow_navigation"):
         return jsonify({"ok": False,
                         "error": "allow_taps is off for this instance - the "
                                  "calibrator walks the game's menus; switch it "
                                  "on in Configuration first"}), 409
     inst = cfg.get("active_instance", "main")
     phases = str(body.get("phases") or "c,g,m,u,b,w")
+    bootstrap = body.get("bootstrap") is True
+    chosen = [p.strip() for p in phases.split(",") if p.strip()]
+    if not chosen or any(p not in ("c", "g", "m", "u", "b", "w", "e") for p in chosen):
+        return jsonify({"ok": False, "error": "Choose valid calibration steps"}), 400
+    from player.scan_plan import missing_navigation
+    missing = [] if bootstrap else missing_navigation(ROOT, cfg, chosen, include_wave=False)
+    if missing:
+        return jsonify({"ok": False, "error": "Capture the navigation images in the Scan plan before automatic calibration.", "missing": missing}), 409
+    if "e" in chosen and not bootstrap:
+        try:
+            with open(os.path.join(_calibration_dir(cfg), "calibrate_state.json"), encoding="utf-8") as fh:
+                basic_done = json.load(fh).get("phases", {}).get("modules", {}).get("status") == "done"
+        except (OSError, ValueError):
+            basic_done = False
+        if not basic_done:
+            return jsonify({"ok": False, "error": "Finish phase 1 Modules first."}), 409
     args = [os.path.join(ROOT, "player", "calibrate.py"), "--instance", inst,
             "--phases", phases]
+    if bootstrap:
+        args.append("--bootstrap")
+        # The consented action-capture stage (start+cancel a battle, walk
+        # event/store/guild). Bootstrap-only and only when the frontend's
+        # popup passed flows=true; never inferred.
+        if body.get("flows"):
+            args.append("--flows")
     if body.get("overwrite"):
         args.append("--overwrite")
     if body.get("fresh"):
         args.append("--fresh")
+    if body.get("allow_navigation"):
+        args.append("--allow-navigation")
     pyw = sys.executable.replace("python.exe", "pythonw.exe")
     subprocess.Popen([pyw] + args, cwd=ROOT,
                      creationflags=subprocess.DETACHED_PROCESS | NO_WINDOW)
     return jsonify({"ok": True, "phases": phases})
 
 
+@app.post("/api/calibrate/observe")
+def api_calibrate_observe():
+    """Capture from the screen as it is: two frames, searched with the
+    installed artwork for every bound target still missing (the HUD ability
+    buttons during a battle, the UW switches with the panel open). READ-ONLY:
+    no taps, no navigation, so it needs no tap permission and may run over a
+    battle the person is playing - the screen is what they chose to show."""
+    others = [pr for pr in _procs() if pr["runner"] != "calibrate"]
+    if others:
+        return jsonify({"ok": False, "error": "runners alive: " + ", ".join(pr["runner"] for pr in others) + " - stop them first"}), 409
+    if any(pr["runner"] == "calibrate" for pr in _procs()):
+        return jsonify({"ok": False, "error": "a calibration is already running"}), 409
+    cfg = load_config()
+    inst = cfg.get("active_instance", "main")
+    args = [os.path.join(ROOT, "player", "calibrate.py"), "--instance", inst, "--phases", "c", "--observe"]
+    body = request.get_json(silent=True) or {}
+    try:
+        watch = min(600, max(0, int(body.get("watch") or 0)))
+    except (TypeError, ValueError):
+        watch = 0
+    if watch:
+        args += ["--observe-watch", str(watch)]
+    pyw = sys.executable.replace("python.exe", "pythonw.exe")
+    subprocess.Popen([pyw] + args, cwd=ROOT, creationflags=subprocess.DETACHED_PROCESS | NO_WINDOW)
+    return jsonify({"ok": True})
+
+
 @app.post("/api/calibrate/stop")
 def api_calibrate_stop():
     cfg = load_config()
     inst = cfg.get("active_instance", "main")
-    os.makedirs(os.path.join(ROOT, "logs", inst), exist_ok=True)
-    with open(os.path.join(ROOT, "logs", inst, "calibrate_stop"), "w") as fh:
+    os.makedirs(_calibration_dir(cfg), exist_ok=True)
+    with open(os.path.join(_calibration_dir(cfg), "calibrate_stop"), "w") as fh:
         fh.write("dashboard")
     return jsonify({"ok": True})
 
@@ -661,23 +1061,106 @@ def api_calibrate_stop():
 def api_calibrate_status():
     cfg = load_config()
     inst = cfg.get("active_instance", "main")
-    out = {"state": {}, "report": {}}
+    out = {"state": {}, "report": {}, "manifest": {}}
     for fname, key in (("calibrate_state.json", "state"),
-                       ("calibrate_report.json", "report")):
+                       ("calibrate_report.json", "report"), ("module_manifest.json", "manifest"),
+                       ("card_manifest.json", "card_manifest")):
         try:
-            with open(os.path.join(ROOT, "logs", inst, fname), encoding="utf-8") as fh:
+            with open(os.path.join(_calibration_dir(cfg), fname), encoding="utf-8") as fh:
                 out[key] = json.load(fh)
         except (OSError, ValueError):
             pass
-    return jsonify({"running": any(pr["runner"] == "calibrate" for pr in _procs_cached()),
+    from player.calibration_report import describe_report
+    out["report"] = describe_report(out["report"])
+    # Start and status must use the same live process source. A cached negative
+    # immediately after Popen used to make the UI declare completion.
+    processes = [pr for pr in _procs() if pr["runner"] == "calibrate"]
+    selection = None
+    activity = None
+    if processes:
+        command = processes[0].get("cmdline", "")
+        match = re.search(r"--phases\s+([a-z,]+)", command)
+        if match:
+            selection = {"mode": "observe" if "--observe" in command else "bootstrap" if "--bootstrap" in command else "basic", "phases": match.group(1).split(","),
+                         "taps": "--allow-navigation" in command,
+                         "overwrite": "--overwrite" in command}
+        # Also supports workers launched before incremental reports existed.
+        events = [row for row in _newest_events(inst, n=2000)
+                  if row.get("kind", "").startswith("calibrate")]
+        if events:
+            activity = events[-1]
+    return jsonify({"restore_pending": os.path.exists(os.path.join(_calibration_dir(cfg), "module_restore.json")), "running": bool(processes), "selection": selection,
+                    "activity": activity,
                     "taps_allowed": _taps_allowed(cfg), **out})
+
+
+@app.post("/api/calibrate/apply")
+def api_calibrate_apply():
+    """Apply only successfully completed observations to the current profile."""
+    import copy
+    if _procs():
+        return jsonify({"ok": False, "error": "Wait for calibration to stop before applying results."}), 409
+    cfg = load_config()
+    name = cfg.get("active_profile")
+    if _is_starter(name):
+        return jsonify({"ok": False, "error": "Create your account or copy the starter before applying calibration."}), 409
+    path = _profile_path(name)
+    if not path or not os.path.isfile(path):
+        return jsonify({"ok": False, "error": "Choose a profile first."}), 400
+    try:
+        with open(os.path.join(_calibration_dir(cfg), "calibrate_state.json"), encoding="utf-8") as fh:
+            state = json.load(fh)
+        if not state.get("player"):
+            raise ValueError("No completed account observations yet")
+        with _profile_lock(path):
+            with open(path, encoding="utf-8") as fh:
+                profile = yaml.safe_load(fh)
+            player = profile.setdefault("player", {})
+            # The wall bar REGION setup detected is machine config (per
+            # instance rois.wall_bar - what the wall watch reads), not profile
+            # data: it goes to config.yaml, never into player.
+            wall_bar = state["player"].get("wall_bar")
+            for key, value in state["player"].items():
+                if key == "wall_bar":
+                    continue
+                if key in ("category_presets", "uws"):
+                    player.setdefault(key, {}).update(copy.deepcopy(value))
+                else:
+                    player[key] = copy.deepcopy(value)
+            # Ownership the verified cuts prove (uw/<name>.png comes off the
+            # in-run panel, which lists owned weapons only) - also for states
+            # written before the scanner recorded player.uws itself.
+            from player.calibration_report import owned_uws
+            proven = owned_uws(state.get("entries"))
+            if proven:
+                player.setdefault("uws", {}).update(proven)
+            from player import playerprofile as pp
+            with _COMPILER_LOCK:
+                previous = pp.CONFIG
+                pp.CONFIG = cfg
+                try:
+                    problems = pp.validate(profile)
+                finally:
+                    pp.CONFIG = previous
+            if problems:
+                return jsonify({"ok": False, "error": problems[0], "problems": problems}), 409
+            _save_yaml_backup(path, profile)
+        from player.readiness import wall_bar_roi
+        if wall_bar and not wall_bar_roi(cfg):
+            inst = cfg.setdefault("instances", {}).setdefault(cfg.get("active_instance", "main"), {})
+            inst.setdefault("rois", {})["wall_bar"] = list(wall_bar)
+            save_config(cfg)
+        return jsonify({"ok": True, "profile": name, "wall_bar": wall_bar})
+    except (OSError, ValueError) as e:
+        return jsonify({"ok": False, "error": str(e)}), 400
 
 
 @app.post("/api/scan/stop")
 def api_scan_stop():
     cfg = load_config()
     inst = cfg.get("active_instance", "main")
-    with open(os.path.join(ROOT, "logs", inst, "scan_stop"), "w") as fh:
+    os.makedirs(_calibration_dir(cfg), exist_ok=True)
+    with open(os.path.join(_calibration_dir(cfg), "scan_stop"), "w") as fh:
         fh.write("dashboard")
     return jsonify({"ok": True})
 
@@ -688,7 +1171,7 @@ def api_scan_status():
     inst = cfg.get("active_instance", "main")
     state = {}
     try:
-        with open(os.path.join(ROOT, "logs", inst, "scan_state.json"),
+        with open(os.path.join(_calibration_dir(cfg), "scan_state.json"),
                   encoding="utf-8") as fh:
             state = json.load(fh)
     except (OSError, ValueError):
@@ -729,7 +1212,7 @@ def api_profile(name):
 #
 # THE VALIDATOR IS THE SINGLE SOURCE OF TRUTH. This module never re-implements
 # a profile rule - not one range, not one "shard-only" clause. Every patch is
-# applied to an IN-MEMORY copy, handed to playerprofile.validate(), and only
+# applied to an IN-MEMORY copy, handed to _profile_check(), and only
 # written if that returns an empty list. The refusal text goes to the browser
 # verbatim, because a paraphrase of a rule is a second copy of that rule.
 #
@@ -754,7 +1237,7 @@ _PROFILE_LOCKS: dict[str, threading.Lock] = {}
 _PROFILE_LOCKS_GUARD = threading.Lock()
 # activate is a read-modify-write of config.yaml through save_config, which has
 # the same shape and the same race with any other config writer.
-_CONFIG_WRITE_LOCK = threading.Lock()
+
 
 
 def _profile_lock(path: str) -> threading.Lock:
@@ -881,10 +1364,13 @@ def api_vocab():
 def api_profile_files():
     """Profile NAMES (the stem playerprofile.load takes), with the active
     flag read from config.yaml's `active_profile`."""
-    active = load_config().get("active_profile")
+    cfg = load_config()
+    active = cfg.get("active_profile")
     out = []
     for f in sorted(glob.glob(os.path.join(_profiles_dir(), "*.yaml"))):
         stem = os.path.basename(f)[:-len(".yaml")]
+        if _foreign_profile(stem, cfg):
+            continue
         draft = _is_draft(stem)
         out.append({"name": stem, "file": os.path.basename(f),
                     "draft": draft,
@@ -900,6 +1386,14 @@ def api_profile_files():
                     "mtime": os.path.getmtime(f),
                     "active": stem == active})
     return jsonify({"profiles": out, "active": active})
+
+
+def _foreign_profile(name, cfg):
+    from player import accounts
+    active = accounts.identity(cfg)
+    return bool(active and any(key != active and (name == record.get("active_profile")
+                   or name in (record.get("profiles") or []) or name == key + ".draft")
+               for key, record in (cfg.get("accounts") or {}).items()))
 
 
 @app.get("/api/profile-src/<name>")
@@ -926,8 +1420,8 @@ def api_profile_src(name):
     problems, warns, verr = [], [], None
     try:
         from player import playerprofile
-        problems = playerprofile.validate(data)
-        warns = playerprofile.warnings(data)
+        problems = _profile_check(data)
+        warns = _profile_warnings(data)
     except Exception as e:                      # noqa: BLE001
         verr = f"{type(e).__name__}: {e}"
     return jsonify({"ok": True, "name": name, "profile": data,
@@ -1044,7 +1538,7 @@ def api_profile_patch():
         # THE VALIDATOR DECIDES. Its message is the user's message, verbatim.
         try:
             from player import playerprofile
-            problems = playerprofile.validate(data)
+            problems = _profile_check(data)
         except Exception as e:                  # noqa: BLE001
             return jsonify({"ok": False,
                             "error": f"validator unavailable: {type(e).__name__}: {e}"}), 500
@@ -1058,7 +1552,7 @@ def api_profile_patch():
     warns = []
     try:
         from player import playerprofile
-        warns = playerprofile.warnings(data)
+        warns = _profile_warnings(data)
     except Exception:                           # noqa: BLE001 - advisory only
         pass
     return jsonify({"ok": True, "backup": backup, "profile": data,
@@ -1106,16 +1600,9 @@ def api_loadout_patch():
                     with open(ppath, encoding="utf-8") as fh:
                         prof = yaml.safe_load(fh)
                 from player import playerprofile
-                from settings import CONFIG as LIVE_CONFIG
-                old = LIVE_CONFIG.get("loadouts")
-                LIVE_CONFIG["loadouts"] = patched
-                try:
-                    problems = playerprofile.validate(
-                        prof if isinstance(prof, dict) else {})
-                    warns = playerprofile.warnings(
-                        prof if isinstance(prof, dict) else {})
-                finally:
-                    LIVE_CONFIG["loadouts"] = old
+                candidate = dict(cfg, loadouts=patched)
+                problems = _profile_check(prof if isinstance(prof, dict) else {}, candidate)
+                warns = _profile_check(prof if isinstance(prof, dict) else {}, candidate, warnings=True)
             except Exception as e:              # noqa: BLE001
                 return jsonify({"ok": False,
                                 "error": f"validator unavailable: "
@@ -1171,6 +1658,8 @@ def api_profile_activate():
         return jsonify({"ok": False, "error": "runners alive - stop them first"}), 409
     body = request.get_json(force=True) or {}
     name = body.get("name")
+    if _foreign_profile(name, load_config()):
+        return jsonify({"ok": False, "error": "This profile belongs to another account. Select that account in Setup first."}), 409
     if name in (None, ""):
         # read-modify-write of config.yaml: same transaction discipline as a
         # profile patch, or two activates race and one loses its whole edit
@@ -1200,7 +1689,7 @@ def api_profile_activate():
             with open(path, encoding="utf-8") as fh:
                 data = yaml.safe_load(fh)
         from player import playerprofile
-        problems = playerprofile.validate(data if isinstance(data, dict) else {})
+        problems = _profile_check(data if isinstance(data, dict) else {})
     except Exception as e:                      # noqa: BLE001
         return jsonify({"ok": False,
                         "error": f"cannot validate {name}: {type(e).__name__}: {e}"}), 400
@@ -1223,9 +1712,9 @@ def api_profile_activate():
 def api_evidence(rel):
     cfg = load_config()
     inst = cfg.get("active_instance", "main")
-    base = os.path.join(ROOT, "logs", inst, "scan_evidence")
+    base = os.path.join(_calibration_dir(cfg), "scan_evidence")
     path = os.path.normpath(os.path.join(base, rel))
-    if not path.startswith(base):
+    if not path.startswith(base + os.sep):
         return Response("no", status=403)
     if not os.path.exists(path):
         return Response("not found", status=404)
@@ -1969,10 +2458,31 @@ def api_wizard_resolution():
     serial = request.args["serial"]
     try:
         from device import adbclient
-        raw = adbclient.exec_out(serial, "screencap", timeout=20)
+        cfg = load_config()
+        inst = cfg.get("instances", {}).get(cfg.get("active_instance", "main")) or {}
+        configured = inst.get("display") if inst.get("serial") == serial else None
+        display = request.args.get("display") or _game_display(serial, configured)
+        raw = adbclient.exec_out(serial, _screencap_cmd(serial, display, png=False), timeout=20)
         if len(raw) < 8:
             raise RuntimeError("screencap answered nothing")
-        w, h = struct.unpack("<II", raw[:8])
+        # a multi-display emulator prefixes the raw payload with a text
+        # warning line ("[Warning] Multiple displays ..."): the first bytes
+        # then read "[War" x "ning" - drop leading lines until the header is
+        # sane, exactly as capture.grab does
+        w = h = 0
+        for _ in range(4):
+            if len(raw) < 8:
+                break
+            w, h = struct.unpack("<II", raw[:8])
+            if w <= 10000 and h <= 10000:
+                break
+            nl = raw.find(b"\n", 0, 400)
+            if nl < 0:
+                break
+            raw = raw[nl + 1:]
+        if len(raw) < 8 or not w or not h or w > 10000 or h > 10000:
+            _forget_display(serial)
+            raise RuntimeError("screencap answered text, not a frame - which display is the game on?")
     except Exception as e:                      # noqa: BLE001
         return jsonify(_wiz_save("resolution", {
             "ok": False, "serial": serial,
@@ -1994,13 +2504,14 @@ def api_wizard_resolution():
 
 @app.get("/api/wizard/templates")
 def api_wizard_templates():
-    tpl_root = os.path.join(ROOT, "templates")
+    from player import accounts
+    cfg = load_config()
+    paths = accounts.template_files(ROOT, cfg, "**/*.png")
     have = []
-    for dirpath, _, files in os.walk(tpl_root):
-        for f in files:
-            if f.endswith(".png"):
-                rel = os.path.relpath(os.path.join(dirpath, f), tpl_root)
-                have.append(rel.replace("\\", "/"))
+    for path in paths:
+        parts = path.parts
+        at = len(parts) - 1 - list(reversed(parts)).index("templates")
+        have.append("/".join(parts[at + 1:]))
     # templates the code ASKED for and did not find, straight from the logs -
     # the only honest source of "what is missing on this machine"
     missing = set()
@@ -2008,13 +2519,111 @@ def api_wizard_templates():
         for r in rows:
             if r.get("kind") == "template_missing":
                 missing.add(r.get("template"))
-    return jsonify({"have": sorted(have), "missing_seen": sorted(missing)})
+    return jsonify({"have": sorted(have), "missing_seen": sorted(missing - set(have))})
+
+
+@app.get("/api/wizard/scan-plan")
+def api_wizard_scan_plan():
+    from player import scan_plan, readiness
+    cfg = load_config()
+    runs = _compiled_runs(cfg)
+    selected = request.args.get("preset")
+    body = runs.get(selected, {}) if selected else {}
+    return jsonify(scan_plan.plan(ROOT, cfg, readiness.requirements(cfg, body) if body else ()))
+
+
+_ARTWORK_INDEX: dict = {}      # asset-library folder -> (index mtime, images by lower-case name)
+
+
+def _asset_library(cfg):
+    """The newest extracted asset library for the active account, or None."""
+    base = os.path.join(_calibration_dir(cfg), "asset_library")
+    best = None
+    for folder in glob.glob(os.path.join(base, "*")):
+        index = os.path.join(folder, "index.json")
+        if os.path.isfile(index) and (best is None or os.path.getmtime(index) > best[1]):
+            best = (folder, os.path.getmtime(index))
+    return best[0] if best else None
+
+
+def _artwork_path(cfg, rel):
+    """The installed game's own artwork for a recognition target, from the
+    asset library Full setup extracts (never shipped): the manifest mapping
+    first, else the names template_docs lists for it. What the person is
+    expected to find on screen, next to the request to find it (2026-09-08)."""
+    from player import template_docs
+    folder = _asset_library(cfg)
+    if not folder:
+        return None
+    try:
+        with open(os.path.join(folder, "mapping.json"), encoding="utf-8") as fh:
+            target = (json.load(fh).get("targets") or {}).get(rel) or {}
+        for cand in target.get("candidates") or []:
+            path = os.path.join(folder, cand.get("file") or "")
+            if cand.get("file") and os.path.isfile(path):
+                return os.path.normpath(path)
+    except (OSError, ValueError):
+        pass
+    names = [n.lower() for n in template_docs.artwork_names(rel)]
+    if not names:
+        return None
+    index = os.path.join(folder, "index.json")
+    stamp = os.path.getmtime(index)
+    cached = _ARTWORK_INDEX.get(folder)
+    if not cached or cached[0] != stamp:
+        by_name = {}
+        try:
+            with open(index, encoding="utf-8") as fh:
+                for img in json.load(fh).get("images") or []:
+                    by_name.setdefault(str(img.get("name") or "").lower(), []).append(img)
+        except (OSError, ValueError):
+            by_name = {}
+        cached = (stamp, by_name)
+        _ARTWORK_INDEX[folder] = cached
+    for name in names:
+        hits = [i for i in cached[1].get(name, []) if i.get("file")]
+        # a Sprite is the on-screen cut; prefer it, then the largest
+        hits.sort(key=lambda i: (i.get("type") != "Sprite", -(i.get("width") or 0) * (i.get("height") or 0)))
+        for img in hits:
+            path = os.path.join(folder, img["file"])
+            if os.path.isfile(path):
+                return os.path.normpath(path)
+    return None
+
+
+def _text_badge_png(text):
+    """A stand-in picture for a control the game renders as TEXT (RETRY,
+    EQUIP, a header word): the expected words on a button-shaped badge, so
+    every target row shows what to look for even when no sprite exists."""
+    import cv2
+    import numpy as np
+    text = str(text)
+    canvas = np.full((88, 260, 3), (44, 34, 30), np.uint8)
+    cv2.rectangle(canvas, (3, 3), (256, 84), (230, 200, 60), 2)
+    scale = 1.1 if len(text) <= 6 else 0.8 if len(text) <= 11 else 0.55
+    (tw, th), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_DUPLEX, scale, 2)
+    cv2.putText(canvas, text, ((260 - tw) // 2, (88 + th) // 2), cv2.FONT_HERSHEY_DUPLEX, scale, (255, 245, 235), 2, cv2.LINE_AA)
+    ok, png = cv2.imencode(".png", canvas)
+    return png.tobytes() if ok else None
+
+
+@app.get("/api/artwork/<path:rel>")
+def api_artwork(rel):
+    path = _artwork_path(load_config(), rel)
+    if path:
+        return send_file(path, mimetype="image/png", max_age=0)
+    from player import template_docs
+    text = template_docs.text_for(rel)
+    png = _text_badge_png(text) if text else None
+    if not png:
+        return Response("no artwork for this target", status=404)
+    return Response(png, mimetype="image/png", headers={"Cache-Control": "max-age=3600"})
 
 
 @app.get("/api/template/<path:rel>")
 def api_template(rel):
-    path = os.path.normpath(os.path.join(ROOT, "templates", rel))
-    if not path.startswith(os.path.join(ROOT, "templates")):
+    path = _template_path(rel)
+    if not path:
         return Response("no", status=403)
     return send_file(path, mimetype="image/png")
 
@@ -2038,7 +2647,7 @@ def _remember_frame(ts: str, raw: bytes) -> None:
             _FRAME_CACHE.pop(next(iter(_FRAME_CACHE)))
 
 
-def _template_path(rel: str) -> str | None:
+def _template_path(rel: str, *, write=False) -> str | None:
     """Absolute path under templates/ for a relative name, or None when the
     name is not a plain `<folder>/<name>.png` inside it."""
     if not isinstance(rel, str) or not rel.lower().endswith(".png"):
@@ -2046,11 +2655,12 @@ def _template_path(rel: str) -> str | None:
     rel = rel.replace("\\", "/")
     if rel.startswith("/") or ".." in rel.split("/") or ":" in rel or "/" not in rel:
         return None                     # every template lives in a subfolder
-    root = os.path.normpath(os.path.join(ROOT, "templates"))
-    path = os.path.normpath(os.path.join(root, rel))
-    if not path.startswith(root + os.sep):
+    from player import accounts
+    try:
+        return str(accounts.template_path(ROOT, load_config(), rel, write=write))
+    except ValueError:
         return None
-    return path
+
 
 
 def _preset_slug(name: str) -> str:
@@ -2061,8 +2671,8 @@ def _preset_slug(name: str) -> str:
 
 def _required_templates(cfg: dict, profile: dict | None) -> list[dict]:
     """Every ACCOUNT-SPECIFIC template the configured loadouts and the
-    scanned presets need, with have/missing. The generic UI chrome ships with
-    the repo; these are the ones only this account can provide: its card
+    scanned presets need, with have/missing. All UI chrome is also captured
+    locally; the separate Scan plan covers those images: its card
     presets, its (renamed) global and category presets, its modules at its
     own rarity."""
     want: dict[str, dict] = {}
@@ -2169,7 +2779,7 @@ def api_template_save(rel):
     at 1.0 and nothing else near it)."""
     import numpy as np
     import cv2
-    path = _template_path(rel)
+    path = _template_path(rel, write=True)
     if not path:
         return jsonify({"ok": False, "error": "template name must be "
                         "<folder>/<name>.png inside templates/"}), 400
@@ -2210,8 +2820,26 @@ def api_template_save(rel):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     if not cv2.imwrite(path, crop):
         return jsonify({"ok": False, "error": "could not write the PNG"}), 500
+    # where it came from: the screen (recognized by the manifest's anchors)
+    # and the native rect go into the learned manifest, plus a report entry
+    # and an event like every cut setup makes - so setup and observe can cut
+    # this control themselves next time, on that screen, at this size
+    screen = None
+    try:
+        from player import bootstrap, calibrate
+        try:
+            screen = bootstrap.recognize_screen(frame)
+        except Exception as e:                  # noqa: BLE001 - OCR unavailable: still record the rect
+            app.logger.warning("cropper screen recognition failed for %s: %s", rel, e)
+        cdir = _calibration_dir()
+        os.makedirs(cdir, exist_ok=True)
+        calibrate.record_manual_cut({"state": os.path.join(cdir, "calibrate_state.json"),
+                                     "report": os.path.join(cdir, "calibrate_report.json")},
+                                    rel.replace("\\", "/"), crop, frame, [x, y, w, h], screen=screen)
+    except Exception as e:                      # noqa: BLE001 - the file is written; provenance is best effort
+        app.logger.warning("cropper provenance not recorded for %s: %s", rel, e)
     return jsonify({"ok": True, "rel": rel.replace("\\", "/"), "width": w,
-                    "height": h, "second_best": round(second, 3)})
+                    "height": h, "second_best": round(second, 3), "screen": screen})
 
 
 # ------------------------------------------- account scan -> profile
@@ -2277,7 +2905,7 @@ def api_profile_promote():
         from player import playerprofile
         check = dict(doc)
         check["_name"] = name
-        problems = playerprofile.validate(check)
+        problems = _profile_check(check)
     except Exception as e:                      # noqa: BLE001
         problems = [f"validator unavailable: {type(e).__name__}: {e}"]
     header = (f"# Promoted from profiles/{draft}.draft.yaml over profiles/{base}.yaml"

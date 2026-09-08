@@ -96,6 +96,16 @@ def main() -> int:
     if not ok:
         return 1
 
+    # A fresh installation has no game art. Launching Android/the game is
+    # complete; waiting for template recognition here can never bootstrap it.
+    from player.scan_plan import missing_navigation
+    missing = missing_navigation(settings.ROOT, settings.CONFIG, [])
+    if missing:
+        logger.event("boot_done", ok=True, screen=None, calibration_required=True,
+                     message="Emulator and game started. Open Scan plan to capture recognition images.",
+                     missing=missing)
+        return 0
+
     # The game loads, rotates to portrait, and lands somewhere the
     # runners know how to adopt: home, or a live battle it resumed.
     from device import capture

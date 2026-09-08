@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 from pathlib import Path
 
+import settings
 from settings import ROOT
 from device import capture
 
@@ -34,7 +35,7 @@ def _load_templates() -> dict[int, np.ndarray]:
     if _templates is None:
         _templates = {}
         for d in range(10):
-            p = _TPL_DIR / f"{d}.png"
+            p = settings.template_path(f"digits/{d}.png")
             if p.exists():
                 _templates[d] = cv2.imread(str(p), cv2.IMREAD_GRAYSCALE)
         if len(_templates) < 10:

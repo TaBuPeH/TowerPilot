@@ -27,7 +27,7 @@ def dash():
 
 def _tracked(prefix: str) -> list[str] | None:
     try:
-        r = subprocess.run(["git", "ls-files", prefix], cwd=str(REPO),
+        r = subprocess.run(["git", "ls-files"] + ([prefix] if prefix else []), cwd=str(REPO),
                            capture_output=True, text=True, timeout=30)
     except (OSError, subprocess.TimeoutExpired):
         return None
@@ -37,47 +37,23 @@ def _tracked(prefix: str) -> list[str] | None:
 
 
 # ------------------------------------------------------------- templates
-def test_no_account_template_is_tracked():
-    """Card preset tabs, preset picker rows and module icons are cut from
-    ONE account at ONE rarity - they are never part of the repo."""
-    from player import catalogue
-    tracked = _tracked("backend/templates")
+def test_no_image_assets_in_release_tree():
+    # Tracked deletions are allowed while reviewing this change. A committed
+    # release must contain no raster assets, including icons and test fixtures.
+    tracked = _tracked("")
     if tracked is None:
         pytest.skip("not a git checkout")
-    rels = [t[len("backend/templates/"):] for t in tracked]
-    bad = []
-    for rel in rels:
-        folder, _, name = rel.partition("/")
-        if folder == "cards" and name.startswith("preset_"):
-            bad.append(rel)
-        elif rel.startswith("modules/equipped/"):
-            bad.append(rel)
-        elif folder == "modules" and name[:-4] in catalogue.MODULES:
-            bad.append(rel)
-        elif folder == "presets" and name.startswith(
-                ("gp_", "modules_", "guardians_", "workshop_", "bots_")) \
-                and rel != "presets/gp_none.png":
-            bad.append(rel)
+    extensions = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".ico"}
+    bad = [p for p in tracked if Path(p).suffix.lower() in extensions and (REPO / p).exists()]
     assert bad == [], bad
 
 
-def test_gitignore_keeps_the_players_own_cuts_out_of_git():
+def test_all_local_game_images_are_ignored():
     text = (REPO / ".gitignore").read_text(encoding="utf-8")
-    for pat in ("backend/templates/cards/preset_*.png",
-                "backend/templates/modules/equipped/",
-                "backend/templates/modules/*.png",
-                "backend/templates/presets/gp_*.png",
-                "backend/templates/presets/modules_*.png",
-                "backend/templates/presets/guardians_*.png",
-                "backend/templates/presets/workshop_*.png",
-                "backend/templates/presets/bots_*.png"):
-        assert pat in text, pat
-    # the generic buttons that live in the modules folder stay shipped
-    for keep in ("assist_btn", "buy_module", "equip_btn", "primary_btn",
-                 "shatter_dialog", "shatter_rare_text", "transfer_yes",
-                 "v29_dialog_close", "v29_equip_btn"):
-        assert f"!backend/templates/modules/{keep}.png" in text, keep
-        assert (BACKEND / "templates" / "modules" / f"{keep}.png").exists(), keep
+    assert "backend/templates/" in text
+    for suffix in ("png", "jpg", "jpeg", "webp", "gif", "bmp", "ico"):
+        assert "*." + suffix in text
+    assert "!backend/templates/" not in text
 
 
 # ---------------------------------------------------- shipped config data

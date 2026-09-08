@@ -334,6 +334,9 @@ def test_modules_restore_without_preset_gets_advisory(profile, monkeypatch):
 
 
 def test_ilm_quest_restores_after_last_cycle(monkeypatch):
+    # This test exercises dispatch after readiness; missing-image refusal is tested separately.
+    from player import readiness
+    monkeypatch.setattr(readiness, "require", lambda *a, **kw: None)
     """The quest must put the farm health module back AFTER the cycles, and
     the restore plan comes from the loadout (declarative - a restarted
     process still knows it)."""

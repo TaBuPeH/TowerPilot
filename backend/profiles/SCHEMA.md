@@ -962,11 +962,11 @@ only kind that offers it**.
 | `uw_grant_quest` | `grant_targets`, `reroll_at_wave`, `ride_to_wave`, `rides`, `uw_setup` | + `grant_targets` |
 | `cycle_quest` | `cycle_sec`, `cycles` | + `cycles` |
 
-Bounds are the ones validation really enforces. Where a bound is
-ACCOUNT-RELATIVE it is not stated as vocabulary: `tier` is
-`[1, null]` with a doc line saying the ceiling is `player.max_tier`,
-because the vocabulary is the same on every account and that number is
-not. `in_run_actions` and `uw_setup` are nested `object` specs (the first
+Bounds are the ones validation really enforces. `tier` is `[1, null]`:
+there is no max tier. `player.max_tier` is only the highest tier setup or
+the operator has SEEN unlocked (`max_tier_verified_by` says which) and a
+run tier above it is an advisory in `warnings()`, never a refusal - the
+starter's 1 is not knowledge, and the tier arrows stop at the real ceiling. `in_run_actions` and `uw_setup` are nested `object` specs (the first
 is written as a LIST of its shape, which its doc says); `policies` nests
 `uw`/`rescue`/`gather`.
 

@@ -386,7 +386,11 @@ POLICY_SECTIONS = ("uw_policies", "rescue_policies", "gather", "shopping_lists",
 # all four policy families, consumed by the dashboard UI only - the compiler
 # ignores it deliberately (it is display data, not behavior).
 GATHER_KEYS = ("flying_gem", "gem_delay_sec", "ad_gems", "quests_8h",
-               "quest_rewards", "guild", "label")
+               "quest_rewards", "guild", "gem_orbit", "label")
+# gem_orbit: the detection-free orbiting-gem blind harvest (flows/shard.py). The
+# compiler passes `gather` through verbatim, so these reach GemOrbitTapper as-is.
+GEM_ORBIT_KEYS = ("enabled", "center", "radius", "angle_deg", "interval_sec",
+                  "taps", "jitter_frac", "spread_deg")
 DIRECTIVE_KEYS = ("enabled", "tab", "stats", "mode", "clicks")
 CL_KEYS = ("mode", "always_on_above", "on_above", "pre_mark_waves",
            "off_after_waves")
@@ -698,6 +702,8 @@ def shop_stats(refresh: bool = False) -> set[str]:
             names = {p.stem for p in Path(_STAT_TEMPLATES_DIR).glob("*.png")}
         except OSError:
             names = set()
+        from player.accounts import generic_names
+        names |= {Path(r).stem for r in generic_names() if r.startswith("stats/")}
         _STATS_CACHE = names - set(_NON_STAT_TEMPLATES)
     return _STATS_CACHE
 
@@ -1052,7 +1058,81 @@ def warnings(profile: dict) -> list[str]:
         return []
     return (_plan_warnings(_d(profile.get("plan")))
             + loadout_corruption_warnings(profile)
-            + _uw_ownership_warnings(profile))
+            + _uw_ownership_warnings(profile)
+            + _tier_ceiling_warnings(profile)
+            + _wall_warnings(profile)
+            + _ability_warnings(profile))
+
+
+def _ability_warnings(profile: dict) -> list[str]:
+    """Advisory (2026-09-08): a bound rescue fires abilities nothing has
+    verified on this account (`player.abilities_verified`). Never a refusal:
+    readiness greys the run out until `buttons/<ability>.png` exists, and
+    that image is the verification (cut from this account's own HUD)."""
+    player = _d(profile.get("player"))
+    if player.get("abilities_verified") is True:
+        return []
+    policies = _d(_d(profile.get("policies")).get("rescue_policies"))
+    out = []
+    for name, bp in _d(profile.get("blueprints")).items():
+        ref = _d(_d(bp).get("policies")).get("rescue")
+        if ref not in policies:
+            continue
+        # an ability setup itself cut from this account's HUD is known; a bare
+        # `true` without `abilities_verified_by` (the migrator's assumption)
+        # is not
+        have = _d(player.get("abilities")) if player.get("abilities_verified_by") else {}
+        fired = sorted({a for _p, a in _abilities_used(_d(policies[ref]), "") if not have.get(a)})
+        if fired:
+            out.append(f"blueprints.{name}.policies.rescue -> {ref}: fires "
+                       f"{', '.join(fired)}, which nothing has verified on this "
+                       f"account yet (player.abilities_verified) - the run stays "
+                       f"greyed out until the button image(s) are captured from "
+                       f"the battle HUD ({', '.join('buttons/' + a + '.png' for a in fired)})")
+    return out
+
+
+def _wall_warnings(profile: dict) -> list[str]:
+    """Advisory (2026-09-08): a bound rescue watches the wall while nothing
+    has confirmed one (`player.wall`). Never a refusal - the run itself is
+    gated by readiness on the wall bar region (config rois.wall_bar), which
+    Full setup detects from the battle HUD and Apply writes."""
+    player = _d(profile.get("player"))
+    if player.get("wall"):
+        return []
+    policies = _d(_d(profile.get("policies")).get("rescue_policies"))
+    out = []
+    for name, bp in _d(profile.get("blueprints")).items():
+        ref = _d(_d(bp).get("policies")).get("rescue")
+        if ref in policies and _rescue_watches_wall(_d(policies[ref])):
+            out.append(f"blueprints.{name}.policies.rescue -> {ref}: watches the "
+                       f"wall, but nothing has confirmed a wall on this account "
+                       f"yet (player.wall) - Full setup detects it from the "
+                       f"battle HUD; until the wall bar region is configured "
+                       f"(config rois.wall_bar) the run stays greyed out")
+    return out
+
+
+def _tier_ceiling_warnings(profile: dict) -> list[str]:
+    """Advisory (2026-09-08): a run tier above the highest tier anyone has
+    SEEN unlocked on this account. Never a refusal - the number is a hint
+    (`player.max_tier`, written by setup's top-tier climb or typed by the
+    operator, `max_tier_verified_by` says which); the starter's floor of 1
+    is no knowledge at all and says nothing."""
+    player = _d(profile.get("player"))
+    ceiling = player.get("max_tier")
+    seen_by = player.get("max_tier_verified_by")
+    if not _is_int(ceiling) or not seen_by:
+        return []
+    out = []
+    for name, bp in _d(profile.get("blueprints")).items():
+        tier = _d(bp).get("tier")
+        if _is_int(tier) and tier > ceiling:
+            out.append(f"blueprints.{name}.tier: tier {tier} is above the highest "
+                       f"tier seen unlocked on this account (player.max_tier = "
+                       f"{ceiling}, per {seen_by}) - the tier arrows stop at the "
+                       f"real ceiling, so the run plays there until you unlock more")
+    return out
 
 
 def _uw_ownership_warnings(profile: dict) -> list[str]:
@@ -1142,6 +1222,26 @@ def _validate_gather(path: str, body) -> list[str]:
     # but the `gather` dict is passed through verbatim to those consumers.
     _check_range(body.get("gem_delay_sec"), f"{path}.gem_delay_sec", out,
                  required=True)
+    if body.get("gem_orbit") is not None:
+        out += _validate_gem_orbit(f"{path}.gem_orbit", body["gem_orbit"])
+    return out
+
+
+def _validate_gem_orbit(path: str, body) -> list[str]:
+    if not isinstance(body, dict):
+        return [f"{path}: must be a mapping"]
+    out: list[str] = []
+    _check_keys(body, GEM_ORBIT_KEYS, path, out)
+    _check_bool(body.get("enabled"), f"{path}.enabled", out)
+    c = body.get("center")
+    if c is not None and not (isinstance(c, (list, tuple)) and len(c) == 2
+                              and all(isinstance(v, (int, float)) for v in c)):
+        out.append(f"{path}.center: must be [x, y]")
+    for k in ("radius", "angle_deg", "interval_sec", "taps", "jitter_frac",
+              "spread_deg"):
+        v = body.get(k)
+        if v is not None and not isinstance(v, (int, float)):
+            out.append(f"{path}.{k}: must be a number")
     return out
 
 
@@ -1280,8 +1380,7 @@ def _validate_shopping_list(path: str, body) -> list[str]:
         for stat in stats:
             if stat not in known:
                 out.append(f"{dpath}.stats: unknown stat {stat!r} - no "
-                           f"templates/stats/{stat}.png, so the sweep could "
-                           f"never find it (known: "
+                           f"declared workshop label for this name (known: "
                            f"{', '.join(sorted(known)) or 'none'})")
     return out
 
@@ -1633,15 +1732,15 @@ def _validate_blueprint(path: str, bp: dict, player: dict, uw_policies: dict,
         out += _validate_loadout_ownership(path, loadout,
                                            _d(loadouts[loadout]), player)
 
-    # ---- tier
+    # ---- tier. There is NO ceiling here (user ruling 2026-09-08: "we should
+    # not have a max tier at all"): `player.max_tier` is a hint - the highest
+    # tier setup or the operator has SEEN unlocked - never a refusal. The
+    # starter's 1 is not knowledge, and the tier arrows stop at the real
+    # ceiling anyway. An advisory lives in warnings() (_tier_ceiling_warnings).
     tier = bp.get("tier")
-    max_tier = player.get("max_tier")
     if tier is not None:
         if not _is_int(tier) or tier < 1:
             out.append(f"{path}.tier: must be an integer >= 1, got {tier!r}")
-        elif _is_int(max_tier) and tier > max_tier:
-            out.append(f"{path}.tier: tier {tier} is above the player's "
-                       f"unlocked maximum (player.max_tier = {max_tier})")
     elif kind in ("coin", "shard"):
         out.append(f"{path}.tier: required for kind '{kind}' - the runner "
                    f"sets the tier from the home screen before every run")
@@ -1704,13 +1803,11 @@ def _validate_blueprint(path: str, bp: dict, player: dict, uw_policies: dict,
                        f".chain_lightning: mode {mode!r} needs Chain Lightning, "
                        f"which the player does not own "
                        f"(player.uws.chain_lightning is not true)")
-    rescue_ref = refs.get("rescue")
-    if rescue_ref in rescue_policies and not player.get("wall") \
-            and _rescue_watches_wall(_d(rescue_policies[rescue_ref])):
-        out.append(f"{path}.policies.rescue -> policies.rescue_policies."
-                   f"{rescue_ref}: watches the wall (`bar: wall` / "
-                   f"`wall_collapse`), but the player has no wall "
-                   f"(player.wall is not true) - there is no bar to watch")
+    # The wall is NOT refused here (2026-09-08, with the tier ceiling): the
+    # starter's `wall: false` is no knowledge. What a wall rescue really needs
+    # is the wall bar REGION (config rois.wall_bar) - a per-run requirement
+    # readiness greys the run out for, which Full setup detects from the
+    # battle HUD. An unconfirmed wall is an advisory (_wall_warnings).
 
     shopping = bp.get("shopping")
     if shopping is not None and shopping not in shopping_lists:
@@ -1764,34 +1861,23 @@ def _validate_blueprint(path: str, bp: dict, player: dict, uw_policies: dict,
     # ABSENT `player.abilities` section must read as "unknown, refuse", never
     # "unknown, permit": permitting is exactly how a blind tap ships.
     rescue = rescue_policies.get(refs.get("rescue"))
+    # The fence against that blind tap is NOT here any more (2026-09-08, with
+    # the tier and wall gates): readiness requires `buttons/<ability>.png` for
+    # every ability the compiled rules fire, and a button template exists only
+    # once that button was cut from THIS account's HUD - so a run whose
+    # rescue fires an unverified ability is greyed out with the image named,
+    # never refused at compile time on a starter's "unknown". What stays a
+    # refusal is KNOWLEDGE: a verified inventory that says the ability is not
+    # there. Unverified is an advisory (_ability_warnings).
     have_abilities = player.get("abilities")
-    if rescue is not None and not isinstance(have_abilities, dict):
-        out.append(f"{path}.policies.rescue: the profile has no "
-                   f"`player.abilities` section, so the abilities this rescue "
-                   f"taps cannot be verified - run scan.py (an unowned ability "
-                   f"is tapped at a fixed coordinate, not skipped)")
-        have_abilities = None
-    # ...AND THE SECTION MUST BE EVIDENCE, NOT AN ASSUMPTION. The migrator
-    # writes `abilities: {nuke: true, demon_mode: true}` because every loadout
-    # in config.yaml implies them - it has not looked at the account. A
-    # fabricated `true` is indistinguishable from a scanned one at this level,
-    # so ownership is only honoured once something has actually checked
-    # (Codex round 2, #1). Unverified + a rescue that taps = refuse.
-    elif rescue is not None and player.get("abilities_verified") is not True:
-        out.append(f"{path}.policies.rescue: ability ownership unverified - "
-                   f"run `scan.py --battle`, or set "
-                   f"`player.abilities_verified: true` after confirming in the "
-                   f"dashboard. Until then a rescue may tap a fixed coordinate "
-                   f"for an ability the account does not have")
-        have_abilities = None
-    for entry_path, ability in _abilities_used(_d(rescue),
-                                               f"{path}.policies.rescue"):
-        if have_abilities is None:
-            break
-        if not have_abilities.get(ability):
-            out.append(f"{entry_path}: fires {ability!r}, which the player "
-                       f"does not have (player.abilities.{ability} is not "
-                       f"true)")
+    if (rescue is not None and isinstance(have_abilities, dict)
+            and player.get("abilities_verified") is True):
+        for entry_path, ability in _abilities_used(_d(rescue),
+                                                   f"{path}.policies.rescue"):
+            if not have_abilities.get(ability):
+                out.append(f"{entry_path}: fires {ability!r}, which the player "
+                           f"does not have (player.abilities.{ability} is not "
+                           f"true)")
 
     # ---- weapons a rule toggles must be on the account
     for entry_path, uw in _uws_used(_d(rescue), f"{path}.policies.rescue"):
@@ -3088,25 +3174,18 @@ def check_capabilities(compiled: dict, player: dict | None = None) -> list[str]:
     where = _d(compiled.get("_source")).get("blueprint") or \
         compiled.get("label") or "preset"
     out: list[str] = []
+    # Abilities and the wall (2026-09-08): an UNVERIFIED inventory is no longer
+    # a refusal here - the starter's "unknown" is not knowledge. The fence
+    # against the fixed-coordinate tap is readiness: `buttons/<ability>.png`
+    # (cut from this account's HUD) and `config rois.wall_bar` are per-run
+    # requirements that grey the run out. Verified knowledge still refuses.
     if need["abilities"]:
         have = player.get("abilities")
-        if not isinstance(have, dict):
-            out.append(f"{where}: taps {', '.join(need['abilities'])}, but the "
-                       f"profile has no `player.abilities` section - run "
-                       f"scan.py (an unowned ability is tapped at a fixed "
-                       f"coordinate, not skipped)")
-        elif player.get("abilities_verified") is not True:
-            out.append(f"{where}: taps {', '.join(need['abilities'])} with "
-                       f"ability ownership unverified - run `scan.py --battle` "
-                       f"or set `player.abilities_verified: true`")
-        else:
+        if isinstance(have, dict) and player.get("abilities_verified") is True:
             for name in need["abilities"]:
                 if not have.get(name):
                     out.append(f"{where}: taps {name!r}, which the player does "
                                f"not have (player.abilities.{name} is not true)")
-    if need["wall"] and not player.get("wall"):
-        out.append(f"{where}: watches the wall bar, but the player has no wall "
-                   f"(player.wall is not true) - there is no bar to watch")
     # A MISSING INVENTORY IS A REFUSAL, NOT A PASS - the same ruling
     # _validate_loadout_ownership already carries. "The account was never
     # scanned" is precisely the case where a wrong tap is most likely, so
@@ -3210,9 +3289,9 @@ def _blueprint_field_specs() -> dict:
                    f"is a forgotten one, which is why it is refused"),
         "tier": _spec(
             "int", "REQUIRED on coin and shard (the runner sets it from the "
-                   "home screen). The upper bound is `player.max_tier`, which "
-                   "is account data rather than vocabulary, so it is not "
-                   "stated here", span=(1, None)),
+                   "home screen). No upper bound: `player.max_tier` is only "
+                   "the highest tier seen unlocked (an advisory, never a "
+                   "refusal)", span=(1, None)),
         "policies": _spec(
             "object", "which named policies this blueprint runs under",
             required=(),

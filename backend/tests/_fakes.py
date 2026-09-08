@@ -249,6 +249,19 @@ def _patch_flows_shard(monkeypatch, mod):
     patched, and the legacy bare name too for anything that still uses it."""
     import sys
     import flows
+    # RunState.__init__ builds the (opt-in, off by default) gem-orbit harvester
+    # from shard; a minimal fake need not know about it, so default it to inert.
+    # Probe __dict__ (never __getattr__) so a Landmine fake that fails on any
+    # attribute ACCESS is not tripped by this defaulting.
+    if "gem_orbit_opts" not in mod.__dict__:
+        mod.gem_orbit_opts = lambda: {"enabled": False}
+    if "GemOrbitTapper" not in mod.__dict__:
+        class _InertOrbit:
+            def __init__(self, **_k):
+                pass
+            def poll(self, _frame):
+                pass
+        mod.GemOrbitTapper = _InertOrbit
     monkeypatch.setitem(sys.modules, "shard", mod)
     monkeypatch.setitem(sys.modules, "flows.shard", mod)
     monkeypatch.setattr(flows, "shard", mod, raising=False)

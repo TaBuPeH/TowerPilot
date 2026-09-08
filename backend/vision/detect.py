@@ -10,6 +10,7 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
+import settings
 from settings import ROOT
 from device import capture
 
@@ -23,7 +24,9 @@ class TemplateMissing(RuntimeError):
 
 def _tpl(rel: str) -> np.ndarray:
     if rel not in _TPL_CACHE:
-        p = ROOT / "templates" / rel
+        from player import accounts
+        from settings import CONFIG
+        p = accounts.template_path(ROOT, CONFIG, rel)
         img = cv2.imread(str(p), cv2.IMREAD_COLOR)
         if img is None:
             raise TemplateMissing(f"missing template {p}")
@@ -267,7 +270,7 @@ def floating_gem(frame: np.ndarray) -> tuple[int, int] | None:
     from settings import ROOT
     rels = ["buttons/gem_claim.png"]
     rels += [f"floaters/{p.name}"
-             for p in sorted((ROOT / "templates" / "floaters").glob("gem_*.png"))]
+             for p in settings.template_files("floaters/gem_*.png")]
     best_score, best_loc, best_shape = 0.0, None, None
     for rel in rels:
         tpl = _gem_tpl(rel)

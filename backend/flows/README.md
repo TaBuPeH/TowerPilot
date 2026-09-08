@@ -49,6 +49,7 @@ FLOW = {
 | `blueprint_args` | How blueprint fields become argv: first non-`None` field in `fields` wins, else `default`; omitted entirely when everything is `None`. Used identically at compile time and at spawn time, so the two can never drift. |
 | `blueprint_fields` | For extension kinds: the fields a blueprint of this kind may carry, with `type`/`doc` (and optional `span`/`values`) for the dashboard's typed editor. |
 | `legacy_preset` | The `config.yaml` preset this flow runs under when no profile names a blueprint. |
+| `templates` | A literal list of relative PNG paths used by this flow. An inner list/tuple means alternatives: any one is sufficient. Shared screen guards and enabled-feature/loadout requirements are added by `player/readiness.py`. |
 
 > [!important] The spec must be a pure literal
 > No names, calls, f-strings or imports inside the dict - it is read with

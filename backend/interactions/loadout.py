@@ -40,7 +40,8 @@ def card_tabs() -> tuple[str, ...]:
     under templates/cards/preset_<name>.png, cut on the Calibrate page.
     Nothing is assumed about how a player named them - a tab with no
     template is invisible here, and the scan says so."""
-    paths = sorted(glob.glob(str(ROOT / "templates" / "cards" / "preset_*.png")))
+    from player import accounts
+    paths = accounts.template_files(ROOT, CONFIG, "cards/preset_*.png")
     return tuple(os.path.basename(p)[len("preset_"):-4] for p in paths)
 
 

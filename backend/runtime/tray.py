@@ -75,7 +75,14 @@ def known_runners() -> set[str]:
         if r:
             out.add(Path(r).name)
     return out
-ICON = ROOT / "assets" / "tower.png"
+def tray_image():
+    # Original application mark; contains no game artwork and needs no asset file.
+    from PIL import ImageDraw
+    image = Image.new("RGBA", (64, 64), (24, 32, 48, 255))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((16, 16, 47, 47), outline=(80, 210, 170), width=4)
+    draw.line((23, 32, 29, 38, 41, 24), fill="white", width=4)
+    return image
 LOG_DIR = ROOT / CONFIG["logging"]["dir"]
 TRAY_LOG = LOG_DIR / "tray.log"
 POLL_SEC = 3.0                     # supervisor tick: reap + refresh menu
@@ -266,7 +273,7 @@ class Supervisor:
                           for k, v in CONFIG["instances"].items()}
         self.presets = preset_menu()
         self.icon = pystray.Icon(
-            "tower_autopilot", Image.open(ICON), "Tower Autopilot",
+            "tower_autopilot", tray_image(), "Tower Autopilot",
             menu=self._menu())
         self._stop = threading.Event()
 

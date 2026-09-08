@@ -685,6 +685,9 @@ def test_a_shard_block_with_no_count_runs_unbounded(combo, plan):
 
 def test_a_plan_handoff_uses_the_blueprints_own_loadout_and_tier(combo, plan,
                                                                  monkeypatch):
+    # This test exercises dispatch after readiness; missing-image refusal is tested separately.
+    from player import readiness
+    monkeypatch.setattr(readiness, "require", lambda *a, **kw: None)
     """Not the phase->name table the constants use. Naming a blueprint in the
     plan is pointless if the handoff equips something else."""
     from settings import CONFIG
@@ -713,6 +716,9 @@ def test_a_plan_handoff_uses_the_blueprints_own_loadout_and_tier(combo, plan,
 
 def test_a_quest_block_is_handed_off_by_its_own_runner(combo, plan,
                                                        monkeypatch):
+    # This test exercises dispatch after readiness; missing-image refusal is tested separately.
+    from player import readiness
+    monkeypatch.setattr(readiness, "require", lambda *a, **kw: None)
     """flows/quest_sm.py / flows/quest_ilm.py own their setup end to end and adopt an
     in-progress run on startup - walking the game Home underneath one takes
     work away rather than adding it."""
@@ -733,6 +739,9 @@ def test_a_quest_block_is_handed_off_by_its_own_runner(combo, plan,
 
 def test_a_blueprint_with_no_loadout_or_tier_refuses_the_handoff(combo, plan,
                                                                  monkeypatch):
+    # This test exercises dispatch after readiness; missing-image refusal is tested separately.
+    from player import readiness
+    monkeypatch.setattr(readiness, "require", lambda *a, **kw: None)
     """No guessing here either. Farming the previous block's tier because this
     one forgot to say is how a T18 shard build ends up on a T14 coin run."""
     from settings import CONFIG

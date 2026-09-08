@@ -61,6 +61,12 @@ LEGACY_PRESET = "quest_smart_missiles"
 
 # What this flow is, for the registry (flows/__init__.py).
 FLOW = {
+    "templates": ['buttons/retry.png',
+     'home/game_stats_home.png',
+     'home/battle_btn.png',
+     'buttons/return_to_game.png',
+     'buttons/perks.png',
+     'uw/smart_missiles.png'],
     "kind": "uw_grant_quest",
     "label": "Quest: Ultimate Weapon grant (Smart Missiles)",
     "runner": "flows/quest_sm.py",
@@ -150,7 +156,7 @@ def uw_setup() -> None:
 
 def _grant_templates() -> list[str]:
     return [g for g in GRANT_UWS
-            if os.path.exists(os.path.join("templates", "uw", f"{g}.png"))]
+            if settings.template_path(f"uw/{g}.png").exists()]
 
 
 def scan_grant(targets: tuple[str, ...] = ("smart_missiles",)
@@ -177,6 +183,14 @@ def scan_grant(targets: tuple[str, ...] = ("smart_missiles",)
         shopper._swipe_panel_down()
         time.sleep(0.5)
     frames.append(capture.grab())
+    # RUN-TIME UW-label subroutine (2026-09-07): capture any still-unknown weapon
+    # label from the panel we already have open, so the farm IDENTIFIES a granted
+    # UW itself instead of waiting for the sm_unknown_uw agent, and every game
+    # keeps trying until all are known. A no-op once every UW template exists;
+    # _grant_templates() below then includes anything just cut.
+    from player import flow_capture
+    for f in frames:
+        flow_capture.capture_missing_uw_labels(f)
     known = [f"uw/{k}.png" for k in KNOWN_UWS]
     grants = _grant_templates()
     for f in frames:
@@ -295,6 +309,8 @@ def _cli(argv=None):
 def main() -> None:
     a = _cli()
     _bind_preset(a.instance, a.preset)
+    from player import readiness
+    readiness.require(settings.ROOT, settings.CONFIG, _preset())
     # PRECEDENCE: explicit CLI > blueprint > module constant. The tray passes
     # --rides 1 in runner_args, so the legacy launch is bit-for-bit unchanged.
     # `or` rather than a dict default throughout: compile_preset emits these

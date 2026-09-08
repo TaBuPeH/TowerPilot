@@ -78,6 +78,28 @@ def orchestrator():
     return _import_live("orchestrator")
 
 
+@pytest.mark.parametrize("screen_name, expected", [("home", [3, "start"]), ("battle", []), ("unknown", [])])
+def test_direct_coin_start_prepares_only_home(orchestrator, monkeypatch, screen_name, expected):
+    import interactions
+    import flows
+    from vision import screen
+    calls = []
+    monkeypatch.setattr(orchestrator, "preset", lambda: {"kind": "coin", "tier": 3, "loadout": None})
+    monkeypatch.setattr(orchestrator.capture, "grab", lambda: "frame")
+    monkeypatch.setattr(screen, "identify", lambda frame: types.SimpleNamespace(name=screen_name))
+    lo = types.ModuleType("interactions.loadout")
+    lo.apply = lambda name: pytest.fail("as-is must not equip anything")
+    sh = types.ModuleType("flows.shard")
+    sh.set_tier = lambda tier: calls.append(tier)
+    sh.start_battle = lambda: calls.append("start")
+    monkeypatch.setitem(sys.modules, "interactions.loadout", lo)
+    monkeypatch.setattr(interactions, "loadout", lo, raising=False)
+    monkeypatch.setitem(sys.modules, "flows.shard", sh)
+    monkeypatch.setattr(flows, "shard", sh, raising=False)
+    orchestrator._prepare_coin_start()
+    assert calls == expected
+
+
 @pytest.fixture(autouse=True)
 def _config_isolation():
     """Same contract as test_p3_runtime's: this file mutates the REAL CONFIG

@@ -49,6 +49,7 @@ ENGINE = "orchestrator.py"
 
 _REQUIRED = ("kind", "label")
 _DEFAULTS = {
+    "templates": [],
     "runner": None,
     "handoff": "loadout",
     "count_arg": None,
@@ -106,6 +107,16 @@ def _validate(spec: dict, name: str) -> dict:
             raise FlowError(f"{name}: FLOW is missing required key {key!r}")
     out = dict(_DEFAULTS)
     out.update(spec)
+    if not isinstance(out["templates"], (list, tuple)):
+        raise FlowError(f"{name}: templates must be a literal list")
+    for entry in out["templates"]:
+        alternatives = [entry] if isinstance(entry, str) else entry
+        if not isinstance(alternatives, (list, tuple)) or not alternatives:
+            raise FlowError(f"{name}: template alternatives must be a nonempty literal list")
+        for rel in alternatives:
+            if (not isinstance(rel, str) or not rel.endswith(".png") or "/" not in rel
+                    or rel.startswith("/") or ".." in rel or ":" in rel or "\\" in rel):
+                raise FlowError(f"{name}: invalid template path {rel!r}")
     if out["handoff"] not in _HANDOFFS:
         raise FlowError(f"{name}: handoff {out['handoff']!r} is not one of "
                         f"{_HANDOFFS}")

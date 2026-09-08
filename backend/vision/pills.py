@@ -27,16 +27,16 @@ GREEN = (38, 60)        # active outline (peaks 47-48)
 
 # Module header: four large (primary) and four small (assist) slots around
 # the tower diagram, fixed positions at native 1080x2560 (2026-09-06).
-HEADER_LARGE = ((307, 518), (307, 755), (768, 518), (768, 755))
-HEADER_SMALL = ((115, 518), (115, 755), (954, 518), (954, 755))
-HEADER_RADIUS = {"large": 86, "small": 64}
+from player.bootstrap_layout import manifest as _native_manifest
+HEADER_LARGE = tuple(map(tuple, _native_manifest()["module_slots"]["large"]))
+HEADER_SMALL = tuple(map(tuple, _native_manifest()["module_slots"]["small"]))
+HEADER_RADIUS = _native_manifest()["module_slots"]["radius"]
 RING_OCCUPIED = 0.05    # lit fraction on the ring: empty grey slots read 0.00
 
 # Where each preset tab row / the picker's rows sit at native 1080x2560 -
 # generous bands, measured 2026-09-06 on BlueStacks; the pills are found
 # inside them, nothing is assumed about their count or labels.
-TAB_BANDS = {"cards": (330, 560), "modules": (150, 340), "guardians": (330, 520),
-             "bots": (440, 640), "workshop": (140, 330), "picker": (1380, 1760)}
+TAB_BANDS = {k: tuple(v) for k, v in _native_manifest()["tab_bands"].items()}
 
 # The inventory grid is visible between the Inventory/Merge tab bar and the
 # "All Types" filter bar (measured 2026-09-06). A tile row is only usable

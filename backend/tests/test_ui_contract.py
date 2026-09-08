@@ -280,6 +280,8 @@ class _FakeChild:
 def start_cmds(dash, monkeypatch):
     """Capture the argv /api/control action=start would spawn, spawn nothing."""
     cmds = []
+    monkeypatch.setattr(dash, "_procs", lambda: [])
+    monkeypatch.setattr(dash, "_procs_refresh", lambda: [])
 
     def fake_popen(cmd, **kw):
         cmds.append(cmd)
@@ -296,7 +298,10 @@ def _start(dash, preset):
 
 
 def test_start_flow_under_its_legacy_preset_omits_preset_argv(dash,
-                                                              start_cmds):
+                                                              start_cmds, monkeypatch):
+    # This test exercises dispatch after readiness; missing-image refusal is tested separately.
+    from player import readiness
+    monkeypatch.setattr(readiness, "check", lambda *a, **kw: {"ready": True, "missing": []})
     """Flow runners take `--preset bp_<name>` ONLY; under their own legacy
     config preset they bind it themselves (FLOW legacy_preset). Passing the
     legacy name made quest starts die at argparse - the UI's 'runner
@@ -310,7 +315,10 @@ def test_start_flow_under_its_legacy_preset_omits_preset_argv(dash,
     assert cmd[-2:] == ["--cycles", "40"]       # runner_args still travel
 
 
-def test_start_engine_preset_keeps_preset_argv(dash, start_cmds):
+def test_start_engine_preset_keeps_preset_argv(dash, start_cmds, monkeypatch):
+    # This test exercises dispatch after readiness; missing-image refusal is tested separately.
+    from player import readiness
+    monkeypatch.setattr(readiness, "check", lambda *a, **kw: {"ready": True, "missing": []})
     """orchestrator.py presets keep the legacy --preset argv unchanged."""
     r = _start(dash, "normal_run")
     assert r.status_code == 200, r.get_json()

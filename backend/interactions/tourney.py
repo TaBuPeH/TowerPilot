@@ -38,9 +38,9 @@ from vision import wave_reader
 from settings import CONFIG
 
 # --- chrome that genuinely does not move -------------------------------
-NAV = {"battle": (85, 2470), "workshop": (265, 2470), "cards": (448, 2470),
-       "modules": (630, 2470), "lab": (812, 2470), "shop": (995, 2470)}
-RETURN_STRIP = (538, 2455)          # "Tap To Return To Game"
+from player.bootstrap_layout import manifest as _native_manifest
+NAV = {k: tuple(v) for k, v in _native_manifest()["navigation"].items()}
+RETURN_STRIP = tuple(_native_manifest()["return_strip"])
 GUARDIAN_SLOTS = [(170, 520), (909, 520), (170, 800)]   # 4th is locked
 GUARDIAN_TAB = (472, 315)
 

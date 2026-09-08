@@ -23,33 +23,32 @@ def refresh_display(serial: str | None = None) -> str | None:
     Raises CaptureError when the screens cannot be parsed: a guessed
     display is a blind tap waiting to happen.
     """
-    import re
-    from device import adbclient
+    from device import adbclient, displays
     from settings import instance as _inst
     inst = _inst()
-    if not inst.get("display"):
-        return None
+    configured = bool(inst.get("display"))
     serial = serial or inst["serial"]
     sf = adbclient.shell(serial, "dumpsys SurfaceFlinger --display-id",
                          timeout=10).decode(errors="replace")
-    screens = re.findall(
-        r'Display (\d+) .*?port=(\d+).*?displayName="(mumuscreen\d+)"', sf)
-    secondary = [did for did, port, _n in screens if int(port) != 0]
-    if not secondary:
+    screens = displays.parse_screens(sf)
+    if not screens and not configured:
+        return None                     # not MuMu (BlueStacks etc.): one display
+    disp = displays.secondary_display(screens)
+    if disp is None:
+        if not configured:
+            return None                 # single-screen MuMu: the default display
         raise CaptureError(
             f"display refresh: no secondary mumuscreen in SurfaceFlinger "
             f"({len(screens)} screen(s) listed)")
-    disp = secondary[0]
     dd = adbclient.shell(serial, "dumpsys display",
                          timeout=10).decode(errors="replace")
-    m = re.search(r"mDisplayId=(\d+)\s*\n\s*mPrimaryDisplayDevice="
-                  rf"[^\n(]*\(local:{disp}\)", dd)
-    if not m:
+    logical = displays.logical_display(dd, disp)
+    if logical is None:
         raise CaptureError(
             f"display refresh: no logical display wraps local:{disp}")
     old = (inst.get("display"), inst.get("input_display"))
     inst["display"] = disp
-    inst["input_display"] = int(m.group(1))
+    inst["input_display"] = logical
     from runtime import logger
     logger.event("display_refreshed", display=disp,
                  input_display=inst["input_display"],
@@ -114,6 +113,14 @@ def grab(serial: str | None = None, display: str | None = None) -> np.ndarray:
             break
         buf = buf[nl + 1:]
     if (w, h) != (exp_w, exp_h):
+        # A freshly adopted MuMu instance has serial + adb and NO display
+        # configured (the wizard writes nothing else), so this reads MuMu's
+        # default screen - the LANDSCAPE launcher - and the lock fires before
+        # anything is calibrated (fresh-account exercise, 2026-09-08). The game
+        # lives on the secondary mumuscreen: derive it once and retry. Single-
+        # display emulators return None from the probe and fall through.
+        if from_instance and not display and refresh_display(serial):
+            return grab()
         raise CaptureError(f"unexpected resolution {w}x{h}, expected {exp_w}x{exp_h} "
                            "(resolution lock violated - recalibrate or fix instance)")
     header = len(buf) - w * h * 4        # 12 (Android <12) or 16 bytes
