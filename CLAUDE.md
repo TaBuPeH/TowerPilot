@@ -93,8 +93,9 @@ portrait at 360 dpi.
   policy is defined: the policy library ships in full for an account that
   has scanned nothing.
 - Per-machine rendering differences are handled by variant tuples
-  (`presets.PICKER_ICONS`, `tourney.BATTLE_BUTTONS`) and the
-  `templates/floaters/gem_*.png` glob, never by lowering thresholds.
+  (`presets.PICKER_ICONS`, `tourney.BATTLE_BUTTONS`), never by lowering
+  thresholds. Rotating diamonds use configured timed orbit clicks;
+  they have no image matcher or scan requirement.
 
 ## Verification habits
 

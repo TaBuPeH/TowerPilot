@@ -147,9 +147,18 @@ def second_wind_badge(frame: np.ndarray) -> tuple[bool, float]:
     Demon Mode button is the same winged hexagon in a ROUNDED BOX ~120px
     lower; SW_BAND excludes it.
     """
-    (y0, y1), (x0, x1) = SW_BAND
-    hit, score, _ = _match(frame[y0:y1, x0:x1], "floaters/second_wind.png",
-                           SW_THRESH)
+    from vision import installed_art
+    # Setup extracts this artwork even when immunity never appears. Match it
+    # only in its manifest region; never search the Demon Mode button below.
+    hit, score = installed_art.match(frame, "floaters/second_wind.png")
+    if hit:
+        return hit, score
+    path = settings.template_path("floaters/second_wind.png")
+    if not path.exists():
+        return False, score
+    from player.bootstrap_layout import manifest
+    x,y,w,h = manifest()['asset_bindings']['floaters/second_wind.png']['search']
+    hit, score, _ = _match(frame[y:y+h,x:x+w], "floaters/second_wind.png", SW_THRESH)
     return hit, score
 
 
@@ -188,13 +197,12 @@ def _border_stats(row_bgr: np.ndarray, loc: tuple[int, int],
 
 def button_state(frame: np.ndarray, name: str) -> ButtonState:
     """name: 'nuke' | 'demon_mode'. State from glyph match + border band color."""
-    row_box = capture.CONFIG["rois"]["ability_row"]
-    row = capture.roi(frame, "ability_row")
-    hit, score, loc = _match(row, f"buttons/{name}.png", 0.60)
+    row_box, row = _ability_search(frame, name)
+    hit, score, loc = _match(row, f"buttons/{name}.png", 0.85)
     if not hit:
         return ButtonState(False, False, False, score, None)
     tpl = _tpl(f"buttons/{name}.png")
-    sat, val = _border_stats(row, loc, tpl.shape)
+    sat, val = _ability_border(row, loc, name, tpl.shape)
     # A READY button has a bright, vividly colored border (measured on Main:
     # sat 116-171, val 119-218). The old rule also demanded "not active",
     # where active meant a saturated border - which is exactly what a ready
@@ -211,82 +219,39 @@ def button_state(frame: np.ndarray, name: str) -> ButtonState:
 def button_border_val(frame: np.ndarray, name: str) -> float | None:
     """Border brightness of an ability button, or None if not found.
     Used to confirm a fire landed: firing dims the button (cooldown)."""
-    row = capture.roi(frame, "ability_row")
-    hit, _, loc = _match(row, f"buttons/{name}.png", 0.60)
+    _, row = _ability_search(frame, name)
+    hit, _, loc = _match(row, f"buttons/{name}.png", 0.85)
     if not hit:
         return None
-    _, val = _border_stats(row, loc, _tpl(f"buttons/{name}.png").shape)
+    _, val = _ability_border(row, loc, name, _tpl(f"buttons/{name}.png").shape)
     return val
 
 
-_GEM_SCALE = 0.5      # search at HALF resolution
-# 0.65 -> 0.55 (user, 2026-08-28): the v29 orbiting gem sits under constant
-# particle spray, so occluded frames score low - the old threshold made
-# detection intermittent (gem_seen fired, the fresh-detection re-check
-# failed, every gem ended gem_lost). Measured with the harvested
-# floaters/gem_v29_orbit.png: 0.864 on-gem, 0.305 noise floor elsewhere
-# on the same frame - 0.55 keeps ~0.25 of margin.
-_GEM_THRESH = 0.55
-_GEM_SMALL: dict[str, np.ndarray] = {}
+def _ability_search(frame, name):
+    from player.bootstrap_layout import manifest
+    binding = manifest().get("asset_bindings", {}).get(f"buttons/{name}.png", {})
+    box = binding.get("search", capture.CONFIG["rois"]["ability_row"])
+    x, y, w, h = box
+    return box, frame[y:y+h, x:x+w]
 
 
-def _gem_tpl(rel: str) -> np.ndarray | None:
-    """Half-size template, resized once and cached."""
-    if rel not in _GEM_SMALL:
-        try:
-            full = _tpl(rel)
-        except TemplateMissing:
-            if rel not in _MISSING:
-                _MISSING.add(rel)
-                from runtime import logger
-                logger.event("template_missing", template=rel)
-            _GEM_SMALL[rel] = None
-        else:
-            _GEM_SMALL[rel] = cv2.resize(full, None, fx=_GEM_SCALE,
-                                         fy=_GEM_SCALE,
-                                         interpolation=cv2.INTER_AREA)
-    return _GEM_SMALL[rel]
-
-
-def floating_gem(frame: np.ndarray) -> tuple[int, int] | None:
-    """Collectible gem: in-flight diamond OR settled '5 CLAIM' box.
-
-    Floaters drift and SETTLE anywhere in the viewport - including on top of
-    the ability-button row - so this searches the full 'field' ROI, never a
-    fixed spot. That also means a FALSE positive could tap Nuke, so the
-    threshold sits far above the measured noise floor (~0.36 on gem-free
-    frames vs ~0.86 with a gem).
-
-    The search runs at half resolution: full-res matching over the whole
-    field cost ~95ms PER TEMPLATE and dominated the whole loop, while halving
-    it is ~5x faster and still localizes the box to within a pixel. Camera
-    zoom differs slightly between accounts, so each account contributes its
-    own gem_*.png rather than relying on one template matching everywhere.
-    """
-    field_box = capture.CONFIG["rois"]["field"]
-    hay = capture.roi(frame, "field")
-    small = cv2.resize(hay, None, fx=_GEM_SCALE, fy=_GEM_SCALE,
-                       interpolation=cv2.INTER_AREA)
-    from settings import ROOT
-    rels = ["buttons/gem_claim.png"]
-    rels += [f"floaters/{p.name}"
-             for p in settings.template_files("floaters/gem_*.png")]
-    best_score, best_loc, best_shape = 0.0, None, None
-    for rel in rels:
-        tpl = _gem_tpl(rel)
-        if tpl is None:
-            continue
-        if tpl.shape[0] >= small.shape[0] or tpl.shape[1] >= small.shape[1]:
-            continue
-        res = cv2.matchTemplate(small, tpl, cv2.TM_CCOEFF_NORMED)
-        _, score, _, loc = cv2.minMaxLoc(res)
-        if score > best_score:
-            best_score, best_loc, best_shape = score, loc, tpl.shape
-    if best_score < _GEM_THRESH or best_loc is None:
-        return None
-    cx = field_box[0] + int((best_loc[0] + best_shape[1] / 2) / _GEM_SCALE)
-    cy = field_box[1] + int((best_loc[1] + best_shape[0] / 2) / _GEM_SCALE)
-    return (cx, cy)
+def _ability_border(row, loc, name, shape):
+    """Read the button's actual edges, not the battlefield around its glyph."""
+    from player.bootstrap_layout import manifest
+    binding = manifest().get("asset_bindings", {}).get(f"buttons/{name}.png", {})
+    rect, glyph = binding.get("button_rect"), binding.get("reference_rect")
+    if not rect or not glyph:
+        return _border_stats(row, loc, shape)
+    x, y = loc[0] + rect[0] - glyph[0], loc[1] + rect[1] - glyph[1]
+    w, h = rect[2:]
+    if x < 0 or y < 0 or x+w > row.shape[1] or y+h > row.shape[0]:
+        return 0.0, 0.0
+    hsv = cv2.cvtColor(row[y:y+h, x:x+w], cv2.COLOR_BGR2HSV)
+    edges = np.concatenate((hsv[:5, 10:-10].reshape(-1, 3),
+                            hsv[-5:, 10:-10].reshape(-1, 3),
+                            hsv[10:-10, :5].reshape(-1, 3),
+                            hsv[10:-10, -5:].reshape(-1, 3)))
+    return float(np.median(edges[:, 1])), float(np.median(edges[:, 2]))
 
 
 def death_screen(frame: np.ndarray) -> tuple[bool, tuple[int, int] | None]:

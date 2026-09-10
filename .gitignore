@@ -19,6 +19,7 @@ backend/templates/
 *.ico
 backend/runs/
 backend/captures/
+backend/recordings/
 backend/_scan_backup_*/
 backend/.last_scan_backup
 docs/HANDOVER_SCANNING.md
@@ -28,6 +29,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
+backend/tools/platform-tools/
+backend/tools/adb-install-*/
+.local-backups/
 venv/
 
 # --- editors / os ------------------------------------------------------

@@ -43,24 +43,55 @@ def bail(frame, reason: str):
         act.tap(*RETURN_STRIP, reason=f"bail_{reason}", instant=True)
 
 
-def find_tile(frame, tpl_rel: str, fallback) -> tuple[int, int]:
-    """Locate a side-menu tile by its ICON (both emulators are clones - the
-    icons are identical but the tile ROWS differ per account/tier, so fixed
-    rows are wrong; the icon is the ground truth). Search is limited to the
-    open menu's tile column. Falls back to the given fixed point on a miss."""
-    col = frame[0:820, 840:1080]
-    hit, _, loc = detect._match(col, tpl_rel, 0.70)
-    if not hit:
-        return fallback
-    tpl = detect._tpl(tpl_rel)
-    return (840 + loc[0] + tpl.shape[1] // 2, loc[1] + tpl.shape[0] // 2)
+def find_tile(frame, tpl_rel: str, fallback=None) -> tuple[int, int] | None:
+    """Identify a currently visible menu icon. Legacy coordinates are ignored.
+
+    The menu has no stable row or ordering. Missing or ambiguous artwork is
+    unavailable, never permission to click its old position.
+    """
+    from player.bootstrap_layout import manifest
+    from player.clicker import locate
+    if not detect.side_menu_open(frame):
+        return None
+    try:
+        tpl = detect._tpl(tpl_rel)
+    except detect.TemplateMissing:
+        from vision.installed_art import _images
+        from player import accounts, asset_verify
+        import settings
+        definition = manifest().get('asset_bindings', {}).get(tpl_rel)
+        if definition is None:
+            return None
+        folder = str(accounts.calibration_dir(settings.ROOT, settings.CONFIG))
+        for image in _images(folder, tpl_rel):
+            hit = asset_verify.locate(image, frame, definition['search'])
+            if not hit:
+                hit = asset_verify.locate_silhouette(image, frame, definition['search'], white=True)
+            if not hit and definition.get('outline_shape'):
+                hit = asset_verify.locate_outline(image, frame, definition['search'])
+            if hit:
+                x,y,w,h = hit['rect']
+                return x+w//2, y+h//2
+        return None
+    search = manifest()['side_menu']['column']
+    # Notification counters overlap the tile border, not its central glyph.
+    # Keep the native center fixed and match the glyph inside that border.
+    inset = int(min(tpl.shape[:2]) * .18)
+    glyph = tpl[inset:-inset, inset:-inset] if inset else tpl
+    hit = locate(frame, glyph, search, search=search)
+    if not hit['ok']:
+        return None
+    x, y, w, h = hit['rect']
+    return x + w//2, y + h//2
 
 
 def _tile_badge(frame, tpl_rel, fallback, lo, hi) -> bool:
-    """Badge check around a located tile: the number badge sits on the tile's
-    top-right corner, so scan the tile cell plus a margin."""
-    cx, cy = find_tile(frame, tpl_rel, fallback)
-    cell = frame[max(0, cy - 55):cy + 55, max(0, cx - 60):min(1080, cx + 70)]
+    """Check the number badge at the located tile's top-left corner."""
+    point = find_tile(frame, tpl_rel)
+    if point is None:
+        return False
+    cx, cy = point
+    cell = frame[max(0, cy - 65):cy - 15, max(0, cx - 65):max(0,cx - 15)]
     hsv = cv2.cvtColor(cell, cv2.COLOR_BGR2HSV)
     if isinstance(lo, tuple):
         mask = cv2.inRange(hsv, lo, hi)
@@ -69,7 +100,7 @@ def _tile_badge(frame, tpl_rel, fallback, lo, hi) -> bool:
         for l, h in zip(lo, hi):
             m = cv2.inRange(hsv, l, h)
             mask = m if mask is None else (mask | m)
-    return (mask > 0).mean() > 0.01
+    return bool((mask > 0).mean() > 0.01)
 
 
 def quests_badge(frame) -> bool:
@@ -85,17 +116,22 @@ def guild_badge(frame) -> bool:
                        (115, 80, 120), (140, 255, 255))
 
 
+def events_badge(frame) -> bool:
+    return _tile_badge(frame, 'icons/tile_events.png', None,
+                       (115, 80, 120), (140, 255, 255))
+
+
 def missions_screen(frame) -> bool:
     hit, _, _ = detect._match(frame, "icons/daily_missions.png", 0.75)
     return hit
 
 
 def find_claim(frame):
-    hit, _, loc = detect._match(frame, "buttons/quest_claim.png", 0.75)
-    if not hit:
+    if not missions_screen(frame):
         return None
-    tpl = detect._tpl("buttons/quest_claim.png")
-    return (loc[0] + tpl.shape[1] // 2, loc[1] + tpl.shape[0] // 2)
+    from interactions.event_rewards import claim_buttons
+    points = claim_buttons(frame)
+    return points[0] if points else None
 
 
 def find_skip(frame):
@@ -129,7 +165,11 @@ def claimable_chests(frame):
     the visible window is scanned (the claimable chest sits at the progress
     edge, which the game keeps in view)."""
     band = frame[CHEST_BAND[0]:CHEST_BAND[1], 0:1080]
-    lock = cv2.cvtColor(detect._tpl("icons/chest_lock.png"), cv2.COLOR_BGR2GRAY)
+    try:
+        lock = cv2.cvtColor(detect._tpl("icons/chest_lock.png"), cv2.COLOR_BGR2GRAY)
+    except detect.TemplateMissing:
+        logger.event("mission_chests_skipped", reason="missing chest lock recognition")
+        return []
     gray = cv2.cvtColor(band, cv2.COLOR_BGR2GRAY)
     res = cv2.matchTemplate(gray, lock, cv2.TM_CCOEFF_NORMED)
     locked_x = []
@@ -265,7 +305,7 @@ def _guild_tap(x, y, reason):
     if LEAVE_ZONE[0] <= x <= LEAVE_ZONE[2] and LEAVE_ZONE[1] <= y <= LEAVE_ZONE[3]:
         logger.event("tap_blocked", reason=reason, x=x, y=y)
         return
-    act.tap(x, y, reason=reason, instant=True)
+    _tap(x, y, reason=reason, instant=True)
 
 
 def guild_flow():
@@ -273,7 +313,11 @@ def guild_flow():
     FIXED AREAS only (guild tile -> Members tab -> the 4 milestone box areas
     -> SKIP -> return); vision is used solely for screen-state checks."""
     frame = yield
-    _tap(*find_tile(frame, "icons/tile_guild.png", GUILD_TILE), "guild_open")
+    point = find_tile(frame, "icons/tile_guild.png")
+    if point is None:
+        logger.event('mission_error', stage='guild_icon_unavailable')
+        return
+    _tap(*point, "guild_open")
     frame = yield
     opened = False
     for _ in range(4):
@@ -295,16 +339,25 @@ def guild_flow():
     # tap each milestone box AREA (claimed/locked boxes ignore the tap);
     # after each, clear any reward listing via SKIP (template, else area)
     before = guild_claimables(frame)
-    for x in GUILD_SLOTS:
+    for x, cy in before:
+        if (x, cy) not in guild_claimables(frame):
+            continue
         _guild_tap(x, 708, "guild_reward")
         frame = yield
         for _ in range(6):
             hit, _, _ = detect._match(frame, "icons/guild_header.png", 0.75)
             if hit:
                 break
-            pt = find_skip(frame) or SKIP_AREA
+            from interactions.event_rewards import reward_dismiss
+            pt = find_skip(frame) or reward_dismiss(frame)
+            if not pt:
+                frame = yield
+                continue
             _guild_tap(*pt, "reward_skip")
             frame = yield
+        if not detect._match(frame, "icons/guild_header.png", .75)[0]:
+            logger.event('mission_error',stage='guild_reward_popup_not_dismissed')
+            return
     after = guild_claimables(frame)
     global last_guild_claims
     last_guild_claims = max(0, len(before) - len(after))
@@ -324,8 +377,12 @@ def guild_flow():
 
 def quest_flow():
     frame = yield
-    _tap(*find_tile(frame, "icons/tile_quests.png", QUESTS_TILE), "quests_open",
-         instant=False)
+    point = find_tile(frame, "icons/tile_quests.png")
+    if point is None:
+        logger.event('mission_error', stage='quests_icon_unavailable')
+        return
+    _tap(*point, "quests_open",
+         instant=True)
     frame = yield
     opened = False
     for _ in range(4):
@@ -341,7 +398,9 @@ def quest_flow():
 
     # ---- claim every finished quest
     claimed = 0
-    for _ in range(MAX_CLAIMS * 3):
+    pages = 0
+    previous_page = None
+    for _ in range(MAX_CLAIMS * 3 + 6):
         if not missions_screen(frame):
             # a reward popup may cover the screen - skip it
             pt = find_skip(frame)
@@ -350,9 +409,24 @@ def quest_flow():
             frame = yield
             continue
         pt = find_claim(frame)
-        if pt is None or claimed >= MAX_CLAIMS:
+        if claimed >= MAX_CLAIMS:
             break
-        _tap(*pt, "quest_claim", instant=False)
+        if pt is None:
+            # Finished quests can be below the fold. Move only the mission
+            # list, keep the weekly reward track fixed, and stop at a repeated
+            # page or a bounded six scrolls.
+            page = cv2.resize(frame[650:2350,40:1040], (100,170))
+            if pages >= 6 or (previous_page is not None and
+                    np.abs(page.astype(float)-previous_page.astype(float)).mean()<1):
+                break
+            previous_page = page
+            act.swipe(540,2100,540,950,400,reason="mission list next page")
+            pages += 1
+            frame = yield
+            frame = yield
+            continue
+        previous_page = None
+        _tap(*pt, "quest_claim", instant=True)
         claimed += 1
         frame = yield
         frame = yield          # let the card disappear / rewards land
@@ -402,16 +476,19 @@ FREE_BTN_OFFSET = (0, 138)      # claim button center relative to FREE label
 
 
 def free_gems_flow(on_success=None):
-    """Daily free-gems claim: cart tile -> premium STORE -> one screen down
-    -> tap the x15 FREE card's button (a no-op if still on cooldown) ->
-    return. Runs once per day around 4-5 AM (orchestrator schedules it).
+    """Daily free-gems claim: locate the free card, verify CLAIM REWARDS,
+    collect and return. Scheduled around 01:00 UTC, with ten-minute jitter.
 
-    on_success() is called ONLY after the claim button is actually tapped.
+    on_success() is called only after the store shows the claim's cooldown.
     The orchestrator used to mark the day claimed before starting this flow, so a
     flow that bailed (menu closed, screen never appeared) still burned the
     day's claim."""
     frame = yield
-    _tap(*find_tile(frame, "icons/tile_cart.png", GEM_STORE_TILE), "gem_store_open")
+    point=find_tile(frame, "icons/tile_cart.png", GEM_STORE_TILE)
+    if point is None:
+        logger.event('mission_error',stage='gem_store_icon_unavailable')
+        return
+    _tap(*point, "gem_store_open")
     frame = yield
     opened = False
     # 4 -> 10 frames (2026-08-30): the 03:00 failure shot scored 1.0 on the
@@ -429,8 +506,6 @@ def free_gems_flow(on_success=None):
         bail(frame, "gem_store_open")
         return
 
-    import subprocess
-    from settings import adb_args
     claimed = False
     for attempt in range(3):
         hit, _, loc = detect._match(frame, "icons/free_gems.png", 0.75)
@@ -438,16 +513,30 @@ def free_gems_flow(on_success=None):
             tpl = detect._tpl("icons/free_gems.png")
             cx = loc[0] + tpl.shape[1] // 2 + FREE_BTN_OFFSET[0]
             cy = loc[1] + tpl.shape[0] // 2 + FREE_BTN_OFFSET[1]
+            from vision import textocr
+            patch=frame[max(0,cy-75):cy+75,max(0,cx-140):cx+140]
+            words=' '.join(t.strip().upper() for _,_,t in textocr.read_lines(patch,2))
+            if words != 'CLAIM REWARDS':
+                logger.event('free_gems_unavailable',reason='Free card is on cooldown or claim not verified')
+                break
             _tap(cx, cy, "free_gems_claim")
-            claimed = True
-            if on_success:
-                on_success()
             frame = yield
             frame = yield
-            pt = find_skip(frame)      # just in case a listing pops
-            if pt:
-                _tap(*pt, "reward_skip")
+            from interactions.event_rewards import reward_dismiss
+            for _ in range(8):
+                if detect._match(frame,'icons/premium_store.png',.75)[0]: break
+                pt=find_skip(frame) or reward_dismiss(frame)
+                if not pt: break
+                _tap(*pt,'free_gems_reward_collect')
+                frame=yield
                 frame = yield
+            patch=frame[max(0,cy-75):cy+75,max(0,cx-140):cx+140]
+            words=' '.join(t.strip().upper() for _,_,t in textocr.read_lines(patch,2))
+            # Count only the observed cooldown on the free card, not a tap attempt.
+            import re
+            claimed=bool(detect._match(frame,'icons/premium_store.png',.75)[0]
+                         and re.search(r'\d+\s*[DHMS]',words))
+            if claimed and on_success: on_success()
             break
         # not visible yet: scroll one stride down and look again
         act.swipe(540, 1800, 540, 900, 400, reason="gem store scroll")

@@ -4,8 +4,19 @@ from functools import lru_cache
 from pathlib import Path
 
 @lru_cache(maxsize=1)
-def manifest():
+def reference_manifest():
     return json.loads(Path(__file__).with_name("bootstrap_manifest.json").read_text(encoding="utf-8"))
+
+
+def manifest(display=None):
+    from copy import deepcopy
+    from player.geometry import scale_manifest
+    reference = reference_manifest()
+    return scale_manifest(reference, display) if display is not None else deepcopy(reference)
+
+
+# Preserve callers that explicitly refresh the reference after editing it.
+manifest.cache_clear = reference_manifest.cache_clear
 
 def writable_targets():
     m = manifest()
@@ -14,6 +25,7 @@ def writable_targets():
     names.update(t["rel"] for t in m.get("dynamic_targets", []))
     names.update(m.get("asset_bindings", {}))
     names.update(t["rel"] for s in m.get("hud", {}).values() if isinstance(s, dict) for t in s.get("targets", []))
+    names.update(f"mapping/v{m['version']}/route_{i}.png" for i in range(len(m['routes'])))
     return names
 
 

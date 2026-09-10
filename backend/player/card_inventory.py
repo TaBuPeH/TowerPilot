@@ -96,7 +96,7 @@ def page_shift(previous,current):
     return int(round(float(np.median(shifts))))
 
 
-def scan(cal, *, grab=None, swipe=None, read=None, read_label=None, pause=time.sleep, check_stop=lambda:None, progress=lambda message:None):
+def scan(cal, *, grab=None, swipe=None, read=None, read_label=None, pause=time.sleep, check_stop=lambda:None, progress=lambda message:None, prove=None):
     from device import capture, act
     from vision import textocr
     read_label=read_label or read or (lambda f:textocr.read_lines(f,2))
@@ -118,7 +118,7 @@ def scan(cal, *, grab=None, swipe=None, read=None, read_label=None, pause=time.s
     def observe():
         check_stop()
         frame=grab()
-        if not screen_matches(frame,read(frame),'cards'):
+        if not (prove(frame) if prove else screen_matches(frame,read(frame),'cards')):
             raise RuntimeError('Cards screen is obscured or unsupported; stopped before scrolling')
         return frame
     def grid(frame):

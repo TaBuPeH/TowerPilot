@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 11,
   "layout": {
     "width": 1080,
     "height": 2560,
@@ -283,33 +283,6 @@
             590,
             65
           ]
-        },
-        {
-          "text": "Members",
-          "rect": [
-            30,
-            275,
-            300,
-            80
-          ]
-        },
-        {
-          "text": "Guardian",
-          "rect": [
-            350,
-            275,
-            300,
-            80
-          ]
-        },
-        {
-          "text": "Tap To Return To Game",
-          "rect": [
-            220,
-            2430,
-            640,
-            65
-          ]
         }
       ],
       "targets": [
@@ -363,7 +336,30 @@
             65
           ]
         }
-      ]
+      ],
+      "selected_tab": {
+        "index": 0,
+        "rects": [
+          [
+            40,
+            280,
+            230,
+            55
+          ],
+          [
+            370,
+            280,
+            230,
+            55
+          ],
+          [
+            730,
+            280,
+            200,
+            55
+          ]
+        ]
+      }
     },
     "guardians": {
       "anchors": [
@@ -375,18 +371,32 @@
             590,
             65
           ]
-        },
-        {
-          "text": "CHIPS INVENTORY",
-          "rect": [
-            20,
-            1100,
-            700,
-            90
-          ]
         }
       ],
-      "targets": []
+      "targets": [],
+      "selected_tab": {
+        "index": 1,
+        "rects": [
+          [
+            40,
+            280,
+            230,
+            55
+          ],
+          [
+            370,
+            280,
+            230,
+            55
+          ],
+          [
+            730,
+            280,
+            200,
+            55
+          ]
+        ]
+      }
     },
     "guild_store": {
       "anchors": [
@@ -397,15 +407,6 @@
             105,
             590,
             65
-          ]
-        },
-        {
-          "text": "CURRENCIES",
-          "rect": [
-            320,
-            400,
-            470,
-            90
           ]
         }
       ],
@@ -460,7 +461,40 @@
             65
           ]
         }
-      ]
+      ],
+      "scan_collection": {
+        "viewport": [
+          40,
+          520,
+          1000,
+          1810
+        ],
+        "axis": "vertical",
+        "max_pages": 16
+      },
+      "selected_tab": {
+        "index": 2,
+        "rects": [
+          [
+            40,
+            280,
+            230,
+            55
+          ],
+          [
+            370,
+            280,
+            230,
+            55
+          ],
+          [
+            730,
+            280,
+            200,
+            55
+          ]
+        ]
+      }
     },
     "events": {
       "anchors": [
@@ -470,42 +504,6 @@
             20,
             105,
             590,
-            65
-          ]
-        },
-        {
-          "text": "Missions",
-          "rect": [
-            30,
-            270,
-            300,
-            90
-          ]
-        },
-        {
-          "text": "Event Shop",
-          "rect": [
-            360,
-            270,
-            370,
-            90
-          ]
-        },
-        {
-          "text": "Bots",
-          "rect": [
-            820,
-            270,
-            230,
-            90
-          ]
-        },
-        {
-          "text": "Tap To Return To Game",
-          "rect": [
-            220,
-            2430,
-            640,
             65
           ]
         }
@@ -541,7 +539,30 @@
             65
           ]
         }
-      ]
+      ],
+      "selected_tab": {
+        "index": 0,
+        "rects": [
+          [
+            50,
+            280,
+            230,
+            55
+          ],
+          [
+            450,
+            280,
+            230,
+            55
+          ],
+          [
+            830,
+            280,
+            200,
+            55
+          ]
+        ]
+      }
     },
     "bots": {
       "anchors": [
@@ -553,27 +574,32 @@
             590,
             65
           ]
-        },
-        {
-          "text": "BOTS",
-          "rect": [
-            430,
-            390,
-            270,
-            90
-          ]
-        },
-        {
-          "text": "Tap To Return To Game",
-          "rect": [
-            220,
-            2430,
-            640,
-            65
-          ]
         }
       ],
-      "targets": []
+      "targets": [],
+      "selected_tab": {
+        "index": 2,
+        "rects": [
+          [
+            50,
+            280,
+            230,
+            55
+          ],
+          [
+            450,
+            280,
+            230,
+            55
+          ],
+          [
+            830,
+            280,
+            200,
+            55
+          ]
+        ]
+      }
     },
     "shop": {
       "anchors": [
@@ -598,7 +624,17 @@
             65
           ]
         }
-      ]
+      ],
+      "scan_collection": {
+        "viewport": [
+          20,
+          200,
+          1040,
+          2100
+        ],
+        "axis": "vertical",
+        "max_pages": 16
+      }
     },
     "picker": {
       "anchors": [
@@ -633,6 +669,376 @@
           ]
         }
       ]
+    },
+    "daily_missions": {
+      "anchors": [
+        {
+          "text": "MISSIONS",
+          "rect": [
+            0,
+            100,
+            600,
+            80
+          ]
+        },
+        {
+          "text": "Weekly",
+          "rect": [
+            0,
+            180,
+            1080,
+            120
+          ]
+        }
+      ],
+      "targets": [
+        {
+          "rel": "icons/daily_missions.png",
+          "text": "DAILY MISSIONS",
+          "rect": [
+            24,
+            108,
+            451,
+            54
+          ]
+        }
+      ],
+      "scan_collection": {
+        "viewport": [
+          15,
+          575,
+          1050,
+          1720
+        ],
+        "axis": "vertical",
+        "max_pages": 16
+      }
+    },
+    "battle_history": {
+      "anchors": [
+        {
+          "text": "BATTLE HISTORY",
+          "rect": [
+            0,
+            100,
+            650,
+            80
+          ]
+        }
+      ],
+      "targets": [],
+      "scan_collection": {
+        "viewport": [
+          20,
+          300,
+          1040,
+          2010
+        ],
+        "axis": "vertical",
+        "max_pages": 16
+      }
+    },
+    "global_presets": {
+      "anchors": [
+        {
+          "text": "GLOBAL PRESET",
+          "rect": [
+            70,
+            450,
+            800,
+            530
+          ]
+        },
+        {
+          "text": "WORKSHOP",
+          "rect": [
+            70,
+            1000,
+            800,
+            300
+          ]
+        }
+      ],
+      "targets": []
+    },
+    "perks_first": {
+      "anchors": [
+        {
+          "text": "PERKS",
+          "rect": [
+            360,
+            430,
+            330,
+            90
+          ]
+        }
+      ],
+      "targets": [],
+      "selected_pill": {
+        "rects": [
+          [
+            220,
+            530,
+            210,
+            90
+          ],
+          [
+            440,
+            530,
+            210,
+            90
+          ],
+          [
+            650,
+            530,
+            215,
+            90
+          ]
+        ],
+        "index": 0
+      }
+    },
+    "perks_ban": {
+      "anchors": [
+        {
+          "text": "PERKS",
+          "rect": [
+            360,
+            430,
+            330,
+            90
+          ]
+        }
+      ],
+      "targets": [],
+      "selected_pill": {
+        "rects": [
+          [
+            220,
+            530,
+            210,
+            90
+          ],
+          [
+            440,
+            530,
+            210,
+            90
+          ],
+          [
+            650,
+            530,
+            215,
+            90
+          ]
+        ],
+        "index": 1
+      }
+    },
+    "perks_priority": {
+      "anchors": [
+        {
+          "text": "PERKS",
+          "rect": [
+            360,
+            430,
+            330,
+            90
+          ]
+        }
+      ],
+      "targets": [],
+      "selected_pill": {
+        "rects": [
+          [
+            220,
+            530,
+            210,
+            90
+          ],
+          [
+            440,
+            530,
+            210,
+            90
+          ],
+          [
+            650,
+            530,
+            215,
+            90
+          ]
+        ],
+        "index": 2
+      }
+    },
+    "themes": {
+      "anchors": [
+        {
+          "text": "THEMES",
+          "rect": [
+            20,
+            105,
+            500,
+            70
+          ]
+        }
+      ],
+      "targets": [],
+      "selected_tab": {
+        "rects": [
+          [
+            30,
+            190,
+            280,
+            65
+          ],
+          [
+            390,
+            190,
+            280,
+            65
+          ],
+          [
+            760,
+            190,
+            280,
+            65
+          ]
+        ],
+        "index": 1
+      }
+    },
+    "event_shop": {
+      "anchors": [
+        {
+          "text": "EVENT",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        }
+      ],
+      "targets": [],
+      "scan_collection": {
+        "viewport": [
+          40,
+          520,
+          1000,
+          1810
+        ],
+        "axis": "vertical",
+        "max_pages": 16
+      },
+      "selected_tab": {
+        "index": 1,
+        "rects": [
+          [
+            50,
+            280,
+            230,
+            55
+          ],
+          [
+            450,
+            280,
+            230,
+            55
+          ],
+          [
+            830,
+            280,
+            200,
+            55
+          ]
+        ]
+      }
+    },
+    "labs": {
+      "anchors": [
+        {
+          "text": "LAB",
+          "rect": [
+            0,
+            100,
+            600,
+            80
+          ]
+        }
+      ],
+      "targets": []
+    },
+    "lab_selection": {
+      "anchors": [
+        {
+          "text": "SELECT RESEARCH",
+          "rect": [
+            200,
+            140,
+            640,
+            100
+          ]
+        }
+      ],
+      "targets": []
+    },
+    "guild_hub": {
+      "anchors": [
+        {
+          "text": "GUILD",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        }
+      ],
+      "targets": []
+    },
+    "events_hub": {
+      "anchors": [
+        {
+          "text": "EVENT",
+          "rect": [
+            20,
+            105,
+            590,
+            65
+          ]
+        }
+      ],
+      "targets": []
+    },
+    "perks_hub": {
+      "anchors": [
+        {
+          "text": "PERKS",
+          "rect": [
+            360,
+            430,
+            330,
+            90
+          ]
+        }
+      ],
+      "targets": []
+    },
+    "themes_hub": {
+      "anchors": [
+        {
+          "text": "THEMES",
+          "rect": [
+            20,
+            105,
+            500,
+            70
+          ]
+        }
+      ],
+      "targets": []
     }
   },
   "routes": [
@@ -667,7 +1073,7 @@
     {
       "name": "Guild",
       "from": "home",
-      "to": "guild",
+      "to": "guild_hub",
       "optional": true,
       "point": [
         120,
@@ -675,14 +1081,29 @@
       ],
       "icon": {
         "rect": [
-          45,
-          900,
-          150,
-          135
+          43,
+          888,
+          158,
+          151
         ],
         "hue": "red",
         "rel": "home/tile_guild.png"
       }
+    },
+    {
+      "name": "Members tab",
+      "from": "guild_hub",
+      "to": "guild",
+      "verify": {
+        "text": "Members",
+        "rect": [
+          40,
+          280,
+          230,
+          70
+        ]
+      },
+      "optional": false
     },
     {
       "name": "Guardian",
@@ -692,7 +1113,16 @@
       "point": [
         472,
         315
-      ]
+      ],
+      "verify": {
+        "text": "Guardian",
+        "rect": [
+          350,
+          275,
+          300,
+          80
+        ]
+      }
     },
     {
       "name": "Guild Store",
@@ -702,7 +1132,16 @@
       "point": [
         791,
         314
-      ]
+      ],
+      "verify": {
+        "text": "Store",
+        "rect": [
+          700,
+          275,
+          300,
+          80
+        ]
+      }
     },
     {
       "name": "Guild return",
@@ -712,12 +1151,21 @@
       "point": [
         538,
         2455
-      ]
+      ],
+      "verify": {
+        "text": "Tap To Return To Game",
+        "rect": [
+          220,
+          2430,
+          640,
+          65
+        ]
+      }
     },
     {
       "name": "Events",
       "from": "home",
-      "to": "events",
+      "to": "events_hub",
       "optional": true,
       "point": [
         120,
@@ -725,14 +1173,29 @@
       ],
       "icon": {
         "rect": [
-          45,
-          630,
-          150,
-          140
+          41,
+          613,
+          162,
+          162
         ],
         "hue": "cyan",
         "rel": "home/tile_event.png"
       }
+    },
+    {
+      "name": "Missions tab",
+      "from": "events_hub",
+      "to": "events",
+      "verify": {
+        "text": "Missions",
+        "rect": [
+          50,
+          280,
+          230,
+          70
+        ]
+      },
+      "optional": false
     },
     {
       "name": "Bots",
@@ -742,7 +1205,16 @@
       "point": [
         895,
         306
-      ]
+      ],
+      "verify": {
+        "text": "Bots",
+        "rect": [
+          820,
+          270,
+          230,
+          90
+        ]
+      }
     },
     {
       "name": "Events return",
@@ -752,7 +1224,16 @@
       "point": [
         538,
         2455
-      ]
+      ],
+      "verify": {
+        "text": "Tap To Return To Game",
+        "rect": [
+          220,
+          2430,
+          640,
+          65
+        ]
+      }
     },
     {
       "name": "Store",
@@ -807,6 +1288,339 @@
         "hue": "cyan",
         "rel": "presets/close_x.png"
       }
+    },
+    {
+      "name": "Daily missions",
+      "from": "home",
+      "to": "daily_missions",
+      "optional": true,
+      "verify": {
+        "text": "MISSIONS",
+        "rect": [
+          910,
+          185,
+          165,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Daily Missions return",
+      "from": "daily_missions",
+      "to": "home",
+      "optional": true,
+      "verify": {
+        "text": "Tap To Return To Game",
+        "rect": [
+          170,
+          2390,
+          750,
+          120
+        ]
+      }
+    },
+    {
+      "name": "Battle history",
+      "from": "home",
+      "to": "battle_history",
+      "optional": true,
+      "art": {
+        "names": [
+          "History Icon"
+        ],
+        "search": [
+          960,
+          175,
+          120,
+          1020
+        ]
+      }
+    },
+    {
+      "name": "Battle History return",
+      "from": "battle_history",
+      "to": "home",
+      "optional": true,
+      "verify": {
+        "text": "Tap To Return To Game",
+        "rect": [
+          170,
+          2390,
+          750,
+          120
+        ]
+      }
+    },
+    {
+      "name": "Global preset settings",
+      "from": "home",
+      "to": "global_presets",
+      "optional": true,
+      "art": {
+        "names": [
+          "GlobalPresets"
+        ],
+        "search": [
+          960,
+          175,
+          120,
+          1020
+        ]
+      }
+    },
+    {
+      "name": "Global preset settings close",
+      "from": "global_presets",
+      "to": "home",
+      "optional": true,
+      "art": {
+        "names": [
+          "close",
+          "close-50"
+        ],
+        "search": [
+          895,
+          425,
+          90,
+          95
+        ],
+        "silhouette": "white"
+      }
+    },
+    {
+      "name": "Perk settings",
+      "from": "home",
+      "to": "perks_hub",
+      "optional": true,
+      "art": {
+        "names": [
+          "PerkButton"
+        ],
+        "search": [
+          960,
+          175,
+          120,
+          1020
+        ]
+      }
+    },
+    {
+      "name": "First perk tab",
+      "from": "perks_hub",
+      "to": "perks_first",
+      "verify": {
+        "text": "First Perk",
+        "rect": [
+          220,
+          530,
+          210,
+          90
+        ]
+      }
+    },
+    {
+      "name": "Banned perks",
+      "from": "perks_first",
+      "to": "perks_ban",
+      "optional": true,
+      "verify": {
+        "text": "Ban Perks",
+        "rect": [
+          430,
+          520,
+          240,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Perk priority",
+      "from": "perks_ban",
+      "to": "perks_priority",
+      "optional": true,
+      "verify": {
+        "text": "Auto Pick",
+        "rect": [
+          650,
+          520,
+          240,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Perk settings close",
+      "from": "perks_priority",
+      "to": "home",
+      "optional": true,
+      "art": {
+        "names": [
+          "close",
+          "close-50"
+        ],
+        "search": [
+          890,
+          430,
+          95,
+          95
+        ],
+        "silhouette": "white"
+      }
+    },
+    {
+      "name": "Themes",
+      "from": "home",
+      "to": "themes_hub",
+      "optional": true,
+      "art": {
+        "names": [
+          "ThemesButton"
+        ],
+        "search": [
+          960,
+          175,
+          120,
+          1020
+        ]
+      }
+    },
+    {
+      "name": "Themes tab",
+      "from": "themes_hub",
+      "to": "themes",
+      "verify": {
+        "text": "Themes",
+        "rect": [
+          390,
+          190,
+          280,
+          70
+        ]
+      }
+    },
+    {
+      "name": "Themes return",
+      "from": "themes",
+      "to": "home",
+      "optional": true,
+      "verify": {
+        "text": "Tap To Return To Game",
+        "rect": [
+          170,
+          2390,
+          750,
+          120
+        ]
+      }
+    },
+    {
+      "name": "Event shop entry",
+      "from": "home",
+      "to": "events_hub",
+      "optional": true,
+      "icon": {
+        "rect": [
+          41,
+          613,
+          162,
+          162
+        ],
+        "hue": "cyan",
+        "rel": "home/tile_event.png"
+      }
+    },
+    {
+      "name": "Missions tab",
+      "from": "events_hub",
+      "to": "events",
+      "verify": {
+        "text": "Missions",
+        "rect": [
+          50,
+          280,
+          230,
+          70
+        ]
+      },
+      "optional": false
+    },
+    {
+      "name": "Event shop",
+      "from": "events",
+      "to": "event_shop",
+      "optional": true,
+      "verify": {
+        "text": "Event Shop",
+        "rect": [
+          350,
+          260,
+          400,
+          100
+        ]
+      }
+    },
+    {
+      "name": "Event Shop return",
+      "from": "event_shop",
+      "to": "home",
+      "optional": true,
+      "verify": {
+        "text": "Tap To Return To Game",
+        "rect": [
+          170,
+          2390,
+          750,
+          120
+        ]
+      }
+    },
+    {
+      "name": "Labs",
+      "from": "home",
+      "to": "labs",
+      "optional": true,
+      "nav": "lab"
+    },
+    {
+      "name": "Lab research list",
+      "from": "labs",
+      "to": "lab_selection",
+      "optional": true,
+      "verify": {
+        "text": "Lab 1",
+        "rect": [
+          0,
+          200,
+          250,
+          170
+        ]
+      }
+    },
+    {
+      "name": "Close lab research list",
+      "from": "lab_selection",
+      "to": "labs",
+      "optional": true,
+      "art": {
+        "names": [
+          "close",
+          "close-50"
+        ],
+        "search": [
+          915,
+          135,
+          90,
+          90
+        ],
+        "silhouette": "white"
+      }
+    },
+    {
+      "name": "Labs return",
+      "from": "labs",
+      "to": "home",
+      "optional": true,
+      "nav": "battle"
     }
   ],
   "module_descriptor": {
@@ -859,6 +1673,11 @@
       "rel": "buttons/end_round.png",
       "screen": "battle",
       "verifier": "consented flow: OCR 'END ROUND' on the in-run side menu"
+    },
+    {
+      "rel": "buttons/exit_battle.png",
+      "screen": "battle_menu",
+      "verifier": "consented flow: EXIT BATTLE label located within the side menu; native crop before opening the surrender dialog"
     },
     {
       "rel": "home/exit_battle_dialog.png",
@@ -949,6 +1768,76 @@
       "rel": "home/game_stats_home.png",
       "screen": "battle",
       "verifier": "consented flow: RIGHT button of the RETRY / HOME row on GAME STATS, by position (HOME)"
+    },
+    {
+      "rel": "buttons/ad_gems_claim.png",
+      "screen": "battle",
+      "verifier": "HUD six-gem CLAIM button in left column; distinct from the free Store tile; confirm on a second frame"
+    },
+    {
+      "rel": "stats/bounce_shot_range.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/critical_factor.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/damage.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/damage_per_meter.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/death_defy.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/enemy_attack_level_skip.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/enemy_health_level_skip.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/health.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/health_regen.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/land_mine_radius.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/max_label.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/super_crit_chance.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
+    },
+    {
+      "rel": "stats/super_crit_mult.png",
+      "screen": "battle",
+      "verifier": "Native upgrade label identified within a bordered upgrade row and confirmed on an independent frame; capture never purchases upgrades"
     }
   ],
   "asset_bindings": {
@@ -963,7 +1852,13 @@
         215,
         1400
       ],
-      "locate_navigation": true
+      "locate_navigation": true,
+      "reference_rect": [
+        43,
+        888,
+        158,
+        151
+      ]
     },
     "home/tile_event.png": {
       "names": [
@@ -976,7 +1871,13 @@
         215,
         1400
       ],
-      "locate_navigation": true
+      "locate_navigation": true,
+      "reference_rect": [
+        41,
+        613,
+        162,
+        162
+      ]
     },
     "presets/picker_icon.png": {
       "names": [
@@ -1027,11 +1928,17 @@
       "screen": "home",
       "search": [
         10,
-        300,
+        170,
         215,
-        1400
+        1500
       ],
-      "locate_navigation": false
+      "locate_navigation": false,
+      "reference_rect": [
+        41,
+        338,
+        162,
+        161
+      ]
     },
     "cards/death_ray.png": {
       "names": [
@@ -1070,7 +1977,13 @@
         1020,
         1140
       ],
-      "locate_navigation": false
+      "locate_navigation": false,
+      "reference_rect": [
+        159,
+        1340,
+        103,
+        123
+      ]
     },
     "guardian/chip_ally.png": {
       "names": [
@@ -1083,7 +1996,13 @@
         1020,
         1140
       ],
-      "locate_navigation": false
+      "locate_navigation": false,
+      "reference_rect": [
+        494,
+        1341,
+        92,
+        115
+      ]
     },
     "guardian/chip_fetch.png": {
       "names": [
@@ -1096,7 +2015,13 @@
         1020,
         1140
       ],
-      "locate_navigation": false
+      "locate_navigation": false,
+      "reference_rect": [
+        144,
+        1668,
+        138,
+        125
+      ]
     },
     "guardian/chip_scout.png": {
       "names": [
@@ -1109,7 +2034,13 @@
         1020,
         1140
       ],
-      "locate_navigation": false
+      "locate_navigation": false,
+      "reference_rect": [
+        810,
+        1670,
+        120,
+        121
+      ]
     },
     "guardian/chip_summon.png": {
       "names": [
@@ -1122,20 +2053,28 @@
         1020,
         1140
       ],
-      "locate_navigation": false
+      "locate_navigation": false,
+      "reference_rect": [
+        483,
+        1673,
+        114,
+        120
+      ]
     },
     "icons/chest_lock.png": {
       "names": [
-        "lock"
+        "lock",
+        "MilestoneLock"
       ],
-      "screen": "missions",
+      "screen": "daily_missions",
       "search": [
-        10,
-        170,
-        1060,
-        2180
+        0,
+        240,
+        1080,
+        700
       ],
-      "locate_navigation": false
+      "silhouette": "white",
+      "repeated": true
     },
     "uw/black_hole.png": {
       "names": [
@@ -1255,6 +2194,12 @@
       "locate_navigation": false
     },
     "buttons/nuke.png": {
+      "button_rect": [
+        18,
+        1445,
+        134,
+        96
+      ],
       "names": [
         "protector-nuke"
       ],
@@ -1266,9 +2211,21 @@
         920
       ],
       "locate_navigation": false,
-      "note": "HUD ability row, both panel layouts (+679 when the upgrade panel is closed); cut by the Tier-1 battle pass"
+      "note": "HUD ability row, both panel layouts (+679 when the upgrade panel is closed); cut by the Tier-1 battle pass",
+      "reference_rect": [
+        55,
+        1457,
+        66,
+        68
+      ]
     },
     "buttons/demon_mode.png": {
+      "button_rect": [
+        175,
+        1445,
+        134,
+        96
+      ],
       "names": [
         "DemonMode"
       ],
@@ -1280,7 +2237,13 @@
         920
       ],
       "locate_navigation": false,
-      "note": "HUD ability row; cut by the Tier-1 battle pass"
+      "note": "HUD ability row; cut by the Tier-1 battle pass",
+      "reference_rect": [
+        209,
+        1460,
+        66,
+        62
+      ]
     },
     "uw/toggle_on.png": {
       "names": [
@@ -1319,10 +2282,12 @@
         840,
         0,
         240,
-        820
+        1100
       ],
       "locate_navigation": false,
-      "note": "the checkbox tile in the open in-run side menu; found by the game's own MissionsIcon sprite"
+      "note": "the checkbox tile in the open in-run side menu; found by the game's own MissionsIcon sprite",
+      "position_policy": "container",
+      "silhouette": "white"
     },
     "floaters/second_wind.png": {
       "names": [
@@ -1336,7 +2301,63 @@
         140
       ],
       "locate_navigation": false,
-      "note": "the badge above the ability row while Death Defied holds (vision.detect.SW_BAND); the sprite is the glyph only - the cyan ring erodes"
+      "note": "Second Wind immunity badge above the ability row; match the installed glyph inside this region, excluding its changing countdown ring and the Demon Mode button below"
+    },
+    "navigation/cards_home.png": {
+      "names": [
+        "swords"
+      ],
+      "screen": "cards",
+      "search": [
+        0,
+        2350,
+        180,
+        200
+      ],
+      "reference_rect": [
+        39,
+        2430,
+        84,
+        84
+      ],
+      "locate_navigation": true
+    },
+    "icons/tile_events.png": {
+      "names": [
+        "event icon"
+      ],
+      "screen": "battle_menu",
+      "search": [
+        840,
+        0,
+        240,
+        1100
+      ],
+      "position_policy": "container",
+      "silhouette": "white",
+      "locate_navigation": false,
+      "source_crop": [
+        63,
+        85,
+        76,
+        70
+      ],
+      "outline_shape": true
+    },
+    "icons/tile_guild.png": {
+      "names": [
+        "GuildButton"
+      ],
+      "screen": "battle_menu",
+      "search": [
+        840,
+        0,
+        240,
+        1100
+      ],
+      "position_policy": "container",
+      "silhouette": "white",
+      "locate_navigation": false
     }
   },
   "asset_strategy": {
@@ -1386,15 +2407,16 @@
         92
       ],
       "closed_hue": "bars",
-      "open_hue": "green"
+      "open_hue": "cross"
     },
     "column": [
       840,
       0,
       240,
-      820
+      1100
     ],
-    "note": "The in-run side menu behind the hamburger: its tiles (quests, guild, ...) are what the reward flows tap. The Tier-1 battle pass opens it when found shut, cuts the column's artwork-bound tiles and the X, and shuts it again; found open it reads and leaves it."
+    "note": "The in-run side menu behind the hamburger: its tiles (quests, guild, ...) are what the reward flows tap. The Tier-1 battle pass opens it when found shut, cuts the column's artwork-bound tiles and the X, and shuts it again; found open it reads and leaves it.",
+    "position_policy": "icon identity only; no fixed row or order"
   },
   "hud": {
     "note": "In-run HUD controls at fixed native positions (measured 2026-09-08 on MuMu: cart box 862,17 96x96; hamburger 963,16 99x96). Not on Home - Home's top-right is a chevron and the Missions box. Cut by the Tier-1 battle pass and by the screen capture when a battle is on screen.",
@@ -1437,10 +2459,4769 @@
             92
           ],
           "icon": true,
-          "hue": "green",
+          "hue": "cross",
           "note": "the green X in the hamburger's place while the side menu is open"
         }
       ]
     }
+  },
+  "interface": {
+    "version": 1,
+    "reference_layout": {
+      "width": 1080,
+      "height": 2560,
+      "dpi": 360
+    },
+    "rules": {
+      "images": "Extract installed artwork and verify rendered controls locally. Never ship game pixels.",
+      "coordinates": "Reference rectangles are search hints only; current screen and target identity must be verified before input.",
+      "dynamic_menu": "No fixed position, row or ordering. Match icons throughout current menu.",
+      "scrolling": "Recognize visible rows on entry, then locate controls relative to the current row or section; never assume scroll starts at top.",
+      "ownership": "Account-specific names, counts, unlocks and loadouts are learned locally.",
+      "unknown": "Unknown or ambiguous controls stop input; absence is not a locked-state proof."
+    },
+    "screens": {
+      "home": {
+        "label": "Home",
+        "acquisition": "automatic",
+        "controls": {
+          "screens_hdr_battle": {
+            "label": "BATTLE",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "BATTLE",
+            "template": "screens/hdr_battle.png"
+          },
+          "home_battle_btn": {
+            "label": "BATTLE",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "BATTLE",
+            "template": "home/battle_btn.png"
+          },
+          "home_dissonant_run": {
+            "label": "Dissonant Run",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Dissonant Run",
+            "template": "home/dissonant_run.png"
+          },
+          "difficulty_left": {
+            "label": "Previous difficulty",
+            "action": "configure",
+            "optional": true,
+            "position": "fixed",
+            "reference_rect": [
+              364,
+              1364,
+              56,
+              74
+            ]
+          },
+          "difficulty_right": {
+            "label": "Next difficulty",
+            "action": "configure",
+            "optional": true,
+            "position": "fixed",
+            "reference_rect": [
+              660,
+              1364,
+              60,
+              74
+            ]
+          },
+          "dissonant": {
+            "label": "Dissonant Run",
+            "action": "navigate",
+            "optional": true,
+            "position": "fixed",
+            "reference_rect": [
+              283,
+              2159,
+              513,
+              82
+            ],
+            "destination": "dissonant"
+          },
+          "missions": {
+            "label": "Missions",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "daily_missions"
+          },
+          "perks": {
+            "label": "Perks",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "perks_first"
+          },
+          "themes": {
+            "label": "Skins",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "themes"
+          },
+          "history": {
+            "label": "Battle History",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "battle_history"
+          },
+          "global_presets": {
+            "label": "Global Preset",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "global_presets"
+          },
+          "options": {
+            "label": "Options",
+            "action": "manual_only",
+            "optional": true,
+            "position": "container"
+          },
+          "rankings": {
+            "label": "Rankings",
+            "action": "manual_only",
+            "optional": true,
+            "position": "container"
+          },
+          "mail": {
+            "label": "Mail",
+            "action": "manual_only",
+            "optional": true,
+            "position": "container"
+          },
+          "key_vault": {
+            "label": "Key Vault",
+            "action": "manual_only",
+            "optional": true,
+            "position": "container"
+          }
+        },
+        "rules": [
+          "Claim Ad Gems can disappear and shift the left column.",
+          "Difficulty controls change tier; verify the displayed tier after each input.",
+          "Preset button and selected-preset text only exist when available."
+        ],
+        "identity_text": [
+          "BATTLE",
+          "Difficulty",
+          "BATTLE"
+        ],
+        "bootstrap_screen": "home"
+      },
+      "cards": {
+        "label": "Cards",
+        "acquisition": "automatic",
+        "controls": {
+          "screens_hdr_cards": {
+            "label": "CARDS",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "CARDS",
+            "template": "screens/hdr_cards.png"
+          },
+          "cards_active_label": {
+            "label": "ACTIVE",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "ACTIVE",
+            "template": "cards/active_label.png"
+          }
+        },
+        "rules": [
+          "Crop icons from inventory without changing deck. Read names, stars, mastery and green equipped check separately.",
+          "Locks indicate cards cannot be swapped during a run. Discover full inventory; no fixed six-card limit.",
+          "Presets and equipped slot count vary. Buying cards is opt-in spending, never setup."
+        ],
+        "identity_text": [
+          "CARDS",
+          "ACTIVE",
+          "INVENTORY"
+        ],
+        "bootstrap_screen": "cards",
+        "scroll_regions": {
+          "active": {
+            "axis": "horizontal",
+            "anchor": "ACTIVE"
+          },
+          "inventory": {
+            "axis": "vertical",
+            "anchor": "INVENTORY",
+            "columns": 4,
+            "stable_order": true
+          }
+        }
+      },
+      "modules": {
+        "label": "Modules",
+        "acquisition": "automatic",
+        "controls": {
+          "screens_hdr_modules": {
+            "label": "MODULES",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "MODULES",
+            "template": "screens/hdr_modules.png"
+          },
+          "modules_buy_module": {
+            "label": "Buy Module",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Buy Module",
+            "template": "modules/buy_module.png"
+          }
+        },
+        "rules": [
+          "Four primary slots; optional assists must be examined but never purchased during scan.",
+          "Equipped modules are absent from inventory. Capture full slot identities before any unequip.",
+          "Crop inventory art first, then open descriptor to identify the clicked tile.",
+          "Restoration must verify every saved primary and assist assignment before reporting completion."
+        ],
+        "identity_text": [
+          "MODULES",
+          "Buy Module",
+          "Inventory"
+        ],
+        "bootstrap_screen": "modules"
+      },
+      "guild": {
+        "label": "Guild",
+        "acquisition": "automatic",
+        "controls": {
+          "screens_hdr_guild": {
+            "label": "GUILD",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "GUILD",
+            "template": "screens/hdr_guild.png"
+          },
+          "icons_guild_header": {
+            "label": "GUILD",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "GUILD",
+            "template": "icons/guild_header.png"
+          },
+          "buttons_guild_members_tab": {
+            "label": "Members",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Members",
+            "template": "buttons/guild_members_tab.png"
+          },
+          "guardian_tab_guardian": {
+            "label": "Guardian",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Guardian",
+            "template": "guardian/tab_guardian.png"
+          },
+          "buttons_return_to_game": {
+            "label": "Tap To Return To Game",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Tap To Return To Game",
+            "template": "buttons/return_to_game.png"
+          }
+        },
+        "rules": [
+          "Four weekly chest positions; distinguish collected, claimable and locked."
+        ],
+        "identity_text": [
+          "GUILD",
+          "Members",
+          "Guardian",
+          "Tap To Return To Game"
+        ],
+        "bootstrap_screen": "guild"
+      },
+      "guardians": {
+        "label": "Guardians",
+        "acquisition": "automatic",
+        "controls": {},
+        "rules": [
+          "Chip inventory logical positions are fixed; unlocks and presets vary. Equipped slots and inventory are distinct."
+        ],
+        "identity_text": [
+          "GUILD",
+          "CHIPS INVENTORY"
+        ],
+        "bootstrap_screen": "guardians"
+      },
+      "guild_store": {
+        "label": "Guild Store",
+        "acquisition": "automatic",
+        "controls": {
+          "icons_store_currencies": {
+            "label": "CURRENCIES",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "CURRENCIES",
+            "template": "icons/store_currencies.png"
+          },
+          "icons_title_tower": {
+            "label": "Tower",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Tower",
+            "template": "icons/title_tower.png"
+          },
+          "icons_title_background": {
+            "label": "Background",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Background",
+            "template": "icons/title_background.png"
+          },
+          "icons_title_menu": {
+            "label": "Menu",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Menu",
+            "template": "icons/title_menu.png"
+          },
+          "icons_title_banner": {
+            "label": "Profile Banner",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Profile Banner",
+            "template": "icons/title_banner.png"
+          }
+        },
+        "rules": [
+          "Scrollable sections Currencies, Themes, Relics and Guardian chips; locate items relative to headings. No purchases for mapping."
+        ],
+        "identity_text": [
+          "GUILD",
+          "CURRENCIES"
+        ],
+        "bootstrap_screen": "guild_store"
+      },
+      "events": {
+        "label": "Events",
+        "acquisition": "automatic",
+        "controls": {
+          "icons_event_missions_tab": {
+            "label": "Missions",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Missions",
+            "template": "icons/event_missions_tab.png"
+          },
+          "buttons_event_bots_tab": {
+            "label": "Bots",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Bots",
+            "template": "buttons/event_bots_tab.png"
+          },
+          "buttons_return_to_game": {
+            "label": "Tap To Return To Game",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "Tap To Return To Game",
+            "template": "buttons/return_to_game.png"
+          }
+        },
+        "rules": [],
+        "identity_text": [
+          "EVENT",
+          "Missions",
+          "Event Shop",
+          "Bots",
+          "Tap To Return To Game"
+        ],
+        "bootstrap_screen": "events"
+      },
+      "bots": {
+        "label": "Bots",
+        "acquisition": "automatic",
+        "controls": {},
+        "rules": [
+          "Presets vary up to user-described five. Owned bots differ; detect On/Off state, never unlock for mapping."
+        ],
+        "identity_text": [
+          "EVENT",
+          "BOTS",
+          "Tap To Return To Game"
+        ],
+        "bootstrap_screen": "bots"
+      },
+      "shop": {
+        "label": "Shop",
+        "acquisition": "automatic",
+        "controls": {
+          "icons_premium_store": {
+            "label": "STORE",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "STORE",
+            "template": "icons/premium_store.png"
+          }
+        },
+        "rules": [
+          "Free gem card identified by gem icon, x20 and Free text. Limited offers can shift its position.",
+          "Only free gem claims supported automatically; paid offers and website gift excluded."
+        ],
+        "identity_text": [
+          "STORE"
+        ],
+        "bootstrap_screen": "shop"
+      },
+      "picker": {
+        "label": "Picker",
+        "acquisition": "automatic",
+        "controls": {
+          "presets_select_header": {
+            "label": "SELECT A PRESET",
+            "action": "observe",
+            "optional": false,
+            "position": "bootstrap",
+            "text": "SELECT A PRESET",
+            "template": "presets/select_header.png"
+          }
+        },
+        "rules": [],
+        "identity_text": [
+          "SELECT A PRESET",
+          "Select a Global Preset"
+        ],
+        "bootstrap_screen": "picker"
+      },
+      "dissonant": {
+        "label": "Dissonant run setup",
+        "acquisition": "observe",
+        "controls": {
+          "attack": {
+            "label": "Attack",
+            "action": "configure",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              250,
+              1160,
+              280,
+              183
+            ],
+            "text": "Attack",
+            "selected_indicator": "red X overlay",
+            "effect": "Disable this category during the run",
+            "boost": "Damage"
+          },
+          "defense": {
+            "label": "Defense",
+            "action": "configure",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              550,
+              1160,
+              280,
+              183
+            ],
+            "text": "Defense",
+            "selected_indicator": "red X overlay",
+            "effect": "Disable this category during the run",
+            "boost": "Health"
+          },
+          "utility": {
+            "label": "Utility",
+            "action": "configure",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              250,
+              1370,
+              280,
+              183
+            ],
+            "text": "Utility",
+            "selected_indicator": "red X overlay",
+            "effect": "Disable this category during the run",
+            "boost": "Coins"
+          },
+          "ultimate_weapons": {
+            "label": "Ultimate Weapons",
+            "action": "configure",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              550,
+              1370,
+              280,
+              183
+            ],
+            "text": "Ultimate Weapons",
+            "selected_indicator": "red X overlay",
+            "effect": "Disable this category during the run",
+            "boost": "Ultimate Weapon Damage"
+          },
+          "battle": {
+            "label": "Battle",
+            "action": "start_run",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              260,
+              1745,
+              560,
+              150
+            ],
+            "text": "BATTLE",
+            "destination": "battle"
+          },
+          "close": {
+            "label": "Close",
+            "action": "navigate",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              910,
+              635,
+              65,
+              65
+            ],
+            "destination": "home"
+          },
+          "presets": {
+            "label": "Presets",
+            "action": "configure",
+            "optional": true,
+            "position": "fixed",
+            "reference_rect": [
+              833,
+              1743,
+              100,
+              100
+            ]
+          }
+        },
+        "rules": [],
+        "identity_text": [
+          "Dissonant Run",
+          "Dissonant Boost"
+        ],
+        "parent": "home"
+      },
+      "tournament": {
+        "label": "Tournament",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Never enter or purchase tickets during mapping. Battle availability depends on tournament state."
+        ],
+        "identity_text": [
+          "TOURNAMENT"
+        ],
+        "parent": "home"
+      },
+      "tournament_info": {
+        "label": "Occasional tournament information",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Optional interruption; identify message and OK separately from normal navigation."
+        ],
+        "identity_text": [],
+        "parent": "tournament"
+      },
+      "tournament_heat": {
+        "identity_text": "TOURNAMENT HEAT",
+        "anchors": {
+          "dialog": [
+            30,
+            430,
+            1020,
+            1550
+          ],
+          "title": [
+            240,
+            475,
+            620,
+            75
+          ],
+          "tabs": [
+            90,
+            720,
+            900,
+            140
+          ],
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "controls": {
+          "close": {
+            "reference_rect": [
+              945,
+              463,
+              73,
+              77
+            ],
+            "click_point": [
+              980,
+              500
+            ],
+            "anchor": "dialog",
+            "intent": "close conditions",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Close",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              915,
+              33,
+              73,
+              77
+            ],
+            "point_offset": [
+              950,
+              70
+            ]
+          },
+          "heat": {
+            "reference_rect": [
+              90,
+              720,
+              440,
+              140
+            ],
+            "click_point": [
+              310,
+              790
+            ],
+            "anchor": "tabs",
+            "intent": "show Heat",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Heat",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              0,
+              0,
+              440,
+              140
+            ],
+            "point_offset": [
+              220,
+              70
+            ]
+          },
+          "overheat": {
+            "reference_rect": [
+              550,
+              720,
+              440,
+              140
+            ],
+            "click_point": [
+              770,
+              785
+            ],
+            "anchor": "tabs",
+            "intent": "show Overheat",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Overheat",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              460,
+              0,
+              440,
+              140
+            ],
+            "point_offset": [
+              680,
+              65
+            ]
+          },
+          "information": {
+            "reference_rect": [
+              67,
+              465,
+              63,
+              63
+            ],
+            "click_point": [
+              98,
+              496
+            ],
+            "anchor": "dialog",
+            "intent": "heat information; visible, not clicked",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Information",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              37,
+              35,
+              63,
+              63
+            ],
+            "point_offset": [
+              68,
+              66
+            ]
+          }
+        },
+        "collection": {
+          "axis": "vertical",
+          "viewport": [
+            65,
+            970,
+            955,
+            1000
+          ],
+          "row_reference": [
+            65,
+            970,
+            950,
+            195
+          ],
+          "fields_relative_to_row": {
+            "title": [
+              30,
+              22,
+              715,
+              50
+            ],
+            "level": [
+              785,
+              22,
+              150,
+              50
+            ],
+            "description": [
+              30,
+              88,
+              890,
+              98
+            ]
+          },
+          "identity": [
+            "title"
+          ],
+          "note": "Do not assume initial scroll at top. Heat has Level, Overheat has Wave; content is event-dependent."
+        },
+        "label": "Tournament heat",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": []
+      },
+      "tournament_overheat": {
+        "identity_text": "OVERHEAT",
+        "anchors": {
+          "dialog": [
+            30,
+            430,
+            1020,
+            1550
+          ],
+          "title": [
+            240,
+            475,
+            620,
+            75
+          ],
+          "tabs": [
+            90,
+            720,
+            900,
+            140
+          ],
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "controls": {
+          "close": {
+            "reference_rect": [
+              945,
+              463,
+              73,
+              77
+            ],
+            "click_point": [
+              980,
+              500
+            ],
+            "anchor": "dialog",
+            "intent": "close conditions",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Close",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              915,
+              33,
+              73,
+              77
+            ],
+            "point_offset": [
+              950,
+              70
+            ]
+          },
+          "heat": {
+            "reference_rect": [
+              90,
+              720,
+              440,
+              140
+            ],
+            "click_point": [
+              310,
+              790
+            ],
+            "anchor": "tabs",
+            "intent": "show Heat",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Heat",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              0,
+              0,
+              440,
+              140
+            ],
+            "point_offset": [
+              220,
+              70
+            ]
+          },
+          "overheat": {
+            "reference_rect": [
+              550,
+              720,
+              440,
+              140
+            ],
+            "click_point": [
+              770,
+              785
+            ],
+            "anchor": "tabs",
+            "intent": "show Overheat",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Overheat",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              460,
+              0,
+              440,
+              140
+            ],
+            "point_offset": [
+              680,
+              65
+            ]
+          }
+        },
+        "collection": {
+          "axis": "vertical",
+          "viewport": [
+            65,
+            875,
+            955,
+            1095
+          ],
+          "row_reference": [
+            65,
+            875,
+            950,
+            195
+          ],
+          "fields_relative_to_row": {
+            "title": [
+              30,
+              22,
+              715,
+              50
+            ],
+            "activation_wave": [
+              785,
+              22,
+              150,
+              50
+            ],
+            "description": [
+              30,
+              88,
+              890,
+              98
+            ]
+          },
+          "identity": [
+            "title"
+          ],
+          "note": "Do not assume initial scroll at top. Heat has Level, Overheat has Wave; content is event-dependent."
+        },
+        "label": "Tournament overheat",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": []
+      },
+      "daily_missions": {
+        "label": "Daily missions",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Quest claim is relative to its card. Weekly rewards scroll horizontally and are identified by threshold and state."
+        ],
+        "identity_text": [
+          "MISSIONS"
+        ],
+        "parent": "home",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "quest card"
+        }
+      },
+      "event_missions": {
+        "label": "Event missions",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Quest tiers award 10, 15, 20 medals; boost doubles rewards. Daily claim limit and event quest progress are separate.",
+          "Reward relic claim is relative to its relic slot; paid and free tracks are distinct."
+        ],
+        "identity_text": [
+          "MISSIONS"
+        ],
+        "parent": "events",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "quest card"
+        }
+      },
+      "event_shop": {
+        "label": "Event shop",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Sections move with scroll. Themes, relics and songs use section-relative item positions.",
+          "Currency and shard purchases are manual-only; optional theme/relic buying requires explicit policy and budget.",
+          "Two standard relics and four rotating relics were described; detect actual availability and prices."
+        ],
+        "identity_text": [
+          "Currencies",
+          "Themes"
+        ],
+        "parent": "events",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "section heading"
+        }
+      },
+      "themes": {
+        "label": "Themes",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Top tabs: Profile, Themes, Relics. Category tabs: Tower, Background, Music, Menus.",
+          "Quest skin swap must save original, equip another, restore original and verify."
+        ],
+        "identity_text": [
+          "Themes"
+        ],
+        "parent": "home",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "category inventory"
+        }
+      },
+      "battle_history": {
+        "label": "Battle History",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Rows identify a run by multiple fields, not skin icon alone."
+        ],
+        "identity_text": [
+          "Battle History"
+        ],
+        "parent": "home",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "run row"
+        }
+      },
+      "battle_report": {
+        "label": "Battle report",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Read labels and values; Copy offers a text export. Verify run identity."
+        ],
+        "identity_text": [
+          "Battle Report"
+        ],
+        "parent": "battle_history",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "section heading"
+        }
+      },
+      "global_presets": {
+        "label": "Global presets",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Top preset loads five assignments: Workshop, Cards, Bots, Modules, Guardians.",
+          "Changing a lower selection edits the selected global preset. Names and counts are account-local."
+        ],
+        "identity_text": [
+          "GLOBAL PRESET"
+        ],
+        "parent": "home"
+      },
+      "workshop": {
+        "label": "Workshop",
+        "acquisition": "manual",
+        "controls": {},
+        "rules": [
+          "Entire Workshop is manual-only; never upgrade, enhance, respec or open Ultimate Weapons for setup."
+        ],
+        "identity_text": [
+          "WORKSHOP"
+        ],
+        "parent": "home",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "upgrade row"
+        }
+      },
+      "perks_first": {
+        "label": "First Perk",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "User preference must be configurable; no universal selection."
+        ],
+        "identity_text": [
+          "First Perk"
+        ],
+        "parent": "home"
+      },
+      "perks_ban": {
+        "label": "Ban Perks",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Selected slots lie between section titles; number unlocked varies. Green tick on available card indicates selected."
+        ],
+        "identity_text": [
+          "Selected Perks",
+          "Available Perks"
+        ],
+        "parent": "perks_first",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "perk card"
+        }
+      },
+      "perks_priority": {
+        "label": "Auto Pick priority",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Rank capacity varies; beyond-capacity and banned rows differ. Right arrow moves up one, left moves down one."
+        ],
+        "identity_text": [
+          "Auto Pick"
+        ],
+        "parent": "perks_first",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "perk row"
+        }
+      },
+      "module_detail": {
+        "label": "Module details",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Read name after opening the clicked inventory tile; match detail art to the source tile.",
+          "Equip, Unequip and role dialog are distinct actions. Dialog height varies."
+        ],
+        "identity_text": [],
+        "parent": "modules"
+      },
+      "module_role": {
+        "label": "Primary or Assist",
+        "acquisition": "observe",
+        "controls": {
+          "primary": {
+            "label": "Primary",
+            "action": "configure",
+            "optional": false,
+            "position": "container",
+            "text": "Primary"
+          },
+          "assist": {
+            "label": "Assist",
+            "action": "configure",
+            "optional": false,
+            "position": "container",
+            "text": "Assist"
+          }
+        },
+        "rules": [
+          "Verify module identity before choosing role."
+        ],
+        "identity_text": [
+          "Primary or Assist?"
+        ],
+        "parent": "module_detail"
+      },
+      "module_merge": {
+        "label": "Merge modules",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Preview lists proposed merges with checkboxes; confirm only under enabled merge policy."
+        ],
+        "identity_text": [
+          "Auto Merge"
+        ],
+        "parent": "modules",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "module tile"
+        }
+      },
+      "module_shatter": {
+        "label": "Shatter modules",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Locked modules are protected. Selection toggles; maximum 12 per batch per user.",
+          "Confirm can open a second rare-module warning. Never shatter as a mapping action."
+        ],
+        "identity_text": [
+          "Shatter"
+        ],
+        "parent": "modules",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "module tile"
+        }
+      },
+      "guardian_detail": {
+        "label": "Guardian chip details",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Long press reveals name and three parameters; do not assume owned levels."
+        ],
+        "identity_text": [],
+        "parent": "guardians"
+      },
+      "labs": {
+        "label": "Labs",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Open a slot name to reach selection; never change research for mapping."
+        ],
+        "identity_text": [
+          "LAB"
+        ],
+        "parent": "home"
+      },
+      "lab_selection": {
+        "label": "Research selection",
+        "acquisition": "observe",
+        "controls": {
+          "range_filter": {
+            "label": "Range",
+            "action": "configure",
+            "optional": false,
+            "position": "container",
+            "text": "Range"
+          }
+        },
+        "rules": [
+          "Range filter limits research list to adjustable skills."
+        ],
+        "identity_text": [
+          "SELECT RESEARCH"
+        ],
+        "parent": "labs",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "research row"
+        }
+      },
+      "lab_values": {
+        "label": "Research range values",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Adjust using + and - then close; never press Research for range adjustment."
+        ],
+        "identity_text": [
+          "RESEARCH",
+          "Set Values"
+        ],
+        "parent": "lab_selection"
+      },
+      "reward_reveal": {
+        "label": "Reward reveal",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Next advances rewards; Skip collects all when present. Single-type rewards may omit Skip."
+        ],
+        "identity_text": []
+      },
+      "results": {
+        "label": "Game stats",
+        "acquisition": "observe",
+        "controls": {
+          "more_stats": {
+            "label": "MORE STATS",
+            "action": "navigate",
+            "optional": false,
+            "position": "container",
+            "text": "MORE STATS"
+          },
+          "perks": {
+            "label": "PERKS",
+            "action": "navigate",
+            "optional": false,
+            "position": "container",
+            "text": "PERKS"
+          },
+          "retry": {
+            "label": "RETRY",
+            "action": "start_run",
+            "optional": false,
+            "position": "container",
+            "text": "RETRY"
+          },
+          "home": {
+            "label": "HOME",
+            "action": "navigate",
+            "optional": false,
+            "position": "container",
+            "text": "HOME"
+          }
+        },
+        "rules": [
+          "Snapshot report and selected perks before Retry or Home. Retry repeats the farm run; Home returns Home."
+        ],
+        "identity_text": [
+          "GAME STATS"
+        ],
+        "parent": "battle"
+      },
+      "battle_perks": {
+        "label": "Battle perks",
+        "acquisition": "observe",
+        "controls": {
+          "auto_pick": {
+            "label": "Auto Pick Perks",
+            "action": "configure",
+            "optional": false,
+            "position": "container",
+            "text": "Auto Pick Perks"
+          },
+          "choose": {
+            "label": "Choose a New Perk",
+            "action": "observe",
+            "optional": false,
+            "position": "container",
+            "text": "Choose a New Perk"
+          },
+          "selected": {
+            "label": "Selected Perks",
+            "action": "observe",
+            "optional": false,
+            "position": "container",
+            "text": "Selected Perks"
+          }
+        },
+        "rules": [
+          "Progress shows current wave / next perk wave, or New Perk.",
+          "Unchecked Auto Pick allows manual or app-controlled choices.",
+          "Only rows between Choose a New Perk and Selected Perks are current offers.",
+          "After selection recapture; stacked choices may require repeated selection."
+        ],
+        "identity_text": [
+          "Perks",
+          "Selected Perks"
+        ],
+        "parent": "battle",
+        "scroll": {
+          "axis": "vertical",
+          "anchor": "perk row"
+        }
+      },
+      "orb_adjuster": {
+        "label": "Orb Distance Adjuster",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Separate from tower range; +, -, slider, close. Opening pauses game; closing restores speed in observed test."
+        ],
+        "identity_text": [
+          "DISTANCE ADJUSTER",
+          "Extra Orbs Distance"
+        ],
+        "parent": "battle_menu"
+      },
+      "target_priority": {
+        "label": "Target Priority",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Drag rows to reorder; higher rows take priority. Low automation priority."
+        ],
+        "identity_text": [
+          "TARGET PRIORITY"
+        ],
+        "parent": "battle_menu"
+      },
+      "exit_battle": {
+        "label": "Exit battle",
+        "acquisition": "observe",
+        "controls": {
+          "surrender": {
+            "label": "Surrender",
+            "action": "end_run",
+            "optional": false,
+            "position": "container",
+            "text": "Surrender"
+          },
+          "home": {
+            "label": "Go Home",
+            "action": "navigate",
+            "optional": false,
+            "position": "container",
+            "text": "Go Home"
+          }
+        },
+        "rules": [
+          "Go Home preserves a resumable battle; Surrender ends it."
+        ],
+        "identity_text": [
+          "EXIT BATTLE",
+          "What would you like to do?"
+        ],
+        "parent": "battle_menu"
+      },
+      "battle": {
+        "label": "Battle HUD",
+        "acquisition": "observe",
+        "controls": {
+          "attack": {
+            "label": "Attack",
+            "action": "navigate",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              0,
+              2460,
+              270,
+              100
+            ],
+            "destination": "battle_attack"
+          },
+          "defense": {
+            "label": "Defense",
+            "action": "navigate",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              270,
+              2460,
+              270,
+              100
+            ],
+            "destination": "battle_defense"
+          },
+          "utility": {
+            "label": "Utility",
+            "action": "navigate",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              540,
+              2460,
+              270,
+              100
+            ],
+            "destination": "battle_utility"
+          },
+          "ultimate_weapons": {
+            "label": "Ultimate Weapons",
+            "action": "navigate",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              810,
+              2460,
+              270,
+              100
+            ],
+            "destination": "battle_ultimate_weapons"
+          },
+          "tower_stats": {
+            "label": "Tower health, overheal, attack, regeneration and coin multiplier",
+            "action": "observe",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              13,
+              1620,
+              520,
+              162
+            ]
+          },
+          "enemy_stats": {
+            "label": "Tier, wave, enemy attack and health",
+            "action": "observe",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              545,
+              1620,
+              524,
+              162
+            ]
+          },
+          "wall": {
+            "label": "Wall health and overheal",
+            "action": "observe",
+            "optional": true,
+            "position": "fixed",
+            "reference_rect": [
+              15,
+              1550,
+              502,
+              62
+            ]
+          },
+          "perk_progress": {
+            "label": "Perk progress",
+            "action": "observe",
+            "optional": false,
+            "position": "fixed",
+            "reference_rect": [
+              348,
+              24,
+              405,
+              76
+            ]
+          },
+          "intro_sprint": {
+            "label": "Intro Sprint",
+            "action": "observe",
+            "optional": true,
+            "position": "fixed",
+            "reference_rect": [
+              25,
+              350,
+              90,
+              65
+            ]
+          },
+          "second_wind": {
+            "label": "Second Wind immunity",
+            "action": "observe",
+            "optional": true,
+            "position": "fixed",
+            "reference_rect": [
+              38,
+              1325,
+              95,
+              94
+            ]
+          },
+          "nuke": {
+            "label": "Nuke",
+            "action": "activate_ability",
+            "optional": true,
+            "position": "container",
+            "template": "buttons/nuke.png"
+          },
+          "demon_mode": {
+            "label": "Demon Mode",
+            "action": "activate_ability",
+            "optional": true,
+            "position": "container",
+            "template": "buttons/demon_mode.png"
+          }
+        },
+        "rules": [
+          "Bottom category titles and tabs are fixed while content scrolls.",
+          "Three upgrade grids have stable logical ordering. Ultimate Weapon roster is account-specific."
+        ],
+        "identity_text": [],
+        "timers": {
+          "second_wind": {
+            "game_seconds": 30,
+            "effect": "immunity",
+            "indicator": "white winged glyph and shrinking cyan arc",
+            "rule": "Detect onset then integrate real elapsed time times game speed, accounting for pauses. Late detection has uncertain remaining duration."
+          }
+        },
+        "orbiting_gem": {
+          "identity": "faceted diamond in thin pink square",
+          "reference_radius_pixels": 168,
+          "rule": "Collect with configured timed clicks on the tower-relative orbit arc, only in a verified battle and away from abilities. No artwork capture or image matching is required. Do not scale by attack-range meters.",
+          "reference_only": true
+        }
+      },
+      "battle_attack": {
+        "label": "Attack",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Read visible rows before input; initial scroll offset is unknown."
+        ],
+        "identity_text": [
+          "ATTACK UPGRADES"
+        ],
+        "parent": "battle",
+        "scroll": {
+          "axis": "vertical",
+          "viewport": [
+            0,
+            1890,
+            1080,
+            570
+          ],
+          "columns": 2,
+          "anchor": "row label"
+        }
+      },
+      "battle_defense": {
+        "label": "Defense",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Read visible rows before input; initial scroll offset is unknown."
+        ],
+        "identity_text": [
+          "DEFENSE UPGRADES"
+        ],
+        "parent": "battle",
+        "scroll": {
+          "axis": "vertical",
+          "viewport": [
+            0,
+            1890,
+            1080,
+            570
+          ],
+          "columns": 2,
+          "anchor": "row label"
+        }
+      },
+      "battle_utility": {
+        "label": "Utility",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Read visible rows before input; initial scroll offset is unknown."
+        ],
+        "identity_text": [
+          "UTILITY UPGRADES"
+        ],
+        "parent": "battle",
+        "scroll": {
+          "axis": "vertical",
+          "viewport": [
+            0,
+            1890,
+            1080,
+            570
+          ],
+          "columns": 2,
+          "anchor": "row label"
+        }
+      },
+      "battle_ultimate_weapons": {
+        "label": "Ultimate Weapons",
+        "acquisition": "observe",
+        "controls": {},
+        "rules": [
+          "Read visible rows before input; initial scroll offset is unknown."
+        ],
+        "identity_text": [
+          "ULTIMATE WEAPONS"
+        ],
+        "parent": "battle",
+        "scroll": {
+          "axis": "vertical",
+          "viewport": [
+            0,
+            1890,
+            1080,
+            570
+          ],
+          "columns": 2,
+          "anchor": "row label"
+        }
+      },
+      "battle_menu": {
+        "label": "In-game menu",
+        "acquisition": "observe",
+        "controls": {
+          "quests": {
+            "label": "Quests",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "daily_missions",
+            "artwork_names": [
+              "MissionsIcon"
+            ]
+          },
+          "options": {
+            "label": "Options",
+            "action": "manual_only",
+            "optional": true,
+            "position": "container"
+          },
+          "cards": {
+            "label": "Cards",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "cards"
+          },
+          "research": {
+            "label": "Research",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "labs",
+            "artwork_names": [
+              "LabButton"
+            ]
+          },
+          "target_priority": {
+            "label": "Target Priority",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "target_priority"
+          },
+          "modules": {
+            "label": "Modules",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "modules"
+          },
+          "events": {
+            "label": "Events",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "events",
+            "artwork_names": [
+              "EventSmallButton"
+            ]
+          },
+          "orb_adjuster": {
+            "label": "Orb Adjuster",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "orb_adjuster",
+            "artwork_names": [
+              "workshopOrbAdjuster"
+            ]
+          },
+          "guild": {
+            "label": "Guild",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "guild",
+            "artwork_names": [
+              "GuildButton"
+            ]
+          },
+          "conditions": {
+            "label": "Battle Conditions",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "tournament_heat",
+            "artwork_names": [
+              "heat"
+            ]
+          },
+          "history": {
+            "label": "Battle History",
+            "action": "navigate",
+            "optional": true,
+            "position": "container",
+            "destination": "battle_report",
+            "artwork_names": [
+              "History Icon"
+            ]
+          },
+          "tournament": {
+            "label": "Tournament",
+            "action": "manual_only",
+            "optional": true,
+            "position": "container",
+            "destination": "tournament",
+            "artwork_names": [
+              "trophy"
+            ]
+          },
+          "exit": {
+            "label": "Exit Battle",
+            "action": "navigate",
+            "optional": false,
+            "position": "container",
+            "text": "EXIT BATTLE",
+            "destination": "exit_battle"
+          }
+        },
+        "rules": [
+          "No fixed position, row or ordering; detect icons anywhere in current menu.",
+          "Availability differs by unlocks and run; tournament trophy is an optional variant."
+        ],
+        "identity_text": [],
+        "parent": "battle",
+        "search_region": [
+          840,
+          0,
+          240,
+          1100
+        ]
+      },
+      "tournament_ticket_reward": {
+        "identity": {
+          "text": "1 TICKET",
+          "rect": [
+            335,
+            1425,
+            420,
+            85
+          ]
+        },
+        "controls": {
+          "claim": {
+            "reference_rect": [
+              260,
+              1880,
+              560,
+              180
+            ],
+            "click_point": [
+              540,
+              1970
+            ],
+            "anchor": "screen",
+            "intent": "claim free awarded ticket",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Claim",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              260,
+              1880,
+              560,
+              180
+            ],
+            "point_offset": [
+              540,
+              1970
+            ]
+          },
+          "skip": {
+            "reference_rect": [
+              775,
+              320,
+              250,
+              105
+            ],
+            "click_point": [
+              900,
+              372
+            ],
+            "anchor": "screen",
+            "intent": "skip reveal; not clicked",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Skip",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              775,
+              320,
+              250,
+              105
+            ],
+            "point_offset": [
+              900,
+              372
+            ]
+          }
+        },
+        "label": "Tournament ticket reward",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": [
+          "Opening Home tournament icon produced this reward before lobby; no purchase occurred."
+        ],
+        "anchors": {
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        }
+      },
+      "tournament_lobby": {
+        "anchors": {
+          "header": [
+            20,
+            100,
+            410,
+            65
+          ],
+          "title": [
+            205,
+            240,
+            670,
+            85
+          ],
+          "first_prize_panel": [
+            238,
+            1185,
+            603,
+            480
+          ],
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "controls": {
+          "information": {
+            "reference_rect": [
+              15,
+              191,
+              80,
+              82
+            ],
+            "click_point": [
+              54,
+              232
+            ],
+            "anchor": "header",
+            "intent": "open information",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Information",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              -5,
+              91,
+              80,
+              82
+            ],
+            "point_offset": [
+              34,
+              132
+            ]
+          },
+          "history": {
+            "reference_rect": [
+              15,
+              285,
+              80,
+              82
+            ],
+            "click_point": [
+              55,
+              326
+            ],
+            "anchor": "header",
+            "intent": "open tournament history",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "History",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              -5,
+              185,
+              80,
+              82
+            ],
+            "point_offset": [
+              35,
+              226
+            ]
+          },
+          "heat": {
+            "reference_rect": [
+              15,
+              377,
+              80,
+              85
+            ],
+            "click_point": [
+              55,
+              419
+            ],
+            "anchor": "header",
+            "intent": "open conditions",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Heat",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              -5,
+              277,
+              80,
+              85
+            ],
+            "point_offset": [
+              35,
+              319
+            ]
+          },
+          "all_prizes": {
+            "reference_rect": [
+              355,
+              1525,
+              370,
+              125
+            ],
+            "click_point": [
+              540,
+              1587
+            ],
+            "anchor": "first_prize_panel",
+            "intent": "open reward table",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "All prizes",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              117,
+              340,
+              370,
+              125
+            ],
+            "point_offset": [
+              302,
+              402
+            ]
+          },
+          "preset": {
+            "reference_rect": [
+              810,
+              2095,
+              85,
+              90
+            ],
+            "click_point": [
+              852,
+              2140
+            ],
+            "anchor": "battle",
+            "intent": "open preset selector",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Preset",
+            "action": "observe",
+            "optional": true,
+            "position": "anchor_relative",
+            "rect_offset": [
+              530,
+              5,
+              85,
+              90
+            ],
+            "point_offset": [
+              572,
+              50
+            ]
+          },
+          "battle": {
+            "reference_rect": [
+              280,
+              2090,
+              520,
+              200
+            ],
+            "click_point": [
+              540,
+              2190
+            ],
+            "anchor": "return",
+            "intent": "consume ticket and enter tournament; not clicked",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Battle",
+            "action": "manual_only",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              75,
+              -330,
+              520,
+              200
+            ],
+            "point_offset": [
+              335,
+              -230
+            ]
+          },
+          "return": {
+            "reference_rect": [
+              205,
+              2420,
+              685,
+              85
+            ],
+            "click_point": [
+              547,
+              2462
+            ],
+            "anchor": "screen",
+            "intent": "return Home",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Return",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              205,
+              2420,
+              685,
+              85
+            ],
+            "point_offset": [
+              547,
+              2462
+            ]
+          }
+        },
+        "read_regions": {
+          "ticket_count": [
+            920,
+            108,
+            130,
+            60
+          ],
+          "join_time": [
+            340,
+            2290,
+            420,
+            45
+          ],
+          "preset_name": [
+            470,
+            2210,
+            300,
+            60
+          ]
+        },
+        "optional": [
+          "preset_name",
+          "preset"
+        ],
+        "label": "Tournament lobby",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": [
+          "League art, rewards and account name are local dynamic data."
+        ]
+      },
+      "tournament_information": {
+        "anchors": {
+          "dialog": [
+            95,
+            545,
+            888,
+            1470
+          ],
+          "title": [
+            240,
+            587,
+            590,
+            67
+          ],
+          "page_dots": [
+            458,
+            1895,
+            162,
+            52
+          ],
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "identity_text": "TOURNAMENTS INFO",
+        "controls": {
+          "close": {
+            "reference_rect": [
+              895,
+              563,
+              77,
+              78
+            ],
+            "click_point": [
+              934,
+              597
+            ],
+            "anchor": "dialog",
+            "intent": "close information",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Close",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              800,
+              18,
+              77,
+              78
+            ],
+            "point_offset": [
+              839,
+              52
+            ]
+          },
+          "previous": {
+            "reference_rect": [
+              350,
+              1865,
+              88,
+              110
+            ],
+            "click_point": [
+              394,
+              1920
+            ],
+            "anchor": "page_dots",
+            "intent": "previous info page",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Previous",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              -108,
+              -30,
+              88,
+              110
+            ],
+            "point_offset": [
+              -64,
+              25
+            ]
+          },
+          "next": {
+            "reference_rect": [
+              645,
+              1865,
+              88,
+              110
+            ],
+            "click_point": [
+              691,
+              1919
+            ],
+            "anchor": "page_dots",
+            "intent": "next info page",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Next",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              187,
+              -30,
+              88,
+              110
+            ],
+            "point_offset": [
+              233,
+              24
+            ]
+          }
+        },
+        "label": "Tournament information",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": [
+          "Three-page persistent info carousel; different from occasional OK-only information interrupt."
+        ]
+      },
+      "tournament_wave_speed_info": {
+        "anchors": {
+          "dialog": [
+            95,
+            545,
+            888,
+            1470
+          ],
+          "title": [
+            240,
+            587,
+            590,
+            67
+          ],
+          "page_dots": [
+            458,
+            1895,
+            162,
+            52
+          ],
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "identity_text": "WAVE SPEED UP",
+        "controls": {
+          "close": {
+            "reference_rect": [
+              895,
+              563,
+              77,
+              78
+            ],
+            "click_point": [
+              934,
+              597
+            ],
+            "anchor": "dialog",
+            "intent": "close information",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Close",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              800,
+              18,
+              77,
+              78
+            ],
+            "point_offset": [
+              839,
+              52
+            ]
+          },
+          "previous": {
+            "reference_rect": [
+              350,
+              1865,
+              88,
+              110
+            ],
+            "click_point": [
+              394,
+              1920
+            ],
+            "anchor": "page_dots",
+            "intent": "previous info page",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Previous",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              -108,
+              -30,
+              88,
+              110
+            ],
+            "point_offset": [
+              -64,
+              25
+            ]
+          },
+          "next": {
+            "reference_rect": [
+              645,
+              1865,
+              88,
+              110
+            ],
+            "click_point": [
+              691,
+              1919
+            ],
+            "anchor": "page_dots",
+            "intent": "next info page",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Next",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              187,
+              -30,
+              88,
+              110
+            ],
+            "point_offset": [
+              233,
+              24
+            ]
+          }
+        },
+        "label": "Tournament wave speed info",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": [
+          "Three-page persistent info carousel; different from occasional OK-only information interrupt."
+        ]
+      },
+      "tournament_fleet_info": {
+        "anchors": {
+          "dialog": [
+            95,
+            545,
+            888,
+            1470
+          ],
+          "title": [
+            240,
+            587,
+            590,
+            67
+          ],
+          "page_dots": [
+            458,
+            1895,
+            162,
+            52
+          ],
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "identity_text": "FLEET WAVES",
+        "controls": {
+          "close": {
+            "reference_rect": [
+              895,
+              563,
+              77,
+              78
+            ],
+            "click_point": [
+              934,
+              597
+            ],
+            "anchor": "dialog",
+            "intent": "close information",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Close",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              800,
+              18,
+              77,
+              78
+            ],
+            "point_offset": [
+              839,
+              52
+            ]
+          },
+          "previous": {
+            "reference_rect": [
+              350,
+              1865,
+              88,
+              110
+            ],
+            "click_point": [
+              394,
+              1920
+            ],
+            "anchor": "page_dots",
+            "intent": "previous info page",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Previous",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              -108,
+              -30,
+              88,
+              110
+            ],
+            "point_offset": [
+              -64,
+              25
+            ]
+          },
+          "next": {
+            "reference_rect": [
+              645,
+              1865,
+              88,
+              110
+            ],
+            "click_point": [
+              691,
+              1919
+            ],
+            "anchor": "page_dots",
+            "intent": "next info page",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Next",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              187,
+              -30,
+              88,
+              110
+            ],
+            "point_offset": [
+              233,
+              24
+            ]
+          }
+        },
+        "label": "Tournament fleet info",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": [
+          "Three-page persistent info carousel; different from occasional OK-only information interrupt."
+        ]
+      },
+      "tournament_history": {
+        "anchors": {
+          "dialog": [
+            95,
+            173,
+            890,
+            2195
+          ],
+          "title": [
+            335,
+            195,
+            420,
+            112
+          ],
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "controls": {
+          "close": {
+            "reference_rect": [
+              870,
+              205,
+              80,
+              80
+            ],
+            "click_point": [
+              910,
+              245
+            ],
+            "anchor": "dialog",
+            "intent": "return tournament lobby",
+            "position_scope": "native reference; reacquire anchor and verify before input",
+            "label": "Close",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              775,
+              32,
+              80,
+              80
+            ],
+            "point_offset": [
+              815,
+              72
+            ]
+          }
+        },
+        "collection": {
+          "viewport": [
+            115,
+            333,
+            850,
+            2028
+          ],
+          "axis": "vertical",
+          "row_reference": [
+            117,
+            345,
+            846,
+            174
+          ],
+          "identity": [
+            "league",
+            "date"
+          ],
+          "fields_relative_to_row": {
+            "league_icon": [
+              10,
+              10,
+              135,
+              150
+            ],
+            "league_name": [
+              155,
+              12,
+              440,
+              58
+            ],
+            "date": [
+              605,
+              20,
+              215,
+              50
+            ],
+            "max_wave": [
+              155,
+              100,
+              320,
+              45
+            ],
+            "rank": [
+              465,
+              100,
+              360,
+              45
+            ]
+          },
+          "swipe_test": {
+            "from": [
+              670,
+              2100
+            ],
+            "to": [
+              670,
+              800
+            ],
+            "duration_ms": 650,
+            "movement_verified": true
+          },
+          "bottom_verified": false
+        },
+        "label": "Tournament history",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": [
+          "Partial rows must be clipped; row date distinguishes repeated league art; row clicking untested."
+        ]
+      },
+      "tournament_prizes": {
+        "identity_text": "PRIZES",
+        "anchors": {
+          "dialog": [
+            65,
+            425,
+            950,
+            1710
+          ],
+          "title": [
+            420,
+            475,
+            245,
+            65
+          ],
+          "league_grid": [
+            117,
+            664,
+            846,
+            450
+          ],
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "controls": {
+          "close": {
+            "reference_rect": [
+              920,
+              447,
+              78,
+              80
+            ],
+            "click_point": [
+              957,
+              486
+            ],
+            "anchor": "dialog",
+            "intent": "close prizes",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Close",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              855,
+              22,
+              78,
+              80
+            ],
+            "point_offset": [
+              892,
+              61
+            ]
+          },
+          "copper": {
+            "reference_rect": [
+              120,
+              667,
+              195,
+              210
+            ],
+            "click_point": [
+              217,
+              772
+            ],
+            "anchor": "league_grid",
+            "intent": "show copper prizes; green border means selected",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Copper",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              3,
+              3,
+              195,
+              210
+            ],
+            "point_offset": [
+              100,
+              108
+            ]
+          },
+          "silver": {
+            "reference_rect": [
+              335,
+              667,
+              195,
+              210
+            ],
+            "click_point": [
+              432,
+              772
+            ],
+            "anchor": "league_grid",
+            "intent": "show silver prizes; green border means selected",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Silver",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              218,
+              3,
+              195,
+              210
+            ],
+            "point_offset": [
+              315,
+              108
+            ]
+          },
+          "gold": {
+            "reference_rect": [
+              550,
+              667,
+              195,
+              210
+            ],
+            "click_point": [
+              647,
+              772
+            ],
+            "anchor": "league_grid",
+            "intent": "show gold prizes; green border means selected",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Gold",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              433,
+              3,
+              195,
+              210
+            ],
+            "point_offset": [
+              530,
+              108
+            ]
+          },
+          "platinum": {
+            "reference_rect": [
+              765,
+              667,
+              195,
+              210
+            ],
+            "click_point": [
+              862,
+              772
+            ],
+            "anchor": "league_grid",
+            "intent": "show platinum prizes; green border means selected",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Platinum",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              648,
+              3,
+              195,
+              210
+            ],
+            "point_offset": [
+              745,
+              108
+            ]
+          },
+          "champion": {
+            "reference_rect": [
+              120,
+              897,
+              195,
+              210
+            ],
+            "click_point": [
+              217,
+              1002
+            ],
+            "anchor": "league_grid",
+            "intent": "show champion prizes; green border means selected",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Champion",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              3,
+              233,
+              195,
+              210
+            ],
+            "point_offset": [
+              100,
+              338
+            ]
+          },
+          "legend": {
+            "reference_rect": [
+              335,
+              897,
+              195,
+              210
+            ],
+            "click_point": [
+              432,
+              1002
+            ],
+            "anchor": "league_grid",
+            "intent": "show legend prizes; green border means selected",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Legend",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              218,
+              233,
+              195,
+              210
+            ],
+            "point_offset": [
+              315,
+              338
+            ]
+          },
+          "mythic": {
+            "reference_rect": [
+              550,
+              897,
+              195,
+              210
+            ],
+            "click_point": [
+              647,
+              1002
+            ],
+            "anchor": "league_grid",
+            "intent": "show mythic prizes; green border means selected",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Mythic",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              433,
+              233,
+              195,
+              210
+            ],
+            "point_offset": [
+              530,
+              338
+            ]
+          }
+        },
+        "collection": {
+          "viewport": [
+            100,
+            1160,
+            880,
+            805
+          ],
+          "columns": 2,
+          "row_stride_reference": 163,
+          "cell_reference": [
+            103,
+            1161,
+            429,
+            149
+          ],
+          "identity": [
+            "selected_league",
+            "rank_range"
+          ],
+          "note": "Read rank range and currency labels; Keys is absent in some leagues. Values/rank groupings vary."
+        },
+        "label": "Tournament prizes",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": []
+      },
+      "tournament_preset_picker": {
+        "identity_text": "SELECT A PRESET",
+        "anchors": {
+          "dialog": [
+            60,
+            855,
+            960,
+            865
+          ],
+          "title": [
+            300,
+            1100,
+            495,
+            65
+          ],
+          "context": [
+            80,
+            1430,
+            440,
+            60
+          ],
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "controls": {
+          "close": {
+            "reference_rect": [
+              905,
+              892,
+              80,
+              80
+            ],
+            "click_point": [
+              944,
+              932
+            ],
+            "anchor": "dialog",
+            "intent": "close without changing preset",
+            "position_scope": "reference only; reacquire and verify",
+            "label": "Close",
+            "action": "observe",
+            "optional": false,
+            "position": "anchor_relative",
+            "rect_offset": [
+              845,
+              37,
+              80,
+              80
+            ],
+            "point_offset": [
+              884,
+              77
+            ]
+          }
+        },
+        "collection": {
+          "viewport": [
+            90,
+            1500,
+            900,
+            200
+          ],
+          "identity": [
+            "local preset name"
+          ],
+          "note": "None plus variable player-defined pills. Determine boundaries; never hardcode observed names/count or choose one while mapping."
+        },
+        "label": "Tournament preset picker",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified",
+        "rules": []
+      },
+      "tournament_battle": {
+        "anchors": {
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ]
+        },
+        "controls": {
+          "menu": {
+            "label": "Open battle menu",
+            "reference_rect": [
+              966,
+              15,
+              98,
+              98
+            ],
+            "click_point": [
+              1015,
+              64
+            ],
+            "anchor": "screen",
+            "position": "anchor_relative",
+            "rect_offset": [
+              966,
+              15,
+              98,
+              98
+            ],
+            "point_offset": [
+              1015,
+              64
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "heat_progress": {
+            "label": "Heat progress; click not tested",
+            "reference_rect": [
+              342,
+              23,
+              410,
+              73
+            ],
+            "click_point": [
+              547,
+              59
+            ],
+            "anchor": "screen",
+            "position": "anchor_relative",
+            "rect_offset": [
+              342,
+              23,
+              410,
+              73
+            ],
+            "point_offset": [
+              547,
+              59
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "speed_down": {
+            "label": "Decrease speed; not clicked",
+            "reference_rect": [
+              674,
+              1537,
+              72,
+              75
+            ],
+            "click_point": [
+              710,
+              1574
+            ],
+            "anchor": "screen",
+            "position": "anchor_relative",
+            "rect_offset": [
+              674,
+              1537,
+              72,
+              75
+            ],
+            "point_offset": [
+              710,
+              1574
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "speed_up": {
+            "label": "Increase speed; not clicked",
+            "reference_rect": [
+              873,
+              1537,
+              72,
+              75
+            ],
+            "click_point": [
+              909,
+              1574
+            ],
+            "anchor": "screen",
+            "position": "anchor_relative",
+            "rect_offset": [
+              873,
+              1537,
+              72,
+              75
+            ],
+            "point_offset": [
+              909,
+              1574
+            ],
+            "action": "observe",
+            "optional": false
+          }
+        },
+        "read_regions": {
+          "boss_stats": [
+            346,
+            100,
+            411,
+            62
+          ],
+          "wave_panel": [
+            550,
+            1618,
+            516,
+            163
+          ],
+          "heat_progress": [
+            342,
+            23,
+            410,
+            73
+          ],
+          "sprint_state": [
+            20,
+            349,
+            94,
+            75
+          ]
+        },
+        "rules": [
+          "Flame progress is tournament Heat, not normal-run perk choice.",
+          "Tier uses tournament league glyph and plus suffix.",
+          "Upgrade viewport can start mid-list.",
+          "Do not change speed or trigger abilities during read-only mapping."
+        ],
+        "label": "Tournament battle",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified"
+      },
+      "tournament_battle_menu": {
+        "anchors": {
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ],
+          "menu": [
+            845,
+            0,
+            235,
+            855
+          ]
+        },
+        "controls": {
+          "store": {
+            "label": "store",
+            "reference_rect": [
+              862,
+              15,
+              96,
+              99
+            ],
+            "click_point": [
+              910,
+              64
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              17,
+              15,
+              96,
+              99
+            ],
+            "point_offset": [
+              65,
+              64
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "close": {
+            "label": "close",
+            "reference_rect": [
+              966,
+              15,
+              98,
+              99
+            ],
+            "click_point": [
+              1015,
+              64
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              121,
+              15,
+              98,
+              99
+            ],
+            "point_offset": [
+              170,
+              64
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "missions": {
+            "label": "missions",
+            "reference_rect": [
+              862,
+              120,
+              96,
+              99
+            ],
+            "click_point": [
+              910,
+              169
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              17,
+              120,
+              96,
+              99
+            ],
+            "point_offset": [
+              65,
+              169
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "options": {
+            "label": "options",
+            "reference_rect": [
+              966,
+              120,
+              98,
+              99
+            ],
+            "click_point": [
+              1015,
+              169
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              121,
+              120,
+              98,
+              99
+            ],
+            "point_offset": [
+              170,
+              169
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "cards": {
+            "label": "cards",
+            "reference_rect": [
+              862,
+              226,
+              96,
+              99
+            ],
+            "click_point": [
+              910,
+              275
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              17,
+              226,
+              96,
+              99
+            ],
+            "point_offset": [
+              65,
+              275
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "research": {
+            "label": "research",
+            "reference_rect": [
+              966,
+              226,
+              98,
+              99
+            ],
+            "click_point": [
+              1015,
+              275
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              121,
+              226,
+              98,
+              99
+            ],
+            "point_offset": [
+              170,
+              275
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "priority": {
+            "label": "priority",
+            "reference_rect": [
+              862,
+              333,
+              96,
+              99
+            ],
+            "click_point": [
+              910,
+              382
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              17,
+              333,
+              96,
+              99
+            ],
+            "point_offset": [
+              65,
+              382
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "modules": {
+            "label": "modules",
+            "reference_rect": [
+              966,
+              333,
+              98,
+              99
+            ],
+            "click_point": [
+              1015,
+              382
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              121,
+              333,
+              98,
+              99
+            ],
+            "point_offset": [
+              170,
+              382
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "events": {
+            "label": "events",
+            "reference_rect": [
+              862,
+              438,
+              96,
+              99
+            ],
+            "click_point": [
+              910,
+              487
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              17,
+              438,
+              96,
+              99
+            ],
+            "point_offset": [
+              65,
+              487
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "orb_adjuster": {
+            "label": "orb_adjuster",
+            "reference_rect": [
+              966,
+              438,
+              98,
+              99
+            ],
+            "click_point": [
+              1015,
+              487
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              121,
+              438,
+              98,
+              99
+            ],
+            "point_offset": [
+              170,
+              487
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "conditions": {
+            "label": "conditions",
+            "reference_rect": [
+              862,
+              542,
+              96,
+              99
+            ],
+            "click_point": [
+              910,
+              591
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              17,
+              542,
+              96,
+              99
+            ],
+            "point_offset": [
+              65,
+              591
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "tournament": {
+            "label": "tournament",
+            "reference_rect": [
+              966,
+              542,
+              98,
+              99
+            ],
+            "click_point": [
+              1015,
+              591
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              121,
+              542,
+              98,
+              99
+            ],
+            "point_offset": [
+              170,
+              591
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "history": {
+            "label": "history",
+            "reference_rect": [
+              862,
+              649,
+              96,
+              99
+            ],
+            "click_point": [
+              910,
+              698
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              17,
+              649,
+              96,
+              99
+            ],
+            "point_offset": [
+              65,
+              698
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "guild": {
+            "label": "guild",
+            "reference_rect": [
+              966,
+              649,
+              98,
+              99
+            ],
+            "click_point": [
+              1015,
+              698
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              121,
+              649,
+              98,
+              99
+            ],
+            "point_offset": [
+              170,
+              698
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "exit": {
+            "label": "exit",
+            "reference_rect": [
+              862,
+              754,
+              202,
+              85
+            ],
+            "click_point": [
+              963,
+              796
+            ],
+            "anchor": "menu",
+            "position": "container",
+            "rect_offset": [
+              17,
+              754,
+              202,
+              85
+            ],
+            "point_offset": [
+              118,
+              796
+            ],
+            "action": "observe",
+            "optional": false
+          }
+        },
+        "rules": [
+          "Positions below describe this observed frame only. Resolve icons anywhere in menu, never assign universal rows."
+        ],
+        "label": "Tournament battle menu",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified"
+      },
+      "tournament_leaderboard": {
+        "identity_text": "You are participating in a tournament",
+        "anchors": {
+          "screen": [
+            0,
+            0,
+            1080,
+            2560
+          ],
+          "header": [
+            20,
+            100,
+            410,
+            65
+          ],
+          "columns": [
+            205,
+            495,
+            670,
+            45
+          ],
+          "prize_panel": [
+            0,
+            2045,
+            1080,
+            235
+          ]
+        },
+        "controls": {
+          "return": {
+            "label": "Return to active battle",
+            "reference_rect": [
+              200,
+              2420,
+              680,
+              85
+            ],
+            "click_point": [
+              540,
+              2462
+            ],
+            "anchor": "screen",
+            "position": "anchor_relative",
+            "rect_offset": [
+              200,
+              2420,
+              680,
+              85
+            ],
+            "point_offset": [
+              540,
+              2462
+            ],
+            "action": "observe",
+            "optional": false
+          },
+          "all_prizes": {
+            "label": "View all prizes",
+            "reference_rect": [
+              795,
+              2095,
+              257,
+              135
+            ],
+            "click_point": [
+              923,
+              2162
+            ],
+            "anchor": "prize_panel",
+            "position": "anchor_relative",
+            "rect_offset": [
+              795,
+              50,
+              257,
+              135
+            ],
+            "point_offset": [
+              923,
+              117
+            ],
+            "action": "observe",
+            "optional": false
+          }
+        },
+        "collection": {
+          "viewport": [
+            210,
+            548,
+            660,
+            1497
+          ],
+          "axis": "vertical",
+          "row_reference": [
+            210,
+            550,
+            660,
+            90
+          ],
+          "fields_relative_to_row": {
+            "rank": [
+              20,
+              20,
+              60,
+              55
+            ],
+            "avatar": [
+              95,
+              5,
+              90,
+              80
+            ],
+            "name": [
+              190,
+              20,
+              290,
+              55
+            ],
+            "badge": [
+              490,
+              10,
+              65,
+              70
+            ],
+            "wave": [
+              575,
+              20,
+              80,
+              55
+            ]
+          },
+          "identity": [
+            "player identity; rank is not unique"
+          ],
+          "rules": [
+            "Rank ties repeat numbers; rows can reorder as players progress.",
+            "Promotion divider is not a player row and alters row spacing.",
+            "Fixed prize panel occludes bottom of list; ignore clipped rows.",
+            "Do not ship player names or tournament ID."
+          ],
+          "scroll_movement_verified": true,
+          "bottom_verified": false
+        },
+        "read_regions": {
+          "current_prize": [
+            75,
+            2050,
+            335,
+            217
+          ],
+          "next_prize": [
+            430,
+            2050,
+            335,
+            217
+          ],
+          "time_remaining": [
+            345,
+            2285,
+            415,
+            50
+          ],
+          "tournament_id": [
+            322,
+            2340,
+            440,
+            32
+          ]
+        },
+        "label": "Tournament leaderboard",
+        "acquisition": "observe",
+        "verification": "reference_observed_not_runtime_verified"
+      },
+      "guild_hub": {
+        "controls": {},
+        "label": "Guild tabs",
+        "acquisition": "automatic",
+        "rules": [
+          "Shared entry; the game remembers the last selected tab. Select the required tab explicitly."
+        ]
+      },
+      "events_hub": {
+        "controls": {},
+        "label": "Events tabs",
+        "acquisition": "automatic",
+        "rules": [
+          "Shared entry; the game remembers the last selected tab. Select the required tab explicitly."
+        ]
+      },
+      "perks_hub": {
+        "controls": {},
+        "label": "Perk tabs",
+        "acquisition": "automatic",
+        "rules": [
+          "Perks remembers the last selected tab and scroll. Select each tab explicitly."
+        ]
+      },
+      "themes_hub": {
+        "controls": {},
+        "label": "Profile, themes and relics tabs",
+        "acquisition": "automatic",
+        "rules": [
+          "Select Themes explicitly; entry may show Profile."
+        ]
+      }
+    },
+    "flows": {
+      "remap": {
+        "automatic": [
+          "extract_local_artwork",
+          "verify_home",
+          "walk_available_safe_routes",
+          "verify_on_second_frame",
+          "save_local_mapping"
+        ],
+        "rule": "Only actually verified controls count as mapped; optional unseen screens remain unobserved."
+      },
+      "module_inventory": {
+        "steps": [
+          "snapshot_all_primary_and_assist_slots",
+          "persist_restore_journal",
+          "unequip_under_explicit_policy",
+          "scan_inventory",
+          "restore_each_original_assignment",
+          "verify_all_assignments"
+        ],
+        "completion": "Restoration verified, not merely inventory scanned"
+      },
+      "perk_selection": {
+        "steps": [
+          "detect_pending",
+          "identify_current_offers",
+          "apply_app_priority",
+          "select_one",
+          "verify_change",
+          "repeat_if_pending"
+        ],
+        "priority": "Independent configurable app priority can override game priority even if fully unlocked.",
+        "game_auto_pick_required": false
+      },
+      "result_snapshot": {
+        "steps": [
+          "save_summary",
+          "capture_all_selected_perks",
+          "copy_or_scroll_report",
+          "verify_run_identity",
+          "save_locally",
+          "then_home_or_retry"
+        ]
+      },
+      "skin_quest": {
+        "steps": [
+          "remember_original",
+          "equip_different_owned_skin",
+          "restore_original",
+          "verify_restoration_and_quest"
+        ],
+        "opt_in": true
+      },
+      "shatter": {
+        "opt_in": true,
+        "never_during_setup": true,
+        "steps": [
+          "filter_allowed_rarity",
+          "reject_locked",
+          "select_at_most_12",
+          "verify_preview",
+          "confirm",
+          "handle_rare_warning",
+          "collect_rewards"
+        ]
+      },
+      "auto_merge": {
+        "opt_in": true,
+        "never_during_setup": true,
+        "steps": [
+          "open_preview",
+          "verify_proposals",
+          "confirm_allowed_batch",
+          "collect_rewards",
+          "verify_inventory"
+        ]
+      }
+    },
+    "tournament_observed_transitions": [
+      {
+        "source": "home",
+        "action": "open_tournament",
+        "destination": "tournament_ticket_reward",
+        "observed": true
+      },
+      {
+        "source": "tournament_ticket_reward",
+        "action": "claim",
+        "destination": "tournament_lobby",
+        "observed": true
+      },
+      {
+        "source": "tournament_lobby",
+        "action": "information",
+        "destination": "tournament_information",
+        "observed": true
+      },
+      {
+        "source": "tournament_information",
+        "action": "next",
+        "destination": "tournament_wave_speed_info",
+        "observed": true
+      },
+      {
+        "source": "tournament_wave_speed_info",
+        "action": "next",
+        "destination": "tournament_fleet_info",
+        "observed": true
+      },
+      {
+        "source": "tournament_fleet_info",
+        "action": "close",
+        "destination": "tournament_lobby",
+        "observed": true
+      },
+      {
+        "source": "tournament_lobby",
+        "action": "history",
+        "destination": "tournament_history",
+        "observed": true
+      },
+      {
+        "source": "tournament_history",
+        "action": "close",
+        "destination": "tournament_lobby",
+        "observed": true
+      },
+      {
+        "source": "tournament_lobby",
+        "action": "heat",
+        "destination": "tournament_heat",
+        "observed": true
+      },
+      {
+        "source": "tournament_heat",
+        "action": "overheat",
+        "destination": "tournament_overheat",
+        "observed": true
+      },
+      {
+        "source": "tournament_overheat",
+        "action": "close",
+        "destination": "tournament_lobby",
+        "observed": true
+      },
+      {
+        "source": "tournament_lobby",
+        "action": "all_prizes",
+        "destination": "tournament_prizes",
+        "observed": true
+      },
+      {
+        "source": "tournament_prizes",
+        "action": "copper",
+        "destination": "tournament_prizes",
+        "observed": true
+      },
+      {
+        "source": "tournament_prizes",
+        "action": "close",
+        "destination": "tournament_lobby",
+        "observed": true
+      },
+      {
+        "source": "tournament_lobby",
+        "action": "preset",
+        "destination": "tournament_preset_picker",
+        "observed": true
+      },
+      {
+        "source": "tournament_preset_picker",
+        "action": "close",
+        "destination": "tournament_lobby",
+        "observed": true
+      },
+      {
+        "source": "tournament_lobby",
+        "action": "battle",
+        "destination": "tournament_battle",
+        "observed": true
+      },
+      {
+        "source": "tournament_battle",
+        "action": "menu",
+        "destination": "tournament_battle_menu",
+        "observed": true
+      },
+      {
+        "source": "tournament_battle_menu",
+        "action": "tournament",
+        "destination": "tournament_leaderboard",
+        "observed": true
+      },
+      {
+        "source": "tournament_leaderboard",
+        "action": "return",
+        "destination": "tournament_battle_menu",
+        "observed": true
+      }
+    ],
+    "tournament_remaining": [
+      "heat information popup",
+      "other league prize selection transitions",
+      "ticket unavailable / purchase options",
+      "completed tournament and reward claim"
+    ]
+  },
+  "execution": {
+    "schema_version": 1,
+    "start": "home",
+    "screen_aliases": {
+      "tournament_battle": "battle",
+      "tournament_battle_menu": "battle_menu"
+    },
+    "preconditions": [
+      "source_screen_verified",
+      "control_verified_twice"
+    ],
+    "unknown_destination": "stop_without_retry",
+    "tournament_availability": "observed_open_not_calendar",
+    "mapping_excludes": [
+      "purchase",
+      "claim",
+      "start_battle",
+      "configure",
+      "manual_only"
+    ],
+    "shared_battle_contexts": [
+      "normal",
+      "dissonant",
+      "tournament"
+    ],
+    "reference_geometry_is_input_proof": false
+  },
+  "navigation_art": {
+    "battle": {
+      "names": [
+        "swords"
+      ],
+      "search": [
+        0,
+        2400,
+        180,
+        150
+      ],
+      "silhouette": true
+    },
+    "workshop": {
+      "names": [
+        "hammer"
+      ],
+      "search": [
+        180,
+        2400,
+        180,
+        150
+      ],
+      "silhouette": true
+    },
+    "cards": {
+      "names": [
+        "card"
+      ],
+      "search": [
+        360,
+        2400,
+        180,
+        150
+      ],
+      "silhouette": true
+    },
+    "modules": {
+      "names": [
+        "modules-icon"
+      ],
+      "search": [
+        540,
+        2400,
+        180,
+        150
+      ],
+      "silhouette": true
+    },
+    "lab": {
+      "names": [
+        "florence-flask"
+      ],
+      "search": [
+        720,
+        2400,
+        180,
+        150
+      ],
+      "silhouette": true
+    },
+    "shop": {
+      "names": [
+        "shopping-cart"
+      ],
+      "search": [
+        900,
+        2400,
+        180,
+        150
+      ],
+      "silhouette": true
+    }
+  },
+  "runtime_regions": {
+    "ad_gems": {
+      "search": [
+        0,
+        200,
+        320,
+        2200
+      ],
+      "note": "Battle left HUD rail: Ad Gems moves with card and temporary-effect rows and the collapsed upgrade panel. Verify cyan offer, CLAIM and amount 6; never use this as a fixed tap point."
+    }
+  },
+  "reward_collection": {
+    "event_missions": {
+      "viewport": [
+        10,
+        370,
+        1060,
+        2010
+      ],
+      "milestones": [
+        15,
+        370,
+        1050,
+        480
+      ],
+      "quest_button_width": [
+        350,
+        1000
+      ],
+      "milestone_button_width": [
+        75,
+        220
+      ],
+      "button_height": [
+        32,
+        135
+      ],
+      "claim_text": "^CLAIM(?:\\s+\\d+.*)?$",
+      "scroll": [
+        540,
+        2200,
+        540,
+        950
+      ],
+      "return": [
+        540,
+        2455
+      ],
+      "note": "Quest buttons move with their cards; detect their magenta border and verify CLAIM inside. After all quest pages, return to top for four reward slots. Paid track is claim-only; never purchase a boost.",
+      "milestone_slots": [
+        [
+          345,
+          430,
+          165,
+          80
+        ],
+        [
+          705,
+          430,
+          165,
+          80
+        ],
+        [
+          425,
+          660,
+          165,
+          80
+        ],
+        [
+          810,
+          660,
+          165,
+          80
+        ]
+      ]
+    },
+    "reveal": [
+      {
+        "rect": [
+          770,
+          320,
+          260,
+          110
+        ],
+        "labels": [
+          "SKIP"
+        ]
+      },
+      {
+        "rect": [
+          250,
+          1850,
+          580,
+          230
+        ],
+        "labels": [
+          "OK",
+          "NEXT",
+          "CLAIM"
+        ]
+      }
+    ]
+  },
+  "geometry_fields": {
+    "/navigation/battle": "xy",
+    "/navigation/workshop": "xy",
+    "/navigation/cards": "xy",
+    "/navigation/modules": "xy",
+    "/navigation/lab": "xy",
+    "/navigation/shop": "xy",
+    "/return_strip": "xy",
+    "/tab_bands/cards": "yy",
+    "/tab_bands/modules": "yy",
+    "/tab_bands/guardians": "yy",
+    "/tab_bands/bots": "yy",
+    "/tab_bands/workshop": "yy",
+    "/tab_bands/picker": "yy",
+    "/module_slots/large/0": "xy",
+    "/module_slots/large/1": "xy",
+    "/module_slots/large/2": "xy",
+    "/module_slots/large/3": "xy",
+    "/module_slots/small/0": "xy",
+    "/module_slots/small/1": "xy",
+    "/module_slots/small/2": "xy",
+    "/module_slots/small/3": "xy",
+    "/screens/home/anchors/0/rect": "xyxy",
+    "/screens/home/anchors/1/rect": "xyxy",
+    "/screens/home/anchors/2/rect": "xyxy",
+    "/screens/home/targets/0/rect": "xyxy",
+    "/screens/home/targets/1/rect": "xyxy",
+    "/screens/home/targets/2/rect": "xyxy",
+    "/screens/cards/anchors/0/rect": "xyxy",
+    "/screens/cards/anchors/1/rect": "xyxy",
+    "/screens/cards/anchors/2/rect": "xyxy",
+    "/screens/cards/targets/0/rect": "xyxy",
+    "/screens/cards/targets/1/rect": "xyxy",
+    "/screens/modules/anchors/0/rect": "xyxy",
+    "/screens/modules/anchors/1/rect": "xyxy",
+    "/screens/modules/anchors/2/rect": "xyxy",
+    "/screens/modules/targets/0/rect": "xyxy",
+    "/screens/modules/targets/1/rect": "xyxy",
+    "/screens/guild/anchors/0/rect": "xyxy",
+    "/screens/guild/targets/0/rect": "xyxy",
+    "/screens/guild/targets/1/rect": "xyxy",
+    "/screens/guild/targets/2/rect": "xyxy",
+    "/screens/guild/targets/3/rect": "xyxy",
+    "/screens/guild/targets/4/rect": "xyxy",
+    "/screens/guild/selected_tab/rects/0": "xyxy",
+    "/screens/guild/selected_tab/rects/1": "xyxy",
+    "/screens/guild/selected_tab/rects/2": "xyxy",
+    "/screens/guardians/anchors/0/rect": "xyxy",
+    "/screens/guardians/selected_tab/rects/0": "xyxy",
+    "/screens/guardians/selected_tab/rects/1": "xyxy",
+    "/screens/guardians/selected_tab/rects/2": "xyxy",
+    "/screens/guild_store/anchors/0/rect": "xyxy",
+    "/screens/guild_store/targets/0/rect": "xyxy",
+    "/screens/guild_store/targets/1/rect": "xyxy",
+    "/screens/guild_store/targets/2/rect": "xyxy",
+    "/screens/guild_store/targets/3/rect": "xyxy",
+    "/screens/guild_store/targets/4/rect": "xyxy",
+    "/screens/guild_store/scan_collection/viewport": "xyxy",
+    "/screens/guild_store/selected_tab/rects/0": "xyxy",
+    "/screens/guild_store/selected_tab/rects/1": "xyxy",
+    "/screens/guild_store/selected_tab/rects/2": "xyxy",
+    "/screens/events/anchors/0/rect": "xyxy",
+    "/screens/events/targets/0/rect": "xyxy",
+    "/screens/events/targets/1/rect": "xyxy",
+    "/screens/events/targets/2/rect": "xyxy",
+    "/screens/events/selected_tab/rects/0": "xyxy",
+    "/screens/events/selected_tab/rects/1": "xyxy",
+    "/screens/events/selected_tab/rects/2": "xyxy",
+    "/screens/bots/anchors/0/rect": "xyxy",
+    "/screens/bots/selected_tab/rects/0": "xyxy",
+    "/screens/bots/selected_tab/rects/1": "xyxy",
+    "/screens/bots/selected_tab/rects/2": "xyxy",
+    "/screens/shop/anchors/0/rect": "xyxy",
+    "/screens/shop/targets/0/rect": "xyxy",
+    "/screens/shop/scan_collection/viewport": "xyxy",
+    "/screens/picker/anchors/0/rect": "xyxy",
+    "/screens/picker/anchors/1/rect": "xyxy",
+    "/screens/picker/targets/0/rect": "xyxy",
+    "/screens/daily_missions/anchors/0/rect": "xyxy",
+    "/screens/daily_missions/anchors/1/rect": "xyxy",
+    "/screens/daily_missions/targets/0/rect": "xyxy",
+    "/screens/daily_missions/scan_collection/viewport": "xyxy",
+    "/screens/battle_history/anchors/0/rect": "xyxy",
+    "/screens/battle_history/scan_collection/viewport": "xyxy",
+    "/screens/global_presets/anchors/0/rect": "xyxy",
+    "/screens/global_presets/anchors/1/rect": "xyxy",
+    "/screens/perks_first/anchors/0/rect": "xyxy",
+    "/screens/perks_first/selected_pill/rects/0": "xyxy",
+    "/screens/perks_first/selected_pill/rects/1": "xyxy",
+    "/screens/perks_first/selected_pill/rects/2": "xyxy",
+    "/screens/perks_ban/anchors/0/rect": "xyxy",
+    "/screens/perks_ban/selected_pill/rects/0": "xyxy",
+    "/screens/perks_ban/selected_pill/rects/1": "xyxy",
+    "/screens/perks_ban/selected_pill/rects/2": "xyxy",
+    "/screens/perks_priority/anchors/0/rect": "xyxy",
+    "/screens/perks_priority/selected_pill/rects/0": "xyxy",
+    "/screens/perks_priority/selected_pill/rects/1": "xyxy",
+    "/screens/perks_priority/selected_pill/rects/2": "xyxy",
+    "/screens/themes/anchors/0/rect": "xyxy",
+    "/screens/themes/selected_tab/rects/0": "xyxy",
+    "/screens/themes/selected_tab/rects/1": "xyxy",
+    "/screens/themes/selected_tab/rects/2": "xyxy",
+    "/screens/event_shop/anchors/0/rect": "xyxy",
+    "/screens/event_shop/scan_collection/viewport": "xyxy",
+    "/screens/event_shop/selected_tab/rects/0": "xyxy",
+    "/screens/event_shop/selected_tab/rects/1": "xyxy",
+    "/screens/event_shop/selected_tab/rects/2": "xyxy",
+    "/screens/labs/anchors/0/rect": "xyxy",
+    "/screens/lab_selection/anchors/0/rect": "xyxy",
+    "/screens/guild_hub/anchors/0/rect": "xyxy",
+    "/screens/events_hub/anchors/0/rect": "xyxy",
+    "/screens/perks_hub/anchors/0/rect": "xyxy",
+    "/screens/themes_hub/anchors/0/rect": "xyxy",
+    "/routes/4/point": "xy",
+    "/routes/4/icon/rect": "xyxy",
+    "/routes/5/verify/rect": "xyxy",
+    "/routes/6/point": "xy",
+    "/routes/6/verify/rect": "xyxy",
+    "/routes/7/point": "xy",
+    "/routes/7/verify/rect": "xyxy",
+    "/routes/8/point": "xy",
+    "/routes/8/verify/rect": "xyxy",
+    "/routes/9/point": "xy",
+    "/routes/9/icon/rect": "xyxy",
+    "/routes/10/verify/rect": "xyxy",
+    "/routes/11/point": "xy",
+    "/routes/11/verify/rect": "xyxy",
+    "/routes/12/point": "xy",
+    "/routes/12/verify/rect": "xyxy",
+    "/routes/15/point": "xy",
+    "/routes/15/icon/rect": "xyxy",
+    "/routes/16/point": "xy",
+    "/routes/16/icon/rect": "xyxy",
+    "/routes/17/verify/rect": "xyxy",
+    "/routes/18/verify/rect": "xyxy",
+    "/routes/19/art/search": "xyxy",
+    "/routes/20/verify/rect": "xyxy",
+    "/routes/21/art/search": "xyxy",
+    "/routes/22/art/search": "xyxy",
+    "/routes/23/art/search": "xyxy",
+    "/routes/24/verify/rect": "xyxy",
+    "/routes/25/verify/rect": "xyxy",
+    "/routes/26/verify/rect": "xyxy",
+    "/routes/27/art/search": "xyxy",
+    "/routes/28/art/search": "xyxy",
+    "/routes/29/verify/rect": "xyxy",
+    "/routes/30/verify/rect": "xyxy",
+    "/routes/31/icon/rect": "xyxy",
+    "/routes/32/verify/rect": "xyxy",
+    "/routes/33/verify/rect": "xyxy",
+    "/routes/34/verify/rect": "xyxy",
+    "/routes/36/verify/rect": "xyxy",
+    "/routes/37/art/search": "xyxy",
+    "/module_descriptor/icon_search": "xyxy",
+    "/asset_bindings/home~1tile_guild.png/search": "xyxy",
+    "/asset_bindings/home~1tile_guild.png/reference_rect": "xyxy",
+    "/asset_bindings/home~1tile_event.png/search": "xyxy",
+    "/asset_bindings/home~1tile_event.png/reference_rect": "xyxy",
+    "/asset_bindings/presets~1picker_icon.png/search": "xyxy",
+    "/asset_bindings/presets~1close_x.png/search": "xyxy",
+    "/asset_bindings/modules~1v29_dialog_close.png/search": "xyxy",
+    "/asset_bindings/tourney~1trophy_tile.png/search": "xyxy",
+    "/asset_bindings/tourney~1trophy_tile.png/reference_rect": "xyxy",
+    "/asset_bindings/cards~1death_ray.png/search": "xyxy",
+    "/asset_bindings/cards~1extra_orb.png/search": "xyxy",
+    "/asset_bindings/guardian~1chip_attack.png/search": "xyxy",
+    "/asset_bindings/guardian~1chip_attack.png/reference_rect": "xyxy",
+    "/asset_bindings/guardian~1chip_ally.png/search": "xyxy",
+    "/asset_bindings/guardian~1chip_ally.png/reference_rect": "xyxy",
+    "/asset_bindings/guardian~1chip_fetch.png/search": "xyxy",
+    "/asset_bindings/guardian~1chip_fetch.png/reference_rect": "xyxy",
+    "/asset_bindings/guardian~1chip_scout.png/search": "xyxy",
+    "/asset_bindings/guardian~1chip_scout.png/reference_rect": "xyxy",
+    "/asset_bindings/guardian~1chip_summon.png/search": "xyxy",
+    "/asset_bindings/guardian~1chip_summon.png/reference_rect": "xyxy",
+    "/asset_bindings/icons~1chest_lock.png/search": "xyxy",
+    "/asset_bindings/uw~1black_hole.png/search": "xyxy",
+    "/asset_bindings/uw~1chain_lightning.png/search": "xyxy",
+    "/asset_bindings/uw~1chronofield.png/search": "xyxy",
+    "/asset_bindings/uw~1death_wave.png/search": "xyxy",
+    "/asset_bindings/uw~1golden_tower.png/search": "xyxy",
+    "/asset_bindings/uw~1inner_land_mines.png/search": "xyxy",
+    "/asset_bindings/uw~1smart_missiles.png/search": "xyxy",
+    "/asset_bindings/uw~1spotlight.png/search": "xyxy",
+    "/asset_bindings/uw~1poison_swamp.png/search": "xyxy",
+    "/asset_bindings/buttons~1nuke.png/button_rect": "xyxy",
+    "/asset_bindings/buttons~1nuke.png/search": "xyxy",
+    "/asset_bindings/buttons~1nuke.png/reference_rect": "xyxy",
+    "/asset_bindings/buttons~1demon_mode.png/button_rect": "xyxy",
+    "/asset_bindings/buttons~1demon_mode.png/search": "xyxy",
+    "/asset_bindings/buttons~1demon_mode.png/reference_rect": "xyxy",
+    "/asset_bindings/uw~1toggle_on.png/search": "xyxy",
+    "/asset_bindings/uw~1toggle_off.png/search": "xyxy",
+    "/asset_bindings/icons~1tile_quests.png/search": "xyxy",
+    "/asset_bindings/floaters~1second_wind.png/search": "xyxy",
+    "/asset_bindings/navigation~1cards_home.png/search": "xyxy",
+    "/asset_bindings/navigation~1cards_home.png/reference_rect": "xyxy",
+    "/asset_bindings/icons~1tile_events.png/search": "xyxy",
+    "/asset_bindings/icons~1tile_guild.png/search": "xyxy",
+    "/card_inventory/viewport": "xyxy",
+    "/card_inventory/columns": "xxxx",
+    "/card_inventory/swipe_down": "xyxy",
+    "/card_inventory/swipe_up": "xyxy",
+    "/side_menu/toggle/rect": "xyxy",
+    "/side_menu/column": "xyxy",
+    "/hud/battle/targets/0/rect": "xyxy",
+    "/hud/battle/targets/1/rect": "xyxy",
+    "/hud/battle_menu/targets/0/rect": "xyxy",
+    "/interface/screens/home/controls/difficulty_left/reference_rect": "xyxy",
+    "/interface/screens/home/controls/difficulty_right/reference_rect": "xyxy",
+    "/interface/screens/home/controls/dissonant/reference_rect": "xyxy",
+    "/interface/screens/dissonant/controls/attack/reference_rect": "xyxy",
+    "/interface/screens/dissonant/controls/defense/reference_rect": "xyxy",
+    "/interface/screens/dissonant/controls/utility/reference_rect": "xyxy",
+    "/interface/screens/dissonant/controls/ultimate_weapons/reference_rect": "xyxy",
+    "/interface/screens/dissonant/controls/battle/reference_rect": "xyxy",
+    "/interface/screens/dissonant/controls/close/reference_rect": "xyxy",
+    "/interface/screens/dissonant/controls/presets/reference_rect": "xyxy",
+    "/interface/screens/tournament_heat/anchors/dialog": "xyxy",
+    "/interface/screens/tournament_heat/anchors/title": "xyxy",
+    "/interface/screens/tournament_heat/anchors/tabs": "xyxy",
+    "/interface/screens/tournament_heat/anchors/screen": "xyxy",
+    "/interface/screens/tournament_heat/controls/close/reference_rect": "xyxy",
+    "/interface/screens/tournament_heat/controls/close/click_point": "xy",
+    "/interface/screens/tournament_heat/controls/close/rect_offset": "xyxy",
+    "/interface/screens/tournament_heat/controls/close/point_offset": "xy",
+    "/interface/screens/tournament_heat/controls/heat/reference_rect": "xyxy",
+    "/interface/screens/tournament_heat/controls/heat/click_point": "xy",
+    "/interface/screens/tournament_heat/controls/heat/rect_offset": "xyxy",
+    "/interface/screens/tournament_heat/controls/heat/point_offset": "xy",
+    "/interface/screens/tournament_heat/controls/overheat/reference_rect": "xyxy",
+    "/interface/screens/tournament_heat/controls/overheat/click_point": "xy",
+    "/interface/screens/tournament_heat/controls/overheat/rect_offset": "xyxy",
+    "/interface/screens/tournament_heat/controls/overheat/point_offset": "xy",
+    "/interface/screens/tournament_heat/controls/information/reference_rect": "xyxy",
+    "/interface/screens/tournament_heat/controls/information/click_point": "xy",
+    "/interface/screens/tournament_heat/controls/information/rect_offset": "xyxy",
+    "/interface/screens/tournament_heat/controls/information/point_offset": "xy",
+    "/interface/screens/tournament_heat/collection/viewport": "xyxy",
+    "/interface/screens/tournament_heat/collection/row_reference": "xyxy",
+    "/interface/screens/tournament_heat/collection/fields_relative_to_row/title": "xyxy",
+    "/interface/screens/tournament_heat/collection/fields_relative_to_row/level": "xyxy",
+    "/interface/screens/tournament_heat/collection/fields_relative_to_row/description": "xyxy",
+    "/interface/screens/tournament_overheat/anchors/dialog": "xyxy",
+    "/interface/screens/tournament_overheat/anchors/title": "xyxy",
+    "/interface/screens/tournament_overheat/anchors/tabs": "xyxy",
+    "/interface/screens/tournament_overheat/anchors/screen": "xyxy",
+    "/interface/screens/tournament_overheat/controls/close/reference_rect": "xyxy",
+    "/interface/screens/tournament_overheat/controls/close/click_point": "xy",
+    "/interface/screens/tournament_overheat/controls/close/rect_offset": "xyxy",
+    "/interface/screens/tournament_overheat/controls/close/point_offset": "xy",
+    "/interface/screens/tournament_overheat/controls/heat/reference_rect": "xyxy",
+    "/interface/screens/tournament_overheat/controls/heat/click_point": "xy",
+    "/interface/screens/tournament_overheat/controls/heat/rect_offset": "xyxy",
+    "/interface/screens/tournament_overheat/controls/heat/point_offset": "xy",
+    "/interface/screens/tournament_overheat/controls/overheat/reference_rect": "xyxy",
+    "/interface/screens/tournament_overheat/controls/overheat/click_point": "xy",
+    "/interface/screens/tournament_overheat/controls/overheat/rect_offset": "xyxy",
+    "/interface/screens/tournament_overheat/controls/overheat/point_offset": "xy",
+    "/interface/screens/tournament_overheat/collection/viewport": "xyxy",
+    "/interface/screens/tournament_overheat/collection/row_reference": "xyxy",
+    "/interface/screens/tournament_overheat/collection/fields_relative_to_row/title": "xyxy",
+    "/interface/screens/tournament_overheat/collection/fields_relative_to_row/activation_wave": "xyxy",
+    "/interface/screens/tournament_overheat/collection/fields_relative_to_row/description": "xyxy",
+    "/interface/screens/battle/controls/attack/reference_rect": "xyxy",
+    "/interface/screens/battle/controls/defense/reference_rect": "xyxy",
+    "/interface/screens/battle/controls/utility/reference_rect": "xyxy",
+    "/interface/screens/battle/controls/ultimate_weapons/reference_rect": "xyxy",
+    "/interface/screens/battle/controls/tower_stats/reference_rect": "xyxy",
+    "/interface/screens/battle/controls/enemy_stats/reference_rect": "xyxy",
+    "/interface/screens/battle/controls/wall/reference_rect": "xyxy",
+    "/interface/screens/battle/controls/perk_progress/reference_rect": "xyxy",
+    "/interface/screens/battle/controls/intro_sprint/reference_rect": "xyxy",
+    "/interface/screens/battle/controls/second_wind/reference_rect": "xyxy",
+    "/interface/screens/battle_attack/scroll/viewport": "xyxy",
+    "/interface/screens/battle_defense/scroll/viewport": "xyxy",
+    "/interface/screens/battle_utility/scroll/viewport": "xyxy",
+    "/interface/screens/battle_ultimate_weapons/scroll/viewport": "xyxy",
+    "/interface/screens/battle_menu/search_region": "xyxy",
+    "/interface/screens/tournament_ticket_reward/identity/rect": "xyxy",
+    "/interface/screens/tournament_ticket_reward/controls/claim/reference_rect": "xyxy",
+    "/interface/screens/tournament_ticket_reward/controls/claim/click_point": "xy",
+    "/interface/screens/tournament_ticket_reward/controls/claim/rect_offset": "xyxy",
+    "/interface/screens/tournament_ticket_reward/controls/claim/point_offset": "xy",
+    "/interface/screens/tournament_ticket_reward/controls/skip/reference_rect": "xyxy",
+    "/interface/screens/tournament_ticket_reward/controls/skip/click_point": "xy",
+    "/interface/screens/tournament_ticket_reward/controls/skip/rect_offset": "xyxy",
+    "/interface/screens/tournament_ticket_reward/controls/skip/point_offset": "xy",
+    "/interface/screens/tournament_ticket_reward/anchors/screen": "xyxy",
+    "/interface/screens/tournament_lobby/anchors/header": "xyxy",
+    "/interface/screens/tournament_lobby/anchors/title": "xyxy",
+    "/interface/screens/tournament_lobby/anchors/first_prize_panel": "xyxy",
+    "/interface/screens/tournament_lobby/anchors/screen": "xyxy",
+    "/interface/screens/tournament_lobby/controls/information/reference_rect": "xyxy",
+    "/interface/screens/tournament_lobby/controls/information/click_point": "xy",
+    "/interface/screens/tournament_lobby/controls/information/rect_offset": "xyxy",
+    "/interface/screens/tournament_lobby/controls/information/point_offset": "xy",
+    "/interface/screens/tournament_lobby/controls/history/reference_rect": "xyxy",
+    "/interface/screens/tournament_lobby/controls/history/click_point": "xy",
+    "/interface/screens/tournament_lobby/controls/history/rect_offset": "xyxy",
+    "/interface/screens/tournament_lobby/controls/history/point_offset": "xy",
+    "/interface/screens/tournament_lobby/controls/heat/reference_rect": "xyxy",
+    "/interface/screens/tournament_lobby/controls/heat/click_point": "xy",
+    "/interface/screens/tournament_lobby/controls/heat/rect_offset": "xyxy",
+    "/interface/screens/tournament_lobby/controls/heat/point_offset": "xy",
+    "/interface/screens/tournament_lobby/controls/all_prizes/reference_rect": "xyxy",
+    "/interface/screens/tournament_lobby/controls/all_prizes/click_point": "xy",
+    "/interface/screens/tournament_lobby/controls/all_prizes/rect_offset": "xyxy",
+    "/interface/screens/tournament_lobby/controls/all_prizes/point_offset": "xy",
+    "/interface/screens/tournament_lobby/controls/preset/reference_rect": "xyxy",
+    "/interface/screens/tournament_lobby/controls/preset/click_point": "xy",
+    "/interface/screens/tournament_lobby/controls/preset/rect_offset": "xyxy",
+    "/interface/screens/tournament_lobby/controls/preset/point_offset": "xy",
+    "/interface/screens/tournament_lobby/controls/battle/reference_rect": "xyxy",
+    "/interface/screens/tournament_lobby/controls/battle/click_point": "xy",
+    "/interface/screens/tournament_lobby/controls/battle/rect_offset": "xyxy",
+    "/interface/screens/tournament_lobby/controls/battle/point_offset": "xy",
+    "/interface/screens/tournament_lobby/controls/return/reference_rect": "xyxy",
+    "/interface/screens/tournament_lobby/controls/return/click_point": "xy",
+    "/interface/screens/tournament_lobby/controls/return/rect_offset": "xyxy",
+    "/interface/screens/tournament_lobby/controls/return/point_offset": "xy",
+    "/interface/screens/tournament_lobby/read_regions/ticket_count": "xyxy",
+    "/interface/screens/tournament_lobby/read_regions/join_time": "xyxy",
+    "/interface/screens/tournament_lobby/read_regions/preset_name": "xyxy",
+    "/interface/screens/tournament_information/anchors/dialog": "xyxy",
+    "/interface/screens/tournament_information/anchors/title": "xyxy",
+    "/interface/screens/tournament_information/anchors/page_dots": "xyxy",
+    "/interface/screens/tournament_information/anchors/screen": "xyxy",
+    "/interface/screens/tournament_information/controls/close/reference_rect": "xyxy",
+    "/interface/screens/tournament_information/controls/close/click_point": "xy",
+    "/interface/screens/tournament_information/controls/close/rect_offset": "xyxy",
+    "/interface/screens/tournament_information/controls/close/point_offset": "xy",
+    "/interface/screens/tournament_information/controls/previous/reference_rect": "xyxy",
+    "/interface/screens/tournament_information/controls/previous/click_point": "xy",
+    "/interface/screens/tournament_information/controls/previous/rect_offset": "xyxy",
+    "/interface/screens/tournament_information/controls/previous/point_offset": "xy",
+    "/interface/screens/tournament_information/controls/next/reference_rect": "xyxy",
+    "/interface/screens/tournament_information/controls/next/click_point": "xy",
+    "/interface/screens/tournament_information/controls/next/rect_offset": "xyxy",
+    "/interface/screens/tournament_information/controls/next/point_offset": "xy",
+    "/interface/screens/tournament_wave_speed_info/anchors/dialog": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/anchors/title": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/anchors/page_dots": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/anchors/screen": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/controls/close/reference_rect": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/controls/close/click_point": "xy",
+    "/interface/screens/tournament_wave_speed_info/controls/close/rect_offset": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/controls/close/point_offset": "xy",
+    "/interface/screens/tournament_wave_speed_info/controls/previous/reference_rect": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/controls/previous/click_point": "xy",
+    "/interface/screens/tournament_wave_speed_info/controls/previous/rect_offset": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/controls/previous/point_offset": "xy",
+    "/interface/screens/tournament_wave_speed_info/controls/next/reference_rect": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/controls/next/click_point": "xy",
+    "/interface/screens/tournament_wave_speed_info/controls/next/rect_offset": "xyxy",
+    "/interface/screens/tournament_wave_speed_info/controls/next/point_offset": "xy",
+    "/interface/screens/tournament_fleet_info/anchors/dialog": "xyxy",
+    "/interface/screens/tournament_fleet_info/anchors/title": "xyxy",
+    "/interface/screens/tournament_fleet_info/anchors/page_dots": "xyxy",
+    "/interface/screens/tournament_fleet_info/anchors/screen": "xyxy",
+    "/interface/screens/tournament_fleet_info/controls/close/reference_rect": "xyxy",
+    "/interface/screens/tournament_fleet_info/controls/close/click_point": "xy",
+    "/interface/screens/tournament_fleet_info/controls/close/rect_offset": "xyxy",
+    "/interface/screens/tournament_fleet_info/controls/close/point_offset": "xy",
+    "/interface/screens/tournament_fleet_info/controls/previous/reference_rect": "xyxy",
+    "/interface/screens/tournament_fleet_info/controls/previous/click_point": "xy",
+    "/interface/screens/tournament_fleet_info/controls/previous/rect_offset": "xyxy",
+    "/interface/screens/tournament_fleet_info/controls/previous/point_offset": "xy",
+    "/interface/screens/tournament_fleet_info/controls/next/reference_rect": "xyxy",
+    "/interface/screens/tournament_fleet_info/controls/next/click_point": "xy",
+    "/interface/screens/tournament_fleet_info/controls/next/rect_offset": "xyxy",
+    "/interface/screens/tournament_fleet_info/controls/next/point_offset": "xy",
+    "/interface/screens/tournament_history/anchors/dialog": "xyxy",
+    "/interface/screens/tournament_history/anchors/title": "xyxy",
+    "/interface/screens/tournament_history/anchors/screen": "xyxy",
+    "/interface/screens/tournament_history/controls/close/reference_rect": "xyxy",
+    "/interface/screens/tournament_history/controls/close/click_point": "xy",
+    "/interface/screens/tournament_history/controls/close/rect_offset": "xyxy",
+    "/interface/screens/tournament_history/controls/close/point_offset": "xy",
+    "/interface/screens/tournament_history/collection/viewport": "xyxy",
+    "/interface/screens/tournament_history/collection/row_reference": "xyxy",
+    "/interface/screens/tournament_history/collection/fields_relative_to_row/league_icon": "xyxy",
+    "/interface/screens/tournament_history/collection/fields_relative_to_row/league_name": "xyxy",
+    "/interface/screens/tournament_history/collection/fields_relative_to_row/date": "xyxy",
+    "/interface/screens/tournament_history/collection/fields_relative_to_row/max_wave": "xyxy",
+    "/interface/screens/tournament_history/collection/fields_relative_to_row/rank": "xyxy",
+    "/interface/screens/tournament_history/collection/swipe_test/from": "xy",
+    "/interface/screens/tournament_history/collection/swipe_test/to": "xy",
+    "/interface/screens/tournament_prizes/anchors/dialog": "xyxy",
+    "/interface/screens/tournament_prizes/anchors/title": "xyxy",
+    "/interface/screens/tournament_prizes/anchors/league_grid": "xyxy",
+    "/interface/screens/tournament_prizes/anchors/screen": "xyxy",
+    "/interface/screens/tournament_prizes/controls/close/reference_rect": "xyxy",
+    "/interface/screens/tournament_prizes/controls/close/click_point": "xy",
+    "/interface/screens/tournament_prizes/controls/close/rect_offset": "xyxy",
+    "/interface/screens/tournament_prizes/controls/close/point_offset": "xy",
+    "/interface/screens/tournament_prizes/controls/copper/reference_rect": "xyxy",
+    "/interface/screens/tournament_prizes/controls/copper/click_point": "xy",
+    "/interface/screens/tournament_prizes/controls/copper/rect_offset": "xyxy",
+    "/interface/screens/tournament_prizes/controls/copper/point_offset": "xy",
+    "/interface/screens/tournament_prizes/controls/silver/reference_rect": "xyxy",
+    "/interface/screens/tournament_prizes/controls/silver/click_point": "xy",
+    "/interface/screens/tournament_prizes/controls/silver/rect_offset": "xyxy",
+    "/interface/screens/tournament_prizes/controls/silver/point_offset": "xy",
+    "/interface/screens/tournament_prizes/controls/gold/reference_rect": "xyxy",
+    "/interface/screens/tournament_prizes/controls/gold/click_point": "xy",
+    "/interface/screens/tournament_prizes/controls/gold/rect_offset": "xyxy",
+    "/interface/screens/tournament_prizes/controls/gold/point_offset": "xy",
+    "/interface/screens/tournament_prizes/controls/platinum/reference_rect": "xyxy",
+    "/interface/screens/tournament_prizes/controls/platinum/click_point": "xy",
+    "/interface/screens/tournament_prizes/controls/platinum/rect_offset": "xyxy",
+    "/interface/screens/tournament_prizes/controls/platinum/point_offset": "xy",
+    "/interface/screens/tournament_prizes/controls/champion/reference_rect": "xyxy",
+    "/interface/screens/tournament_prizes/controls/champion/click_point": "xy",
+    "/interface/screens/tournament_prizes/controls/champion/rect_offset": "xyxy",
+    "/interface/screens/tournament_prizes/controls/champion/point_offset": "xy",
+    "/interface/screens/tournament_prizes/controls/legend/reference_rect": "xyxy",
+    "/interface/screens/tournament_prizes/controls/legend/click_point": "xy",
+    "/interface/screens/tournament_prizes/controls/legend/rect_offset": "xyxy",
+    "/interface/screens/tournament_prizes/controls/legend/point_offset": "xy",
+    "/interface/screens/tournament_prizes/controls/mythic/reference_rect": "xyxy",
+    "/interface/screens/tournament_prizes/controls/mythic/click_point": "xy",
+    "/interface/screens/tournament_prizes/controls/mythic/rect_offset": "xyxy",
+    "/interface/screens/tournament_prizes/controls/mythic/point_offset": "xy",
+    "/interface/screens/tournament_prizes/collection/viewport": "xyxy",
+    "/interface/screens/tournament_prizes/collection/cell_reference": "xyxy",
+    "/interface/screens/tournament_preset_picker/anchors/dialog": "xyxy",
+    "/interface/screens/tournament_preset_picker/anchors/title": "xyxy",
+    "/interface/screens/tournament_preset_picker/anchors/context": "xyxy",
+    "/interface/screens/tournament_preset_picker/anchors/screen": "xyxy",
+    "/interface/screens/tournament_preset_picker/controls/close/reference_rect": "xyxy",
+    "/interface/screens/tournament_preset_picker/controls/close/click_point": "xy",
+    "/interface/screens/tournament_preset_picker/controls/close/rect_offset": "xyxy",
+    "/interface/screens/tournament_preset_picker/controls/close/point_offset": "xy",
+    "/interface/screens/tournament_preset_picker/collection/viewport": "xyxy",
+    "/interface/screens/tournament_battle/anchors/screen": "xyxy",
+    "/interface/screens/tournament_battle/controls/menu/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle/controls/menu/click_point": "xy",
+    "/interface/screens/tournament_battle/controls/menu/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle/controls/menu/point_offset": "xy",
+    "/interface/screens/tournament_battle/controls/heat_progress/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle/controls/heat_progress/click_point": "xy",
+    "/interface/screens/tournament_battle/controls/heat_progress/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle/controls/heat_progress/point_offset": "xy",
+    "/interface/screens/tournament_battle/controls/speed_down/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle/controls/speed_down/click_point": "xy",
+    "/interface/screens/tournament_battle/controls/speed_down/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle/controls/speed_down/point_offset": "xy",
+    "/interface/screens/tournament_battle/controls/speed_up/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle/controls/speed_up/click_point": "xy",
+    "/interface/screens/tournament_battle/controls/speed_up/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle/controls/speed_up/point_offset": "xy",
+    "/interface/screens/tournament_battle/read_regions/boss_stats": "xyxy",
+    "/interface/screens/tournament_battle/read_regions/wave_panel": "xyxy",
+    "/interface/screens/tournament_battle/read_regions/heat_progress": "xyxy",
+    "/interface/screens/tournament_battle/read_regions/sprint_state": "xyxy",
+    "/interface/screens/tournament_battle_menu/anchors/screen": "xyxy",
+    "/interface/screens/tournament_battle_menu/anchors/menu": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/store/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/store/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/store/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/store/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/close/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/close/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/close/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/close/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/missions/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/missions/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/missions/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/missions/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/options/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/options/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/options/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/options/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/cards/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/cards/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/cards/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/cards/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/research/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/research/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/research/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/research/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/priority/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/priority/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/priority/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/priority/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/modules/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/modules/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/modules/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/modules/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/events/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/events/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/events/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/events/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/orb_adjuster/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/orb_adjuster/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/orb_adjuster/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/orb_adjuster/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/conditions/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/conditions/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/conditions/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/conditions/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/tournament/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/tournament/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/tournament/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/tournament/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/history/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/history/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/history/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/history/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/guild/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/guild/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/guild/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/guild/point_offset": "xy",
+    "/interface/screens/tournament_battle_menu/controls/exit/reference_rect": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/exit/click_point": "xy",
+    "/interface/screens/tournament_battle_menu/controls/exit/rect_offset": "xyxy",
+    "/interface/screens/tournament_battle_menu/controls/exit/point_offset": "xy",
+    "/interface/screens/tournament_leaderboard/anchors/screen": "xyxy",
+    "/interface/screens/tournament_leaderboard/anchors/header": "xyxy",
+    "/interface/screens/tournament_leaderboard/anchors/columns": "xyxy",
+    "/interface/screens/tournament_leaderboard/anchors/prize_panel": "xyxy",
+    "/interface/screens/tournament_leaderboard/controls/return/reference_rect": "xyxy",
+    "/interface/screens/tournament_leaderboard/controls/return/click_point": "xy",
+    "/interface/screens/tournament_leaderboard/controls/return/rect_offset": "xyxy",
+    "/interface/screens/tournament_leaderboard/controls/return/point_offset": "xy",
+    "/interface/screens/tournament_leaderboard/controls/all_prizes/reference_rect": "xyxy",
+    "/interface/screens/tournament_leaderboard/controls/all_prizes/click_point": "xy",
+    "/interface/screens/tournament_leaderboard/controls/all_prizes/rect_offset": "xyxy",
+    "/interface/screens/tournament_leaderboard/controls/all_prizes/point_offset": "xy",
+    "/interface/screens/tournament_leaderboard/collection/viewport": "xyxy",
+    "/interface/screens/tournament_leaderboard/collection/row_reference": "xyxy",
+    "/interface/screens/tournament_leaderboard/collection/fields_relative_to_row/rank": "xyxy",
+    "/interface/screens/tournament_leaderboard/collection/fields_relative_to_row/avatar": "xyxy",
+    "/interface/screens/tournament_leaderboard/collection/fields_relative_to_row/name": "xyxy",
+    "/interface/screens/tournament_leaderboard/collection/fields_relative_to_row/badge": "xyxy",
+    "/interface/screens/tournament_leaderboard/collection/fields_relative_to_row/wave": "xyxy",
+    "/interface/screens/tournament_leaderboard/read_regions/current_prize": "xyxy",
+    "/interface/screens/tournament_leaderboard/read_regions/next_prize": "xyxy",
+    "/interface/screens/tournament_leaderboard/read_regions/time_remaining": "xyxy",
+    "/interface/screens/tournament_leaderboard/read_regions/tournament_id": "xyxy",
+    "/navigation_art/battle/search": "xyxy",
+    "/navigation_art/workshop/search": "xyxy",
+    "/navigation_art/cards/search": "xyxy",
+    "/navigation_art/modules/search": "xyxy",
+    "/navigation_art/lab/search": "xyxy",
+    "/navigation_art/shop/search": "xyxy",
+    "/runtime_regions/ad_gems/search": "xyxy",
+    "/reward_collection/event_missions/viewport": "xyxy",
+    "/reward_collection/event_missions/milestones": "xyxy",
+    "/reward_collection/event_missions/quest_button_width": "xx",
+    "/reward_collection/event_missions/milestone_button_width": "xx",
+    "/reward_collection/event_missions/button_height": "yy",
+    "/reward_collection/event_missions/scroll": "xyxy",
+    "/reward_collection/event_missions/return": "xy",
+    "/reward_collection/event_missions/milestone_slots/0": "xyxy",
+    "/reward_collection/event_missions/milestone_slots/1": "xyxy",
+    "/reward_collection/event_missions/milestone_slots/2": "xyxy",
+    "/reward_collection/event_missions/milestone_slots/3": "xyxy",
+    "/reward_collection/reveal/0/rect": "xyxy",
+    "/reward_collection/reveal/1/rect": "xyxy",
+    "/module_slots/radius/large": "min",
+    "/module_slots/radius/small": "min",
+    "/module_descriptor/text_gap": "x",
+    "/module_descriptor/text_above": "y",
+    "/module_descriptor/text_below": "y",
+    "/module_descriptor/text_right": "x",
+    "/module_descriptor/icon_search_from_close/x": "x",
+    "/module_descriptor/icon_search_from_close/dy": "y",
+    "/module_descriptor/icon_search_from_close/width": "x",
+    "/module_descriptor/icon_search_from_close/height": "y",
+    "/card_inventory/tile_width": "x",
+    "/card_inventory/tile_height": "y",
+    "/interface/screens/battle/orbiting_gem/reference_radius_pixels": "min",
+    "/interface/screens/tournament_prizes/collection/row_stride_reference": "y"
   }
 }

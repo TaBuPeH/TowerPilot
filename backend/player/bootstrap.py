@@ -43,14 +43,41 @@ def anchor_present(frame, lines, anchor):
     # on brightness, so a dimmed/blank anchor never reaches this.
     from vision import textocr
     want = normalized(anchor["text"])
-    return any(want in normalized(t) for _, _, t in textocr.read_lines(crop, 2))
+    # Small UI labels can get worse when enlarged (MISSIONS became
+    # "Misstorqs" on a live native frame). Try the native crop first.
+    return any(want in normalized(t) for scale in (1, 2)
+               for _, _, t in textocr.read_lines(crop, scale))
 
 
 def screen_matches(frame, lines, screen):
     m = manifest()
     if frame.shape[:2] != (m["layout"]["height"], m["layout"]["width"]):
         return False
-    return all(anchor_present(frame, lines, a) for a in m["screens"][screen]["anchors"])
+    spec=m['screens'][screen]
+    if not all(anchor_present(frame, lines, a) for a in spec['anchors']):
+        return False
+    tabs=spec.get('selected_tab')
+    if tabs:
+        values=[float(np.median(cv2.cvtColor(region(frame,r),cv2.COLOR_BGR2HSV)[:,:,2]))
+                for r in tabs['rects']]
+        selected=values[tabs['index']]
+        if any(selected < value+20 for i,value in enumerate(values) if i!=tabs['index']):
+                return False
+    pills=spec.get('selected_pill')
+    if pills:
+        counts=[]
+        for rect in pills['rects']:
+            hsv=cv2.cvtColor(region(frame,rect),cv2.COLOR_BGR2HSV)
+            counts.append(int(np.count_nonzero((hsv[:,:,0]>=40)&(hsv[:,:,0]<=95)&(hsv[:,:,1]>100)&(hsv[:,:,2]>180))))
+        selected=counts[pills['index']]
+        if selected<80 or any(value>selected*.5 for i,value in enumerate(counts) if i!=pills['index']):
+            return False
+    return True
+
+
+def proof_anchors(name):
+    spec=manifest()['screens'][name]
+    return spec['anchors'] + [{'rect':r} for kind in ('selected_tab','selected_pill') for r in spec.get(kind,{}).get('rects',[])]
 
 
 def recognize_screen(frame, lines=None, *, read=None):
@@ -123,6 +150,14 @@ def icon_present(frame, spec):
              "green": (h > 40) & (h < 80)}
     if spec["hue"] == "bars":
         return _three_bars(crop)
+    if spec['hue'] == 'cross':
+        # White close-X with a cyan/green glow; the glow hue varies by theme.
+        hh,ww=crop.shape[:2]
+        inner=crop[int(hh*.2):int(hh*.8),int(ww*.2):int(ww*.8)]
+        white=inner.min(axis=2)>210
+        yy,xx=np.indices(white.shape)
+        diagonal=(abs(xx/white.shape[1]-yy/white.shape[0])<.18)|(abs(xx/white.shape[1]+yy/white.shape[0]-1)<.18)
+        return bool(white[diagonal].mean()>.55 and white[~diagonal].mean()<.35)
     lit = masks[spec["hue"]] & (s > 80) & (v > 170)
     ys, xs = np.nonzero(lit)
     return bool(len(xs) >= 100 and np.ptp(xs) >= crop.shape[1]*.35 and np.ptp(ys) >= crop.shape[0]*.35)
@@ -141,7 +176,7 @@ def preflight():
             continue
         args = p.info["cmdline"] or []
         runners = {"orchestrator.py", "shard.py", "combo.py", "tourney.py", "quest_sm.py",
-                   "quest_ilm.py", "scan.py", "calibrate.py", "boot.py", "harness.py"}
+                   "quest_ilm.py", "scan.py", "calibrate.py", "clicker.py", "boot.py", "harness.py"}
         if any(Path(arg).name in runners for arg in args):
             raise RuntimeError(f"Stop the other runner first (PID {p.pid})")
     inst = settings.instance()
@@ -157,11 +192,13 @@ def preflight():
     from player import accounts
     if (accounts.calibration_dir(settings.ROOT, settings.CONFIG) / "module_restore.json").exists():
         raise RuntimeError("Restore the saved module setup before a starter scan")
+    from player.geometry import Display
+    return Display(frame.shape[1], frame.shape[0], dpi)
 
 
 class Scanner:
     def __init__(self, cal, state, grab=None, tap=None, read=None, pause=None,
-                 flows=False):
+                 flows=False, battle_only=False):
         from device import capture, act
         from vision import textocr
         self.cal, self.state = cal, state
@@ -172,6 +209,7 @@ class Scanner:
         self.completed = 0
         self.skipped = []
         self.flows = flows
+        self.battle_only = battle_only
         from player.bootstrap_layout import scan_steps
         steps = [dict(step, status="pending") for step in scan_steps()]
         if flows:
@@ -182,6 +220,8 @@ class Scanner:
                 dict(id="flow_menus", label="Capture menu controls", status="pending"),
                 dict(id="flow_battle", label="Capture a battle and its results", status="pending")]
         self.steps = steps
+        if battle_only:
+            self.steps = [s for s in steps if s['id'] in ('preflight', 'extract', 'map', 'home', 'flow_battle', 'finish')]
         self.active_step = 0
         self.started_at = time.time()
         self.steps[0].update(status="running", started_at=self.started_at)
@@ -190,6 +230,8 @@ class Scanner:
         self.asset_index = {}
         self.asset_mappings = {}
         self.asset_summary = {}
+        from player.screen_proof import VisualAnchors
+        self.visual_anchors = VisualAnchors()
 
     def check_stop(self):
         from player.calibrate import _stop_requested, Stopped
@@ -321,7 +363,8 @@ class Scanner:
             entry=self.cal.cut('bootstrap',rel,crop,frame,hit['asset_name'],
                 {'source_kind':'installed_asset','asset_id':hit['asset_id'],'asset_sha256':hit['asset_sha256'],
                  'game_version':self.asset_summary['version'],'rect':hit['rect'],'confirmation':round(score,3),
-                 'source_inliers':hit['inliers'],'screen':definition.get('screen')},unique=unique)
+                 'source_inliers':hit['inliers'],'screen':definition.get('screen')},
+                unique=unique and not definition.get('repeated', False))
             mapping['verification']='verified' if entry['verified'] else 'needs_attention'
             mapping['observed_rect']=hit['rect']
             out[rel]=mapping['verification']
@@ -332,8 +375,12 @@ class Scanner:
         self.check_stop()
         for _ in range(4):
             frame = self.grab()
+            anchors = proof_anchors(name)
+            if self.visual_anchors.matches(name, frame, anchors):
+                return frame, []
             lines = self.read(frame)
             if screen_matches(frame, lines, name):
+                self.visual_anchors.remember(name, frame, anchors)
                 return frame, lines
             self.pause(.5)
             self.check_stop()
@@ -367,6 +414,9 @@ class Scanner:
     def harvest(self, name, frame, lines):
         if name in self.visited:
             return
+        if name == 'home' and not self.visited and not self.battle_only:
+            self.state['screen_map'] = {}
+            self.state['collections'] = {}
         self.visited.add(name)
         self.progress(f"Capturing {name.replace('_',' ')}")
         self.pause(.3)
@@ -377,6 +427,16 @@ class Scanner:
             self.cut(spec, frame, follow, lines)
         if self.asset_folder:
             self.verify_assets(name,frame,follow)
+        # Some composed controls (e.g. the preset picker) do not render as
+        # their original sprite. Their shipped route has its own verifier.
+        # Map them BEFORE leaving the parent, not only after navigating away.
+        for route in manifest().get('routes', []):
+            spec = route.get('icon')
+            if route.get('from') == name and spec and icon_present(frame,spec) and icon_present(follow,spec):
+                if not any(e.get('rel')==spec['rel'] and e.get('verified') and e.get('t',0)>=self.started_at
+                           for e in self.cal.entries):
+                    self.cut(spec, frame, follow, lines, icon=True, screen=name)
+        self.update_screen_map(name)
         self.learned_cuts(name, frame, follow)
         # Read preset names without selecting them or changing the loadout.
         categories = {"cards":("cards/preset_", "cards"), "modules":("presets/modules_", "modules"),
@@ -392,6 +452,25 @@ class Scanner:
                 if phase == "cards": self.cal.player["card_presets"] = [slug for _,slug,_ in rows]
                 elif phase == "global": self.cal.player["global_presets"] = [n for n,slug,_ in rows if slug != "none"]
                 else: self.cal.player.setdefault("category_presets", {})[phase] = names
+
+    def update_screen_map(self, name):
+        expected = {t['rel'] for t in manifest()['screens'][name]['targets']}
+        expected.update(rel for rel, definition in manifest().get('asset_bindings', {}).items()
+                        if definition['screen'] == name)
+        evidence = {e['rel']:e for e in self.cal.entries
+                    if e.get('t', 0) >= self.started_at and e.get('rel') in expected}
+        optional = {r['icon']['rel'] for r in manifest()['routes']
+                    if r.get('optional') and r.get('icon') and r['from']==name}
+        blocks = [{"target":rel, "status":"verified" if evidence.get(rel, {}).get('verified') else "unavailable" if rel in optional else "needs_mapping"}
+                  for rel in sorted(expected)]
+        if not blocks:
+            blocks = [{'target': 'screen_identity', 'status': 'verified' if name in self.visited else 'needs_mapping'}]
+        verified = sum(b['status']=='verified' for b in blocks)
+        available = sum(b['status']!='unavailable' for b in blocks)
+        self.state.setdefault('screen_map', {})[name] = {
+            "status":"verified" if blocks and verified==available else "needs_mapping",
+            "verified":verified, "total":available, "blocks":blocks}
+        self.progress(f"{name.replace('_',' ')}: {verified}/{available} available blocks verified")
 
     def module_detail(self, grid):
         from interactions import inventory
@@ -429,14 +508,14 @@ class Scanner:
         self.cal.cut("bootstrap",f"modules/{slug}.png",icon,grid,name,
                      {"rarity":rarity,"source":"inventory_before_open", "panel_icon":box})
         x,y=close
-        self.cut({"rel":"modules/v29_dialog_close.png","rect":[x-34,y-34,68,68]},panel,follow,[],icon=True)
+        self.cut({"rel":"modules/v29_dialog_close.png","rect":[x-34,y-34,68,68]},panel,follow,[],icon=True,screen="module_detail")
         if self.asset_folder:
             self.verify_assets("module_detail",panel,follow)
         lines=self.read(panel)
         equip=[(y,x,t) for y,x,t in lines if normalized(t)=="EQUIP"]
         if len(equip)==1:
             y,x,_=equip[0]
-            self.cut({"rel":"modules/v29_equip_btn.png","text":"Equip","rect":[x-10,y-8,210,65]},panel,follow,lines)
+            self.cut({"rel":"modules/v29_equip_btn.png","text":"Equip","rect":[x-10,y-8,210,65]},panel,follow,lines,screen="module_detail")
         else:
             self.skipped.append({"target":"modules/v29_equip_btn.png","reason":"Equip label unavailable; no action taken"})
         self.check_stop()
@@ -464,68 +543,36 @@ class Scanner:
         from player.card_inventory import scan
         from vision import textocr
         scan(self.cal, grab=self.grab, read=self.read, read_label=lambda f:textocr.read_lines(f,2), pause=self.pause,
-             check_stop=self.check_stop, progress=self.progress)
+             check_stop=self.check_stop, progress=self.progress,
+             prove=lambda frame: self.prove_screen('cards', frame))
+
+    def prove_screen(self, name, frame):
+        anchors = proof_anchors(name)
+        if self.visual_anchors.matches(name, frame, anchors):
+            return True
+        if screen_matches(frame, self.read(frame), name):
+            self.visual_anchors.remember(name, frame, anchors)
+            return True
+        return False
 
     def run(self):
         self.check_stop()
+        from player.manifest_driver import validate
+        validate()  # Broken screen references must fail before the first input.
         self.begin_step(self.step_index("home"))
         self.progress("Verifying Home")
         frame, lines = self.observed("home")
         self.harvest("home", frame, lines)
-        self.finish_step(message="Home captured and verified")
-        for index, route in enumerate(manifest()["routes"]):
-            self.begin_step(self.step_index(f"route_{index}"))
-            skipped_before = len(self.skipped)
-            self.check_stop()
-            if route["from"] != self.current:
-                # Only a skipped optional Home branch can create this case.
-                self.finish_step("skipped", "Skipped because the parent menu was unavailable")
-                continue
-            self.progress(f"Opening {route['name']}")
-            frame, lines = self.observed(self.current)
-            icon = route.get("icon")
-            point = manifest()["navigation"][route["nav"]] if "nav" in route else route.get("point")
-            binding = manifest().get("asset_bindings",{}).get(icon["rel"],{}) if icon else {}
-            source_hit = None
-            if binding.get("locate_navigation") and self.asset_folder:
-                source_hit = self.asset_hit(icon["rel"],frame)
-                if source_hit:
-                    icon = dict(icon,rect=source_hit["rect"])
-                    x,y,w,h=icon["rect"]
-                    point=[x+w//2,y+h//2]
-                else:
-                    self.skipped.append({"screen":route["to"],"reason":"Extracted navigation icon not verified on this screen"})
-                    self.finish_step("skipped","Installed artwork could not be located; no coordinate tap sent")
-                    continue
-            if icon and not icon_present(frame, icon):
-                if not route.get("optional"):
-                    raise RuntimeError(f"Cannot verify {route['name']} control; stopped without tapping")
-                self.skipped.append({"screen":route["to"], "reason":"Control unavailable or outside supported native position"})
-                self.finish_step("skipped", "Control unavailable or outside supported native position")
-                continue
-            self.pause(.3)
-            follow, _ = self.observed(self.current)
-            if icon and not icon_present(follow, icon):
-                raise RuntimeError("Navigation control changed; stopped before tapping")
-            self.check_stop()
-            if source_hit:
-                other=self.asset_hit(icon["rel"],follow)
-                if not other or other['asset_sha256']!=source_hit['asset_sha256'] or max(abs(a-b) for a,b in zip(other['rect'],source_hit['rect']))>3:
-                    raise RuntimeError("Extracted navigation icon moved; stopped before tapping")
-            self.tap(*point, reason=f"starter scan: {route['name']}")
-            self.pause(.8)
-            destination, dest_lines = self.observed(route["to"])
-            # Only now do we know the icon's meaning. Commit no speculative cut.
-            if icon and not source_hit:
-                self.cut(icon, frame, follow, lines, icon=True)
-            self.current = route["to"]
-            self.harvest(self.current, destination, dest_lines)
-            if self.current == "cards":
-                self.card_inventory()
-            if self.current == "modules":
-                self.module_detail(destination)
-            self.finish_step("needs_attention" if len(self.skipped)>skipped_before else "done",
-                             f"{route['name']} checked")
+        home = self.state.get('screen_map', {}).get('home', {})
+        self.finish_step("done" if home.get('status') == 'verified' else "needs_attention",
+                         f"Home: {home.get('verified',0)}/{home.get('total',0)} declared blocks verified")
+        if home.get('status') != 'verified':
+            missing = [b['target'] for b in home.get('blocks',[]) if b['status']!='verified']
+            raise RuntimeError("Home mapping is incomplete; no navigation started. Needs mapping: " + ', '.join(missing))
+        from player.manifest_driver import transitions
+        from player.mapping_session import Session
+        if not self.battle_only:
+            Session(self).run([edge for edge in transitions() if 'route' in edge])
         if self.flows:
             self._run_flows()
         self.begin_step(self.step_index("finish"))
@@ -536,10 +583,13 @@ class Scanner:
         _merge_draft(self.cal.player)
         self.finish_step(message="Returned to Home; discoveries saved")
         attention = sum(not e.get("verified") for e in self.cal.entries)
+        incomplete = [name for name,row in self.state.get('screen_map',{}).items() if row['status']!='verified']
         tail = ("" if self.flows
                 else " Battle and rare-dialog captures remain separate.")
+        if incomplete:
+            tail += " Incomplete screen maps: " + ', '.join(incomplete) + "."
         self.progress(f"Starter scan finished on Home. {len(self.visited)} screens checked.{tail}",
-                      "needs_attention" if attention or self.skipped else "done", screens=sorted(self.visited), needs_attention=attention)
+                      "needs_attention" if attention or self.skipped or incomplete else "done", screens=sorted(self.visited), needs_attention=attention)
 
     def learned_cuts(self, screen, frame, follow):
         """Cut every target the learned manifest places on `screen` that is
@@ -552,7 +602,7 @@ class Scanner:
         import settings
         from player import learned, template_docs
         out = {}
-        rows = learned.targets_on(self.cal.p, screen)
+        rows = learned.targets_on(self.cal.p, screen, frame_size=(frame.shape[1], frame.shape[0]))
         if not rows:
             return out
         from player.bootstrap_layout import screen_targets
@@ -599,15 +649,30 @@ class Scanner:
         from player import flow_capture
         from runtime import logger
         flow = flow_capture._Flow(self)
-        self.begin_step(self.step_index("flow_menus"))
-        self.progress("Capturing event, store and guild controls")
-        try:
-            flow_capture.capture_menu_extras(flow)
-            self.finish_step(message="Menu controls captured")
-        except Exception as e:                   # noqa: BLE001 - isolate
-            logger.event("flow_menu_error", error=str(e)[:200])
-            flow_capture._safe_home(flow)
-            self.finish_step("needs_attention", "Menu capture interrupted; returned Home")
+        if self.battle_only:
+            import settings
+            if not settings.template_path('icons/chest_lock.png').exists() or not settings.template_path('buttons/quest_claim.png').exists():
+                from player.mapping_session import Session
+                from player.manifest_driver import transitions
+                session = Session(self)
+                for edge in transitions():
+                    if 'route' not in edge or 'daily_missions' not in (edge['source'],edge['destination']):
+                        continue
+                    self.progress('Checking missing mission controls')
+                    if not session.driver.step(edge):
+                        raise RuntimeError('Could not verify the mission screen route; no further taps')
+                    if edge['destination'] == 'daily_missions':
+                        flow.capture('buttons/quest_claim.png','CLAIM',flow_capture.R_FULL,(160,50))
+        if not self.battle_only:
+            self.begin_step(self.step_index("flow_menus"))
+            self.progress("Capturing event, store and guild controls")
+            try:
+                flow_capture.capture_menu_extras(flow)
+                self.finish_step(message="Menu controls captured")
+            except Exception as e:                   # noqa: BLE001 - isolate
+                logger.event("flow_menu_error", error=str(e)[:200])
+                flow_capture._safe_home(flow)
+                self.finish_step("needs_attention", "Menu capture interrupted; returned Home")
         self.begin_step(self.step_index("flow_battle"))
         self.progress("Starting and cancelling a battle to capture its dialogs")
         try:
@@ -619,16 +684,16 @@ class Scanner:
             self.finish_step("needs_attention", "Battle capture interrupted; returned Home")
 
 
-def run(p, overwrite=False, flows=False):
+def run(p, overwrite=False, flows=False, battle_only=False):
     from player.calibrate import Calibration, _state_load, _state_save, Stopped, _merge_draft
     st = _state_load(p)
     cal = Calibration(p, overwrite, bootstrap=True)
     cal.entries = list(st.get("entries") or [])
     cal.player = dict(st.get("player") or {})
-    scanner = Scanner(cal, st, flows=flows)
+    scanner = Scanner(cal, st, flows=flows, battle_only=battle_only)
     scanner.progress("Checking game, emulator and Home")
     try:
-        preflight()
+        scanner.display = preflight()
         scanner.finish_step(message="Emulator and game checks passed")
         scanner.prepare_assets()
         scanner.run()

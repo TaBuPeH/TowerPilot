@@ -245,62 +245,6 @@
     ]
   },
   {
-    "rel": "floaters/gem_a.png",
-    "reference_size": [
-      65,
-      65
-    ]
-  },
-  {
-    "rel": "floaters/gem_b.png",
-    "reference_size": [
-      65,
-      65
-    ]
-  },
-  {
-    "rel": "floaters/gem_c.png",
-    "reference_size": [
-      90,
-      78
-    ]
-  },
-  {
-    "rel": "floaters/gem_v29_orbit.png",
-    "reference_size": [
-      84,
-      84
-    ]
-  },
-  {
-    "rel": "floaters/gem_v29_orbit_b.png",
-    "reference_size": [
-      89,
-      84
-    ]
-  },
-  {
-    "rel": "floaters/gem_v29_orbit_b_lr.png",
-    "reference_size": [
-      82,
-      86
-    ]
-  },
-  {
-    "rel": "floaters/gem_v29_orbit_b_ul.png",
-    "reference_size": [
-      82,
-      81
-    ]
-  },
-  {
-    "rel": "floaters/gem_v29_orbit_b_ul2.png",
-    "reference_size": [
-      82,
-      82
-    ]
-  },
-  {
     "rel": "floaters/second_wind.png",
     "reference_size": [
       75,
@@ -1191,6 +1135,13 @@
     "reference_size": [
       5,
       7
+    ]
+  },
+  {
+    "rel": "buttons/ad_gems_claim.png",
+    "reference_size": [
+      236,
+      133
     ]
   }
 ]

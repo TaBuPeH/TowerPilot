@@ -21,7 +21,7 @@ def test_record_keeps_native_rects_per_screen_and_ignores_the_rest(tmp_path):
     p = _p(tmp_path)
     row = learned.record(p, "modules/assist_btn.png", [700, 1500, 250, 105], "modules", "dashboard_cropper")
     assert row["rect"] == [700, 1500, 250, 105] and row["relative"] == [round(700 / 1080, 4), round(1500 / 2560, 4), round(250 / 1080, 4), round(105 / 2560, 4)]
-    assert learned.record(p, "x/y.png", [20, 21, 65, 64], "battle", "trim", frame_size=(101, 104)) is None   # a rect inside a crop
+    assert learned.record(p, "x/y.png", [20, 21, 65, 64], "battle", "trim", frame_size=(50, 50)) is None   # outside the supplied frame
     assert learned.record(p, "x/y.png", [1000, 0, 200, 50], "home", "s") is None                             # outside the frame
     assert learned.record(p, "x/y.png", [0, 0, 10, 10], None, "s") is None                                   # no screen: nothing learned
     assert set(learned.known(p)) == {"modules/assist_btn.png"}
@@ -39,7 +39,9 @@ def test_recognize_screen_uses_the_anchors_the_side_menu_x_and_the_wave_counter(
     assert bootstrap.recognize_screen(np.zeros((2560, 1080, 3), np.uint8), []) == "battle"
     x, y, w, h = m["side_menu"]["toggle"]["rect"]
     hud = np.zeros((2560, 1080, 3), np.uint8)
-    cv2.rectangle(hud, (x + 8, y + 8), (x + w - 8, y + h - 8), (40, 220, 40), 6)         # the green X: in-run menu open
+    # A border is not a close control: model the actual bright diagonal X.
+    cv2.line(hud, (x + 8, y + 8), (x + w - 8, y + h - 8), (255, 255, 255), 12)
+    cv2.line(hud, (x + w - 8, y + 8), (x + 8, y + h - 8), (255, 255, 255), 12)
     assert bootstrap.recognize_screen(hud, []) == "battle_menu"
     monkeypatch.setattr(wave_reader, "read_wave", lambda f: None)
     assert bootstrap.recognize_screen(np.zeros((2560, 1080, 3), np.uint8), []) is None

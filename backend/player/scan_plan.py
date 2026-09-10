@@ -28,13 +28,18 @@ def step_for(rel):
     if folder == "storefont" or any(t in name for t in ("store", "title_", "premium", "free_gems", "gem_claim", "tile_cart")): return "store"
     if folder == "cards" or name == "hdr_cards.png": return "cards"
     if folder == "modules" or name == "hdr_modules.png": return "modules"
-    if folder in ("digits", "valuefont", "uw", "stats", "floaters") or name in ("demon_mode.png", "nuke.png", "perks.png", "more_stats.png", "intro_sprint.png", "game_stats.png", "speed_x5_mask.png", "menu_closed_tile.png", "menu_collapsed.png", "hdr_battle.png"):
+    if folder in ("digits", "valuefont", "uw", "stats", "floaters") or name in ("ad_gems_claim.png", "demon_mode.png", "nuke.png", "perks.png", "more_stats.png", "intro_sprint.png", "game_stats.png", "speed_x5_mask.png", "menu_closed_tile.png", "menu_collapsed.png", "hdr_battle.png"):
         return "battle"
     if name in ("retry.png", "return_to_game.png", "reward_skip.png"): return "results"
     return "home"
 
 def targets():
-    return json.loads(Path(__file__).with_name("scan_targets.json").read_text(encoding="utf-8"))
+    rows = json.loads(Path(__file__).with_name("scan_targets.json").read_text(encoding="utf-8"))
+    known = {row['rel'] for row in rows}
+    # New manifest targets must not disappear from the repair screen merely
+    # because the older reference-size catalogue has not acquired a size yet.
+    rows.extend({'rel': rel} for rel in sorted(accounts.generic_names() - known))
+    return rows
 
 def plan(root, cfg, requirements=()):
     import cv2
@@ -44,7 +49,7 @@ def plan(root, cfg, requirements=()):
         report = json.loads((accounts.calibration_dir(root,cfg)/"calibrate_report.json").read_text(encoding="utf-8"))
     except (OSError,ValueError):
         report = {}
-    evidence = {e["rel"]:e for e in report.get("entries",[]) if e.get("verified")}
+    evidence = {e["rel"]:e for e in report.get("entries",[]) if e.get("rel")}
     from player import learned
     learned_rows = learned.known({"state": str(accounts.calibration_dir(root,cfg)/"calibrate_state.json")})
     automatic = writable_targets()
@@ -55,11 +60,14 @@ def plan(root, cfg, requirements=()):
         path = accounts.template_path(root, cfg, rel)
         image = cv2.imread(str(path)) if path.is_file() else None
         proof = evidence.get(rel,{})
-        verified = image is not None and proof.get("image_sha256") == hashlib.sha256(path.read_bytes()).hexdigest()
+        verified = bool(proof.get('verified')) and image is not None and proof.get("image_sha256") == hashlib.sha256(path.read_bytes()).hexdigest()
         status = "Verified on this emulator" if verified else "Captured; recognition not yet verified" if image is not None else "Missing"
         groups[step_for(rel)]["targets"].append(dict(item, automatic=rel in automatic or rel in learned_rows, label=Path(rel).stem.replace("_", " "),
             required=rel in required, status=status, learned=learned_rows.get(rel)))
-    return {"native_frame":[1080,2560], "bootstrap":{"steps":scan_steps(), "version":manifest()["version"], "screens":list(manifest()["screens"]), "targets":sorted(automatic)}, "steps":list(groups.values()),
+    from player.interface_manifest import coverage
+    from player.manifest_driver import plan as mapping_plan
+    interface = coverage(lambda rel: accounts.template_path(root, cfg, rel), report.get("entries", []))
+    return {"mapping":mapping_plan(), "interface":interface, "native_frame":[1080,2560], "bootstrap":{"steps":scan_steps(), "version":manifest()["version"], "screens":list(manifest()["screens"]), "targets":sorted(automatic)}, "steps":list(groups.values()),
         "captured":sum(t["status"] != "Missing" for g in groups.values() for t in g["targets"]),
         "total":sum(len(g["targets"]) for g in groups.values()),
         "note":"All game images are captured locally from your game. Reference sizes are guidance, not scaling instructions. Variants are alternatives; only capture appearances your emulator actually shows. Capturing an image is not proof that recognition works."}
@@ -111,6 +119,8 @@ def control_gate(root, cfg):
     scanned = bool(phases) and all(p.get("status") in ("done", "needs_attention")
                                    for p in phases.values())
     pending = (folder / "module_restore.json").exists()
-    missing = missing_navigation(root, cfg, [])
+    # Control includes run configuration. Battle-only recognition is checked
+    # when starting the individual run, not when opening its settings.
+    missing = missing_navigation(root, cfg, [], include_wave=False)
     return {"ready": scanned and not pending and not missing, "scan_complete":scanned,
             "missing":missing, "restore_pending":pending}

@@ -9,10 +9,10 @@ from player import accounts
 # "tower on screen" proof every tap rail rests on. Full setup captures all of
 # these by itself. Missing one BLOCKS the run.
 CORE = [
+    "buttons/exit_battle.png", "buttons/menu_closed_tile.png",
     "screens/hdr_battle.png", "screens/hdr_cards.png", "screens/hdr_guild.png",
     "screens/hdr_modules.png",
-    "icons/game_stats.png", "home/exit_battle_dialog.png", "home/end_round_dialog.png",
-    "home/intro_sprint_dialog.png", "home/dissonant_run.png",
+    "icons/game_stats.png", "home/exit_battle_dialog.png", "home/dissonant_run.png",
 ] + [f"digits/{d}.png" for d in range(10)]
 
 # Recognition guards for screens setup CANNOT produce on demand: a live
@@ -23,6 +23,7 @@ CORE = [
 # BLOCKING only for the run kind that drives that screen (tournament) - a
 # coin farm must not be greyed out by a tournament nobody has opened yet.
 ADVISORY = [
+    "home/end_round_dialog.png", "home/intro_sprint_dialog.png",
     "home/tourney_open_dialog.png", "home/welcome_back_dialog.png",
     "home/welcome_back_resume.png", "buttons/reward_skip.png",
     "screens/hdr_tournament.png", "tourney/tournament_stats.png",
@@ -80,18 +81,29 @@ def requirements(cfg, body):
     for rel in flows.flow(kind).get("templates", []):
         need(rel, flows.flow(kind)["label"])
     gather = body.get("gather") or {}
+    gather = dict(gather)
+    global_rewards = body.get('global_behaviors', {})
+    if 'free_store_gems' in global_rewards:
+        gather['free_store_gems'] = global_rewards['free_store_gems']
+    if 'daily_missions' in global_rewards:
+        gather['quests_8h'] = global_rewards['daily_missions']
+        gather['quest_rewards'] = global_rewards['daily_missions']
+    if 'guild_progress' in global_rewards:
+        gather['guild'] = global_rewards['guild_progress']
+    if global_rewards.get('event_missions'):
+        need('icons/event_missions_tab.png', 'Event Missions')
     generic = accounts.generic_names()
-    if gather.get("flying_gem", True):
-        need(sorted(r for r in generic if r.startswith("floaters/gem_")), "Collect flying gems")
     for key, names in {
-        "ad_gems": ["icons/premium_store.png", "icons/free_gems.png", "buttons/gem_claim.png"],
-        "quests_8h": ["icons/daily_missions.png", "icons/tile_quests.png", "buttons/quest_claim.png"],
-        "quest_rewards": ["icons/event_calendar.png", "icons/event_missions_tab.png", "buttons/quest_claim.png"],
-        "guild": ["home/tile_guild.png", "icons/guild_header.png", "icons/guild_coin.png", "buttons/guild_members_tab.png"],
+        "ad_gems": ["buttons/ad_gems_claim.png"],
+        "free_store_gems": ["icons/premium_store.png", "icons/free_gems.png"],
+        "quests_8h": ["icons/daily_missions.png", "icons/tile_quests.png", "buttons/quest_claim.png", "icons/chest_lock.png"],
+        "quest_rewards": ["icons/daily_missions.png", "icons/tile_quests.png", "buttons/quest_claim.png"],
+        "guild": ["home/tile_guild.png", "icons/guild_header.png", "buttons/guild_members_tab.png"],
+        "guild_store": ["icons/guild_coin.png"],
     }.items():
-        if gather.get(key, True):
+        if gather.get(key, key not in ("free_store_gems", "guild_store")):
             for rel in names:
-                need(rel, key.replace("_", " ").capitalize())
+                need(rel, key.replace("_", " ").capitalize(), blocking=key != 'ad_gems' and rel != 'buttons/quest_claim.png')
     for directive in body.get("shopping") or []:
         if not directive.get("enabled", True):
             continue
@@ -108,6 +120,7 @@ def requirements(cfg, body):
             for k, v in value.items():
                 if k in ("button", "fire") and isinstance(v, str) and v in ("nuke", "demon_mode"):
                     need(f"buttons/{v}.png", "Rescue ability")
+                if k == "second_wind" or (k == "on" and v == "second_wind"):
                     need("floaters/second_wind.png", "Rescue timing")
                 walk(v)
         elif isinstance(value, list):
@@ -118,10 +131,11 @@ def requirements(cfg, body):
     for key, button in (("dm_below", "demon_mode"), ("nuke_below", "nuke"), ("nuke_on_fleet", "nuke")):
         if abilities.get(key) is not None:
             need(f"buttons/{button}.png", "Rescue ability")
-            need("floaters/second_wind.png", "Rescue timing")
     if body.get("cancel_sprint") or abilities.get("rescue_bar"):
         need("icons/intro_sprint.png", "Intro sprint detection")
         need("home/intro_sprint_yes.png", "End intro sprint")
+    if any(abilities.get(k) is not None for k in ('dm_below', 'nuke_below', 'nuke_on_fleet')) and abilities.get('hold_until_second_wind', True):
+        need('floaters/second_wind.png', 'Rescue timing')
     if abilities.get("rescue_bar") == "wall":
         # Not an image: the wall watch reads config rois.wall_bar (per
         # instance) and capture.roi raises without it. Full setup detects the
@@ -207,6 +221,14 @@ def check(root, cfg, body):
                 if wall_bar_roi(cfg):
                     good.append(rel)
                 continue
+            if rel == 'floaters/second_wind.png':
+                from vision.installed_art import _images
+                try:
+                    if _images(str(accounts.calibration_dir(root,cfg)), rel):
+                        good.append(rel)
+                        continue
+                except (OSError, ValueError, KeyError):
+                    pass
             if rel in stale:
                 continue
             path = accounts.template_path(root, cfg, rel)
@@ -218,8 +240,12 @@ def check(root, cfg, body):
                          learned={rel: learned_rows[rel] for rel in row["alternatives"] if rel in learned_rows}))
     missing = [r for r in rows if not r["have"] and r["blocking"]]
     advisory = [r for r in rows if not r["have"] and not r["blocking"]]
-    return {"ready": not missing, "required": rows, "missing": missing, "advisory": advisory,
-            "calibration_url": "/ui/index.html#calibrate"}
+    result = {"ready": not missing, "required": rows, "missing": missing, "advisory": advisory,
+              "calibration_url": "/ui/index.html#calibrate"}
+    if missing and all(r['alternatives'] == ['floaters/second_wind.png'] for r in missing):
+        result.update(next_action='edit_run', action_label='Choose rescue timing',
+                      message='This run waits for Second Wind. Choose rescue timing that does not wait for it, or capture its indicator during normal play. Another setup scan will not help.')
+    return result
 
 
 def require(root, cfg, body):

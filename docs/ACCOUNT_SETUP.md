@@ -1,24 +1,35 @@
 # Account setup and calibration
 
-1. Open **Setup**, create an account, and connect its emulator. A new
-   account starts with one coin run using the equipment already in the game.
+For installation, recommended resolution and measured scan times, follow the
+[README setup guide](../README.md#quick-start). Allow **20–30 minutes** initially;
+the recent MuMu rescan took about 17 minutes and the BlueStacks full scan about
+21 minutes, with a separate four-minute repair pass.
+
+1. Open **Setup**, create an account, and connect its emulator. New accounts
+   receive Farm, Tournament and Shard farming recipes.
    Import existing settings only when they belong to this account; importing
    copies the profile, templates and calibration history and keeps the originals.
-2. Set the highest tier you have unlocked. Each run has its own farming tier.
-3. Check the display. The captured game frame must be **1080 Ã— 2560 at
-   360 dpi**. BlueStacks uses a **2560 Ã— 1080 landscape panel**, which the game
+2. Use **Start it**, **Use this one** and **Open The Tower** as needed. Resolve
+   any login/cloud-save prompt. Each run has its own farming tier; setup can
+   detect the highest unlocked tier during its temporary battle checks.
+3. Check the display. The captured game frame must be **1080 × 2560 at
+   360 DPI**. BlueStacks uses a **2560 × 1080 landscape panel**, which the game
    rotates. MuMu's game may use a secondary display. Arbitrary resolutions
    and DPI scaling are not supported.
-4. Open **Calibrate → Scan plan**, capture the navigation images, then choose the run you want to prepare. Its image
-   requirements exclude unused equipment and disabled features. Screen
-   recognition guards are shared because a dialog can cover any run.
-5. Select only unlocked features. Allow menu navigation for this calibration
-   session, then **Calibrate selected features**. Leave the emulator alone
-   while it navigates. **Resume unfinished steps** skips completed phases.
-6. Review the detected names and use **Use discovered presets in my profile**.
-   This updates account observations without replacing run settings or schedules.
-   Failed and interrupted phases preserve the previous account observations.
-7. In **Control**, select equipment and a tier. Use **Check setup** before
+4. End all existing battles and open Home. Going Home alone may leave a battle
+   active. Do not scan over a tournament.
+5. Click **Continue to map my game → Remap this game**, read the dialog and
+   choose **Continue preparation**. Keep the dashboard open and the emulator
+   untouched. Setup extracts installed artwork and follows the manifest; manual
+   crops and a separate legacy account scan are not normally required.
+6. Discoveries are saved automatically without replacing run settings. Setup may
+   start bounded normal test battles, ends only those battles, and restores the
+   original tier. Optional effects such as Second Wind never require an
+   indefinite wait. A failed full Remap can still repeat inventory work;
+   persistent resume remains an improvement.
+7. In **Control**, select equipment and a tier. Use **Prepare this run** if
+   required controls are missing; battle repair reuses completed discoveries.
+   Confirm that the run shows **Ready** before
    starting. Enable automation's tap permission when ready to let it control
    the emulator. Calibration's temporary permission does not enable runners.
 

@@ -25,7 +25,7 @@ FIRST_DIGIT_X = (10, 24)          # wave_reader's measured layout proof
 # the left and a value/price box on the right (interactions/shopper._find_stat).
 STAT_BORDER_THRESH = 190
 STAT_MIN_W, STAT_MIN_H, STAT_MAX_H = 380, 130, 260
-STAT_LABEL_LEFT_FRAC = 0.47       # the name sits in the left ~half of the box
+STAT_LABEL_LEFT_FRAC = 0.50       # include long names; the value plaque starts beyond halfway
 
 
 def glyph_boxes(gray, *, min_h=DIGIT_MIN_H, min_w=DIGIT_MIN_W):
@@ -44,7 +44,10 @@ def digit_glyphs(wave_crop, number):
     reading cannot be trusted to label glyphs: empty OCR, a glyph count that
     disagrees with the number's length, or a first glyph that is not where the
     wave counter starts (a stray bracket / a non-counter box)."""
-    number = re.sub(r"\D", "", number or "")
+    # This ROI contains only the numeric wave field (plus a clipped edge of
+    # its label). Windows OCR often spells a round zero as capital O.
+    # Glyph count and the native starting position still have to agree.
+    number = re.sub(r"\D", "", (number or "").replace('O', '0'))
     if not number:
         return {}
     gray = cv2.cvtColor(wave_crop, cv2.COLOR_BGR2GRAY)

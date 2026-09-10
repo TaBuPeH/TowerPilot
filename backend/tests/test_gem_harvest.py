@@ -6,8 +6,34 @@ battle screen, never over the Nuke/Demon-Mode ability row, and aimed at the
 measured top-left (135deg) arc rather than into the tower or the abilities.
 """
 import math
+import json
+from pathlib import Path
 
 from flows import shard
+
+
+def test_diamonds_need_no_captured_images_even_with_legacy_flag():
+    from player import readiness, accounts
+    cfg = {"active_instance": "main", "instances": {"main": {}}, "loadouts": {}}
+    required = readiness.requirements(cfg, {"kind": "coin", "gather": {
+        "flying_gem": True, "gem_orbit": {"enabled": True}}})
+    assert not any(p.startswith("floaters/gem_") for r in required for p in r["alternatives"])
+    assert not any(p.startswith("floaters/gem_") for p in accounts.generic_names())
+    targets = json.loads((Path(readiness.__file__).with_name("scan_targets.json")).read_text())
+    assert not any(t["rel"].startswith("floaters/gem_") for t in targets)
+    assert "floaters/second_wind.png" in accounts.generic_names()
+
+
+def test_collector_refreshes_frame_after_ad_claim(monkeypatch):
+    from types import SimpleNamespace
+    from interactions import ad_gems
+    calls = []
+    fresh = object()
+    monkeypatch.setattr(ad_gems, "AdGemCollector", lambda enabled: SimpleNamespace(poll=lambda f: calls.append("ad")))
+    monkeypatch.setattr(shard, "GemOrbitTapper", lambda **kw: SimpleNamespace(enabled=True, poll=lambda f: calls.append(f)))
+    monkeypatch.setattr(shard.capture, "grab", lambda: fresh)
+    shard.GemWatch().poll(object())
+    assert calls == ["ad", fresh]
 
 
 def test_orbit_points_land_on_the_top_left_arc():

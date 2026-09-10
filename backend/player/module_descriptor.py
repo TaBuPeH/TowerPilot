@@ -4,6 +4,27 @@ import numpy as np
 from player.bootstrap_layout import manifest
 
 
+def settled_panel(icon, first, grab, pause, attempts=8):
+    """Wait through opening animation; require the same mapping twice.
+
+    The close control can appear before the enlarged icon finishes moving.
+    A transient failure must not abort the inventory or weaken its identity check.
+    """
+    previous = None
+    frame = first
+    for _ in range(attempts):
+        try:
+            box = locate_icon(icon, frame)
+        except RuntimeError:
+            box = None
+        if box is not None and previous is not None and max(abs(a-b) for a,b in zip(box, previous)) <= 3:
+            return frame
+        previous = box
+        pause(.25)
+        frame = grab()
+    raise RuntimeError('Module artwork did not settle into a consistent description position; retry this scan')
+
+
 def locate_icon(icon, panel):
     """Feature registration locates enlarged artwork; no pixels are rescaled.
 
@@ -23,6 +44,18 @@ def locate_icon(icon, panel):
             raise RuntimeError('Module description is outside the supported native frame')
     from player.asset_verify import locate
     hit = locate(icon, panel, [x,y,w,h])
+    if hit is None and min(icon.shape[:2]) > 20:
+        # Inventory tile edges include neighbouring glow/background. Match
+        # the unchanged inner artwork, then recover the original crop extent
+        # using the measured registration (not an assumed display scale).
+        inset = 5
+        inner = locate(icon[inset:-inset, inset:-inset], panel, [x,y,w,h])
+        if inner is not None:
+            padding = round(inset * inner['scale'])
+            ix,iy,iw,ih = inner['rect']
+            rect = [ix-padding, iy-padding, iw+2*padding, ih+2*padding]
+            if rect[0] >= x and rect[1] >= y and rect[0]+rect[2] <= x+w and rect[1]+rect[3] <= y+h:
+                hit = dict(inner, rect=rect)
     if hit is None or not .8 <= hit['scale'] <= 3:
         raise RuntimeError('Description icon does not match the clicked tile with consistent scale and position')
     return hit['rect']

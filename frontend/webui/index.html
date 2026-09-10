@@ -31,6 +31,7 @@
     background-attachment: fixed;
   }
   ::selection { background:rgba(10,132,255,.4); }
+  #screen-mapping { max-height:10rem; overflow-y:auto; }
 
   header.topbar {
     display:flex; align-items:center; gap:1.2rem; padding:.6rem 1.3rem;
@@ -495,9 +496,10 @@ async function loadStatus(){
 }
 
 async function loadHomeData(){
-  const [vocab, flows, config, plist] = await Promise.all([
+  const [vocab, flows, config, plist, templates] = await Promise.all([
     api("/api/vocab"), api("/api/flows"), api("/api/config"),
-    api("/api/profiles")]);
+    api("/api/profiles"), api("/api/run-templates")]);
+  S.runTemplates = templates.templates;
   S.vocab = vocab.vocab; S.flows = flows.flows; S.config = config;
   const rows = Array.isArray(plist) ? plist : (plist.profiles || []);
   S.profiles = {
@@ -686,6 +688,7 @@ async function selectAccount(create=false){
   } catch(e) { toast(e.message, true); }
 }
 async function renderSetup(){
+  S.tools = await api("/api/wizard/tools").catch(e => ({stage:"error",message:e.message}));
   S.accounts = await api("/api/accounts").catch(() => ({accounts:[]}));
   [S.wizard, S.emus] = await Promise.all([
     api("/api/wizard/state").catch(() => ({})),
@@ -723,6 +726,9 @@ async function renderSetup(){
       <td>${esc(serial || "")}</td>
       <td style="white-space:nowrap">
         ${serial && i.running ? useOrStatus(serial, adbFor(i.emulator)) : ""}
+        ${i.running && serial === ((e.configured || []).find(c => c.instance === e.active_instance) || {}).serial
+          && ['MuMu', 'BlueStacks'].includes(i.emulator)
+          ? `<button class="small" onclick="launchVM('${esc(i.emulator)}', '${esc(String(i.index))}')">Open The Tower</button>` : ""}
         ${!i.running && i.index !== undefined
           && ((i.emulator||"").startsWith("MuMu") || (i.emulator||"").startsWith("BlueStacks"))
           ? `<button class="small ghost" onclick="launchVM('${esc(i.emulator)}', '${esc(String(i.index))}')">Start it</button>` : ""}
@@ -743,6 +749,14 @@ async function renderSetup(){
         connect to it</button></p>` : "";
 
   $("#view").innerHTML = `
+  <article>
+    <header>Get connected in three steps</header>
+    <p>Prepare connection tools → Start or connect your emulator → Map your game.</p>
+    <p>No terminal, separate ADB installation or PATH changes needed. Your emulator can be closed. Keep The Tower installed and signed in.</p>
+    <p id="tools-status" role="status" aria-live="polite">${esc(S.tools.installed ? '✓ Connection tools installed' : S.tools.message || 'Prepare connection tools first')}</p>
+    <progress id="tools-progress" max="100" value="${S.tools.percent || 0}" ${S.tools.installed ? 'hidden' : ''}></progress>
+    ${!S.tools.installed ? `<label class="inline"><input id="tools-license" type="checkbox">I accept the <a href="https://developer.android.com/tools/releases/platform-tools" target="_blank" rel="noopener">Android SDK terms</a> for this download.</label><button id="install-tools" onclick="installConnectionTools()">Install connection tools</button>` : ''}
+  </article>
   ${accountSetupHtml()}
   <article>
     <header><span class="step-num">1</span>Connect your emulator
@@ -779,8 +793,8 @@ async function renderSetup(){
     <p class="muted">With the game open on its Home screen, this reads what
       your account owns — guardians, card presets, equipped modules — so runs
       can be tailored to it and never tap an ability you don't have.
-      It navigates menus only; it starts no battle.</p>
-    <div id="scan-box"><button onclick="startScan()">Start account scan</button>
+      Setup also runs a short test battle and saves the results automatically. The confirmation explains the test before it starts.</p>
+    <div id="scan-box"><a href="#calibrate" role="button">Continue to map my game</a>
       <span id="scan-state" class="muted"></span></div>
   </article>
 
@@ -788,10 +802,30 @@ async function renderSetup(){
      ${calibOk() ? 'Recognition setup is complete. Continue to <a href="#home">Control</a>.' : 'Next: <a href="#calibrate">scan the game and capture recognition images</a>. Control unlocks after the scan is complete.'}</p></article>` : ""}`;
 }
 
+async function installConnectionTools(){
+  if (!$("#tools-license")?.checked) { toast("Accept the Android SDK terms to install connection tools", true); return; }
+  const button = $("#install-tools");
+  if (button) button.disabled = true;
+  try {
+    await post("/api/wizard/tools/install", {accept_license:true});
+    while (S.view === "setup") {
+      const r = await api("/api/wizard/tools");
+      if ($("#tools-status")) $("#tools-status").textContent = r.message;
+      const bar = $("#tools-progress");
+      if (bar) { if (r.percent == null) bar.removeAttribute("value"); else bar.value=r.percent; }
+      if (r.stage === "error") throw new Error(r.message);
+      if (r.installed) { await renderSetup(); return; }
+      await new Promise(resolve => setTimeout(resolve, 700));
+    }
+  } catch(e) { toast(e.message, true); }
+  finally { if (button) button.disabled = false; }
+}
+
 async function adopt(serial, adb){
   try {
     const r = await post("/api/wizard/adopt", adb ? { serial, adb } : { serial });
-    toast("Connected: config now points at " + serial);
+    if (!r.connected) throw new Error(r.message || "Emulator is not connected yet");
+    toast("Connected to " + serial);
     await checkResolution(serial);
     await loadStatus();
     renderSetup();
@@ -809,6 +843,10 @@ function renderBootStatus(){
   const el = $("#boot-state"); if (!el || !S.status) return;
   const running = (S.status.processes || []).some(p => p.runner === "boot");
   const event = (S.status.events || []).filter(e => ["boot_stage","boot_done"].includes(e.kind) || (e.kind === "runner_crashed" && e.flow === "boot")).at(-1);
+  if (!running && event?.kind === 'boot_done' && event.ok && S.view === 'setup' && S.bootRefreshed !== event.t) {
+    S.bootRefreshed = event.t;
+    renderSetup().catch(e => toast(e.message, true));
+  }
   el.textContent = running ? `Starting emulator${event?.stage ? ": " + event.stage : ""}…`
     : event?.kind === "boot_done" && event.ok ? (event.calibration_required ? "Game started — scan required. Continue to Calibrate; no recognition images have been assumed." : "Game started and screen recognized.")
     : event && (event.ok === false || event.kind === "runner_crashed") ? `Boot stopped: ${event.error || event.stage || "check the emulator"}.`
@@ -906,7 +944,7 @@ function calibrationKnowledge(st){
       if(cards.length) found += ': ' + cards.map(c=>c.name + (c.active ? ' ✓' : '') + (c.mastery ? ' ★' : '')).join(', ');
     }
     if (key === "modules" && (phase || manifest?.slots?.length || evidence.length)) {
-      const total = manifest?.inventory_complete ? `${manifest.inventory.length} modules recorded in the full scan` : "Full inventory not yet confirmed";
+      const total = manifest?.inventory_complete ? `${manifest.inventory.length} modules recorded in the full scan` : player.module_inventory_complete ? "Equipped slots and full inventory scanned" : "Full inventory not yet confirmed";
       found = `${total}; ${(player.modules_equipped || []).length} equipped; ${(player.modules_copies || []).length} inventory copies recorded`;
       if (manifest?.slots) found += `; ${manifest.slots.filter(r => r.state === "locked").length} locked slots`;
     }
@@ -914,6 +952,8 @@ function calibrationKnowledge(st){
   }).join("");
 }
 async function renderCalibrate(){
+  // Direct links must bind account-scoped preferences before rendering them.
+  S.config = await api("/api/config");
   const prefs = calibrationPreferences();
   S.calibrationRuns = (await api("/api/runs").catch(() => ({runs:{}}))).runs || {};
   S.readiness = await api("/api/readiness" + (S.calibrationPreset ? "?preset=" + encodeURIComponent(S.calibrationPreset) : "")).catch(e => ({error:e.message}));
@@ -938,10 +978,35 @@ async function renderCalibrate(){
   <div>
     <article>
       <header>What to scan next <span id="calib-state" class="muted" style="font-weight:normal; font-size:.85em"></span></header>
+      <section><h3>Map your game</h3><p>Connect your emulator, open Home in the game, then press Remap. We find the installed artwork, check the available screens and read your cards, modules and presets. You do not need to choose features or draw image crops. Keep the emulator free while mapping runs.</p><p><a href="#setup">Connect or change emulator</a></p><button id="client-remap" onclick="remapClient()">Remap this game</button><ol id="screen-mapping" aria-label="Screen mapping progress"></ol></section>
+      <p id="bootstrap-progress" role="status" aria-live="polite"></p>
+      <button class="small ghost" onclick="stopCalibrate()">Stop</button>
+      <div id="bootstrap-timeline"></div>
+    </article>
+    <article>
+      <header>What we know about this account</header>
+      <p class="muted">Saved discoveries for this account and emulator. “Scanned” means names and equipment were recorded; recognition images have a separate verification status. These results do not depend on the scan switches above.</p>
+      <div id="calib-knowledge">Loading saved discoveries…</div>
+      <div id="calib-manifest"></div>
+      <details><summary>Recognition images and diagnostic scores</summary><div id="calib-report"></div></details>
+      <button class="ghost" onclick="applyCalibration()">Use discovered presets in my profile</button>
+      <p class="muted">Applying discoveries is separate from scanning. Your run settings are preserved.</p>
+      <label>Run to prepare<select onchange="S.calibrationPreset=this.value; renderCalibrate()">${Object.entries(S.calibrationRuns).filter(([k]) => k !== "combo").map(([k,v]) => `<option value="${esc(k)}" ${S.readiness.preset === k ? "selected" : ""}>${esc(v.label || k)}</option>`).join("")}</select></label>
+      <button data-prepare-run onclick="prepareRun(S.readiness.preset)">Prepare this run</button>
+      <p class="prepare-run-status" role="status" aria-live="polite">${esc(S.prepareMessage || S.readiness.message || "Use the completed scan and automatically capture what this run still needs.")}</p>
+      <div id="calibration-readiness">${S.readiness.message ? `<p>${esc(S.readiness.message)}</p>` : S.readiness.error ? `<p class="bad">${esc(S.readiness.error)}</p>` : `<p class="${S.readiness.ready ? "ok" : "bad"}">${S.readiness.ready ? "Required images are present. Verify recognition on your emulator before relying on it." : `Outstanding — ${(S.readiness.missing || []).length} image${(S.readiness.missing || []).length === 1 ? "" : "s"} this run still needs. Each card says what to look for, where, and how to capture it.`}</p>`}
+        ${(S.readiness.missing || []).length ? `<p class="muted">Open the screen that shows the missing control, then use Capture or Watch at the top of this page. Both inspect screenshots without tapping the game.</p>` : ""}
+        ${(S.readiness.missing || []).length ? `<details><summary>Advanced: required image details (${S.readiness.missing.length})</summary>${S.readiness.missing.map(row => outstandingCard(row, "calibrate")).join("")}</details>` : ""}
+        ${(S.readiness.advisory || []).length ? `<details><summary class="muted">${(S.readiness.advisory || []).length} optional recognition images - capture when the screen appears (a live tournament, the welcome-back resume, a reward skip); this run starts without them</summary>
+          ${(S.readiness.advisory || []).map(row => `<div class="flowcard"><div>${row.alternatives.map(rel => `${artPair(rel, "")}<button class="small ghost" data-template="${esc(rel)}" onclick="cropPick(this.dataset.template)">${esc(rel)}</button>`).join(" or ")}</div></div>`).join("")}</details>` : ""}
+      </div>
+    </article>
+    <details><summary>Advanced: targeted scans and repair</summary>
       <p id="observe-progress" role="status" aria-live="polite"></p>
       <p><button class="small" onclick="observeNow()">Capture from the screen now (no taps)</button> <button class="small ghost" onclick="observeNow(120)">Watch the screen for 2 min (no taps)</button></p>
+
       <p class="muted">Switch on the unlocked features you want to scan. Off means “skip in the next basic scan”; it does not mean unknown or locked. Choices are remembered for this account and emulator.</p>
-      <section><h3>Prepare recognition from your installed game</h3><p>Extract the installed artwork, map it to the shipped manifest, then verify it on Home and the available menus. Full setup goes further: it starts and cancels a normal battle and opens Events, Store and Guild to capture the controls that only appear during play — you'll see it tap around your own profile. It never touches a tournament. Images stay on this computer. Open Home and allow navigation below to begin.</p><button id="bootstrap-start" onclick="startBootstrap()">Full setup: extract, verify and capture live screens</button><p id="bootstrap-progress" role="status" aria-live="polite"></p><div id="bootstrap-timeline"></div><div id="asset-library-summary"></div></section>
+      <section><h3>Prepare recognition from your installed game</h3><p>Extract the installed artwork, map it to the shipped manifest, then verify it on Home and the available menus. Full setup goes further: it starts and cancels a normal battle and opens Events, Store and Guild to capture the controls that only appear during play — you'll see it tap around your own profile. It never touches a tournament. Images stay on this computer. Open Home and allow navigation below to begin.</p><button id="bootstrap-start" onclick="startBootstrap()">Capture battle screens (optional)</button><div id="asset-library-summary"></div></section>
       <section><h3>Understand the current screen</h3><p>Take one snapshot and compare it with the installed artwork. This only observes; it does not navigate or change equipment.</p><button id="analyze-screen" onclick="analyzeScreen()">Analyze this screen</button><p id="analysis-progress" role="status" aria-live="polite"></p><div id="analysis-result"></div></section>
       <div id="scan-plan"><p>Loading the image acquisition plan…</p></div>
       <fieldset><legend>Include in the next basic scan</legend>
@@ -953,30 +1018,25 @@ async function renderCalibrate(){
       <div style="display:flex; gap:.6rem; align-items:center; flex-wrap:wrap">
         <button disabled onclick="startCalibrate()">Phase 1: basic scan</button><button disabled class="ghost" onclick="startCalibrate(true)">Resume unfinished steps</button>
         <label style="margin:0; white-space:nowrap"><input type="checkbox" id="calib-over" ${prefs.overwrite ? "checked" : ""} onchange="rememberCalibration()"> Replace existing recognition images</label>
-        <button class="small ghost" onclick="stopCalibrate()">Stop</button>
+
       </div>
       <p class="muted">Phase 2 completes the equipped-module images. It first records all eight slots, including locked assists. Then it unequips the occupied slots, scans the full inventory once, and restores the saved setup. Stop waits for restoration.</p>
       <button disabled id="calib-phase2" onclick="startEquippedCalibration()">Phase 2: scan and restore equipped modules</button>
       <p class="muted">Phase 2 always scans modules, regardless of the basic-scan switches above.</p>
       <p id="calib-progress" role="status" aria-live="polite">Checking calibration status…</p><div id="calib-timeline"></div>
-    </article>
-    <article>
-      <header>What we know about this account</header>
-      <p class="muted">Saved discoveries for this account and emulator. “Scanned” means names and equipment were recorded; recognition images have a separate verification status. These results do not depend on the scan switches above.</p>
-      <div id="calib-knowledge">Loading saved discoveries…</div>
-      <div id="calib-manifest"></div>
-      <details><summary>Recognition images and diagnostic scores</summary><div id="calib-report"></div></details>
-      <button class="ghost" onclick="applyCalibration()">Use discovered presets in my profile</button>
-      <p class="muted">Applying discoveries is separate from scanning. Your run settings are preserved.</p>
-      <label>Run to prepare<select onchange="S.calibrationPreset=this.value; renderCalibrate()">${Object.entries(S.calibrationRuns).filter(([k]) => k !== "combo").map(([k,v]) => `<option value="${esc(k)}" ${S.readiness.preset === k ? "selected" : ""}>${esc(v.label || k)}</option>`).join("")}</select></label>
-      <div id="calibration-readiness">${S.readiness.error ? `<p class="bad">${esc(S.readiness.error)}</p>` : `<p class="${S.readiness.ready ? "ok" : "bad"}">${S.readiness.ready ? "Required images are present. Verify recognition on your emulator before relying on it." : `Outstanding — ${(S.readiness.missing || []).length} image${(S.readiness.missing || []).length === 1 ? "" : "s"} this run still needs. Each card says what to look for, where, and how to capture it.`}</p>`}
-        ${(S.readiness.missing || []).length ? `<p class="muted">Open the screen that shows the missing control, then use Capture or Watch at the top of this page. Both inspect screenshots without tapping the game.</p>` : ""}
-        ${(S.readiness.missing || []).map(row => outstandingCard(row, "calibrate")).join("")}
-        ${(S.readiness.advisory || []).length ? `<details><summary class="muted">${(S.readiness.advisory || []).length} optional recognition images - capture when the screen appears (a live tournament, the welcome-back resume, a reward skip); this run starts without them</summary>
-          ${(S.readiness.advisory || []).map(row => `<div class="flowcard"><div>${row.alternatives.map(rel => `${artPair(rel, "")}<button class="small ghost" data-template="${esc(rel)}" onclick="cropPick(this.dataset.template)">${esc(rel)}</button>`).join(" or ")}</div></div>`).join("")}</details>` : ""}
-      </div>
-    </article>
-    <details open><summary>Advanced: missing images, manual repair and template library</summary>
+    </details>
+      <details><summary>Advanced developer tools</summary><section id="client-clicker"><h3>Click a recognized control</h3>
+        <p>Choose a menu control. Preview checks its saved image near the manifest position. Watch checks for up to two minutes and clicks once when it is verified. Keep this page open and leave the emulator untouched while watching.</p>
+        <label>Action <select id="clicker-action"><option value="guild">Open Guild</option><option value="events">Open Events</option><option value="presets">Open preset picker</option><option value="close_presets">Close preset picker</option><option value="cards_home">Return from Cards to Home</option><option value="guild_home">Return from Guild to Home</option></select></label>
+        <button onclick="clientClicker('preview')">Preview target</button>
+        <button onclick="clientClicker('once')">Verify and click once</button>
+        <button onclick="clientClicker('watch')">Watch and click once</button>
+        <button class="ghost" onclick="stopClientClicker()">Stop watching</button>
+        <p id="clicker-status" role="status" aria-live="polite">No clicker is running.</p>
+        <ol id="clicker-history" aria-label="Clicker activity"></ol>
+        <img id="clicker-preview" alt="Screenshot checked by the clicker; green rectangle marks the matched target" style="display:none;max-width:240px;width:100%">
+      </section><p><a href="/api/manifest/contribution" download>Export text-only manifest contribution</a> — for review; no images or account details.</p></details>
+    <details><summary>Advanced: missing images, manual repair and template library</summary>
     <article>
       <header>Previously missing images</header>
       <p class="muted">The autopilot recognizes the game purely by matching
@@ -1059,7 +1119,7 @@ async function renderCalibrate(){
         <button class="small ghost" onclick="cropRefresh()">↻ Refresh</button>
         <a role="button" class="small ghost" href="/api/frame.png" target="_blank">Open full size ↗</a>
       </div>
-      <details id="manual-crop" open><summary>Advanced: repair an image manually</summary>
+      <details id="manual-crop"><summary>Advanced: repair an image manually</summary>
       <div style="display:flex; gap:.5rem; margin-top:.5rem; flex-wrap:wrap; align-items:center">
         <input id="crop-name" placeholder="folder/name.png (e.g. modules/my_module.png)"
                style="margin:0; flex:1; min-width:16rem">
@@ -1138,6 +1198,57 @@ function observationFeedback(st){
   if (el) el.textContent = observing ? `Screen capture running — ${record?.message || "Preparing screenshots…"}`
     : record ? `Screen capture ${record.status === "done" ? "finished" : "stopped before completion"} — ${record.message}` : "";
 }
+let clientClickerGeneration = 0;
+function stopClientClicker(){
+  clientClickerGeneration++;
+  const el = $("#clicker-status");
+  if (el) el.textContent = "Watching stopped. A click already being verified may still finish; no further checks will start.";
+}
+async function clientClicker(mode){
+  if (S.clientClickerBusy) return;
+  const generation = ++clientClickerGeneration;
+  const action = $("#clicker-action").value;
+  const instance = S.config.active_instance;
+  const account = S.config.instances[instance]?.account;
+  const until = Date.now()+120000;
+  S.clientClickerBusy = true;
+  const controls = document.querySelectorAll('#client-clicker select, #client-clicker [onclick^="clientClicker"]');
+  controls.forEach(el=>el.disabled=true);
+  const active = () => generation === clientClickerGeneration && location.hash === '#calibrate' && !document.hidden;
+  const report = message => {
+    if (!$("#clicker-status")) return;
+    $("#clicker-status").textContent = message;
+    const li = document.createElement('li'); li.textContent = new Date().toLocaleTimeString()+' — '+message;
+    const history = $("#clicker-history"); history.prepend(li);
+    while(history.children.length>20) history.lastElementChild.remove();
+  };
+  try {
+    do {
+      if (!active()) break;
+      report('Checking the current screen and manifest position…');
+      let result = (await post('/api/clicker/step',{action,instance,account,execute:false})).result;
+      const img = $("#clicker-preview");
+      if (img) { img.src='/api/clicker/frame?t='+Date.now(); img.style.display='block'; }
+      report(result.reason);
+      if (!active() || mode === 'preview') break;
+      if (result.ok) {
+        report('Verifying a second frame and sending one click…');
+        result = (await post('/api/clicker/step',{action,instance,account,execute:true})).result;
+        report(result.reason);
+        break; // Never retry a click whose outcome is uncertain.
+      }
+      if (mode !== 'watch') break;
+      await new Promise(resolve=>setTimeout(resolve,2500));
+    } while(Date.now()<until);
+    if (mode === 'watch' && Date.now()>=until) report('Watch finished without a verified target. No click sent.');
+  } catch(e){ report('Stopped: '+e.message); }
+  finally {
+    S.clientClickerBusy=false;
+    controls.forEach(el=>el.disabled=false);
+  }
+}
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) clientClickerGeneration++; });
+window.addEventListener('hashchange',()=>{ clientClickerGeneration++; });
 async function observeNow(watch){
   // read-only: the screen the person is showing right now, searched with the
   // installed artwork; results land in the calibrate state a few seconds later.
@@ -1255,6 +1366,18 @@ async function startBootstrap(){
   } catch(e){ S.scanLaunchPending = null; toast(e.message, true); }
   pollCalibrate();
 }
+async function remapClient(){
+  if (!await confirmPreparation("Set up farming?\n\nAllow approximately 15–22 minutes, including battle verification. Larger inventories or slower emulators may take longer.\n\nLeave the game on Home and keep the emulator untouched. Setup scans menus once, then tests a battle at your highest unlocked tier. It may use a bounded Tier 1 pass for missing controls. It ends only its own test battles and restores your original tier. Discoveries are saved to your profile automatically. Optional effects never block completion.\n\nStart setup?")) return;
+  try {
+    S.scanLaunchPending = Date.now();
+    calibrationBusy(true);
+    $("#bootstrap-progress").textContent = "Remapping: extract artwork, verify Home, then follow the screen manifest…";
+    await post('/api/calibrate/start', {bootstrap:true, flows:true, phases:'c,m', fresh:true,
+      overwrite:true, allow_navigation:true});
+    localStorage.setItem('finishFullSetup', '1');
+  } catch(e){ S.scanLaunchPending=null; toast(e.message,true); }
+  pollCalibrate();
+}
 async function startCalibrate(resume=false){
   try {
     const phases = [...document.querySelectorAll('[name="calibration-phase"]:checked')].map(el => el.value).join(",");
@@ -1283,6 +1406,79 @@ async function startEquippedCalibration(){
 async function applyCalibration(){
   try { await post("/api/calibrate/apply", {}); await loadHomeData(); toast("Discovered presets are ready to use in Equipment."); }
   catch(e) { toast(e.message, true); }
+}
+function confirmPreparation(message){
+  return new Promise(resolve => {
+    const dialog = document.createElement('dialog');
+    dialog.setAttribute('aria-label', 'Prepare this run');
+    dialog.innerHTML = `<article><header>Prepare this run</header><div role="alert" style="border:2px solid #f5b942;border-radius:12px;padding:18px;margin:16px 0;background:#402f18;color:#fff"><strong style="font-size:1.3em">Before scanning: end all battles and open Home</strong><p>Returning to Home can leave a battle running. Finish or surrender that battle first, then return to the game's Home screen. Do not start a scan during a tournament.</p></div><p style="white-space:pre-line">${esc(message)}</p><footer><button class="ghost" data-cancel>Cancel</button><button data-continue>Continue preparation</button></footer></article>`;
+    document.body.appendChild(dialog);
+    let accepted = false;
+    dialog.querySelector('[data-cancel]').onclick = () => dialog.close();
+    dialog.querySelector('[data-continue]').onclick = () => { accepted = true; dialog.close(); };
+    dialog.addEventListener('close', () => { dialog.remove(); resolve(accepted); }, {once:true});
+    dialog.showModal();
+  });
+}
+function preparationMessage(message){
+  S.prepareMessage = message;
+  document.querySelectorAll('.prepare-run-status').forEach(el => el.textContent = message);
+}
+async function prepareRun(selected){
+  if (S.prepareBusy) return;
+  const run = selected || $('#start-preset')?.value || S.readiness?.preset;
+  if (!run) { toast('Choose a run first.', true); return; }
+  S.prepareBusy = true;
+  document.querySelectorAll('[data-prepare-run]').forEach(el => el.disabled = true);
+  try {
+    const before = await api('/api/calibrate/status');
+    if (before.running) throw new Error('A scan is already running. Let it finish first.');
+    if (before.restore_pending) throw new Error('Restore the saved module setup before preparing a run.');
+    preparationMessage('Using your completed scan…');
+    if (Object.keys(before.state?.player || {}).length) await post('/api/calibrate/apply', {});
+    let result = await api('/api/readiness?preset=' + encodeURIComponent(run));
+    if (result.ready) {
+      preparationMessage('Ready. You can start this run from Control.');
+      await loadStatus();
+      if (S.view === 'home') await renderHome(); else await renderCalibrate();
+      return;
+    }
+    if (result.next_action === 'edit_run') {
+      preparationMessage(result.message);
+      await loadHomeData();
+      openEditor(run.replace(/^bp_/, ''));
+      return;
+    }
+    const accepted = await confirmPreparation('Prepare the missing run controls?\n\nYour completed discoveries have been saved. The automatic setup will reuse your menu and inventory scan and start a temporary normal battle to verify battle controls, weapons and the wave counter, then end only that battle. It will not enter a tournament or purchase anything.\n\nAllow approximately 3–6 minutes. Second Wind is optional and will not hold up preparation. Keep the game on Home, leave the emulator untouched, and keep this dashboard open so it can apply the results and check readiness.\n\nContinue?');
+    if (!accepted) { preparationMessage('Discoveries saved. Battle preparation has not started.'); return; }
+    const previous = JSON.stringify(before.state);
+    preparationMessage('Preparing recognition automatically…');
+    await post('/api/calibrate/start', {bootstrap:true, flows:true, battle_only:true, phases:'c,m', overwrite:false, allow_navigation:true});
+    S.calibrationPreset = run;
+    location.hash = '#calibrate';
+    const started = Date.now();
+    let seenWorker = false;
+    while (true) {
+      await new Promise(resolve => setTimeout(resolve, 1200));
+      const status = await api('/api/calibrate/status');
+      seenWorker = seenWorker || status.running || JSON.stringify(status.state) !== previous;
+      if (!seenWorker && Date.now() - started > 30000) throw new Error('The scan did not start. Please try Prepare this run again.');
+      if (status.running || !seenWorker) continue;
+      const phase = status.state?.phases?.bootstrap;
+      if (status.restore_pending || !['done', 'needs_attention'].includes(phase?.status))
+        throw new Error('Preparation stopped. See the latest scan step for the reason.');
+      await post('/api/calibrate/apply', {});
+      result = await api('/api/readiness?preset=' + encodeURIComponent(run));
+      preparationMessage(result.ready ? 'Ready. You can start this run from Control.' : 'Discoveries saved. ' + (result.message || 'Some controls were not visible during preparation. The remaining checks are listed below.'));
+      await loadStatus();
+      if (S.view === 'home') await renderHome(); else await renderCalibrate();
+      break;
+    }
+  } catch(e) { preparationMessage(e.message); toast(e.message, true); }
+  finally {
+    S.prepareBusy = false;
+    document.querySelectorAll('[data-prepare-run]').forEach(el => el.disabled = false);
+  }
 }
 async function stopCalibrate(){
   try { await post("/api/calibrate/stop", {}); toast("stop requested - it finishes the current step"); }
@@ -1366,7 +1562,7 @@ function assetLibraryHTML(assets){
     <p class="muted">Extracted artwork does not establish what your account owns or has unlocked. Rendered labels and composed controls are verified from the game screen.</p>
     ${assets.empty_placeholders ? `<p class="muted">${assets.empty_placeholders} empty texture placeholders contain no source pixels. Rendered text is checked on screen.</p>` : ""}
     ${assets.decode_errors ? `<p class="muted">${assets.decode_errors} image objects could not be decoded; their source records remain in the local extraction report.</p>` : ""}
-    <details open><summary>Mapped artwork and verification</summary><table><thead><tr><th>Target</th><th>Installed source</th><th>Screen check</th></tr></thead><tbody>${(assets.targets || []).map(t=>`<tr class="row-${rowState(t.verification) || "none"}"><td>${artPair(t.rel, rowState(t.verification))}${esc(t.rel)}</td><td>${esc(t.names.join(", ") || "Source not found")}</td><td>${esc(labels[t.verification] || t.verification)}</td></tr>`).join("")}</tbody></table></details></section>`;
+    <details><summary>Advanced: mapped artwork and verification</summary><table><thead><tr><th>Target</th><th>Installed source</th><th>Screen check</th></tr></thead><tbody>${(assets.targets || []).map(t=>`<tr class="row-${rowState(t.verification) || "none"}"><td>${artPair(t.rel, rowState(t.verification))}${esc(t.rel)}</td><td>${esc(t.names.join(", ") || "Source not found")}</td><td>${esc(labels[t.verification] || t.verification)}</td></tr>`).join("")}</tbody></table></details></section>`;
 }
 function calibrationMode(st){
   return st.selection?.mode || (st.running && st.state?.phases?.bootstrap?.status === "running" ? "bootstrap" : "basic");
@@ -1394,10 +1590,26 @@ function calibReport(st){
   S.scanLaunchPending=null;
   S.lastCalibrationState=stateKey;
   calibrationBusy(st.running);
+  const preview = $("#calib-frame");
+  if (preview && (st.running || S.previewWasRunning) && Date.now()-(S.previewUpdatedAt || 0)>4000
+      && (typeof CROP === 'undefined' || (!CROP.drag && !CROP.rect))) {
+    S.previewUpdatedAt = Date.now();
+    S.calibTs = S.previewUpdatedAt;
+    preview.src = '/api/frame.png?ts=' + S.calibTs;
+  }
+  S.previewWasRunning = st.running;
   observationFeedback(st);
   $("#calib-phase2").disabled = st.running || st.state?.phases?.modules?.status !== "done";
   renderCalibrationIntent();
-  const starter = st.state?.phases?.bootstrap;
+  let starter = st.state?.phases?.bootstrap;
+  const incompleteMaps = Object.entries(st.state?.screen_map || {}).filter(([,row])=>row.status!=='verified').map(([name])=>name);
+  if (starter?.status === 'done' && incompleteMaps.length) starter = {...starter,status:'needs_attention',message:starter.message+' Incomplete screen maps: '+incompleteMaps.join(', ')+'.'};
+  const map = $("#screen-mapping");
+  if (map) map.innerHTML = Object.entries(st.state?.screen_map || {}).map(([name,row])=> {
+    const list = st.state?.collections?.[name];
+    const pages = list ? `; ${list.pages} pages read${list.complete ? ', list end confirmed' : ', list incomplete'}` : '';
+    return `<li>${esc(name.replaceAll('_',' '))}: ${row.verified}/${row.total} screen anchors verified${row.status === 'verified' ? '' : ' — mapping incomplete'}${esc(pages)}</li>`;
+  }).join('');
   const starterEl = $("#bootstrap-progress");
   if (starterEl && starter) starterEl.textContent = `${starter.completed || 0}/${starter.total || 1} steps - ${starter.status}: ${starter.message || ""}${starter.skipped?.length ? ` ${starter.skipped.length} captures or menus need another pass.` : ""}`;
   const starterRunning=st.running && calibrationMode(st) === "bootstrap";
@@ -1409,6 +1621,24 @@ function calibReport(st){
   else if (calibrationMode(st) === "observe" && $("#calib-timeline")) $("#calib-timeline").innerHTML = "";
   if (S.bootstrapWasRunning && !st.running) renderScanPlan();
   S.bootstrapWasRunning = st.running;
+  if (!st.running && localStorage.getItem('finishFullSetup') &&
+      ['done', 'needs_attention'].includes(starter?.status) && !S.finishingSetup) {
+    S.finishingSetup = true;
+    (async () => {
+    try {
+      if (st.restore_pending) throw new Error('Restore the saved module setup before completing setup.');
+      await post('/api/calibrate/apply', {});
+      const ready = await api('/api/readiness?preset=bp_coin_default');
+      preparationMessage(ready.ready ? 'Setup complete. Open Control and Start farming.' :
+        'Scan saved. ' + (ready.message || 'A required control still needs verification.'));
+      localStorage.removeItem('finishFullSetup');
+      await loadStatus();
+    } catch(e) {
+      localStorage.removeItem('finishFullSetup');
+      preparationMessage('Setup could not finish: ' + e.message);
+    } finally { S.finishingSetup = false; }
+    })();
+  }
   const known = $("#calib-knowledge");
   if (known) known.innerHTML = `<table><thead><tr><th>Feature</th><th>Saved discoveries</th><th>Recognition images</th></tr></thead><tbody>${calibrationKnowledge(st)}</tbody></table>`;
   const manifest = $("#calib-manifest");
@@ -1455,7 +1685,7 @@ function calibReport(st){
   <p class="muted">A good cut matches itself at 1.00 and nothing else above 0.85. "exists" = a file was already there and was kept (tick overwrite to replace it); the names are in the draft profile for Promote.</p>`;
 }
 function calibrationBusy(running){
-  document.querySelectorAll('#bootstrap-start, [onclick^="startCalibrate"], [onclick^="observeNow"], #calib-phase2, [name="calibration-phase"], #calib-taps, #calib-over, [onclick="applyCalibration()"]')
+  document.querySelectorAll('#client-remap, #bootstrap-start, [onclick^="startCalibrate"], [onclick^="observeNow"], #calib-phase2, [name="calibration-phase"], #calib-taps, #calib-over, [onclick="applyCalibration()"]')
     .forEach(el => el.disabled = running);
   const stop = document.querySelector('[onclick="stopCalibrate()"]');
   if (stop) stop.disabled = !running;
@@ -1481,13 +1711,23 @@ function pollCalibrate(){
   };
   tick();
 }
+function renderMappingPlan(model){
+  if (!model) return '';
+  const labels = {deferred:'Waiting for an open tournament',manual_only:'Excluded from automatic mapping',needs_local_verification:'Needs local recognition check'};
+  return `<section class="card"><h3>Screen mapping route</h3><p>Start on Home. Each move must verify the button and the resulting screen. Tournament battles share the normal battle definitions.</p><details open><summary>Steps and availability</summary><ol>${model.steps.map(s=>`<li>${esc(model.screens[s.source]?.label || s.source)} → ${esc(model.screens[s.destination]?.label || s.destination)}: ${esc(labels[s.status] || s.status)}</li>`).join('')}</ol></details></section>`;
+}
+function renderInterfaceCoverage(model){
+  if (!model) return "";
+  const modes = {automatic:"Automatic remap supported", observe:"Observe when available", manual:"Manual only"};
+  return `<section class="card"><h3>What we know about your screens</h3><p>${model.verified} / ${model.total} documented controls verified on this account. Described screens and saved images are not yet proof of recognition.</p><ol>${model.screens.map(s => `<li><details><summary>${esc(s.label)}: ${s.verified}/${s.total} verified - ${esc(modes[s.acquisition] || s.acquisition)}</summary>${s.total ? `<ul>${s.controls.map(c=>`<li>${esc(c.label)}: ${esc(c.status)}${c.optional ? " (optional)" : ""}</li>`).join("")}</ul>` : "<p>Screen behaviour documented; individual control mapping still needed.</p>"}${s.rules.map(r=>`<p class="muted">${esc(r)}</p>`).join("")}</details></li>`).join("")}</ol></section>`;
+}
 async function renderScanPlan(){
   const el = $("#scan-plan"); if (!el) return;
   try {
     const plan = await api("/api/wizard/scan-plan" + (S.readiness?.preset ? "?preset=" + encodeURIComponent(S.readiness.preset) : ""));
     S.starterPlan = plan.bootstrap?.steps;
     S.learned = Object.fromEntries(plan.steps.flatMap(s => s.targets).filter(t => t.learned).map(t => [t.rel, t.learned]));
-    el.innerHTML = `<details open><summary>Advanced: remaining captures and reference manifest</summary><p>${esc(plan.note)}</p><p><b>${plan.captured} / ${plan.total} reference targets captured locally</b>. This is a catalogue of supported appearances, not a requirement to capture every variant. Required alternatives depend on your selected run.</p><p>Use the starter scan above for supported Home and menu controls. For remaining or unsupported appearances, open the screen yourself and capture the named target below. Manual captures do not tap the game.</p>${plan.steps.map((step,i) => `<details ${i === 0 ? "open" : ""}><summary>${esc(step.title)} — ${step.targets.filter(t=>t.status !== "Missing").length}/${step.targets.length} reference captures</summary><p>${esc(step.instructions)}</p>${step.id === "cards" ? '<p>These are navigation and runtime reference images, not your card count. <b>Cards and presets</b> scans the full inventory and discovers its size.</p>' : ""}<table><tr><th>Target</th><th>Local evidence</th><th>Capture</th></tr>${step.targets.map(t => `<tr class="row-${rowState(t.status) || "none"}"><td>${artPair(t.rel, rowState(t.status))}${esc(t.label)}${t.required ? '<div class="muted">Required by selected run (may have alternatives)</div>' : ''}${t.learned ? `<div class="muted">Learned: ${esc(String(t.learned.screen).replace("_", " "))} at ${t.learned.rect.join(",")} (${t.learned.rect[2]}×${t.learned.rect[3]})</div>` : ''}<details><summary>Image reference</summary><code>${esc(t.rel)}</code>${t.reference_size ? `<p>Reference crop: ${t.reference_size.join(" × ")} native pixels. Never resize a capture.</p>` : ''}</details></td><td>${esc(t.status)}</td><td><button class="small ghost" data-template="${esc(t.rel)}" onclick="cropPick(this.dataset.template)">Choose target</button></td></tr>`).join('')}</table></details>`).join('')}<p class="muted">After navigation images are captured, use the basic scan below for account names and inventory. Observe rare screens as they occur; missing requirements keep the affected runs blocked.</p></details>`;
+    el.innerHTML = `${renderMappingPlan(plan.mapping)}${renderInterfaceCoverage(plan.interface)}<details><summary>Advanced: remaining captures and reference manifest</summary><p>${esc(plan.note)}</p><p><b>${plan.captured} / ${plan.total} reference targets captured locally</b>. This is a catalogue of supported appearances, not a requirement to capture every variant. Required alternatives depend on your selected run.</p><p>Use the starter scan above for supported Home and menu controls. For remaining or unsupported appearances, open the screen yourself and capture the named target below. Manual captures do not tap the game.</p>${plan.steps.map((step,i) => `<details ${i === 0 ? "open" : ""}><summary>${esc(step.title)} — ${step.targets.filter(t=>t.status !== "Missing").length}/${step.targets.length} reference captures</summary><p>${esc(step.instructions)}</p>${step.id === "cards" ? '<p>These are navigation and runtime reference images, not your card count. <b>Cards and presets</b> scans the full inventory and discovers its size.</p>' : ""}<table><tr><th>Target</th><th>Local evidence</th><th>Capture</th></tr>${step.targets.map(t => `<tr class="row-${rowState(t.status) || "none"}"><td>${artPair(t.rel, rowState(t.status))}${esc(t.label)}${t.required ? '<div class="muted">Required by selected run (may have alternatives)</div>' : ''}${t.learned ? `<div class="muted">Learned: ${esc(String(t.learned.screen).replace("_", " "))} at ${t.learned.rect.join(",")} (${t.learned.rect[2]}×${t.learned.rect[3]})</div>` : ''}<details><summary>Image reference</summary><code>${esc(t.rel)}</code>${t.reference_size ? `<p>Reference crop: ${t.reference_size.join(" × ")} native pixels. Never resize a capture.</p>` : ''}</details></td><td>${esc(t.status)}</td><td><button class="small ghost" data-template="${esc(t.rel)}" onclick="cropPick(this.dataset.template)">Choose target</button></td></tr>`).join('')}</table></details>`).join('')}<p class="muted">After navigation images are captured, use the basic scan below for account names and inventory. Observe rare screens as they occur; missing requirements keep the affected runs blocked.</p></details>`;
   } catch(e) { el.textContent = "Scan plan unavailable: " + e.message; }
 }
 function cropRefresh(){
@@ -1549,7 +1789,7 @@ async function renderHome(){
       <article id="card-loadouts"><header>Equipment presets
         <span class="muted" style="font-weight:400">— what gets equipped before a run</span>
       </header><div id="loadouts-body"></div></article>
-      <details open><summary>Advanced global settings</summary><article id="card-global"><header>Global behaviors</header><div id="global-body"></div></article></details>
+      <article id="card-global"><header>Global behaviors</header><div id="global-body"></div></article>
     </div>
     <div>
       <article class="stream-box"><header>Live
@@ -1850,7 +2090,7 @@ function renderRunner(){
       const title = ok ? "" : `Needs ${miss.length} image${miss.length === 1 ? "" : "s"} before it can start:\n` +
         miss.slice(0, 8).map(m => " - " + m).join("\n") + (miss.length > 8 ? `\n   … and ${miss.length - 8} more` : "") +
         "\nOpen Calibrate (Check setup) to scan or crop them.";
-      return { name:n, label:(b || {}).label || n, ok, miss, title };
+      return { name:n, label:(b || {}).label || n, ok, miss, title:r?.setup_required ? "Review equipment and abilities" : title, setupRequired:r?.setup_required };
     });
   const firstReady = (presets.find(p => p.name === "bp_coin_default" && p.ok) || presets.find(p => p.ok) || presets[0] || {}).name;
   const tapsAllowed = !!S.config.instances?.[S.config.active_instance]?.allow_taps;
@@ -1858,7 +2098,7 @@ function renderRunner(){
     <label class="inline"><input type="checkbox" ${tapsAllowed ? "checked" : ""} ${procs.length ? "disabled" : ""} onchange="setAutomationAccess(this.checked)"> Allow automation to tap this emulator</label>
     ${!tapsAllowed ? '<p class="muted">Read-only: the game will not be controlled until you enable taps.</p>' : ""}
     ${procs.length ? procs.map(p => `
-      <div class="flowcard"><div><b>${esc(p.runner)}</b>
+      <div class="flowcard"><div><b>${p.runner === "gem_collector" ? "Diamond collector" : esc(p.runner)}</b>
         <span class="chip">pid ${p.pid}</span>
         <div class="muted">${esc((p.cmdline || "").slice(0, 90))}</div></div>
         <button class="small danger" onclick="killPid(${p.pid})">Stop now</button>
@@ -1866,15 +2106,17 @@ function renderRunner(){
       : '<p class="muted">Nothing is running.</p>'}
     <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-top:.6rem">
       <select id="start-preset" style="margin:0; width:auto; padding:.3rem .6rem" onchange="renderRunReady()">
-        ${presets.map(p => `<option value="${esc(p.name)}" title="${esc(p.title)}" ${p.ok ? "" : "disabled"}
-            ${p.name === firstReady ? "selected" : ""}>${esc(p.label)}${p.ok ? "" : ` — needs scan (${p.miss.length})`}</option>`).join("")}
+        ${presets.map(p => `<option value="${esc(p.name)}" title="${esc(p.title)}"
+            ${p.name === firstReady ? "selected" : ""}>${esc(p.label)}</option>`).join("")}
       </select>
-      <button onclick="checkRun()">Check setup</button><button id="start-run" onclick="startPreset()">▶ Start</button>
+      <button data-prepare-run onclick="prepareRun()">Prepare this run</button><button id="start-run" onclick="startPreset()">▶ Start</button>
+      <button onclick="startGemsOnly()" ${procs.length ? "disabled" : ""}>Collect diamonds only</button>
       ${S.status.stop_flag
         ? `<button class="small ghost" onclick="ctl('clear_flag')">✋ will stop after this run — cancel?</button>`
         : `<button class="small ghost" onclick="ctl('stop_after_run')">Finish current run, then stop</button>`}
     </div>
     <div id="run-ready" class="muted" style="margin-top:.4rem"></div>
+    <p class="prepare-run-status" role="status">${esc(S.prepareMessage || '')}</p>
     <p class="muted" style="margin-top:.4rem">“Combo (day plan)” runs the whole
       day plan below. “Stop now” never touches the game — a live run keeps
       playing; prefer “finish current run, then stop”.</p>`;
@@ -1890,20 +2132,28 @@ function renderRunReady(){
   // disabled until those images exist. Runs whose images are complete start.
   const sel = $("#start-preset"), out = $("#run-ready"), btn = $("#start-run");
   if (!sel || !out) return;
+  const running = !!S.status?.processes?.length;
+  const prepare = document.querySelector('[data-prepare-run]');
+  if (prepare) prepare.disabled = running;
+  if (running) {
+    if (btn) btn.disabled = true;
+    out.textContent = 'Automation is running. Use Stop now to stop the driver, or finish current run to stop after the battle.';
+    return;
+  }
   const r = (S.runReadiness || {})[sel.value];
   if (!r) { out.innerHTML = ""; if (btn) btn.disabled = false; return; }
   const miss = r.missing || [], adv = r.advisory || [];
   if (btn) btn.disabled = !r.ready;
+  if (r.setup_required) {
+    out.innerHTML = `<p>${esc(r.message || 'This run needs preparation. Click Prepare this run above.')}</p>`;
+    return;
+  }
   if (r.ready) {
-    out.innerHTML = `<span class="ok">Ready to start.</span>` + (adv.length
-      ? ` <span class="muted">${adv.length} optional screen${adv.length === 1 ? "" : "s"} still to capture when they appear (tournament, welcome-back, reward skip).</span>` : "");
+    out.innerHTML = `<span class="ok">Ready to start.</span>`;
   } else {
     const details = r.details || miss.map(m => ({alternatives:[m], reasons:[], docs:[]}));
-    out.innerHTML = `<p class="bad" style="margin:.4rem 0">Cannot start yet - ${miss.length} image${miss.length === 1 ? "" : "s"} missing. ` +
-      `<a href="#calibrate" onclick='goOutstanding(${JSON.stringify(sel.value)}, ${JSON.stringify((details[0] || {alternatives:[""]}).alternatives[0])})'>Open the outstanding list in Calibrate</a> ` +
-      `<button class="small" onclick="observeNow()" title="Two screenshots, searched with the game's artwork for every missing control on screen. No taps.">Capture from the screen now</button> ` +
-      `<button class="small ghost" onclick="observeNow(120)" title="Keeps looking for two minutes, about once a second. No taps. For controls that are only up for moments, like the Second Wind badge during your own run.">Watch the screen for 2 min</button></p>` +
-      details.map(d => outstandingCard(d, "control", sel.value)).join("");
+    out.innerHTML = `<p>Click <b>Prepare this run</b> above to finish ${miss.length} remaining recognition checks. Your completed scan will be reused.</p>` +
+      `<details><summary>Recognition details</summary>${details.map(d => outstandingCard(d, "control", sel.value)).join("")}</details>`;
   }
 }
 async function killPid(pid){
@@ -1918,6 +2168,13 @@ async function setAutomationAccess(enabled){
 async function checkRun(){
   S.calibrationPreset = $("#start-preset").value;
   location.hash = "#calibrate";
+}
+async function startGemsOnly(){
+  try {
+    const r=await post('/api/control',{action:'start_gems',preset:$('#start-preset').value});
+    toast('Diamond collector running; the current battle and equipment are unchanged.');
+    await loadStatus();
+  } catch(e){toast(e.message,true);}
 }
 async function startPreset(){
   try {
@@ -2109,7 +2366,8 @@ function renderFlows(){
   const body = $("#flows-body");
   if (!S.profile) { body.innerHTML = '<p class="muted">Activate a profile to edit run types.</p>'; return; }
   const bps = Object.entries(S.profile.blueprints || {});
-  body.innerHTML = bps.map(([name, b]) => {
+  body.innerHTML = `<p>Start with a shipped run template, then choose equipment and a tier for this account.</p>
+    <div>${(S.runTemplates || []).map(t=>`<button class="small" onclick="openRunTemplate('${esc(t.id)}')">＋ ${esc(t.label)}</button>`).join(' ')}</div>` + bps.map(([name, b]) => {
     const label = bpLabel(name);
     return `<div class="flowcard">
       <div><b>${esc(label)}</b>${label !== name
@@ -2120,6 +2378,47 @@ function renderFlows(){
       <button class="small" onclick="openEditor('${esc(name)}')">Edit</button>
     </div>`;
   }).join("") || '<p class="muted">No run types defined in this profile.</p>';
+}
+
+function openRunTemplate(id){
+  S.editorBp=null;
+  const t=(S.runTemplates || []).find(t=>t.id===id);
+  if (!t) return;
+  let n=1, key=id+'_run', label=t.label;
+  while (S.profile.blueprints?.[key] || Object.values(S.profile.blueprints || {}).some(b=>b.label===label)) {
+    n++; key=id+'_run_'+n; label=t.label+' '+n;
+  }
+  S.templateRunId=key; S.templateChoice=id;
+  const loadouts=Object.entries(S.config.loadouts || {}).filter(([,v])=>v?.defined!==false).map(([k])=>k);
+  if (t.blueprint.kind==='coin') loadouts.unshift('as_is');
+  const dlg=$('#editor');
+  dlg.innerHTML=`<article><header><b>Add ${esc(t.label)}</b></header><p>${esc(t.description)}</p>
+    ${t.requirements.map(r=>`<p>${esc(r)}</p>`).join('')}
+    <label>Run name<input id="template-label" value="${esc(label)}"></label>
+    <label>Tier<input id="template-tier" type="number" min="1" value="1"></label>
+    <label>Equipment<select id="template-loadout">${loadouts.map(k=>`<option value="${esc(k)}" ${k===t.blueprint.loadout?'selected':''}>${k==='as_is'?'Keep current equipment':esc(k)+(Object.keys(S.config.loadouts[k] || {}).length?'':' (current equipment; no changes configured)')}</option>`).join('')}</select></label>
+    <details><summary>Advanced run behaviour</summary>
+    ${t.blueprint.kind==='shard'?'<label>Runs per batch<input id="template-count" type="number" min="1" value="100"></label>':''}
+    ${t.blueprint.kind==='tournament'?'<label>Maximum gems for entry<input id="template-gems" type="number" min="0" value="0"></label><small>0 allows existing tickets and free ad entries, with no gem purchases. Saving this template does not enter a tournament.</small>':''}
+    ${t.optional_policies.uw?'<label><input id="template-uw" type="checkbox">Use legacy weapon timing (requires verified owned weapons)</label>':''}
+    ${t.optional_policies.rescue?'<label><input id="template-rescue" type="checkbox">Use legacy wall rescue (requires verified abilities and wall)</label>':''}
+    </details><p>${t.notes.map(esc).join(' ')}</p><footer>
+    <button onclick="saveRunTemplate()">Add run</button><button class="ghost" onclick="document.querySelector('#editor').close()">Cancel</button>
+    </footer></article>`;
+  dlg.showModal();
+}
+
+async function saveRunTemplate(){
+  const options={label:$('#template-label').value.trim(),tier:Number($('#template-tier').value),loadout:$('#template-loadout').value};
+  if ($('#template-count')) options.count=Number($('#template-count').value);
+  if ($('#template-gems')) options.gem_entry_max=Number($('#template-gems').value);
+  if ($('#template-uw')) options.enable_uw=$('#template-uw').checked;
+  if ($('#template-rescue')) options.enable_rescue=$('#template-rescue').checked;
+  if (!(await saveAll())) return;
+  try {
+    await post('/api/run-templates/add',{profile:S.profiles.active,template:S.templateChoice,run_id:S.templateRunId,options});
+    $('#editor').close(); await loadHomeData(); renderHome(); toast('Run added. It is ready to configure; nothing has been started.');
+  } catch(e){toast(e.message,true);}
 }
 
 /* ------------------------------------------------------- global behaviors */
@@ -2133,6 +2432,10 @@ function renderGlobal(){
     shatter:"Shatter surplus blue modules once a day",
     housekeeping:"Housekeeping: prune old logs/screenshots" };
   body.innerHTML = `
+    <h3>Reward collection</h3>
+    <p class="muted">Shared by all run types. Checks wait while another action is using the screen. If the app is off at the scheduled time, free Store gems are checked when automation next runs.</p>
+    ${Object.entries({free_store_gems:'Free Gems Collection — once daily at 01:00 UTC ±10 minutes', daily_missions:'Daily Missions — check every 5 minutes during runs', guild_progress:'Guild progress — check its purple badge every 5 minutes', event_missions:'Event Missions — check every 5 minutes; claim quests, then free and unlocked paid-track rewards'}).map(([key,label])=>`<label class="inline"><input type="checkbox" ${S.profile.policies?.global_behaviors?.[key] === true ? 'checked' : ''} onchange="setGlobalReward('${key}',this.checked)">${label}</label>`).join('')}
+    <h3>Between-run tasks</h3>
     <p class="muted">These run <b>between</b> runs, from the Home screen, at
       most one per gap — never during a battle. Uncheck what this account
       should never do; each run type can additionally override its own
@@ -2141,6 +2444,10 @@ function renderGlobal(){
       <label class="inline"><input type="checkbox" ${cmap[n] !== false ? "checked" : ""}
         onchange="setChore('${esc(n)}', this.checked)">
         ${esc(CHORE_LABEL[n] || n)}</label>`).join("")}`;
+}
+function setGlobalReward(name, enabled){
+  const value = {...(S.profile.policies?.global_behaviors || {}), [name]:enabled};
+  queuePatch(['policies','global_behaviors'], value); renderGlobal();
 }
 function setChore(name, enabled){
   const choreNames = ((S.vocab || {}).chore_names || {}).values || [];
@@ -2165,7 +2472,7 @@ function editorCancel(bpName){
   renderFlows(); renderDay(); renderBehaviors();
 }
 async function editorSave(){
-  if (await saveAll()) $("#editor").close();
+  if (await saveAll()) { $("#editor").close(); await renderHome(); }
 }
 function editorHtml(bpName){
   const bp = (S.profile.blueprints || {})[bpName];
@@ -2178,8 +2485,10 @@ function editorHtml(bpName){
   const curGather = (bp.policies || {}).gather;
   const isLocal = curGather === localName;
   const gatherBody = isLocal ? (pol.gather || {})[localName] || {} : null;
-  const GATHER_LABEL = { flying_gem:"Claim flying gems during the run",
-    ad_gems:"Claim the daily free gems (premium shop)",
+  const GATHER_LABEL = { gem_orbit:"Collect rotating diamonds with timed clicks",
+    ad_gems:"Claim Ad Gems on the battle screen",
+    free_store_gems:"Claim free gems in the Store",
+    guild_store:"Buy items with guild currency after collecting rewards",
     quests_8h:"Collect the 8-hour quests", quest_rewards:"Claim quest rewards",
     guild:"Collect guild rewards" };
   const gatherKeys = Object.keys(GATHER_LABEL);
@@ -2240,7 +2549,7 @@ function editorHtml(bpName){
         onchange="useGlobalGather('${esc(bpName)}')">
         Use a shared behavior:
         <select ${isLocal ? "disabled" : ""} onchange="setBpPolicy('${esc(bpName)}', 'gather', this.value)">
-          <option value="" ${!curGather ? "selected" : ""}>(engine defaults — gather everything)</option>
+          <option value="" ${!curGather ? "selected" : ""}>(engine defaults)</option>
           ${gatherPolicies.filter(g => g !== localName).map(g =>
             `<option value="${esc(g)}" ${curGather === g ? "selected" : ""}>
               ${esc(polLabel("gather", g))}</option>`).join("")}
@@ -2250,7 +2559,7 @@ function editorHtml(bpName){
         Customize for this run only</label>
       ${isLocal ? `<div style="margin-left:1.6rem">${gatherKeys.map(k => `
         <label class="inline"><input type="checkbox"
-          ${gatherBody[k] !== false ? "checked" : ""}
+          ${(k === "gem_orbit" ? gatherBody.gem_orbit?.enabled : (gatherBody[k] ?? (!["free_store_gems", "guild_store"].includes(k)))) ? "checked" : ""}
           onchange="setLocalGather('${esc(bpName)}', '${k}', this.checked)">
           ${GATHER_LABEL[k]}</label>`).join("")}</div>` : ""}
     </fieldset>
@@ -2366,7 +2675,7 @@ function setLocalGather(bpName, key, value){
   const localName = bpName + "_gather";
   const body = deep(((S.profile.policies || {}).gather || {})[localName]
                     || SEEDS.templates.gather);
-  body[key] = value;
+  body[key] = key === "gem_orbit" ? {...(body.gem_orbit || {}), enabled:value} : value;
   queuePatch(["policies", "gather", localName], body);
   refreshEditor(bpName);
 }
@@ -2473,17 +2782,11 @@ function gatherHtml(){
     ${hint ? `<span class="muted">${hint}</span>` : ""}</label>`;
   return `<article>${p2Header("gathering")}
     <fieldset><legend>Pick up while a run is live</legend>
-      ${sw("flying_gem", "Tap the flying gem")}
-      <div class="kv" style="margin-left:1.6rem; margin-bottom:.5rem">
-        <label>Reach delay — min / max whole seconds
-          <span class="muted">(a human wander, not a pounce)</span></label>
-        <span style="display:flex; gap:.4rem">
-          <input type="number" style="width:6rem" value="${(d.gem_delay_sec || [])[0] ?? ""}"
-            onchange="p2gatherDelay(0, this.value)">
-          <input type="number" style="width:6rem" value="${(d.gem_delay_sec || [])[1] ?? ""}"
-            onchange="p2gatherDelay(1, this.value)">
-        </span></div>
-      ${sw("ad_gems", "Claim the daily ad-gem offer")}
+      ${sw("ad_gems", "Claim Ad Gems on the battle screen")}
+      ${sw("free_store_gems", "Claim free gems in the Store")}
+      ${sw("guild_store", "Buy items with guild currency after collecting rewards")}
+      <label class="inline"><input type="checkbox" ${d.gem_orbit?.enabled ? "checked" : ""}
+        onchange="p2field('gem_orbit', {...(P2.draft.gem_orbit || {}), enabled:this.checked})">Collect rotating diamonds with timed clicks (no image matching)</label>
       ${sw("quests_8h", "Claim the 8-hour quest chest")}
       ${sw("quest_rewards", "Claim finished quests")}
       ${sw("guild", "Guild collection")}
@@ -2491,12 +2794,6 @@ function gatherHtml(){
     <p class="muted">Reward flows only ever navigate menus the bot itself
       opened, and back off when a visit claims nothing.</p></article>`;
 }
-function p2gatherDelay(i, v){
-  const arr = [...(P2.draft.gem_delay_sec || [3, 10])];
-  arr[i] = v === "" ? null : Number(v);
-  P2.draft.gem_delay_sec = arr; p2Save(false);
-}
-
 /* ---- generic param rendering off the vocab specs */
 function pInput(spec, val, js){
   if ((spec.values || []).length && spec.type !== "bool")
@@ -2602,6 +2899,12 @@ function p2arm(key, val){
   // rule at main-loop latency); only the second_wind form is a mapping.
   if (key === "mode") {
     P2.draft.arm = deep(SEEDS.arm[val === "always" ? "always" : "second_wind"]);
+    if (val === 'always') {
+      for (const rule of P2.draft.rules || []) {
+        if (rule.do?.burst) delete rule.do.burst.retaps;
+      }
+      P2.draft.end_sprint_after_sw = false;
+    }
   } else {
     const prev = (typeof P2.draft.arm === "object" && P2.draft.arm) || { on:"second_wind" };
     P2.draft.arm = { ...prev, [key]: val };

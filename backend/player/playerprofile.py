@@ -380,12 +380,12 @@ TOP_SECTIONS = ("player", "blueprints", "policies", "plan")
 # scheduler handed nothing has no safe move.
 REQUIRED_SECTIONS = ("player", "blueprints", "policies")
 POLICY_SECTIONS = ("uw_policies", "rescue_policies", "gather", "shopping_lists",
-                   "chores")
+                   "chores", "global_behaviors")
 # `label` is the human name the dashboard shows for a policy ("Chain
 # Lightning Farming Choreography"); the key stays the identifier. Legal on
 # all four policy families, consumed by the dashboard UI only - the compiler
 # ignores it deliberately (it is display data, not behavior).
-GATHER_KEYS = ("flying_gem", "gem_delay_sec", "ad_gems", "quests_8h",
+GATHER_KEYS = ("flying_gem", "gem_delay_sec", "ad_gems", "free_store_gems", "guild_store", "quests_8h",
                "quest_rewards", "guild", "gem_orbit", "label")
 # gem_orbit: the detection-free orbiting-gem blind harvest (flows/shard.py). The
 # compiler passes `gather` through verbatim, so these reach GemOrbitTapper as-is.
@@ -988,6 +988,15 @@ def validate(profile: dict) -> list[str]:
         problems += _validate_shopping_list(
             f"policies.shopping_lists.{name}", body)
     problems += _validate_chores(policies.get("chores"))
+    from scheduling.global_rewards import KEYS as reward_keys
+    global_rewards = policies.get('global_behaviors', {})
+    if not isinstance(global_rewards, dict):
+        problems.append('policies.global_behaviors: expected an object')
+    else:
+        _check_keys(global_rewards, reward_keys, 'policies.global_behaviors', problems)
+        for key, value in global_rewards.items():
+            if type(value) is not bool:
+                problems.append(f'policies.global_behaviors.{key}: expected true or false')
 
     blueprints = _d(profile.get("blueprints"))
     if isinstance(profile.get("blueprints"), dict) and not blueprints:
@@ -1213,7 +1222,7 @@ def _validate_gather(path: str, body) -> list[str]:
     out: list[str] = []
     _check_keys(body, GATHER_KEYS, path, out)
     _check_label(body, path, out)
-    for key in ("flying_gem", "ad_gems", "quests_8h", "quest_rewards", "guild"):
+    for key in ("flying_gem", "ad_gems", "free_store_gems", "guild_store", "quests_8h", "quest_rewards", "guild"):
         _check_bool(body.get(key), f"{path}.{key}", out)
     # REQUIRED, not merely well-shaped. orchestrator does
     # `random.uniform(*preset()["gem_delay_sec"])` and shard does `tuple(...)`
@@ -2585,6 +2594,10 @@ def compile_preset(profile: dict, blueprint_name: str) -> dict:
                     "blueprint": blueprint_name},
     }
 
+    if policies.get('global_behaviors'):
+        # Added only for opted-in profiles, preserving older compiled presets.
+        out['global_behaviors'] = copy.deepcopy(policies['global_behaviors'])
+
     # Kind-specific passthroughs. Only emitted where they MEAN something: orchestrator
     # does `preset().get("tournament_setup")`, so a coin preset carrying a false
     # one would read identically but suggest the key was considered and
@@ -2959,7 +2972,7 @@ def _compile_tier_b_rule(entry: dict, policy_name: str) -> dict:
         "id": rid,
         "when": _compile_trigger(trig, tp),
         "do": _compile_action(act, ap),
-        "repeat": bool(rule.get("repeat")),
+        "repeat": bool(rule.get("repeat", trig == "fleet_mark")),
         "refire_sec": (float(DEFAULT_RULE_REFIRE_SEC) if refire is None
                        else _finite(refire, f"{rid}.refire_sec")),
         # WHERE it runs, which is also WHEN: a death_screen rule cannot be
@@ -3575,7 +3588,9 @@ def vocab() -> dict:
                     "list", "[low, high] whole seconds before the tap - it is "
                             "splatted into random.uniform(), so both bounds "
                             "are integers and low <= high", span=(0, None)),
-                "ad_gems": _spec("bool", "watch ad-gem offers"),
+                "ad_gems": _spec("bool", "claim the HUD Ad Gems button"),
+                "free_store_gems": _spec("bool", "collect free Store gems separately"),
+                "guild_store": _spec("bool", "spend guild currency after collecting guild rewards (off by default)"),
                 "quests_8h": _spec("bool", "claim the 8h quest chest"),
                 "quest_rewards": _spec("bool", "claim finished quests"),
                 "guild": _spec("bool", "guild collection")}),

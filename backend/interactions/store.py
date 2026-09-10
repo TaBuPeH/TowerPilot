@@ -176,7 +176,11 @@ def _swipe(y0, y1):
 def store_flow():
     """Scan the guild store and buy the ladder target if affordable."""
     frame = yield
-    act.tap(*find_tile(frame, "icons/tile_guild.png", GUILD_TILE),
+    point = find_tile(frame, "icons/tile_guild.png")
+    if point is None:
+        logger.event('store_error', stage='guild_icon_unavailable')
+        return
+    act.tap(*point,
             reason="guild_open", instant=True)
     frame = yield
     ok = False

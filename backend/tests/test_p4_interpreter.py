@@ -1156,3 +1156,32 @@ def test_the_live_fast_watch_body_still_touches_no_dicts():
         f"config reads inside the live sampling loop: "
         f"{_config_reads_in_watch_loop(src)}")
     _assert_policies_are_hoisted(src)
+
+
+def test_naturally_finished_sprint_does_not_block_rescue(orchestrator,monkeypatch):
+    monkeypatch.setattr(_f(orchestrator,'detect'),'find_intro_sprint',lambda frame:None)
+    monkeypatch.setattr(_f(orchestrator,'wave_reader'),'read_wave',lambda frame:4000)
+    monkeypatch.setattr(_f(orchestrator,'detect'),'button_state',
+                        lambda *a:types.SimpleNamespace(present=True,ready=True,center=(80,1500)))
+    rs=_rs();rs.sprint_end_try=-1e9
+    assert orchestrator.end_intro_sprint(rs,'test') is True
+    assert orchestrator._taps == []
+
+
+def test_second_wind_badge_suppresses_wall_rules_and_clears_old_decline(orchestrator):
+    rs=_rs();rs.sw_floater_seen=True
+    rs.rule_bar_prev={'wall-rule':.8,('collapse','wall-rule'):.8}
+    rs.rule_bar_falling={'wall-rule':7}
+    for kind in ('bar','wall_collapse'):
+        fired,snap=orchestrator._trigger_fires(rs,'FRAME',5000,'wall-rule',kind,{}, {})
+        assert not fired and snap['suppressed']=='second_wind_immunity'
+    assert rs.rule_bar_prev=={} and rs.rule_bar_falling=={}
+
+
+def test_burst_rechecks_second_wind_before_demon_tap(orchestrator,monkeypatch):
+    rs=_rs();rs.sprint_ended=True
+    monkeypatch.setattr(_f(orchestrator,'wave_reader'),'read_wave',lambda f:5403)
+    monkeypatch.setattr(_f(orchestrator,'detect'),'second_wind_badge',lambda f:(True,.9))
+    monkeypatch.setattr(orchestrator,'fire_button',lambda *a,**k:pytest.fail('fired during immunity'))
+    touched,ok=orchestrator._rule_act(rs,'OLD',0,'test','burst',{'button':'demon_mode'})
+    assert touched and not ok

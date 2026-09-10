@@ -41,6 +41,29 @@ def test_screen_proof_rejects_dimmed_anchors_wrong_position_and_wrong_resolution
     assert not bootstrap.screen_matches(frame[:2000],lines,'home')
 
 
+def test_native_anchor_crop_is_tried_before_enlargement(monkeypatch):
+    from vision import textocr
+    scales=[]
+    def read(frame, scale):
+        scales.append(scale)
+        return [(0,0,'MISSIONS' if scale==1 else 'Misstorqs')]
+    monkeypatch.setattr(textocr,'read_lines',read)
+    assert bootstrap.anchor_present(np.full((100,100,3),240,np.uint8),[],
+                                    {'text':'MISSIONS','rect':[0,0,80,30]})
+    assert scales == [1]
+
+
+def test_perk_header_does_not_prove_the_wrong_selected_tab():
+    frame=np.zeros((2560,1080,3),np.uint8)
+    frame[430:520,360:690]=240
+    cv2.rectangle(frame,(654,534),(860,616),(0,255,0),5)
+    lines=[(450,380,'PERKS')]
+    assert bootstrap.screen_matches(frame,lines,'perks_hub')
+    assert bootstrap.screen_matches(frame,lines,'perks_priority')
+    assert not bootstrap.screen_matches(frame,lines,'perks_first')
+    assert not bootstrap.screen_matches(frame,lines,'perks_ban')
+
+
 def test_unknown_start_sends_no_input_and_writes_no_templates(tmp_path):
     cal=calibrate.Calibration({'stop':str(tmp_path/'stop'),'state':str(tmp_path/'state.json')},False,bootstrap=True)
     taps=[]
@@ -140,6 +163,7 @@ def test_skipped_branches_are_history_steps_not_successful_visits(tmp_path,monke
     scanner=bootstrap.Scanner(cal,{},tap=lambda *a,**k:None,pause=lambda _:None)
     monkeypatch.setattr(scanner,'observed',lambda name:(None,[]))
     monkeypatch.setattr(scanner,'harvest',lambda *a:None)
+    scanner.state['screen_map']={'home':{'status':'verified','verified':7,'total':7}}
     monkeypatch.setattr(scanner,'module_detail',lambda *a:None)
     monkeypatch.setattr(scanner,'card_inventory',lambda *a:None)
     scanner.finish_step(message='Preflight passed')
@@ -153,5 +177,42 @@ def test_skipped_branches_are_history_steps_not_successful_visits(tmp_path,monke
     steps={s['label']:s for s in saved['steps']}
     assert steps['Guild']['status']=='skipped'
     assert steps['Guardian']['status']=='skipped'
-    assert steps['Cards']['status']=='done'
+    assert steps['Cards']['status']=='skipped'  # no artwork proof means no coordinate-only visit
     assert all(s['status']!='running' for s in saved['steps'])
+
+
+def test_incomplete_home_never_taps(tmp_path,monkeypatch):
+    from runtime import logger
+    monkeypatch.setattr(logger,'event',lambda *a,**k:None)
+    cal=calibrate.Calibration({'state':str(tmp_path/'state.json'),'stop':str(tmp_path/'stop')},False)
+    taps=[]
+    scanner=bootstrap.Scanner(cal,{},tap=lambda *a,**k:taps.append(a),pause=lambda _:None)
+    monkeypatch.setattr(scanner,'observed',lambda name:(None,[]))
+    monkeypatch.setattr(scanner,'harvest',lambda *a:None)
+    scanner.state['screen_map']={'home':{'status':'needs_mapping','verified':6,'total':7,
+        'blocks':[{'target':'presets/picker_icon.png','status':'needs_mapping'}]}}
+    import pytest
+    with pytest.raises(RuntimeError,match='Home mapping is incomplete'):
+        scanner.run()
+    assert taps==[]
+
+
+def test_battle_preparation_reuses_menu_scan(tmp_path, monkeypatch):
+    from player.mapping_session import Session
+    cal=calibrate.Calibration({'state':str(tmp_path/'state.json'),'stop':str(tmp_path/'stop')},False)
+    state={'screen_map':{'home':{'status':'verified'},'cards':{'status':'verified'}},
+           'collections':{'cards':{'count':31}}}
+    scanner=bootstrap.Scanner(cal,state,flows=True,battle_only=True)
+    assert [s['id'] for s in scanner.steps] == ['preflight','extract','map','home','flow_battle','finish']
+    monkeypatch.setattr(scanner,'observed',lambda name:(None,[]))
+    monkeypatch.setattr(scanner,'harvest',lambda *a:None)
+    monkeypatch.setattr(scanner,'_run_flows',lambda:None)
+    monkeypatch.setattr(scanner,'progress',lambda *a,**k:None)
+    monkeypatch.setattr(scanner,'finish_step',lambda *a,**k:None)
+    monkeypatch.setattr(scanner,'begin_step',lambda *a,**k:None)
+    monkeypatch.setattr(cal,'save_report',lambda:None)
+    monkeypatch.setattr(calibrate,'_merge_draft',lambda *a:None)
+    monkeypatch.setattr(Session,'run',lambda *a:pytest.fail('must not repeat menu/inventory scan'))
+    scanner.run()
+    assert state['collections']['cards']['count']==31
+    assert state['screen_map']['cards']['status']=='verified'

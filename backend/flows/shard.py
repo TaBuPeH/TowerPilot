@@ -100,10 +100,7 @@ TIER_DIGIT_H = (26, 40)
 HOME_BATTLE = (621, 2057)       # the big BATTLE button on the home screen
 
 SPRINT_WAVE = 100               # cancel the Intro Sprint the moment this lands
-NUKE_WAVE = 101                 # ...then nuke near the end of this one. The
-                                # fleet actually spawned back on wave 95 and
-                                # Commander/Overcharge move at 1/5 basic speed,
-                                # so the wait is walk-in time, not spawn time.
+NUKE_WAVE = 101                 # fire once this wave reaches the progress threshold
 NUKE_AT_PROGRESS = 0.10         # how far through wave 101 to fire.
                                 # Fires almost as soon as 101 starts. The fleet
                                 # spawned back on wave 95 and has had six waves
@@ -125,8 +122,6 @@ TIER_TRIES = 25    # was 12: Tier 14 -> Tier 1 (the ILM quest) needs 13 taps
 WAVE_TIMEOUT = 240.0            # generous: the sprint to wave 100 took ~77s
 
 
-GEM_DELAY_SEC = (3, 10)         # human pause before claiming, as in orchestrator.py
-GEM_STALE_SEC = 10.0            # give a drifting gem this long to reappear
 
 # Orbiting-gem BLIND HARVEST (measured live 2026-09-07 on BlueStacks Pie64):
 # the collectible gem (a magenta square + pink diamond) circles the tower CORE
@@ -166,63 +161,18 @@ def _in_ability_row(pt, margin: int = 25) -> bool:
 
 
 class GemWatch:
-    """Claim floating gems while the loop is otherwise just waiting.
+    """Collect Ad Gems and orbiting diamonds using their separate policies."""
 
-    Gems stay a priority during shard farming - both the diamond orbiting the
-    tower and the settled 'CLAIM' box that lands bottom-left. detect.floating_
-    gem finds either, anywhere in the field ROI, so there is nothing to aim.
-
-    Same three rules as the orchestrator, for the same reasons:
-      * a randomised 3-10s pause before tapping, so the claim is not instant
-      * fire only on a FRESH detection - the orbiting gem moves, so a
-        remembered point goes stale within a second
-      * ...unless it has been missing for 10s, in which case tap where it was
-        last seen (a settled box does not move) - but never if that point is
-        over the ability row, where a stray tap would burn Nuke.
-    """
-
-    def __init__(self, enabled: bool = True,
-                 delay: tuple[float, float] = GEM_DELAY_SEC):
-        self.due: tuple[float, tuple[int, int]] | None = None
-        # Defaults ARE the legacy behaviour: every existing caller does
-        # GemWatch() and gets gem claiming with the 3-10s human pause.
-        self.enabled = bool(enabled)
-        self.delay = tuple(delay)
-        # The detection-free orbit harvest rides along on every GemWatch poll,
-        # inert unless a blueprint turns gather.gem_orbit on.
+    def __init__(self):
         self.orbit = GemOrbitTapper(**gem_orbit_opts())
+        from interactions.ad_gems import AdGemCollector
+        gather = (CONFIG.get("presets", {}).get(CONFIG.get("preset")) or {}).get("gather") or {}
+        self.ad_gems = AdGemCollector(gather.get("ad_gems", True))
 
     def poll(self, frame) -> None:
-        self.orbit.poll(frame)          # blind harvest (opt-in, self-gated)
-        if not self.enabled:
-            return
-        gem = detect.floating_gem(frame)
-        now = time.monotonic()
-        if gem and self.due is None:
-            delay = random.uniform(*self.delay)
-            self.due = (now + delay, gem)
-            logger.event("shard_gem_seen", delay=round(delay, 1),
-                         x=gem[0], y=gem[1])
-        if not self.due or now < self.due[0]:
-            return
-        if gem:
-            try:
-                logger.event("shard_gem", **act.tap(*gem, reason="gem_claim"))
-            except act.TapRefused as e:
-                logger.event("tap_refused", button="gem", error=str(e))
-            self.due = None
-        elif now - self.due[0] > GEM_STALE_SEC:
-            pt = self.due[1]
-            if _in_ability_row(pt):
-                logger.event("shard_gem_lost", reason="over_ability_row",
-                             x=pt[0], y=pt[1])
-            else:
-                try:
-                    logger.event("shard_gem_stale",
-                                 **act.tap(*pt, reason="gem_claim_stale"))
-                except act.TapRefused as e:
-                    logger.event("tap_refused", button="gem", error=str(e))
-            self.due = None
+        self.ad_gems.poll(frame)
+        # Refresh after a possible ad claim; the orbit collector checks battle state.
+        self.orbit.poll(capture.grab() if self.orbit.enabled else frame)
 
 
 def _orbit_points(center, radius, angle, taps, jitter, spread):
@@ -235,7 +185,7 @@ def _orbit_points(center, radius, angle, taps, jitter, spread):
     cx, cy = center
     pts = []
     for k in range(taps):
-        a = angle + spread * (k - (taps - 1) / 2.0) + random.uniform(-2.0, 2.0)
+        a = angle + spread * (k - (taps - 1) / 2.0) + (random.uniform(-2.0, 2.0) if jitter else 0.0)
         r = radius * (1.0 + random.uniform(-jitter, jitter))
         x = cx + r * math.cos(math.radians(a))
         y = cy - r * math.sin(math.radians(a))           # up-left => smaller y
@@ -415,21 +365,6 @@ def preset_active(frame, pt) -> bool:
     return green > cyan
 
 
-def gem_opts() -> dict:
-    """GemWatch kwargs from the active blueprint's gather policy.
-
-    Only a compiled `bp_` preset is consulted. Anything else - the legacy
-    shard_farm tray entry, a bare `python flows/shard.py` - returns {} and keeps
-    the module constants exactly.
-    """
-    name = CONFIG.get("preset") or ""
-    if not name.startswith("bp_"):
-        return {}
-    g = (CONFIG["presets"].get(name) or {}).get("gather") or {}
-    return {"enabled": bool(g.get("flying_gem", True)),
-            "delay": tuple(g.get("gem_delay_sec", GEM_DELAY_SEC))}
-
-
 def gem_orbit_opts() -> dict:
     """GemOrbitTapper kwargs from the active blueprint's gather.gem_orbit policy.
     Off unless a compiled preset sets gather.gem_orbit.enabled true; geometry
@@ -449,6 +384,17 @@ def gem_orbit_opts() -> dict:
     return kw
 
 
+def configured_loadout():
+    """Use the selected blueprint's equipment for setup AND restoration."""
+    preset = CONFIG.get("preset", "")
+    if preset.startswith("bp_"):
+        name = (CONFIG.get("presets", {}).get(preset) or {}).get("loadout")
+        if not name:
+            raise Abort("Shard blueprint has no equipment loadout")
+        return name
+    return "shard_farm"
+
+
 def setup(tier: int | None = None):
     """Everything that happens once, before the first battle.
 
@@ -458,10 +404,12 @@ def setup(tier: int | None = None):
     KeyError when the v29 body replaced that list with `module_preset:`
     (this silently killed the whole 78-run block on 2026-08-27; found via
     the runner_crashed event the next morning)."""
+    equipment = configured_loadout()
+    loadout.spec(equipment)  # Validate before navigating or changing tier.
     tier = tier or TIER
     ensure_home()
     set_tier(tier)
-    loadout.apply("shard_farm")
+    loadout.apply(equipment)
     frame = capture.grab()
     if not on_home(frame):
         ensure_home()
@@ -590,34 +538,41 @@ def _in_run(frame) -> bool:
 def cancel_sprint():
     """Tap the Intro Sprint indicator and confirm. Verified at every step."""
     frame = capture.grab()
-    pt = detect.find_intro_sprint(frame)
-    if pt is None:
-        logger.event("shard_sprint", result="indicator not found")
-        return False
-    tap_at(pt, "intro sprint indicator")
-    frame = capture.grab()
     sc = screen.identify(frame)
+    if sc.name != "intro_sprint_end":
+        pt = detect.find_intro_sprint(frame)
+        if pt is None:
+            logger.event("shard_sprint", result="indicator not found")
+            return False
+        tap_at(pt, "intro sprint indicator")
+        frame = capture.grab()
+        sc = screen.identify(frame)
     if sc.name != "intro_sprint_end":
         logger.event("shard_sprint", result="no confirm dialog", screen=sc.name,
                      shot=logger.shot(frame, "shard_sprint_nodialog"))
         return False
+    # The structural setup capture includes the entire button (173px high
+    # on MuMu); the old 140px band could never contain that template.
     score, yes = screen._match(frame, "home/intro_sprint_yes.png",
-                               ((1380, 1520), (560, 900)))
+                               ((1320, 1580), (540, 940)))
     if score < 0.90:
         logger.event("shard_sprint", result="Yes not found", score=round(score, 3))
         return False
     tap_at(yes, "intro sprint: yes")
-    logger.event("shard_sprint", result="ended")
-    return True
+    after = capture.grab()
+    confirmed = (screen.identify(after).name != "intro_sprint_end"
+                 and detect.find_intro_sprint(after) is None
+                 and _in_run(after))
+    logger.event("shard_sprint", result="ended" if confirmed else "unconfirmed",
+                 shot=logger.shot(after, "shard_sprint_after"))
+    return confirmed
 
 
 def wait_for_nuke_point(timeout: float = 120.0,
                         gems: "GemWatch | None" = None):
-    """Wave NUKE_WAVE, nearly finished.
+    """Wait for wave 101 and the configured 10% progress threshold.
 
-    The progress bar is the cue the user gave ("wait until 101 is almost
-    over"), not a stopwatch - waves run ~7s under the sprint and much longer
-    without it, so any fixed delay would be wrong in one regime or the other.
+    Read the wave/progress bar rather than estimating elapsed time.
     """
     deadline = time.monotonic() + timeout
     best = 0.0
@@ -650,9 +605,13 @@ def fire_nuke(frame) -> bool:
         return False
     before = detect.button_border_val(frame, "nuke")
     tap_at(st.center, "NUKE")
-    after = detect.button_border_val(capture.grab(), "nuke")
+    after_frame = capture.grab()
+    after = detect.button_border_val(after_frame, "nuke")
     fired = after is None or (before is not None and after < before * 0.75)
     logger.event("shard_nuke", fired=fired,
+                 wave=wave_reader.read_wave(frame),
+                 before_shot=logger.shot(frame, "shard_nuke_before"),
+                 after_shot=logger.shot(after_frame, "shard_nuke_after"),
                  border_before=round(before or 0, 1),
                  border_after=(round(after, 1) if after is not None else None))
     return fired
@@ -757,15 +716,25 @@ def abandon_run(to_home: bool = False):
             continue
         dead, retry = detect.death_screen(frame)
         if dead and to_home:
+            logger.event("shard_result", shot=logger.shot(frame, "shard_result"))
             # Quest cycles (user, 2026-08-16): "just restart, don't store
             # the statistics" - so the home exit here deliberately skips
             # the runlog.collect that tourney.end_round would do.
             hit = find(frame, "home/game_stats_home.png")
             if hit:
                 act.tap(*hit[0], reason="game stats: HOME", instant=True)
-                logger.event("shard_exit_home", ok=True)
-                return True
+                # HOME fades in after the tap. Returning immediately let
+                # cards_restore tap the navigation row during that fade.
+                home_deadline = time.monotonic() + 8.0
+                while time.monotonic() < home_deadline:
+                    time.sleep(EXIT_POLL)
+                    if on_home(capture.grab()):
+                        time.sleep(0.5)
+                        logger.event("shard_exit_home", ok=True)
+                        return True
+                raise Abort("HOME was tapped but the Home screen did not appear")
         elif dead and retry:
+            logger.event("shard_result", shot=logger.shot(frame, "shard_result"))
             act.tap(*retry, reason="RETRY", instant=True)
             logger.event("shard_retry", ok=True)
             return True
@@ -834,10 +803,13 @@ def one_loop(n: int, gems: "GemWatch | None" = None, last: bool = False):
     wait_for_wave(1, gems=gems)
     ensure_max_speed()
     frame, w = wait_for_wave(SPRINT_WAVE, gems=gems)
-    logger.event("shard_loop", n=n, stage="wave", wave=w)
-    cancel_sprint()
+    logger.event("shard_loop", n=n, stage="wave", wave=w,
+                 shot=logger.shot(frame, f"shard_loop_{n}_sprint"))
+    if not cancel_sprint():
+        raise Abort("Intro Sprint cancellation was not confirmed; leaving the battle untouched")
     frame = wait_for_nuke_point(gems=gems)
-    fire_nuke(frame)
+    if not fire_nuke(frame):
+        raise Abort("Nuke firing was not confirmed; refusing to surrender or retry")
     time.sleep(0.4)                 # let the kill and the shard drop resolve
     # The LAST loop exits to HOME, not RETRY (2026-08-29): the final RETRY
     # used to chain a 101st run that the next handoff walked over - since
@@ -864,8 +836,7 @@ def run(loops: int | None = None, do_setup: bool = True,
     if do_setup:
         setup(tier)
     adb_fails = 0
-    gems = GemWatch(**gem_opts())   # one watcher across all loops: a gem seen
-                                    # at the end of one run is gone by the next
+    gems = GemWatch()   # preserve collection cadence across the batch
     n = 0
     while loops is None or n < loops:
         # Honour the scheduler's stop flag at the loop boundary (2026-08-17).
@@ -919,7 +890,7 @@ def run(loops: int | None = None, do_setup: bool = True,
     # deck, and whichever preset stays selected is where later card
     # mutations land. Degrades loudly: a failed restore must not turn a
     # completed block into a crash.
-    restore = loadout.spec("shard_farm").get("cards_restore")
+    restore = loadout.spec(configured_loadout()).get("cards_restore")
     if restore:
         try:
             logger.event("shard_cards_restore", preset=restore,

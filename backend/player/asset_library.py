@@ -23,11 +23,8 @@ MAX_UNPACKED = 3 * 1024**3
 
 
 def atomic_json(path, value):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix('.pending.json')
-    temp.write_text(json.dumps(value, indent=1), encoding='utf-8')
-    os.replace(temp, path)
+    from runtime.files import atomic_json as save
+    save(path, value)
 
 
 def sha_file(path):

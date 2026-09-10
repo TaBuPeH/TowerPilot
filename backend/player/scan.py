@@ -420,7 +420,8 @@ def main() -> None:
     ap.add_argument("--fresh", action="store_true",
                     help="ignore previous scan state, redo all phases")
     a = ap.parse_args()
-    settings.select_instance(a.instance, "normal_run")
+    settings.bind_device(a.instance)
+    settings.CONFIG["preset"] = "normal_run"
     from runtime import logger
     p = _paths()
     if os.path.exists(p["stop"]):

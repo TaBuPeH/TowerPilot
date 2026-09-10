@@ -15,6 +15,7 @@ Normal Run policy:
 """
 import datetime
 from scheduling import daystate
+from scheduling import global_rewards
 import json
 import math
 import random
@@ -90,6 +91,15 @@ def free_gems_mark_claimed():
     daystate.set_raw("free_gems_claimed", datetime.date.today().isoformat())
 
 
+def store_gems_due():
+    return global_rewards.store_due()
+
+
+def store_gems_mark_claimed():
+    global_rewards.store_claimed()
+    logger.event("store_gems_claimed", schedule='01:00 UTC +/-10 minutes')
+
+
 def marks():
     f = CONFIG["fleet"]
     return [f["first_wave"] + i * f["interval"] for i in range(20)]
@@ -139,7 +149,8 @@ class RunState:
         self.cl_offsets: dict[int, tuple[int, int]] = {}  # mark -> (on_before, off_after)
         self.cl_always_above: int | None = None   # rolled per run from a range
         self.cl_blocked_logged = False   # edge-log for "toggle wanted but gated"
-        self.gem_due: tuple[float, tuple[int, int]] | None = None
+        from interactions.ad_gems import AdGemCollector
+        self.ad_gems = AdGemCollector(preset().get("gather", {}).get("ad_gems", True))
         from flows import shard
         # Detection-free orbiting-gem harvest, inert unless gather.gem_orbit is
         # enabled; rides along on the gem block below (see flows/shard.py).
@@ -275,6 +286,15 @@ def end_intro_sprint(rs: "RunState", why: str, fast: bool = False) -> bool:
     frame = capture.grab()
     pt = detect.find_intro_sprint(frame)
     if pt is None:
+        # A naturally finished sprint has nothing to cancel. Require a live
+        # HUD and a positively recognized ready ability before accepting that
+        # state; an unknown screen or unavailable ability still fails closed.
+        if wave_reader.read_wave(frame) is not None:
+            for button in ("nuke", "demon_mode"):
+                state = detect.button_state(frame, button)
+                if state.present and state.ready and state.center:
+                    logger.event("intro_sprint_end", why=why, result="already inactive")
+                    return True
         logger.event("intro_sprint_end", why=why, result="indicator not found")
         return False
     try:
@@ -802,6 +822,13 @@ def _trigger_fires(rs: "RunState", frame, wave, i: int, name: str, p: dict,
     """(fired?, trigger snapshot for the log). Cheap by construction: wave
     comparisons and rs state cost nothing, and the two bar readers are the ones
     the loop already runs, behind a one-read-per-pass cache."""
+    if name in ("bar", "wall_collapse") and getattr(rs, "sw_floater_seen", False):
+        # A visible immunity badge invalidates pre-proc wall decline samples.
+        # Rebuild a fresh history only after the badge has cleared.
+        for key in ("rule_bar_prev", "rule_bar_falling"):
+            _rule_mem(rs, key).pop(i, None)
+        _rule_mem(rs, "rule_bar_prev").pop(("collapse", i), None)
+        return False, {"wave": wave, "suppressed": "second_wind_immunity"}
     if name == "wave_at_least":
         n = p.get("value", p.get("wave"))
         snap = {"wave": wave, "at_least": n}
@@ -1238,6 +1265,11 @@ def _rule_act(rs: "RunState", frame, i: int, rid: str, name: str,
                 f2 = capture.grab()
                 if wave_reader.read_wave(f2) is None:
                     break               # death dialog reads dark: NO taps
+            if _rule_button(p) == "demon_mode" and detect.second_wind_badge(f2)[0]:
+                logger.event("rule_burst_deferred", index=i, id=rid,
+                             why="Second Wind appeared before the ability tap",
+                             shot=logger.shot(f2, "rescue_sw_deferred"))
+                return True, False
             ok = bool(fire_button(f2, _rule_button(p), f"{rid}_{attempt + 1}",
                                   require_ready=bool(p.get("require_ready",
                                                            False))))
@@ -1998,45 +2030,9 @@ def watch_frame(rs: "RunState", frame) -> str | None:
 
     # ---- orbiting-gem BLIND HARVEST (opt-in): tap the 135deg arc on a cadence,
     # detection-free. Self-gated (enabled + a readable wave), inert by default.
+    rs.ad_gems.poll(frame)
     rs.gem_orbit.poll(frame)
 
-    # ---- gem CLAIM with human delay (3-10 s)
-    # gather.flying_gem: a blueprint may switch gem collection off. Absent
-    # (every legacy preset) = True. When off, `gem` is never truthy, so the
-    # entire claim block below - detection, delay, stale tap - stays inert.
-    gem = (detect.floating_gem(frame)
-           if preset().get("gather", {}).get("flying_gem", True) else None)
-    if gem and rs.gem_due is None:
-        delay = random.uniform(*preset()["gem_delay_sec"])
-        rs.gem_due = (now + delay, gem)
-        logger.event("gem_seen", wave=rs.tracker.last, delay=round(delay, 1))
-    if rs.gem_due and now >= rs.gem_due[0]:
-        # fire ONLY on a fresh detection - the orbiting gem moves, so
-        # a remembered position is stale; grace-extend up to 10s
-        if gem:
-            try:
-                ev = act.tap(*gem, reason="gem_claim")
-                logger.event("gem", wave=rs.tracker.last, **ev)
-            except act.TapRefused as e:
-                logger.event("tap_refused", button="gem", error=str(e))
-            rs.gem_due = None
-        elif now - rs.gem_due[0] > 10:
-            # Last resort before giving up: tap where it was last seen. A
-            # settled CLAIM box does not move, and a stale tap on empty field
-            # is harmless - EXCEPT over the ability row, where it would fire
-            # Nuke or Demon Mode, so that area is refused outright.
-            pt = rs.gem_due[1]
-            if not _in_ability_row(pt):
-                try:
-                    ev = act.tap(*pt, reason="gem_claim_stale")
-                    logger.event("gem_stale_try", wave=rs.tracker.last, **ev)
-                except act.TapRefused as e:
-                    logger.event("tap_refused", button="gem", error=str(e))
-            else:
-                logger.event("gem_stale_skipped", wave=rs.tracker.last,
-                             reason="over_ability_row", x=pt[0], y=pt[1])
-            logger.event("gem_lost", wave=rs.tracker.last)
-            rs.gem_due = None
     return False
 
 
@@ -2416,15 +2412,18 @@ def main():
                     rs.await_guild_result = False
                     # only a flow that actually CLAIMED something changes the
                     # balance - only then is a store visit worth anything
-                    rs.pending_store = missions.last_guild_claims > 0
+                    rs.pending_store = (missions.last_guild_claims > 0
+                                        and preset().get("gather", {}).get("guild_store", False))
                 time.sleep(random.uniform(0.15, 0.55))   # 0.5-1s step spacing
                 continue                     # nothing else acts mid-flow
             # hands_off gathering (2026-09-05): when the blueprint wants
             # nothing that lives in the side menu, the menu is never opened -
             # on a human's run that tap is theirs to make, not ours.
             _g = preset().get("gather", {})
+            _global = preset().get('global_behaviors', {})
             _want_menu = any(_g.get(k, True) for k in
-                             ("quests_8h", "quest_rewards", "guild", "ad_gems"))
+                             ("quests_8h", "quest_rewards", "guild", "free_store_gems"))
+            _want_menu = _want_menu or any(_global.values())
             _menu_open = detect.side_menu_open(frame)
             if not _menu_open and not _want_menu:
                 rs.menu_open_frames = 0
@@ -2458,6 +2457,23 @@ def main():
             else:
                 rs.menu_closed_frames = 0
                 rs.menu_open_frames += 1
+                if rs.menu_open_frames >= 2 and not rs.shop.active:
+                    from interactions import event_rewards
+                    for key, detector, flow in (
+                            ('daily_missions', missions.quests_badge, missions.quest_flow),
+                            ('guild_progress', missions.guild_badge, missions.guild_flow),
+                            ('event_missions', missions.events_badge, event_rewards.event_flow)):
+                        if _global.get(key) is not True or not global_rewards.check_due(key):
+                            continue
+                        present = bool(detector(frame))
+                        global_rewards.checked(key)
+                        logger.event('global_reward_check', behavior=key, badge=present, next_in=300)
+                        if present:
+                            rs.mission.start(flow)
+                            rs.mission.step(frame)
+                            break
+                    if rs.mission.active:
+                        continue
                 if rs.menu_open_frames < 2:
                     # menu may still be sliding in (EXIT BATTLE renders
                     # early) - let it settle before any flow taps tiles
@@ -2469,10 +2485,11 @@ def main():
                     _g = preset().get("gather", {})
                     _want_q = (_g.get("quests_8h", True)
                                or _g.get("quest_rewards", True))
+                    _want_q = _want_q and 'daily_missions' not in _global
                     badge = ("quests"
                              if _want_q and missions.quests_badge(frame) else
                              "guild"
-                             if _g.get("guild", True)
+                             if _g.get("guild", True) and 'guild_progress' not in _global
                              and missions.guild_badge(frame) else None)
                 if badge is None:
                     rs.quest_due = None
@@ -2503,21 +2520,17 @@ def main():
                     rs.pending_store = False
                     rs.mission.start(store.store_flow)
                     rs.mission.step(frame)
-                # ---- daily free gems (premium store), around 4-5 AM
+                # ---- once per UTC day, 01:00 +/-10 minutes; catch up when online
                 if not rs.mission.active and not rs.shop.active \
                         and rs.menu_open_frames >= 2 \
-                        and preset().get("gather", {}).get("ad_gems", True) \
-                        and free_gems_due() \
+                        and _global.get('free_store_gems', _g.get('free_store_gems', False)) \
+                        and store_gems_due() \
                         and now >= rs.free_gems_try_at:
-                    # the claim is counted by the flow ITSELF, and only once
-                    # the button is really tapped. v29: the Ad Gem respawns
-                    # through the day (60/UTC-day cap enforced in
-                    # free_gems_due) - the jittered pace averages ~17 min
-                    # between visits so no two days tick on the same clock,
-                    # and a failing flow still cannot spin.
-                    rs.free_gems_try_at = now + random.uniform(600, 1500)
+                    # Failed/unavailable claims can retry after five minutes;
+                    # a confirmed cooldown closes this account's UTC day.
+                    rs.free_gems_try_at = now + 300
                     rs.mission.start(lambda: missions.free_gems_flow(
-                        on_success=free_gems_mark_claimed))
+                        on_success=store_gems_mark_claimed))
                     rs.mission.step(frame)
 
             # ---- CL normalization: first thing each run, force the preset's

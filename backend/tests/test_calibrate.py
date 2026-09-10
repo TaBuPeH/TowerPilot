@@ -36,11 +36,14 @@ def _pill_frame(labels, y=400, x0=20, w=190, h=75, gap=22, active=0):
 
 
 @pytest.fixture()
-def dash():
+def dash(tmp_path):
     path = REPO / "frontend" / "dashboard.py"
     spec = importlib.util.spec_from_file_location("tp_dashboard_cal", str(path))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    config = tmp_path / "dashboard_config.yaml"
+    config.write_text((BACKEND / "config.example.yaml").read_text(encoding="utf-8"), encoding="utf-8")
+    mod.CONFIG_PATH = str(config)
     return mod
 
 
@@ -268,7 +271,7 @@ def test_calibrate_endpoints_guard_taps_and_report_state(dash, tmp_path, monkeyp
 
 def test_calibrator_counts_as_a_runner_for_the_process_guards():
     src = (REPO / "frontend" / "dashboard.py").read_text(encoding="utf-8")
-    assert src.count("scan|calibrate|boot|dashboard") == 2
+    assert src.count("scan|calibrate|clicker|boot|dashboard") == 2
     scan_src = (BACKEND / "player" / "scan.py").read_text(encoding="utf-8")
     assert '"calibrate"' in scan_src
 
@@ -550,3 +553,11 @@ def test_module_crop_allows_native_grid_offset_but_keeps_rarity_border():
     # Too little shared evidence is not sufficient for verification.
     distant = source[25:175, 25:175].copy()
     assert match_module_crop(distant, old)[0] < .95
+
+
+@pytest.fixture(autouse=True)
+def unbound_calibration_config(monkeypatch):
+    import settings
+    import yaml
+    cfg = yaml.safe_load((BACKEND / "config.example.yaml").read_text(encoding="utf-8"))
+    monkeypatch.setattr(settings, "CONFIG", cfg)

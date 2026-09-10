@@ -274,7 +274,7 @@ def ride_to(target: int) -> None:
     # gems went unclaimed through whole quest batches). The old 10s sleep
     # would lose the orbiting gem between polls - 1s keeps GemWatch's
     # fresh-detection rule workable and costs one template match a second.
-    gems = shard.GemWatch(**shard.gem_opts())
+    gems = shard.GemWatch()
     while True:
         frame = capture.grab()
         w = wave_reader.read_wave(frame)

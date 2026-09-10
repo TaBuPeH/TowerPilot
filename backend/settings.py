@@ -59,8 +59,11 @@ def instance(name: str | None = None) -> dict:
     return CONFIG["instances"][name]
 
 
-def select_instance(name: str, preset: str | None = None) -> None:
-    """Bind this PROCESS to one instance, applying its overrides.
+def bind_device(name: str) -> None:
+    """Bind device and account storage without compiling a farming profile.
+
+    Boot and calibration must work before account ownership is discovered.
+    Run entry points use select_instance, which also validates the profile.
 
     Accounts differ in ways the vision layer cares about (Main has a wall bar
     where low tiers have none), so instances may carry their own `preset`,
@@ -91,6 +94,12 @@ def select_instance(name: str, preset: str | None = None) -> None:
         override = inst.get(key)
         if isinstance(override, dict):
             CONFIG[key].update(override)
+
+
+def select_instance(name: str, preset: str | None = None) -> None:
+    """Bind a run to its device, validating and compiling its profile."""
+    bind_device(name)
+    inst = CONFIG["instances"][name]
     # ---- PROFILE LAYER (P3). A profile compiles its blueprints into extra
     # CONFIG["presets"]["bp_<name>"] entries, so it has to run BEFORE the
     # preset is resolved below - `--preset bp_coin_default` must be findable

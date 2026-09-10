@@ -30,6 +30,23 @@ def _rows(cfg, body):
     return {row["alternatives"][0]: row for row in readiness.requirements(cfg, body)}
 
 
+def test_second_wind_only_required_by_explicit_timing_rule():
+    body = _coin()
+    body['rules'] = [{'when': {'wave': 1000}, 'fire': 'nuke'}]
+    assert 'buttons/nuke.png' in _rows(_cfg(), body)
+    assert 'floaters/second_wind.png' not in _rows(_cfg(), body)
+    body['rules'][0]['when'] = {'second_wind': {'state': 'after_immunity'}}
+    assert _rows(_cfg(), body)['floaters/second_wind.png']['blocking']
+
+
+def test_wall_rescue_without_second_wind_does_not_require_badge():
+    body = _coin()
+    body['abilities'] = {'dm_below': .02, 'hold_until_second_wind': False}
+    assert 'floaters/second_wind.png' not in _rows(_cfg(), body)
+    body['abilities']['hold_until_second_wind'] = True
+    assert 'floaters/second_wind.png' in _rows(_cfg(), body)
+
+
 def test_tournament_guards_are_advisory_for_coin_and_blocking_for_tournament():
     rows = _rows(_cfg(), _coin())
     for rel in readiness.TOURNAMENT_GUARDS | {"home/welcome_back_dialog.png", "buttons/reward_skip.png"}:

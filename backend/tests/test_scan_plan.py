@@ -62,11 +62,12 @@ def test_control_requires_completed_scan_and_current_images(tmp_path):
     state = folder / "calibrate_state.json"
     state.write_text(json.dumps({"phases":{"cards":{"status":"done"}}}))
     assert not scan_plan.control_gate(tmp_path,cfg)["ready"]
-    for rel in scan_plan.missing_navigation(tmp_path,cfg,[]):
+    for rel in scan_plan.missing_navigation(tmp_path,cfg,[],include_wave=False):
         path = accounts.template_path(tmp_path,cfg,rel,write=True)
         path.parent.mkdir(parents=True,exist_ok=True)
         cv2.imwrite(str(path),np.random.default_rng(32).integers(0,256,(20,30,3),dtype=np.uint8))
     assert scan_plan.control_gate(tmp_path,cfg)["ready"]
+    assert "digits/0.png" in scan_plan.missing_navigation(tmp_path,cfg,[])
     state.write_text(json.dumps({"phases":{"cards":{"status":"running"}}}))
     assert not scan_plan.control_gate(tmp_path,cfg)["ready"]
     state.write_text(json.dumps({"phases":{"cards":{"status":"done"}}}))
@@ -81,7 +82,7 @@ def test_boot_finishes_without_waiting_for_missing_game_images(tmp_path, monkeyp
     from runtime import logger
     events = []
     monkeypatch.setattr(sys,"argv",["boot.py","--instance","main"])
-    monkeypatch.setattr(settings,"select_instance",lambda *a:None)
+    monkeypatch.setattr(settings,"bind_device",lambda *a:None)
     monkeypatch.setattr(settings,"instance",lambda:{"serial":"test"})
     monkeypatch.setattr(settings,"ROOT",tmp_path)
     monkeypatch.setattr(settings,"CONFIG",{"active_instance":"main"})

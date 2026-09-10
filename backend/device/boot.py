@@ -42,10 +42,21 @@ def main() -> int:
     ap.add_argument("--instance", required=True)
     a = ap.parse_args()
     import settings
-    settings.select_instance(a.instance)
+    settings.bind_device(a.instance)
     from runtime import logger
     from settings import instance
     serial = instance()["serial"]
+
+    # A newly installed ADB has no daemon yet. Socket reconnect alone cannot
+    # start it; do this lifecycle operation once, never once per screenshot.
+    from device import tool_install
+    try:
+        tool_install.ensure_server(settings.ROOT,
+                                   settings.CONFIG.get("adb", {}).get("exe"),
+                                   settings.run_hidden)
+    except Exception as exc:
+        logger.event("boot_stage", stage="adb", ok=False, error=str(exc))
+        return 1
 
     def adb_up() -> bool:
         try:

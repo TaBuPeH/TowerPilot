@@ -80,7 +80,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--instance', required=True)
     args = ap.parse_args()
-    settings.select_instance(args.instance, 'normal_run')
+    settings.bind_device(args.instance)
+    settings.CONFIG['preset'] = 'normal_run'
     directory = accounts.calibration_dir(settings.ROOT, settings.CONFIG)
     state = directory/'screen_analysis.json'
     def progress(n, total):

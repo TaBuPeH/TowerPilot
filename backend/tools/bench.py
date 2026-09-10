@@ -47,7 +47,6 @@ for i in range(iters):
     try:
         detect.intro_sprint_active(frame)
         detect.second_wind_floater(frame)
-        detect.floating_gem(frame)
         detect.death_screen(frame)
     except Exception:
         pass

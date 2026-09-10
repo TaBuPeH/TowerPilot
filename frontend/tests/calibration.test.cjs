@@ -9,7 +9,7 @@ test('screen capture has separate persisted feedback and blocks duplicate starts
   const progress = {}, buttons = [{}, {}];
   const ctx = vm.createContext({$:()=>progress, document:{querySelectorAll:()=>buttons},
     calibrationMode:st=>st.selection?.mode});
-  vm.runInContext(section('function observationFeedback(', 'async function observeNow('), ctx);
+  vm.runInContext(section('function observationFeedback(', 'let clientClickerGeneration'), ctx);
   ctx.st = {running:true,selection:{mode:'observe'},state:{observation:{status:'running',message:'Reading Home'}}};
   vm.runInContext('observationFeedback(st)',ctx);
   assert.match(progress.textContent,/running.*Reading Home/);

@@ -148,7 +148,19 @@ def identify(frame) -> Screen:
     band = ((HEADER_BAND[0], HEADER_BAND[1]), (HEADER_X[0], HEADER_X[1]))
     best, best_s = None, 0.0
     for name in HEADERS:
-        s, _ = _match(frame, f"screens/hdr_{name}.png", band)
+        rel = f"screens/hdr_{name}.png"
+        # Setup's native header cuts can be taller than the historical 62px
+        # band. Search the manifest rectangle with a small positioning margin.
+        # Otherwise a perfectly verified fresh crop can NEVER match at runtime.
+        from player.bootstrap_layout import manifest
+        definition = manifest()['screens'].get('home' if name=='battle' else name, {})
+        spec = next((t for t in definition.get('targets',[]) if t['rel']==rel), None)
+        region = band
+        if spec:
+            x,y,w,h=spec['rect']
+            region=((max(0,y-24),min(frame.shape[0],y+h+24)),
+                    (max(0,x-24),min(frame.shape[1],x+w+24)))
+        s, _ = _match(frame, rel, region)
         ev[f"hdr_{name}"] = round(s, 3)
         if s > best_s:
             best, best_s = name, s

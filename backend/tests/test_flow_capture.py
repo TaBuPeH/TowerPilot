@@ -212,6 +212,57 @@ def test_setup_uw_lottery_is_opt_in_off_by_default(monkeypatch):
     assert lot == [True]
 
 
+def test_setup_starts_at_max_tier_before_missing_font_pass(monkeypatch):
+    calls=[]
+    monkeypatch.setattr(fc, 'can_start_battle', lambda **k: (True, ''))
+    monkeypatch.setattr(fc, 'read_tier', lambda f: 14)
+    monkeypatch.setattr(fc, '_battle_pass', lambda f,t,label: calls.append(t))
+    monkeypatch.setattr(fc, '_hud_digit_pass', lambda f: calls.append('missing font'))
+    monkeypatch.setattr(fc, '_have_templates', lambda rels: set(rels))
+    flow=fc._Flow(_FakeScanner(_frame()))
+    flow.on_home=lambda f: True
+    flow.wave=lambda f: None
+    flow.side_menu=flow.game_stats=flow.in_tournament=lambda f: False
+    fc.capture_battle_flow(flow)
+    assert calls == [fc.TIER_FOR_END_ROUND, 'missing font']
+
+
+def test_optional_effect_observation_is_bounded(monkeypatch):
+    from types import SimpleNamespace
+    ticks=iter([0, 0, 1, 91])
+    monkeypatch.setattr(fc.time, 'monotonic', lambda: next(ticks))
+    captures=[]
+    monkeypatch.setattr(fc, 'capture_artwork_targets', lambda *a,**k: captures.append(1))
+    flow=SimpleNamespace(s=SimpleNamespace(check_stop=lambda:None), grab=lambda:None,
+        game_stats=lambda f:False, on_home=lambda f:False, progress=lambda s:None,
+        pause=lambda s:None)
+    fc.observe_optional_effects(flow)
+    assert captures == [1]
+
+
+def test_setup_off_switch_capture_restores_on(tmp_path, monkeypatch):
+    import settings
+    from types import SimpleNamespace
+    from interactions import shopper
+    label=tmp_path/'chain_lightning.png'
+    label.write_bytes(b'label')
+    monkeypatch.setattr(settings,'template_path',lambda rel: label if rel=='uw/chain_lightning.png' else tmp_path/'missing')
+    monkeypatch.setattr(fc.cv2,'imread',lambda p: _frame())
+    monkeypatch.setattr(shopper,'_scroll_to_top',lambda:None)
+    on=('on',[10,20,80,40],'uw/chain_lightning.png')
+    off=('off',[10,20,80,40],'uw/chain_lightning.png')
+    states=iter([[on],[on],[off],[on]])
+    monkeypatch.setattr(fc,'find_uw_switches',lambda *a:next(states))
+    captured=[]
+    monkeypatch.setattr(fc,'capture_uw_switches',lambda *a:captured.append(True))
+    taps=[]
+    flow=SimpleNamespace(grab=lambda:_frame(),pause=lambda t:None,cal=object(),
+        progress=lambda s:None,tap=lambda x,y,reason:taps.append(reason))
+    fc.capture_missing_off_state(flow)
+    assert captured == [True]
+    assert taps == ['setup: capture OFF switch','setup: restore weapon ON']
+
+
 # ------------------------------------------------------------- manifest contract
 def test_every_flow_target_is_declared_writable():
     from player.bootstrap_layout import writable_targets

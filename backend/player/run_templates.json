@@ -1,0 +1,400 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "farm",
+      "label": "Farm",
+      "description": "Repeated coin runs with in-battle upgrade shopping and reward collection. Optional legacy Chain Lightning and wall rescue rules.",
+      "legacy_source": "normal_run",
+      "blueprint": {
+        "kind": "coin",
+        "label": "Farm",
+        "loadout": "as_is",
+        "tier": 1,
+        "restart_via_home": true,
+        "shop_interval_sec": 90,
+        "shopping": "default_sweep",
+        "policies": {
+          "gather": "all_on"
+        }
+      },
+      "policies": {
+        "gather": {
+          "all_on": {
+            "flying_gem": false,
+            "gem_delay_sec": [
+              3,
+              10
+            ],
+            "ad_gems": true,
+            "quests_8h": true,
+            "quest_rewards": true,
+            "guild": true,
+            "free_store_gems": false,
+            "gem_orbit": {
+              "enabled": true
+            }
+          }
+        },
+        "uw_policies": {
+          "farm_cl_choreo": {
+            "baseline": {
+              "black_hole": true,
+              "chronofield": true,
+              "death_wave": true,
+              "golden_tower": true,
+              "poison_swamp": true,
+              "spotlight": true
+            },
+            "chain_lightning": {
+              "always_on_above": [
+                4080,
+                4120
+              ],
+              "mode": "fleet_marks",
+              "off_after_waves": [
+                53,
+                72
+              ],
+              "pre_mark_waves": [
+                5,
+                25
+              ]
+            },
+            "label": "Chain Lightning Farming Choreography"
+          }
+        },
+        "rescue_policies": {
+          "high_tier_wall": {
+            "label": "High Tier Wall",
+            "arm": {
+              "on": "second_wind",
+              "immunity_sec": null,
+              "watch_sec": 30
+            },
+            "end_sprint_after_sw": false,
+            "rules": [
+              {
+                "when": {
+                  "bar": "wall",
+                  "below": 0.02,
+                  "falling_samples": 2,
+                  "deadband": 0.01
+                },
+                "do": {
+                  "burst": {
+                    "cancel_sprint": true,
+                    "fire": "demon_mode",
+                    "retaps": 3
+                  }
+                }
+              },
+              {
+                "when": {
+                  "wall_collapse": {
+                    "from_above": 0.3
+                  }
+                },
+                "do": {
+                  "burst": {
+                    "cancel_sprint": true,
+                    "fire": "demon_mode",
+                    "retaps": 3
+                  }
+                }
+              },
+              {
+                "when": {
+                  "fleet_mark": {
+                    "after_waves": 3,
+                    "window_waves": 60
+                  }
+                },
+                "do": {
+                  "fire": {
+                    "button": "nuke",
+                    "throttle_sec": 5
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "shopping_lists": {
+          "default_sweep": {
+            "label": "Default Sweep",
+            "enabled": true,
+            "directives": [
+              {
+                "enabled": true,
+                "tab": "utility",
+                "stats": [
+                  "enemy_attack_level_skip",
+                  "enemy_health_level_skip"
+                ],
+                "mode": "repeat"
+              },
+              {
+                "enabled": true,
+                "tab": "defense",
+                "stats": [
+                  "death_defy",
+                  "land_mine_radius"
+                ],
+                "mode": "once"
+              },
+              {
+                "enabled": true,
+                "tab": "defense",
+                "stats": [
+                  "health",
+                  "health_regen"
+                ],
+                "mode": "best_cost"
+              },
+              {
+                "enabled": true,
+                "tab": "attack",
+                "stats": [
+                  "critical_factor",
+                  "damage_per_meter",
+                  "bounce_shot_range",
+                  "super_crit_chance",
+                  "super_crit_mult"
+                ],
+                "mode": "once"
+              },
+              {
+                "enabled": true,
+                "tab": "attack",
+                "stats": [
+                  "damage"
+                ],
+                "mode": "clicks",
+                "clicks": 3
+              }
+            ]
+          }
+        }
+      },
+      "optional_policies": {
+        "uw": "farm_cl_choreo",
+        "rescue": "high_tier_wall"
+      },
+      "requirements": [],
+      "notes": [
+        "Tier and equipment are local choices.",
+        "Creation does not start a run or add a schedule."
+      ]
+    },
+    {
+      "id": "tournament",
+      "label": "Tournament",
+      "description": "One tournament entry, upgrade shopping and reward collection. Never surrender a tournament. Optional legacy weapon and wall rescue rules.",
+      "legacy_source": "tournament",
+      "blueprint": {
+        "kind": "tournament",
+        "label": "Tournament",
+        "loadout": "tourney_1",
+        "gem_entry_max": 0,
+        "tier": 1,
+        "restart_via_home": true,
+        "shop_interval_sec": 90,
+        "shopping": "default_sweep",
+        "policies": {
+          "gather": "all_on"
+        }
+      },
+      "policies": {
+        "gather": {
+          "all_on": {
+            "flying_gem": false,
+            "gem_delay_sec": [
+              3,
+              10
+            ],
+            "ad_gems": true,
+            "quests_8h": true,
+            "quest_rewards": true,
+            "guild": true,
+            "free_store_gems": false,
+            "gem_orbit": {
+              "enabled": true
+            }
+          }
+        },
+        "uw_policies": {
+          "tourney_cl": {
+            "baseline": {
+              "black_hole": true,
+              "death_wave": true,
+              "golden_tower": true,
+              "poison_swamp": true,
+              "spotlight": true,
+              "chronofield": true
+            },
+            "chain_lightning": {
+              "mode": "off_until_wave",
+              "on_above": [
+                500,
+                550
+              ]
+            },
+            "label": "Tournament Chain Lightning"
+          }
+        },
+        "rescue_policies": {
+          "tournament_any_falling": {
+            "label": "Tournament Any Falling",
+            "arm": {
+              "on": "second_wind",
+              "immunity_sec": 8,
+              "watch_sec": null
+            },
+            "end_sprint_after_sw": false,
+            "rules": [
+              {
+                "when": {
+                  "bar": "wall",
+                  "below": 0.5,
+                  "falling_samples": 2,
+                  "deadband": 0.01
+                },
+                "do": {
+                  "burst": {
+                    "cancel_sprint": true,
+                    "fire": "demon_mode",
+                    "retaps": 3
+                  }
+                }
+              },
+              {
+                "when": {
+                  "wall_collapse": {
+                    "from_above": 0.3
+                  }
+                },
+                "do": {
+                  "burst": {
+                    "cancel_sprint": true,
+                    "fire": "demon_mode",
+                    "retaps": 3
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "shopping_lists": {
+          "default_sweep": {
+            "label": "Default Sweep",
+            "enabled": true,
+            "directives": [
+              {
+                "enabled": true,
+                "tab": "utility",
+                "stats": [
+                  "enemy_attack_level_skip",
+                  "enemy_health_level_skip"
+                ],
+                "mode": "repeat"
+              },
+              {
+                "enabled": true,
+                "tab": "defense",
+                "stats": [
+                  "death_defy",
+                  "land_mine_radius"
+                ],
+                "mode": "once"
+              },
+              {
+                "enabled": true,
+                "tab": "defense",
+                "stats": [
+                  "health",
+                  "health_regen"
+                ],
+                "mode": "best_cost"
+              },
+              {
+                "enabled": true,
+                "tab": "attack",
+                "stats": [
+                  "critical_factor",
+                  "damage_per_meter",
+                  "bounce_shot_range",
+                  "super_crit_chance",
+                  "super_crit_mult"
+                ],
+                "mode": "once"
+              },
+              {
+                "enabled": true,
+                "tab": "attack",
+                "stats": [
+                  "damage"
+                ],
+                "mode": "clicks",
+                "clicks": 3
+              }
+            ]
+          }
+        }
+      },
+      "optional_policies": {
+        "uw": "tourney_cl",
+        "rescue": "tournament_any_falling"
+      },
+      "requirements": [],
+      "notes": [
+        "Tier and equipment are local choices.",
+        "Creation does not start a run or add a schedule.",
+        "Paid entries are disabled until you choose a gem budget."
+      ]
+    },
+    {
+      "id": "shard",
+      "label": "Shard farming",
+      "description": "Cancel Intro Sprint at wave 100, fire Nuke at wave 101, then surrender this owned run and retry. Choose a tier and deck that can reach the target.",
+      "legacy_source": "shard_farm",
+      "blueprint": {
+        "kind": "shard",
+        "label": "Shard farming",
+        "loadout": "shard_farm",
+        "tier": 1,
+        "count": 100,
+        "policies": {
+          "gather": "gems_only"
+        }
+      },
+      "policies": {
+        "gather": {
+          "gems_only": {
+            "flying_gem": false,
+            "gem_delay_sec": [
+              3,
+              10
+            ],
+            "ad_gems": true,
+            "quests_8h": false,
+            "quest_rewards": false,
+            "guild": false,
+            "free_store_gems": false,
+            "gem_orbit": {
+              "enabled": true
+            }
+          }
+        }
+      },
+      "optional_policies": {},
+      "requirements": [
+        "Verified wave counter, Intro Sprint and Nuke; a suitable equipped deck."
+      ],
+      "notes": [
+        "Tier and equipment are local choices.",
+        "Creation does not start a run or add a schedule."
+      ]
+    }
+  ]
+}

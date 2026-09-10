@@ -194,6 +194,7 @@ DOCS = {
     "stats/max_label.png": {"label": "MAX label", "what": "The MAX marker shown on a maxed workshop stat.", "where": "In-run panel, workshop tabs.", "how": "Crop it from a maxed stat row during a run.", "art": []},
     "icons/premium_store.png": {"label": "Store icon", "what": "The premium store icon on Home.", "where": "Home screen.", "how": "Full setup captures it.", "art": []},
     "icons/free_gems.png": {"label": "Free gems", "what": "The store's free gems (ad) tile.", "where": "Store screen.", "how": "Full setup captures it from the Store.", "art": []},
+    "buttons/ad_gems_claim.png": {"label": "Ad Gems claim", "what": "The six-gem CLAIM button on the left HUD, separate from Store gems.", "where": "Battle screen, above equipped ability cards; moves with the HUD.", "how": "Capture while the offer is visible; verify on a second frame.", "art": []},
     "buttons/gem_claim.png": {"label": "Gem claim", "what": "The CLAIM button on a free gems tile.", "where": "Store screen.", "how": "Full setup captures it from the Store.", "art": []},
     "icons/daily_missions.png": {"label": "Missions header", "what": "The 'Missions' header text the quests flow reads to confirm the Missions screen opened.", "where": "Missions screen (side menu > quests tile), top.", "how": "Crop the header text on the Missions screen.", "art": []},
     "icons/tile_quests.png": {"label": "Quests tile (side menu)", "what": "The checkbox tile in the side menu that opens the daily missions; a red number badge on it means rewards wait. The quests flow taps it.", "where": "In-run side menu column on the right, after opening the hamburger (during a run, not on Home).", "how": "Automatic: Full setup's Tier-1 run opens the side menu and finds it with the game's MissionsIcon artwork; or open the menu during your run and use 'Capture from the screen now'.", "art": ["MissionsIcon"]},
@@ -219,8 +220,6 @@ FOLDERS = {
                "Full setup reads them from a Tier 1 run automatically.", []),
     "uw": ("Ultimate Weapon name", "The name label of an Ultimate Weapon in the in-run panel's UW tab.",
            "During a run: bottom panel, ULTIMATE WEAPONS tab.", "Full setup captures the owned weapons' labels.", []),
-    "floaters": ("Flying gem", "A gem floating over the field during a run (one appearance variant).",
-                 "Battle HUD, over the field.", "Crop one when it floats by; each variant is a separate image.", ["gem", "Gem"]),
     "presets": ("Preset row", "A named preset row in the preset picker (this account's own name).",
                 "Preset picker dialog.", "Calibrate (Presets) cuts it from your picker.", []),
     "cards": ("Card preset tab", "One of this account's card preset tabs.", "Cards menu.", "Calibrate (Cards) cuts it.", []),
@@ -277,8 +276,6 @@ ART = {
     "uw/poison_swamp.png": ["weapon_swamp"],
     "floaters/second_wind.png": ["SecondWind"],
 }
-for _rel in ("gem_a", "gem_b", "gem_c", "gem_v29_orbit", "gem_v29_orbit_b", "gem_v29_orbit_b_lr", "gem_v29_orbit_b_ul", "gem_v29_orbit_b_ul2"):
-    ART[f"floaters/{_rel}.png"] = ["gem"]
 
 # Controls the game renders as TEXT on a generic button: there is no sprite
 # to show, so the dashboard draws the expected words as a stand-in badge.

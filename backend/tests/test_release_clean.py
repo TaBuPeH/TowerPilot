@@ -106,6 +106,7 @@ def test_no_account_constants_survive_in_code():
 
 def test_card_tabs_are_whatever_templates_the_player_cut(tmp_path, monkeypatch):
     from interactions import loadout
+    monkeypatch.setattr(loadout, "CONFIG", {})
     root = tmp_path / "backend"
     (root / "templates" / "cards").mkdir(parents=True)
     monkeypatch.setattr(loadout, "ROOT", root)

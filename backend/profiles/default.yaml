@@ -118,6 +118,11 @@ blueprints:
   quest_ilm: {kind: cycle_quest, label: 'Quest: Inner Land Mines', loadout: inner_land_mines_quest,
     tier: 1, cycle_sec: 25, cycles: 40}
 policies:
+  global_behaviors:
+    free_store_gems: true
+    daily_missions: true
+    event_missions: true
+    guild_progress: true
   uw_policies:
     farm_cl_choreo:
       baseline: {black_hole: true, chronofield: true, death_wave: true, golden_tower: true,

@@ -20,6 +20,7 @@ cannot be pooled), but a socket is vastly cheaper than a process and closes
 cleanly, which is what the buffer-space exhaustion was really about.
 """
 import socket
+import select
 
 _HOST = ("127.0.0.1", 5037)
 _TIMEOUT = 15.0
@@ -27,6 +28,30 @@ _TIMEOUT = 15.0
 
 class AdbError(RuntimeError):
     pass
+
+
+def stream_lines(serial: str, command: str, stopped, timeout=15):
+    """Read a long-lived device stream; cancellation works even when idle."""
+    if not serial:
+        raise ConnectionError("No adb serial configured")
+    with socket.create_connection(_HOST, timeout=timeout) as sock:
+        _send(sock, f"host:transport:{serial}")
+        _status(sock, "transport")
+        _send(sock, f"exec:{command}")
+        _status(sock, "exec")
+        pending = b""
+        while not stopped():
+            if not select.select([sock], [], [], 0.25)[0]:
+                continue
+            chunk = sock.recv(65536)
+            if not chunk:
+                break
+            pending += chunk
+            while b"\n" in pending:
+                line, pending = pending.split(b"\n", 1)
+                yield line.decode("utf-8", errors="replace") + "\n"
+        if pending:
+            yield pending.decode("utf-8", errors="replace")
 
 
 def _send(sock: socket.socket, payload: str):

@@ -79,10 +79,8 @@ def _state_load(p) -> dict:
 
 
 def _state_save(p, st) -> None:
-    tmp = p["state"] + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as fh:
-        json.dump(st, fh, indent=1)
-    os.replace(tmp, p["state"])
+    from runtime.files import atomic_json
+    atomic_json(p["state"], st)
 
 
 def _stop_requested(p) -> bool:
@@ -292,6 +290,8 @@ class Calibration:
         texture = float(cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY).std()) if crop is not None and crop.size else 0
         verified = texture >= 2 and best >= 0.99 and (second < 0.85 or exempt)
         status = write_template(rel, crop, self.overwrite, bootstrap=self.bootstrap) if verified else "rejected"
+        if status == 'refused':
+            verified = False
         fresh = None
         if status == "exists":
             # the file that is already there is what the runs will use: score
@@ -331,19 +331,17 @@ class Calibration:
         if verified and status in ("written", "exists") and (extra or {}).get("rect") and (extra or {}).get("screen"):
             # the learned manifest: this control lives HERE on THIS screen
             from player import learned
-            learned.record(self.p, rel, extra["rect"], extra["screen"], extra.get("source") or phase)
+            learned.record(self.p, rel, extra["rect"], extra["screen"], extra.get("source") or phase,
+                           frame_size=(int(frame.shape[1]), int(frame.shape[0])))
         if self.p.get("report"):
             self.save_report()
         return entry
 
     def save_report(self) -> None:
         from player.calibration_report import describe_report
-        tmp = self.p["report"] + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(describe_report({"entries": self.entries, "player": self.player,
-                       "written_at": datetime.datetime.now().isoformat(timespec="seconds")}),
-                      fh, indent=1)
-        os.replace(tmp, self.p["report"])
+        from runtime.files import atomic_json
+        atomic_json(self.p["report"], describe_report({"entries": self.entries, "player": self.player,
+                    "written_at": datetime.datetime.now().isoformat(timespec="seconds")}))
 
 
 def harvest_row(cal: Calibration, frame, band, prefix: str, phase: str,
@@ -414,8 +412,9 @@ def _inspect(cx: int, cy: int, icon=None):
     if panel is None:
         return None, None
     if icon is not None:
-        from player.module_descriptor import read_descriptor
+        from player.module_descriptor import read_descriptor, settled_panel
         try:
+            panel = settled_panel(icon, panel, capture.grab, time.sleep)
             name,rarity,box = read_descriptor(icon,panel)
             from runtime import logger
             logger.event("calibrate_module_identity", centre=[cx,cy], panel_icon=box, name=name, rarity=rarity)
@@ -441,7 +440,7 @@ def _inspect(cx: int, cy: int, icon=None):
     return name, rarity
 
 
-def _walk_grid(cal: Calibration):
+def _walk_grid(cal: Calibration, progress=lambda message: None):
     """Every inventory tile: tap, read, cut `modules/<slug>.png` for the
     first copy of each module. inventory.sweep's paging, with the tile rows
     read off each frame (the lattice shifts when "New" badges show)."""
@@ -473,6 +472,7 @@ def _walk_grid(cal: Calibration):
     for page in range(inventory.MAX_PAGES):
         if _stop_requested(cal.p):
             raise Stopped(f"modules grid page {page}")
+        progress(f"Modules: reading inventory page {page+1}")
         grid = inventory.settle()
         _evidence(cal.p, grid, f"modules_grid_{page}")
         rows = pills.grid_rows(grid)          # whole rows only; none = nothing to read
@@ -498,6 +498,7 @@ def _walk_grid(cal: Calibration):
                     copies.append({"slug": known[0], "rarity": known[1], "page": page,
                                    "row": r, "col": c})
                 continue
+            progress(f"Modules: identifying tile {len(placed)} on page {page+1}")
             name, rarity = _inspect(cx, cy, icon)
             s = module_slug(name)
             seen.append((icon, s, rarity))
@@ -606,10 +607,18 @@ def phase_workshop(cal: Calibration) -> dict:
 
 
 def phase_modules(cal: Calibration) -> dict:
+    from interactions import tourney
+    tourney.open_nav("modules", "modules/buy_module.png", "modules screen")
+    result = read_module_contents(cal)
+    tourney.return_to_game("modules")
+    return result
+
+
+def read_module_contents(cal: Calibration, progress=lambda message: None) -> dict:
+    """Read equipped identities and the entire inventory without changing slots."""
     from device import capture
     from interactions import tourney
     from runtime import logger
-    tourney.open_nav("modules", "modules/buy_module.png", "modules screen")
     from player.module_roundtrip import ScreenDriver
     ScreenDriver(cal).inventory_tab()
     time.sleep(0.6)
@@ -637,10 +646,12 @@ def phase_modules(cal: Calibration) -> dict:
     if unreadable:
         raise RuntimeError(f"{unreadable} equipped modules could not be read. Previous inventory is kept; retry Modules.")
     cal.player["modules_equipped"] = equipped
-    slugs, copies = _walk_grid(cal)
+    slugs, copies = _walk_grid(cal, progress)
+    from interactions import inventory
+    inventory.park_top()
+    cal.player["module_inventory_complete"] = True
     cal.player["modules_in_grid"] = sorted(set(slugs))
     cal.player["modules_copies"] = copies
-    tourney.return_to_game("modules")
     return {"modules_equipped": equipped, "modules_in_grid": cal.player["modules_in_grid"],
             "copies": len(copies), "preset_tabs": cal.player["category_presets"]["modules"]}
 
@@ -700,12 +711,14 @@ def main() -> None:
                          "Bootstrap only; the dashboard popup is the consent.")
     ap.add_argument("--overwrite", action="store_true",
                     help="replace templates that already exist")
+    ap.add_argument("--battle-only", action="store_true", help="Reuse menu discoveries and prepare only battle controls")
     ap.add_argument("--allow-navigation", action="store_true",
                     help="Allow taps for this human-started calibration process only")
     ap.add_argument("--fresh", action="store_true",
                     help="ignore previous state, redo all phases")
     a = ap.parse_args()
-    settings.select_instance(a.instance, "normal_run")
+    settings.bind_device(a.instance)
+    settings.CONFIG["preset"] = "normal_run"
     if a.allow_navigation:
         settings.instance()["allow_taps"] = True
     from runtime import logger
@@ -721,7 +734,7 @@ def main() -> None:
         if os.path.exists(p["stop"]):
             os.remove(p["stop"])
         from player import bootstrap
-        bootstrap.run(p, a.overwrite, flows=a.flows)
+        bootstrap.run(p, a.overwrite, flows=a.flows, battle_only=a.battle_only)
         return
     from player.scan_plan import missing_navigation
     missing = missing_navigation(settings.ROOT, settings.CONFIG, a.phases.split(","), include_wave=False)

@@ -9,6 +9,7 @@ def test_digit_glyphs_labels_each_glyph_by_the_ocr_number():
     got = bc.digit_glyphs(crop, "160")
     assert set(got) == {"1", "6", "0"}
     assert all(g.size for g in got.values())
+    assert set(bc.digit_glyphs(crop, '16O')) == {'1','6','0'}
 
 
 def test_digit_glyphs_refuses_when_it_cannot_label_safely():

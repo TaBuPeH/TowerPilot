@@ -31,7 +31,7 @@ from functools import wraps
 import time
 
 import yaml
-from flask import Flask, Response, jsonify, redirect, request, send_file
+from flask import Flask, Response, jsonify, redirect, request, send_file, g
 
 # The FRONTEND lives here (dashboard.py + webui/); everything it serves and
 # controls - config.yaml, logs, profiles, templates, the runner scripts -
@@ -59,6 +59,87 @@ def _run(args, **kw):
     return subprocess.run(args, **kw)
 
 app = Flask(__name__, static_folder="webui", static_url_path="/ui")
+
+# Serialize dashboard mutations, including the short clicker worker. A config
+# or account switch must not race a screenshot-verified click on the old device.
+_ACTION_LOCK = threading.Lock()
+
+
+@app.before_request
+def serialize_actions():
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        if not _ACTION_LOCK.acquire(blocking=False):
+            return jsonify({"ok": False, "error": "Another action is in progress; wait for its result"}), 409
+        g.action_lock = True
+
+
+@app.teardown_request
+def release_action_lock(_error):
+    if getattr(g, "action_lock", False):
+        g.action_lock = False
+        _ACTION_LOCK.release()
+
+
+@app.get("/api/clicker/actions")
+def api_clicker_actions():
+    from player.clicker import ACTIONS
+    return jsonify({"actions": [{"id": key, **value} for key, value in ACTIONS.items()]})
+
+
+@app.post("/api/clicker/step")
+def api_clicker_step():
+    from player.clicker import ACTIONS
+    body = request.get_json(silent=True) or {}
+    action = body.get("action")
+    cfg = load_config()
+    inst = cfg.get("active_instance", "main")
+    if action not in ACTIONS or body.get("instance") != inst or body.get("account") != cfg.get("instances", {}).get(inst, {}).get("account"):
+        return jsonify({"ok": False, "error": "Invalid action or the active emulator changed"}), 400
+    if _procs():
+        return jsonify({"ok": False, "error": "Stop automation or calibration before using the clicker"}), 409
+    if body.get("execute") and not _taps_allowed(cfg):
+        return jsonify({"ok": False, "error": "Allow automation taps in Control first"}), 409
+    args = [sys.executable.replace("pythonw.exe", "python.exe"),
+            os.path.join(ROOT, "player", "clicker.py"), "--instance", inst, "--action", action]
+    if body.get("execute") is True:
+        args.append("--execute")
+    try:
+        result = _run(args, cwd=ROOT, capture_output=True, text=True, timeout=45)
+        lines = result.stdout.strip().splitlines()
+        data = json.loads(lines[-1]) if lines else {"ok": False, "reason": "Clicker worker returned no result"}
+        return jsonify({"ok": True, "result": data})
+    except (subprocess.TimeoutExpired, ValueError) as exc:
+        return jsonify({"ok": False, "error": "Check did not finish. Inspect the game before trying again: " + str(exc)[:150]})
+
+
+@app.get("/api/clicker/frame")
+def api_clicker_frame():
+    return send_file(os.path.join(_calibration_dir(load_config()), "clicker_preview.png"), mimetype="image/png", max_age=0)
+
+
+@app.get("/api/manifest/contribution")
+def api_manifest_contribution():
+    from player.bootstrap_layout import manifest
+    from player.manifest_contribution import export, discovery_candidates
+    try:
+        with open(os.path.join(_calibration_dir(load_config()), "calibrate_report.json"), encoding="utf-8") as fh:
+            report = json.load(fh)
+    except (OSError, ValueError):
+        report = {}
+    payload = export(manifest(), report)
+    try:
+        directory = _calibration_dir(load_config())
+        with open(os.path.join(directory, 'screen_analysis.json'), encoding='utf-8') as fh:
+            analysis = json.load(fh)
+        names = set()
+        for path in glob.glob(os.path.join(directory, 'asset_library', '*', 'index.json')):
+            with open(path, encoding='utf-8') as fh:
+                names.update(item['name'] for item in json.load(fh).get('images', []) if item.get('name'))
+        payload['discovery_candidates'] = discovery_candidates(manifest(), analysis, names)
+    except (OSError, ValueError):
+        payload['discovery_candidates'] = []
+    return Response(json.dumps(payload, indent=2), mimetype="application/json",
+                    headers={"Content-Disposition": 'attachment; filename="manifest-contribution.json"'})
 
 # Known emulator adb locations, expanded per-drive. BlueStacks 5 ships its
 # own daemon as HD-Adb.exe; MuMu under nx_main; a PATH adb catches the rest.
@@ -144,12 +225,51 @@ def _compiled_runs(cfg):
 def api_runs():
     try:
         cfg = load_config()
-        runs = _compiled_runs(cfg)
+        runs = _display_runs(cfg)
         if cfg.get("active_profile"):
             runs = {k: v for k, v in runs.items() if k.startswith("bp_") or k == "combo"}
         return jsonify({"runs": runs, "readiness": _runs_readiness(cfg, runs)})
     except Exception as e:
         return jsonify({"runs": {}, "error": str(e)}), 400
+
+
+def _display_runs(cfg):
+    """Keep saved runs editable before ownership checks can pass.
+
+    Launch paths still use _compiled_runs and retain strict validation.
+    """
+    try:
+        return _compiled_runs(cfg)
+    except ValueError:
+        path = _profile_path(cfg.get("active_profile"))
+        if not path or not os.path.isfile(path):
+            raise
+        with open(path, encoding="utf-8") as fh:
+            profile = yaml.safe_load(fh)
+        from player import playerprofile as pp
+        import flows
+        import copy
+        out = {}
+        with _COMPILER_LOCK:
+            previous = pp.CONFIG
+            pp.CONFIG = cfg
+            try:
+                for key, bp in (profile.get("blueprints") or {}).items():
+                    single = copy.deepcopy(profile)
+                    single["blueprints"] = {key: bp}
+                    single.pop("plan", None)
+                    problems = pp.validate(single)
+                    try:
+                        item = pp.compile_preset(single, key)
+                        item["runner"] = flows.script(item["kind"])
+                    except Exception as exc:
+                        item = dict(bp)
+                        problems.append(str(exc))
+                    item["_setup_errors"] = problems
+                    out["bp_" + key] = item
+            finally:
+                pp.CONFIG = previous
+        return out
 
 
 def _runs_readiness(cfg, runs):
@@ -163,6 +283,10 @@ def _runs_readiness(cfg, runs):
     out = {}
     for name, body in runs.items():
         if name == "combo" or not isinstance(body, dict):
+            continue
+        if body.get("_setup_errors"):
+            out[name] = {"ready": False, "setup_required": True, "missing": ["Confirm this run's equipment and abilities after scanning."],
+                         "details": [], "advisory": [], **_setup_next_action(cfg, body)}
             continue
         try:
             r = readiness.check(ROOT, cfg, body)
@@ -180,15 +304,39 @@ def _runs_readiness(cfg, runs):
     return out
 
 
+def _setup_next_action(cfg, body):
+    """One actionable step; saved discoveries are separate from run validation."""
+    try:
+        with open(os.path.join(_calibration_dir(cfg), "calibrate_state.json"), encoding="utf-8") as fh:
+            observed = json.load(fh).get("player") or {}
+        with open(_profile_path(cfg.get("active_profile")), encoding="utf-8") as fh:
+            saved = (yaml.safe_load(fh) or {}).get("player") or {}
+        for key in ("card_presets", "global_presets", "category_presets", "uws", "abilities"):
+            value = observed.get(key)
+            if value and (any(saved.get(key, {}).get(k) != v for k, v in value.items())
+                          if isinstance(value, dict) else saved.get(key) != value):
+                return dict(next_action="apply_scan", message="Your menu scan is complete. Save its discoveries to this account.", action_label="Use completed scan")
+    except (OSError, ValueError, TypeError):
+        pass
+    errors = " ".join(body.get("_setup_errors") or [])
+    if any(word in errors for word in ("chain_lightning", "abilities", "wall", "uws")):
+        return dict(next_action="battle_setup", message="Menu setup is complete. This run still needs battle controls and abilities verified.", action_label="Prepare battle controls")
+    return dict(next_action="edit_run", message="Choose equipment available on this account for this run.", action_label="Choose run equipment")
+
+
 @app.get("/api/readiness")
 def api_readiness():
     from player import readiness
     cfg = load_config()
     try:
-        runs = _compiled_runs(cfg)
+        runs = _display_runs(cfg)
         name = request.args.get("preset") or next((n for n in runs if n.startswith("bp_")), None) or next((n for n in runs if n != "combo"), None)
         if not name or name not in runs or name == "combo":
             raise ValueError("Choose an individual run to check calibration")
+        if runs[name].get("_setup_errors"):
+            return jsonify(ready=False, preset=name, missing=[],
+                           **_setup_next_action(cfg, runs[name]),
+                           diagnostics=runs[name]["_setup_errors"])
         return jsonify(dict(readiness.check(ROOT, cfg, runs[name]), preset=name))
     except Exception as e:
         return jsonify({"ready": False, "error": str(e), "missing": []}), 400
@@ -285,9 +433,8 @@ def api_account_select():
                 if path.exists():
                     raise ValueError("The new account's profile already exists; choose another identifier")
                 starter = yaml.safe_load((Path(ROOT) / "profiles" / "default.yaml").read_text(encoding="utf-8"))
-                starter["blueprints"] = {"coin_default": {
-                    "kind": "coin", "label": "Coin farming", "loadout": "as_is",
-                    "tier": 1, "restart_via_home": True, "policies": {"gather": "hands_off"}}}
+                from player.run_templates import starter_runs
+                starter = starter_runs(starter)
                 starter.pop("plan", None)
                 starter["policies"]["chores"] = []
                 path.write_text(yaml.safe_dump(starter, sort_keys=False, allow_unicode=True), encoding="utf-8")
@@ -439,8 +586,8 @@ def _scan_procs():
             data = [data]
         for row in data:
             cl = row.get("CommandLine") or ""
-            m = re.search(r"(orchestrator|shard|combo|tourney|quest_\w+|hp_probe|"
-                          r"scan|calibrate|boot|dashboard)\.py", cl)
+            m = re.search(r"(gem_collector|orchestrator|shard|combo|tourney|quest_\w+|hp_probe|"
+                          r"scan|calibrate|clicker|boot|dashboard)\.py", cl)
             if m and m.group(1) != "dashboard":
                 pid = int(row["ProcessId"])
                 if not _proc_in_tree(pid):
@@ -457,8 +604,8 @@ def _scan_procs():
                 cl = " ".join(p.cmdline() or [])
             except Exception:                   # noqa: BLE001
                 continue
-            m = re.search(r"(orchestrator|shard|combo|tourney|quest_\w+|hp_probe|"
-                          r"scan|calibrate|boot|dashboard)\.py", cl)
+            m = re.search(r"(gem_collector|orchestrator|shard|combo|tourney|quest_\w+|hp_probe|"
+                          r"scan|calibrate|clicker|boot|dashboard)\.py", cl)
             if m and m.group(1) != "dashboard":
                 if not _proc_in_tree(p.info["pid"]):
                     continue
@@ -826,6 +973,29 @@ def api_control():
                 _procs_refresh()
                 return jsonify({"ok": True, "gone": True})
         return jsonify({"ok": False, "error": "not a runner pid"}), 400
+    if action == "start_gems":
+        if _procs():
+            return jsonify(ok=False,error="Automation is already running. Stop it before starting the diamond collector."),409
+        if not cfg.get("instances",{}).get(inst,{}).get("allow_taps"):
+            return jsonify(ok=False,error="Enable automation taps first."),409
+        name=body.get("preset")
+        runs=_compiled_runs(cfg)
+        if name not in runs:
+            return jsonify(ok=False,error="Choose a run's diamond settings."),400
+        gather=runs[name].get("gather") or {}
+        if not (gather.get("ad_gems",True) or (gather.get("gem_orbit") or {}).get("enabled")):
+            return jsonify(ok=False,error="Enable Ad Gems or timed orbit clicks in this run's gathering settings."),409
+        from player import accounts
+        if gather.get("ad_gems",True) and not accounts.template_path(ROOT,cfg,"buttons/ad_gems_claim.png").exists():
+            return jsonify(ok=False,error="Capture the HUD Ad Gems claim button first."),409
+        cmd=[sys.executable.replace("python.exe","pythonw.exe"),os.path.join(ROOT,"gem_collector.py"),"--instance",inst,"--preset",name]
+        child=subprocess.Popen(cmd,cwd=ROOT,creationflags=subprocess.DETACHED_PROCESS | NO_WINDOW)
+        import time as _t
+        _t.sleep(1.5)
+        if child.poll() is not None:
+            return jsonify(ok=False,error="Diamond collector exited; check its log."),500
+        _procs_refresh()
+        return jsonify(ok=True,pid=child.pid)
     if action == "start":
         preset = body.get("preset")
         if _procs():
@@ -1008,6 +1178,8 @@ def api_calibrate_start():
         # popup passed flows=true; never inferred.
         if body.get("flows"):
             args.append("--flows")
+            if body.get("battle_only"):
+                args.append("--battle-only")
     if body.get("overwrite"):
         args.append("--overwrite")
     if body.get("fresh"):
@@ -1112,6 +1284,8 @@ def api_calibrate_apply():
             state = json.load(fh)
         if not state.get("player"):
             raise ValueError("No completed account observations yet")
+        if os.path.exists(os.path.join(_calibration_dir(cfg), "module_restore.json")):
+            raise ValueError("Restore the saved module equipment before applying discoveries.")
         with _profile_lock(path):
             with open(path, encoding="utf-8") as fh:
                 profile = yaml.safe_load(fh)
@@ -1142,15 +1316,16 @@ def api_calibrate_apply():
                     problems = pp.validate(profile)
                 finally:
                     pp.CONFIG = previous
-            if problems:
-                return jsonify({"ok": False, "error": problems[0], "problems": problems}), 409
+            # Saving observed ownership must not depend on battle-only run
+            # requirements. No run rules change; launch still validates them.
             _save_yaml_backup(path, profile)
         from player.readiness import wall_bar_roi
         if wall_bar and not wall_bar_roi(cfg):
             inst = cfg.setdefault("instances", {}).setdefault(cfg.get("active_instance", "main"), {})
             inst.setdefault("rois", {})["wall_bar"] = list(wall_bar)
             save_config(cfg)
-        return jsonify({"ok": True, "profile": name, "wall_bar": wall_bar})
+        return jsonify({"ok": True, "profile": name, "wall_bar": wall_bar,
+                        "remaining_run_checks": problems})
     except (OSError, ValueError) as e:
         return jsonify({"ok": False, "error": str(e)}), 400
 
@@ -1189,6 +1364,38 @@ def api_profiles():
                     "draft": f.casefold().endswith(".draft.yaml"),
                     "mtime": os.path.getmtime(f)})
     return jsonify(out)
+
+
+@app.get("/api/run-templates")
+def api_run_templates():
+    from player.run_templates import catalogue
+    return jsonify(catalogue())
+
+
+@app.post("/api/run-templates/add")
+def api_run_template_add():
+    from player.run_templates import instantiate
+    body=request.get_json(force=True) or {}
+    if not isinstance(body,dict):
+        return jsonify(ok=False,error='Expected run template choices.'),400
+    name=body.get('profile')
+    path=_profile_path(name)
+    if not path:
+        return jsonify(ok=False,error='Choose a valid local profile.'),400
+    if _is_starter(name) or _is_draft(name):
+        return jsonify(ok=False,error='Create a personal profile in Setup before adding run templates.'),409
+    with _profile_lock(path):
+        try:
+            with open(path,encoding='utf-8') as fh:
+                original=yaml.safe_load(fh)
+            updated=instantiate(original,body.get('template'),body.get('run_id'),body.get('options'))
+            problems=_profile_check(updated)
+            if problems:
+                return jsonify(ok=False,error=problems[0],problems=problems),400
+            backup=_save_yaml_backup(path,updated)
+        except (OSError,ValueError,yaml.YAMLError) as e:
+            return jsonify(ok=False,error=str(e)),400
+    return jsonify(ok=True,profile=updated,backup=backup)
 
 
 @app.get("/api/profile/<name>")
@@ -2148,6 +2355,44 @@ def api_wizard_bluestacks_prepare():
         return jsonify({"ok": False, "error": f"cannot write bluestacks.conf: {e}"}), 500
 
 
+_TOOLS_STATE = {"stage": "idle", "message": "Connection tools have not been installed", "percent": 0}
+_TOOLS_LOCK = threading.Lock()
+
+
+@app.get("/api/wizard/tools")
+def api_wizard_tools():
+    from device import tool_install
+    with _TOOLS_LOCK:
+        state = dict(_TOOLS_STATE)
+    path = tool_install.installed(ROOT)
+    return jsonify(dict(state, installed=bool(path), path=path))
+
+
+@app.post("/api/wizard/tools/install")
+def api_wizard_tools_install():
+    if _procs():
+        return jsonify(error="Stop automation before preparing connection tools"), 409
+    body = request.get_json(force=True) or {}
+    if body.get("accept_license") is not True:
+        return jsonify(error="Accept the Android SDK terms before downloading"), 400
+    with _TOOLS_LOCK:
+        if _TOOLS_STATE["stage"] in ("downloading", "installing"):
+            return jsonify(ok=True, **_TOOLS_STATE)
+        _TOOLS_STATE.update(stage="downloading", message="Starting download", percent=0)
+
+    def worker():
+        from device import tool_install
+        def progress(stage, message, percent):
+            with _TOOLS_LOCK:
+                _TOOLS_STATE.update(stage=stage, message=message, percent=percent)
+        try:
+            tool_install.install(ROOT, progress)
+        except Exception as exc:
+            progress("error", f"Could not install connection tools: {exc}. Check your internet connection and retry.", 0)
+    threading.Thread(target=worker, daemon=True).start()
+    return jsonify(ok=True, stage="downloading"), 202
+
+
 @app.post("/api/wizard/launch")
 def api_wizard_launch():
     """Start a stopped MuMu instance through MuMuManager (`control -v <i>
@@ -2178,6 +2423,9 @@ def api_wizard_launch():
             return jsonify({"ok": False, "message": msg})
         serial = f"127.0.0.1:{16384 + 32 * int(idx)}"   # MuMu's port scheme
         mumu_adb = os.path.join(os.path.dirname(mgr), "adb.exe")
+        if not os.path.isfile(mumu_adb):
+            from device import tool_install
+            mumu_adb = tool_install.installed(ROOT) or mumu_adb
         msg += _adopt_placeholder(serial, mumu_adb)
         msg += _boot_pipeline_for(serial)
         return jsonify({"ok": True, "message": msg})
@@ -2388,6 +2636,10 @@ def api_wizard_adopt():
                 f"automatic adopt (it only ever fills an EMPTY serial)")}), 409
         adb = body.get("adb")
         adb = adb.strip() if isinstance(adb, str) else ""
+        if not adb:
+            from device import tool_install
+            configured = (cfg.get("adb") or {}).get("exe") or ""
+            adb = configured if os.path.isfile(configured) else tool_install.installed(ROOT) or ""
         if adb and os.path.exists(adb):
             cfg.setdefault("adb", {})["exe"] = adb
         instances[inst]["serial"] = serial
@@ -2647,7 +2899,7 @@ def _remember_frame(ts: str, raw: bytes) -> None:
             _FRAME_CACHE.pop(next(iter(_FRAME_CACHE)))
 
 
-def _template_path(rel: str, *, write=False) -> str | None:
+def _template_path(rel: str, *, write=False, cfg=None) -> str | None:
     """Absolute path under templates/ for a relative name, or None when the
     name is not a plain `<folder>/<name>.png` inside it."""
     if not isinstance(rel, str) or not rel.lower().endswith(".png"):
@@ -2657,7 +2909,7 @@ def _template_path(rel: str, *, write=False) -> str | None:
         return None                     # every template lives in a subfolder
     from player import accounts
     try:
-        return str(accounts.template_path(ROOT, load_config(), rel, write=write))
+        return str(accounts.template_path(ROOT, load_config() if cfg is None else cfg, rel, write=write))
     except ValueError:
         return None
 
@@ -2725,7 +2977,7 @@ def _required_templates(cfg: dict, profile: dict | None) -> list[dict]:
     equipped = set(player.get("modules_equipped") or [])
     out = []
     for rel in sorted(want):
-        path = _template_path(rel)
+        path = _template_path(rel, cfg=cfg)
         row = want[rel]
         row["have"] = bool(path and os.path.exists(path))
         stem = rel[len("modules/"):-4]

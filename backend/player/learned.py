@@ -9,9 +9,9 @@ with the screen it was taken on, and from then on Full setup and the observe
 pass cut any target still missing from its learned position whenever they
 stand on that screen, at the same size.
 
-Account-local and git-ignored (it lives beside calibrate_state.json). Only
-native 1080x2560 frames are recorded: a rect measured on anything else means
-nothing here.
+Account-local and git-ignored (it lives beside calibrate_state.json). Rectangles
+are stored in pixels of the explicitly supplied full frame, never scaled crops.
+Runtime bindings additionally carry display, connection and revision validity.
 """
 import json
 import os
@@ -37,26 +37,26 @@ def load(p) -> dict:
 
 
 def _save(p, data) -> None:
-    file = path(p)
-    file.parent.mkdir(parents=True, exist_ok=True)
-    tmp = file.with_suffix(".tmp")
-    tmp.write_text(json.dumps(data, indent=1), encoding="utf-8")
-    os.replace(tmp, file)
+    from runtime.files import atomic_json
+    atomic_json(path(p), data)
 
 
 def record(p, rel, rect, screen, source, frame_size=NATIVE, extra=None) -> dict | None:
     """Remember that `rel` was cut at `rect` on `screen`. Returns the row, or
-    None when there is nothing to learn (no screen, no rect, not native)."""
+    None when there is nothing to learn (no screen, no rect, invalid bounds)."""
     if not p or not p.get("state") or not rel or not screen or not rect:
         return None
     try:
         x, y, w, h = (int(v) for v in rect)
     except (TypeError, ValueError):
         return None
-    fw, fh = (int(v) for v in (frame_size or NATIVE))
-    if (fw, fh) != NATIVE or w <= 0 or h <= 0 or x < 0 or y < 0 or x + w > fw or y + h > fh:
+    try:
+        fw, fh = (int(v) for v in (frame_size or NATIVE))
+    except (TypeError, ValueError):
         return None
-    row = {"screen": str(screen), "rect": [x, y, w, h],
+    if fw <= 0 or fh <= 0 or w <= 0 or h <= 0 or x < 0 or y < 0 or x + w > fw or y + h > fh:
+        return None
+    row = {"screen": str(screen), "rect": [x, y, w, h], "frame_size": [fw, fh],
            "relative": [round(x / fw, 4), round(y / fh, 4), round(w / fw, 4), round(h / fh, 4)],
            "source": str(source or "cut"), "t": time.time()}
     if extra:
@@ -67,9 +67,10 @@ def record(p, rel, rect, screen, source, frame_size=NATIVE, extra=None) -> dict 
     return row
 
 
-def targets_on(p, screen) -> dict:
+def targets_on(p, screen, frame_size=NATIVE) -> dict:
     """{rel: row} learned on `screen`."""
-    return {rel: row for rel, row in load(p)["targets"].items() if row.get("screen") == screen}
+    return {rel: row for rel, row in load(p)["targets"].items()
+            if row.get("screen") == screen and tuple(row.get('frame_size', NATIVE)) == tuple(frame_size)}
 
 
 def known(p) -> dict:

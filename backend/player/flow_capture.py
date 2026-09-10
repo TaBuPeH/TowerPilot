@@ -130,7 +130,7 @@ class _Flow:
 
     def tap(self, x, y, reason):
         self.s.check_stop()
-        return self.s.tap(int(x), int(y), reason=f"flow: {reason}")
+        return self.s.tap(int(x), int(y), reason=f"flow: {reason}", instant=True)
 
     def pause(self, seconds):
         self.s.pause(seconds)
@@ -150,13 +150,26 @@ class _Flow:
     def wave(self, frame):
         from vision import wave_reader
         try:
-            return wave_reader.read_wave(frame)
+            wave = wave_reader.read_wave(frame)
+            if wave is not None:
+                return wave
         except RuntimeError:
-            # No digit font yet (a fresh account): the wave is simply
-            # UNREADABLE here, not an error. Capture must proceed - the digits
-            # are cut from the live counter by capture_hud_digits - rather than
-            # let the whole battle stage abort before it can bootstrap them.
-            return None
+            pass
+        # No digit font yet (a fresh account): the wave is simply
+        # UNREADABLE here, not an error. Capture must proceed - the digits
+        # are cut from the live counter by capture_hud_digits - rather than
+        # let the whole battle stage abort before it can bootstrap them.
+        import re
+        from settings import CONFIG
+        x,y,w,h = CONFIG['rois']['wave_box']
+        text = ' '.join(t for _,_,t in _read(frame[y:y+h,x:x+w], 2))
+        from player.battle_capture import digit_glyphs
+        crop = frame[y:y+h,x:x+w]
+        if not digit_glyphs(crop, text):
+            context = ' '.join(t for _,_,t in _read(frame[max(0,y-12):y+h+12,max(0,x-140):x+w], 2))
+            found = re.search(r'\bWave\s*(\d+)\b', context, re.I)
+            text = found.group(1) if found else ''
+        return int(re.sub(r'\D','',text.replace('O','0'))) if digit_glyphs(crop,text) else None
 
     def on_home(self, frame):
         from player.bootstrap import screen_matches
@@ -376,7 +389,9 @@ def capture_intro_sprint(flow: _Flow) -> None:
                   {"where": "left rail"})
     flow.capture("home/intro_sprint_dialog.png", "END INTRO SPRINT", R_DIALOG,
                  (560, 130), name="End Intro Sprint Early", frame=frame,
-                 anchor=(0.15, 0.4))
+                 # Keep the complete two-line title. The old 84px left /
+                 # 52px top padding clipped its right and bottom edges.
+                 anchor=(0.015, 0.04))
     # Yes is the RIGHT button of the dialog's two-button row - captured by
     # position (sibling of No, unique=False), not by OCR. END the sprint (tap
     # Yes): a cancelled sprint fast-forwards waves for minutes and a round CANNOT
@@ -420,15 +435,36 @@ def capture_uw_weapons(flow: _Flow) -> None:
     # current tab from the header colour and taps only when a switch is needed
     # (and refuses off a live wave) - the tested, toggle-safe selector.
     from interactions import shopper
-    if not shopper._tap_tab("uw"):
+    from vision import detect
+    if detect.panel_tab(frame) != 'uw':
+        flow.tap(*CONFIG['tabs']['uw'], 'open Ultimate Weapons')
+        flow.pause(.8)
+    if detect.panel_tab(flow.grab()) != 'uw':
         flow.skip("uw/black_hole.png", "could not open the UW tab")
         return
-    frame = flow.grab()
-    for rel, text, size in UW_WEAPONS:
-        flow.capture(rel, text, R_UW_PANEL, size, name=text, frame=frame,
-                     anchor=(0.08, 0.35))
+    shopper._scroll_to_top()
+    previous = None
+    for page in range(6):
+        flow.s.check_stop()
+        frame = flow.grab()
+        x,y,w,h = R_UW_PANEL
+        names = {_norm(t) for _,_,t in _read(frame[y:y+h,x:x+w], 2)}
+        signature = frozenset(text for _,text,_ in UW_WEAPONS if _norm(text) in names)
+        if page and signature == previous:
+            break
+        previous = signature
+        flow.progress(f'Ultimate Weapons: reading page {page+1}')
+        for rel, text, size in UW_WEAPONS:
+            if text in signature:
+                flow.capture(rel, text, R_UW_PANEL, size, name=text, frame=frame,
+                             anchor=(0.08, 0.35))
+        f1 = flow.grab(); flow.pause(.4); f2 = flow.grab()
+        capture_uw_switches(getattr(flow, 'cal', None), f1, f2)
+        shopper._swipe(down=True)
+        flow.pause(.6)
     # every owned weapon has an ON/OFF switch: cut one of each state by its
     # artwork (not unique on screen by design)
+    capture_missing_off_state(flow)
     capture_artwork_targets(flow, UW_SWITCH_TARGETS, unique=False, label="the weapon switches")
     try:
         f1 = flow.grab(); flow.pause(0.4); f2 = flow.grab()
@@ -439,6 +475,38 @@ def capture_uw_weapons(flow: _Flow) -> None:
 
 
 # ---------------------------------------------------------------- end the run
+
+def capture_missing_off_state(flow):
+    """Exercise a verified switch only in the setup-owned battle, then restore."""
+    import settings
+    if settings.template_path('uw/toggle_off.png').exists():
+        return
+    from interactions import shopper
+    shopper._scroll_to_top()
+    labels = {rel: cv2.imread(str(settings.template_path(rel)))
+              for rel, _, _ in UW_WEAPONS if settings.template_path(rel).exists()}
+    first = find_uw_switches(flow.grab(), labels)
+    flow.pause(.3)
+    second = find_uw_switches(flow.grab(), labels)
+    candidates = [row for row in first if row[0] == 'on' and row in second]
+    if not candidates:
+        return
+    _, (x,y,w,h), name = candidates[0]
+    flow.progress('Verifying weapon OFF state, then restoring ON')
+    flow.tap(x+w//2,y+h//2,'setup: capture OFF switch')
+    flow.pause(.5)
+    try:
+        a=flow.grab(); flow.pause(.3); b=flow.grab()
+        capture_uw_switches(flow.cal,a,b)
+    finally:
+        rows=find_uw_switches(flow.grab(),labels)
+        off=next((r for state,r,n in rows if n==name and state=='off'),None)
+        if off:
+            x,y,w,h=off
+            flow.tap(x+w//2,y+h//2,'setup: restore weapon ON')
+            flow.pause(.5)
+        if not any(state=='on' and n==name for state,_,n in find_uw_switches(flow.grab(),labels)):
+            raise RuntimeError('Could not confirm weapon restored ON; inspect equipment before farming')
 
 def end_run_and_capture(flow: _Flow) -> bool:
     """Surrender the calibration run, capturing the exit dialog, GAME STATS
@@ -484,8 +552,21 @@ def end_run_and_capture(flow: _Flow) -> bool:
                      name="End round", frame=frame, anchor=(0.1, 0.2))
     exit_pt = flow.locate(frame, R_EXIT_BTN, label)
     if not exit_pt:
+        # Reuse the full-frame label evidence rather than losing the same
+        # text when Windows OCR segments the smaller region differently.
+        for y, x, text in _read(frame, 2):
+            if _norm(text) == label and R_EXIT_BTN[0] <= x/2 < R_EXIT_BTN[0]+R_EXIT_BTN[2] and R_EXIT_BTN[1] <= y/2 < R_EXIT_BTN[1]+R_EXIT_BTN[3]:
+                exit_pt = (int(x/2)+20, int(y/2)+12)
+                break
+    if not exit_pt:
         flow.skip("buttons/end_round.png", f"{label} vanished before tapping")
         return False
+    if label == 'EXIT BATTLE':
+        # The full-frame text proved this control. Keep a native label crop
+        # even if OCR could not resegment it in the narrower search band.
+        x, y = max(0, exit_pt[0]-26), max(0, exit_pt[1]-18)
+        flow.cut_crop('buttons/exit_battle.png', frame[y:y+50,x:x+190].copy(), frame,
+                      'Exit battle', {'rect':[x,y,190,50], 'screen':'battle_menu'})
     flow.tap(exit_pt[0], exit_pt[1], f"tap {label}")
 
     # the confirm dialog: capture it, then confirm. The two buttons are captured
@@ -949,6 +1030,7 @@ def set_tier(flow, target=TIER_FOR_END_ROUND):
             return None
         if cur == target:
             return cur
+        flow.progress(f'Selecting setup tier: {cur} → {target}')
         if cur == prev:
             stall += 1
             if stall >= 3:                     # arrow no longer moves it - capped
@@ -1194,20 +1276,39 @@ def capture_hud_digits(flow: _Flow) -> list[str]:
     if all(settings.template_path(f"digits/{d}.png").exists() for d in "0123456789"):
         return []
     x, y, w, h = settings.CONFIG["rois"]["wave_box"]
-    ocr = lambda crop: textocr.read_text(crop)
-    got: dict = {}
+    def ocr(crop):
+        text = textocr.read_text(crop, scales=(2.0,))
+        if not bc.digit_glyphs(crop, text):
+            # The clipped tail of "Wave" makes Windows miss 10/20/30 at
+            # 2x. Read only the number at 3x/4x, preserving native crops.
+            text = textocr.read_text(crop[:,10:], scales=(3.0,4.0))
+        return text
+    got: dict = {d: None for d in '0123456789' if settings.template_path(f'digits/{d}.png').exists()}
     deadline = time.monotonic() + 180            # generous; stops early at 10/10
+    last_progress = 0.0
     while time.monotonic() < deadline and len(got) < 10:
         flow.s.check_stop()
         f = flow.grab()
         if flow.game_stats(f):                   # the run ended - counter is gone
             break
         crop = f[y:y + h, x:x + w]
-        for ch, glyph in bc.digit_glyphs(crop, ocr(crop)).items():
+        number = ocr(crop)
+        if not bc.digit_glyphs(crop, number):
+            # An isolated digit is often omitted by Windows OCR. Give it the
+            # neighbouring Wave label, but still cut only the native glyphs.
+            import re
+            context = textocr.read_text(f[max(0,y-12):y+h+12,max(0,x-140):x+w], scales=(2.0,3.0))
+            found = re.search(r'\bWave\s*(\d+)\b', context, re.I)
+            if found:
+                number = found.group(1)
+        for ch, glyph in bc.digit_glyphs(crop, number).items():
             got.setdefault(ch, glyph)
+        if time.monotonic() - last_progress >= 5:
+            flow.progress(f"Reading wave counter: {len(got)}/10 digits; up to {max(0, int(deadline-time.monotonic()))}s remaining")
+            last_progress = time.monotonic()
         flow.pause(0.3)
     written = [f"digits/{ch}.png" for ch, glyph in got.items()
-               if bc.write_template(f"digits/{ch}.png", glyph) == "written"]
+               if glyph is not None and bc.write_template(f"digits/{ch}.png", glyph) == "written"]
     if written:
         # wave_reader caches whatever it loaded (a PARTIAL dict survives the
         # "incomplete" raise) - drop it so the fresh font is read from disk.
@@ -1216,6 +1317,60 @@ def capture_hud_digits(flow: _Flow) -> list[str]:
         logger.event("hud_digits_captured", rels=sorted(written), seen=len(got))
     flow.progress(f"Captured {len(written)} HUD digit(s) from the wave counter")
     return written
+
+
+def capture_upgrade_labels(flow):
+    """Read native upgrade rows without purchasing upgrades."""
+    import settings
+    from player import battle_capture as bc, accounts
+    from interactions import shopper
+    from vision import detect, textocr
+    wanted = {r[6:-4] for r in accounts.generic_names() if r.startswith('stats/') and r.endswith('.png')}
+    for tab in ('attack','defense','utility'):
+        flow.s.check_stop()
+        frame = flow.grab()
+        if flow.wave(frame) is None:
+            raise RuntimeError('Battle HUD no longer visible while reading upgrade labels')
+        if detect.panel_tab(frame) != tab:
+            flow.tap(*settings.CONFIG['tabs'][tab], f'open {tab} upgrades for capture')
+            flow.pause(.8)
+        if detect.panel_tab(flow.grab()) != tab:
+            raise RuntimeError(f'Could not verify {tab} upgrade panel')
+        shopper._scroll_to_top()
+        previous = None
+        for page in range(8):
+            flow.s.check_stop()
+            flow.progress(f'Reading {tab} upgrades: page {page+1}')
+            frame = flow.grab()
+            x,y,w,h=settings.CONFIG['rois']['upgrade_panel']
+            panel=frame[y:y+h,x:x+w]
+            def read(c):
+                text=textocr.read_text(c,scales=(2.0,3.0))
+                from runtime import logger
+                logger.event('setup_upgrade_label',tab=tab,page=page+1,text=text)
+                return text
+            cuts=bc.capture_stats(panel,read,wanted)
+            signature=frozenset(cuts)
+            if page and signature and signature == previous:
+                break
+            previous=signature
+            if not settings.template_path('stats/max_label.png').exists():
+                maximum=bc.capture_max_plaque(panel,read)
+                if maximum is not None: cuts['max_label']=maximum
+            flow.pause(.3)
+            follow=flow.grab()
+            for name,crop in cuts.items():
+                rel=f'stats/{name}.png'
+                if settings.template_path(rel).exists(): continue
+                _,score,_,point=cv2.minMaxLoc(cv2.matchTemplate(follow,crop,cv2.TM_CCOEFF_NORMED))
+                if score < .98: continue
+                flow.cut_crop(rel,crop,frame,name,{'rect':[point[0],point[1],crop.shape[1],crop.shape[0]],'screen':'battle'},unique=False)
+            # Slow, overlapping strokes keep a wrapped label from staying
+            # clipped at successive page boundaries (fast flings can skip it).
+            from device import act
+            act.swipe(x+w//2, y+int(h*.75), x+w//2, y+int(h*.35), 600,
+                      reason='setup overlapping upgrade scroll')
+            flow.pause(.6)
 
 
 def _hud_digit_pass(flow: _Flow) -> None:
@@ -1240,9 +1395,26 @@ def _hud_digit_pass(flow: _Flow) -> None:
     hud_targets = (HUD_ABILITY_TARGETS + UW_SWITCH_TARGETS + ("icons/tile_quests.png",)
                    + tuple(t["rel"] for s in ("battle", "battle_menu") for t in screen_targets(s)))
     hud_missing = bool(set(hud_targets) - _have_templates(hud_targets))   # ability buttons / UW switches / HUD tiles
-    if digits_ok and not uw_never and not hud_missing:
+    from player.readiness import requirements
+    from player import playerprofile
+    bodies = list(settings.CONFIG.get('presets', {}).values())
+    profile_name = settings.CONFIG.get('active_profile')
+    if profile_name:
+        profile = playerprofile.load(profile_name)
+        for name in profile.get('blueprints', {}):
+            try:
+                bodies.append(playerprofile.compile_preset(profile, name))
+            except playerprofile.ProfileError:
+                continue  # An unconfigured run cannot require a setup capture.
+    required_stats = {rel for body in bodies
+                      if isinstance(body, dict)
+                      for item in requirements(settings.CONFIG, body)
+                      for rel in item['alternatives'] if rel.startswith('stats/')}
+    stats_missing = any(not settings.template_path(rel).exists() for rel in required_stats)
+    if digits_ok and not uw_never and not hud_missing and not stats_missing:
         return
-    set_tier(flow, 1)
+    if set_tier(flow, 1) != 1:
+        raise RuntimeError('Could not select Tier 1; no setup battle started')
     frame = flow.grab()
     if not flow.on_home(frame):
         _safe_home(flow)
@@ -1269,9 +1441,10 @@ def _hud_digit_pass(flow: _Flow) -> None:
     except Exception as e:                        # noqa: BLE001 - isolate
         logger.event("flow_digits", stage="sprint_warn", error=str(e)[:150])
     _record_wall(flow, flow.grab())           # the HUD proves a wall (positive-only)
-    capture_artwork_targets(flow, HUD_ABILITY_TARGETS + HUD_STATE_TARGETS, label="the ability buttons")
+    capture_artwork_targets(flow, HUD_ABILITY_TARGETS, label="the ability buttons")
     capture_hud_targets(flow, "battle")          # the cart tile, the hamburger, learned HUD spots
     written = capture_hud_digits(flow)
+    capture_upgrade_labels(flow)
     # The OWNED Ultimate Weapon labels live here too: the tower SURVIVES at
     # Tier 1, so the UW-tab sweep cannot race a death - at the account's top
     # tier (the END ROUND pass) it did, and the surrender must come first.
@@ -1291,6 +1464,8 @@ def _hud_digit_pass(flow: _Flow) -> None:
         flow.progress("Digit pass done; ending the Tier-1 run")
         reached = end_run_and_capture(flow)
     logger.event("flow_digits", result="done", written=written, home=bool(reached))
+    if not reached:
+        raise RuntimeError('Could not return Home after the setup battle; no further battle will start')
 
 
 def capture_battle_flow(flow: _Flow, observe_minutes: float | None = None,
@@ -1298,11 +1473,10 @@ def capture_battle_flow(flow: _Flow, observe_minutes: float | None = None,
     """The END ROUND + results battle pass, then the difficulty is restored.
     Gated on a clean Home and refused over any live or tournament run.
 
-    Pass A (high tier, quick): the exit dialog only shows END ROUND / Yes-No at a
-    high tier - below it it is Surrender / Go Home (already captured). A high-tier
-    tower dies in ~30s, so this pass surrenders promptly to catch END ROUND, and
-    picks up the intro-sprint dialog, the GAME STATS controls and the OWNED
-    Ultimate Weapon labels on the way.
+    Start at the highest unlocked tier read from Home. Observe optional effects
+    for at most 90 seconds, then collect results or surrender the setup-owned
+    battle. A separate bounded Tier-1 pass fills missing digits and menu labels
+    that a short battle may never expose. Neither pass repeats the inventories.
 
     Finding the UNOWNED weapons is OPTIONAL and OFF here: they only render when a
     Tier-1 perk grant holds one for a run, so making setup wait for that lottery
@@ -1326,20 +1500,29 @@ def capture_battle_flow(flow: _Flow, observe_minutes: float | None = None,
         flow.skip("home/intro_sprint_dialog.png", why)
         return
     original_tier = read_tier(frame)
+    if original_tier is None:
+        raise RuntimeError('Could not read the original difficulty; no setup battle started')
     try:
+        known_player = getattr(getattr(flow, 'cal', None), 'player', {})
+        if known_player.get('max_tier_verified_by') != 'setup':
+            _battle_pass(flow, TIER_FOR_END_ROUND, "highest unlocked tier; optional effects")
         _hud_digit_pass(flow)          # the wave font, at Tier 1 (fresh account); a no-op once known
-        _battle_pass(flow, TIER_FOR_END_ROUND, "END ROUND + results capture")
+        results = ('icons/game_stats.png', 'buttons/retry.png', 'home/game_stats_home.png',
+                   'buttons/exit_battle.png', 'home/exit_battle_dialog.png')
+        if set(results) - _have_templates(results):
+            _battle_pass(flow, 1, "exit and results capture")
         if do_lottery and _uw_remaining():
             _uw_lottery_pass(flow, max_minutes=observe_minutes)
     finally:
-        if original_tier is not None and read_tier(flow.grab()) != original_tier:
+        restored_frame = flow.grab()
+        if flow.on_home(restored_frame) and read_tier(restored_frame) != original_tier:
             set_tier(flow, original_tier)
             logger.event("flow_tier_restored", tier=original_tier)
 
 
 def _battle_pass(flow: _Flow, tier, label: str) -> None:
     """One battle at the top tier: start, capture the intro-sprint dialog and
-    end the sprint, then end the run straight away - surrendering (END ROUND
+    end the sprint, observe optional effects briefly, then finish - surrendering (END ROUND
     dialog, GAME STATS with RETRY / HOME, reward skip) or, if the tower already
     died, cutting the GAME STATS screen directly. (The owned UW labels are cut in
     `_hud_digit_pass`; the UNOWNED ones only appear via the Tier-1 grant lottery,
@@ -1347,6 +1530,8 @@ def _battle_pass(flow: _Flow, tier, label: str) -> None:
     from runtime import logger
     if tier is not None:
         reached = set_tier(flow, tier)
+        if reached is None:
+            raise RuntimeError('Could not verify setup difficulty; no battle started')
         # The climb to TIER_FOR_END_ROUND stops where the account's tier
         # arrows stop: that is the highest tier seen unlocked. Recorded as a
         # HINT (player.max_tier, per setup) that Apply carries into the
@@ -1388,9 +1573,13 @@ def _battle_pass(flow: _Flow, tier, label: str) -> None:
     # the tower survives. ONE battle gives every results screen from here on.
     frame = flow.grab()
     _record_wall(flow, frame)
+    if tier == TIER_FOR_END_ROUND:
+        observe_optional_effects(flow)
+        frame = flow.grab()
     # the top-tier tower is dying about now: the one setup moment the Second
     # Wind badge can be up (positive-only, two frames, nothing waits for it)
-    capture_artwork_targets(flow, HUD_STATE_TARGETS, label="the Second Wind badge")
+    # Second Wind is transient and optional. Observe can learn it during
+    # normal play; setup must never delay surrender looking for this badge.
     capture_hud_targets(flow, "battle")
     if flow.game_stats(frame):
         flow.progress("Run ended on its own; capturing the results screens")
@@ -1401,6 +1590,21 @@ def _battle_pass(flow: _Flow, tier, label: str) -> None:
     if not reached:
         logger.event("flow_battle_incomplete",
                      note="could not confirm Home after the run; left as-is")
+        raise RuntimeError('Setup battle did not return Home; no further battle will start')
+
+
+def observe_optional_effects(flow, seconds=90):
+    """Bounded observation of the setup-owned top-tier run, never an ability gate."""
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline:
+        flow.s.check_stop()
+        frame = flow.grab()
+        if flow.game_stats(frame) or flow.on_home(frame):
+            return
+        flow.progress(f'Observing highest-tier battle: optional abilities; {max(0, int(deadline-time.monotonic()))}s remaining')
+        capture_artwork_targets(flow, HUD_ABILITY_TARGETS + HUD_STATE_TARGETS,
+                                label='optional battle effects')
+        flow.pause(.5)
 
 
 # ---------------------------------------------------------------- menu extras
@@ -1434,7 +1638,6 @@ def capture_menu_extras(flow: _Flow) -> None:
                               or has_text(_lines_text(f), "MISSIONS"), timeout=6.0)
             if ok:
                 _menu_capture(flow, [
-                    ("icons/daily_missions.png", "DAILY MISSIONS", (430, 40), (0.05, 0.3)),
                     ("buttons/quest_claim.png", "CLAIM", (160, 50), (0.2, 0.35)),
                     ("icons/event_calendar.png", "CALENDAR", (138, 124), (0.3, 0.5)),
                 ])
@@ -1481,11 +1684,15 @@ def capture_menu_extras(flow: _Flow) -> None:
 
 
 def _safe_home(flow: _Flow) -> None:
-    from interactions import tourney
-    try:
-        tourney.ensure_home()
-    except Exception:                            # noqa: BLE001
-        pass
+    # ensure_home is a runner helper that waits for live battles to finish.
+    # A setup error must return promptly and honour Stop, not wait for hours.
+    flow.s.check_stop()
+    frame = flow.grab()
+    if flow.on_home(frame):
+        return
+    if flow.game_stats(frame) and capture_game_stats(flow):
+        return
+    raise RuntimeError('Setup paused away from Home. Return Home before retrying; no automatic waiting or further taps.')
 
 
 # ---------------------------------------------------------------- entry point

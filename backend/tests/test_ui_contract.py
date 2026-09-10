@@ -200,12 +200,15 @@ def test_bad_labels_refused(profile, bad):
 
 # ------------------------------------------------------------ api contract
 @pytest.fixture(scope="module")
-def dash():
+def dash(tmp_path_factory):
     """The real dashboard app, driven exactly like the browser does."""
     path = os.path.join(os.path.dirname(BACKEND), "frontend", "dashboard.py")
     spec = importlib.util.spec_from_file_location("tp_dashboard", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    config = tmp_path_factory.mktemp("dashboard_config") / "config.yaml"
+    shutil.copyfile(os.path.join(BACKEND, "config.example.yaml"), config)
+    mod.CONFIG_PATH = str(config)
     return mod
 
 

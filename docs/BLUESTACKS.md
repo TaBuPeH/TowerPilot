@@ -138,8 +138,8 @@ the menu flows. The codebase's answer is "one control, several looks":
 - `interactions/presets.py` `PICKER_ICONS` and
   `interactions/tourney.py` `BATTLE_BUTTONS` are tuples of alternative
   cuts, tried in order - add a BlueStacks cut next to the existing one.
-- `templates/floaters/gem_*.png` are picked up by glob - drop in a new gem
-  cut, no code change.
+- Rotating diamonds use timed clicks configured by `gather.gem_orbit`.
+  No diamond screenshots or image matching are needed.
 - Everything else: recut the template with the cropper (tick *overwrite*)
   and keep the original under another name if you also run MuMu.
 

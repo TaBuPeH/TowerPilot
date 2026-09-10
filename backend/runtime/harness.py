@@ -81,12 +81,12 @@ class Run:
         Every harness run claims floating gems by default (user, 2026-08-28:
         circling gems went unclaimed through whole quest batches) - GemWatch
         is the same claim discipline as the shard loop, gated by the same
-        gather.flying_gem policy via shard.gem_opts().
+        separate Ad Gem and timed orbit-click policies.
         """
         deadline = time.monotonic() + self.timeout
         off = 0
         wave = None
-        gems = shard.GemWatch(**shard.gem_opts())
+        gems = shard.GemWatch()
         while time.monotonic() < deadline:
             frame = capture.grab()
             w = wave_reader.read_wave(frame)

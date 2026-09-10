@@ -228,11 +228,14 @@ def test_ad_gems_cap_gates(monkeypatch, tmp_path):
 
 # ------------------------------------------------------ /api/loadout-patch
 @pytest.fixture(scope="module")
-def dash():
+def dash(tmp_path_factory):
     path = os.path.join(os.path.dirname(BACKEND), "frontend", "dashboard.py")
     spec = importlib.util.spec_from_file_location("tp_dashboard_v29", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
+    config = tmp_path_factory.mktemp("dashboard_config") / "config.yaml"
+    shutil.copyfile(os.path.join(BACKEND, "config.example.yaml"), config)
+    mod.CONFIG_PATH = str(config)
     return mod
 
 
@@ -240,7 +243,7 @@ def dash():
 def config_guard(dash):
     """Snapshot config.yaml and settings.CONFIG['loadouts']; restore after."""
     from settings import CONFIG
-    cfg_path = os.path.join(BACKEND, "config.yaml")
+    cfg_path = dash.CONFIG_PATH
     backup = cfg_path + ".zz_v29_test"
     shutil.copyfile(cfg_path, backup)
     old_loadouts = copy.deepcopy(CONFIG.get("loadouts"))
@@ -464,7 +467,6 @@ def test_shard_run_restores_cards_at_exit(monkeypatch):
                         lambda n, gems=None, last=False:
                         calls.append((f"loop{n}", last)))
     monkeypatch.setattr(shard, "GemWatch", lambda **k: None)
-    monkeypatch.setattr(shard, "gem_opts", lambda: {})
     monkeypatch.setattr(shard.runflag, "requested", lambda: None)
     monkeypatch.setattr(shard.daystate, "set_today", lambda *a: None)
     monkeypatch.setattr(shard.daystate, "get_today", lambda *a, **k: 0)
@@ -494,7 +496,6 @@ def test_shard_stop_flag_closes_chained_run(monkeypatch):
                         lambda n, gems=None, last=False:
                         calls.append(f"loop{n}"))
     monkeypatch.setattr(shard, "GemWatch", lambda **k: None)
-    monkeypatch.setattr(shard, "gem_opts", lambda: {})
     flags = iter([None, "phase_change"])
     monkeypatch.setattr(shard.runflag, "requested", lambda: next(flags))
     monkeypatch.setattr(shard, "abandon_run",
@@ -556,7 +557,6 @@ def test_ilm_cycle_polls_gems_through_wait(monkeypatch):
             polls.append(frame)
 
     monkeypatch.setattr(shard, "GemWatch", lambda **k: FakeWatch())
-    monkeypatch.setattr(shard, "gem_opts", lambda: {})
     monkeypatch.setattr(shard, "wait_for_wave", lambda w: ("F", 1))
     monkeypatch.setattr(shard, "ensure_max_speed", lambda: None)
     monkeypatch.setattr(shard, "abandon_run", lambda **k: None)

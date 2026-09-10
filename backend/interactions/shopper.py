@@ -450,7 +450,7 @@ def _uw_state(frame, weapon) -> bool | None:
     # back empty and the pair read as unreadable forever.
     box = CONFIG["rois"]["upgrade_panel"]
     x0, y0 = box[0] + loc[0], box[1] + loc[1] + tpl.shape[0]
-    region = frame[y0:y0 + 90, x0:x0 + 180]
+    region = frame[y0:min(y0 + 130, CONFIG["rois"]["upgrade_panel"][1] + CONFIG["rois"]["upgrade_panel"][3]), x0:x0 + 180]
     # comparative read: absolute thresholds are brittle across accounts (the
     # battle glow bleeds through the card differently) - the pill is always
     # one of the two, so take the better match above a loose floor
@@ -470,7 +470,7 @@ def _uw_toggle_center(frame, weapon):
     x0, y0 = loc[0], loc[1] + tpl.shape[0]
     # Full-frame slice for the same reason as _uw_state: the bottom row's
     # pill lives below the panel ROI's lower edge.
-    region = frame[box[1] + y0:box[1] + y0 + 90, box[0] + x0:box[0] + x0 + 180]
+    region = frame[box[1] + y0:min(box[1] + y0 + 130, box[1] + box[3]), box[0] + x0:box[0] + x0 + 180]
     # Comparative, exactly like _uw_state: an absolute 0.75 threshold here was
     # the reason Chain Lightning could never be switched ON - the OFF pill
     # scores ~0.705 on Main, so the toggle was never located and the tap never

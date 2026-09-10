@@ -4034,3 +4034,14 @@ def test_blueprint_labels_are_unique_display_names():
     assert len(probs) == 1 and "title-cased" in probs[0], probs
     prof["blueprints"][b]["label"] = "   "
     assert any(f"blueprints.{b}.label: must be a non-empty" in p for p in labels())
+
+
+def test_fleet_nuke_keeps_repeating_when_rescue_is_always_armed(prof):
+    policy=prof['policies']['rescue_policies']['high_tier_wall']
+    policy['arm']='always'
+    for rule in policy['rules']:
+        rule.get('do',{}).get('burst',{}).pop('retaps',None)
+    policy['end_sprint_after_sw']=False
+    compiled=profile_mod.compile_preset(prof,'coin_default')
+    fleet=next(r for r in compiled['rules'] if r['when']['kind']=='fleet_mark')
+    assert fleet['repeat'] is True

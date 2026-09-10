@@ -148,16 +148,55 @@ def dash(tmp_path, monkeypatch):
     return mod
 
 
-def test_new_account_has_editable_minimal_coin_profile(dash):
+def test_new_account_has_all_shipped_run_recipes(dash):
     with dash.app.test_client() as client:
         reply = client.post("/api/accounts", json={"id": "alice", "create": True})
         assert reply.status_code == 200, reply.json
         cfg = dash.load_config()
         assert cfg["active_profile"] == "account_alice"
         profile = yaml.safe_load((Path(dash.ROOT) / "profiles/account_alice.yaml").read_text())
-        assert list(profile["blueprints"]) == ["coin_default"]
+        assert list(profile["blueprints"]) == ["coin_default", "tourney_main", "shard_run"]
+        assert profile["blueprints"]["coin_default"]["loadout"] == "as_is"
+        assert profile["blueprints"]["tourney_main"]["loadout"] == "my_equipment"
         assert "plan" not in profile
         assert client.get("/api/runs").status_code == 200
+
+
+def test_unready_profile_remains_visible_but_cannot_compile_for_launch(dash):
+    with dash.app.test_client() as client:
+        assert client.post("/api/accounts", json={"id": "alice", "create": True}).status_code == 200
+        path = Path(dash.ROOT) / "profiles/account_alice.yaml"
+        profile = yaml.safe_load(path.read_text())
+        profile["blueprints"]["coin_default"]["loadout"] = "unknown_equipment"
+        path.write_text(yaml.safe_dump(profile))
+        result = client.get("/api/runs")
+        assert result.status_code == 200
+        assert "bp_coin_default" in result.json["runs"]
+        assert not result.json["readiness"]["bp_coin_default"]["ready"]
+        ready = client.get("/api/readiness?preset=bp_coin_default")
+        assert ready.status_code == 200 and not ready.json["ready"]
+        assert ready.json["diagnostics"]
+        with pytest.raises(ValueError):
+            dash._compiled_runs(dash.load_config())
+
+
+def test_apply_discoveries_does_not_require_unrelated_run_readiness(dash):
+    with dash.app.test_client() as client:
+        client.post("/api/accounts", json={"id": "alice", "create": True})
+        path = Path(dash.ROOT) / "profiles/account_alice.yaml"
+        profile = yaml.safe_load(path.read_text())
+        profile["blueprints"]["coin_default"]["loadout"] = "not_configured"
+        path.write_text(yaml.safe_dump(profile))
+        folder = Path(dash._calibration_dir(dash.load_config()))
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / "calibrate_state.json").write_text(json.dumps({
+            "player": {"card_presets": ["my_cards"]}, "phases": {"cards": {"status": "done"}}}))
+        result = client.post("/api/calibrate/apply", json={})
+        assert result.status_code == 200, result.json
+        saved = yaml.safe_load(path.read_text())
+        assert saved["player"]["card_presets"] == ["my_cards"]
+        assert saved["blueprints"] == profile["blueprints"]
+        assert result.json["remaining_run_checks"]
 
 
 def test_import_copies_profile_and_templates_without_changing_original(dash):

@@ -78,7 +78,6 @@ def _install_fakes(rec_taps):
     det.wall_overheal = lambda frame: (1.0, "normal")
     det.death_screen = lambda frame: (False, None)
     det.second_wind_badge = lambda frame: (False, 0.0)
-    det.floating_gem = lambda frame: None
     det.side_menu_open = lambda frame: False
     det.intro_sprint_active = lambda frame: False
     det.find_intro_sprint = lambda frame: None
@@ -288,7 +287,7 @@ def _rs(**kw):
                 last_fire={"nuke": 0.0, "demon_mode": 0.0}, wall_prev=None,
                 wall_last=None, nuked_marks=set(), fleet_try_at=0.0,
                 no_wave=0, dead_frames=0, wave_seen=None, wave_seen_at=0.0,
-                wave_stall_logged=False, gem_due=None,
+                wave_stall_logged=False,
                 tracker=types.SimpleNamespace(last=100,
                                               update=lambda w: None))
     base.update(kw)

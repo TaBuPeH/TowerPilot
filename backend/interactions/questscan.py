@@ -32,7 +32,7 @@ from interactions import missions
 from interactions import tourney
 from settings import ROOT
 
-EVENT_ICON = "icons/event_calendar.png"
+EVENT_ICON = "home/tile_event.png"
 # The Missions TAB, not the "EVENT - JURASSIC" header: the event name changes
 # every few days, the tab label does not.
 MISSIONS_TAB = "icons/event_missions_tab.png"

@@ -20,7 +20,6 @@ its taps get mixed into the log as if they were the human's.
 import argparse
 import json
 import re
-import subprocess
 import sys
 import threading
 import time
@@ -30,13 +29,13 @@ import cv2
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import settings                                    # noqa: E402
-from settings import ROOT, adb_args                # noqa: E402
-from device import capture                                     # noqa: E402
+from settings import ROOT                         # noqa: E402
+from device import capture, adbclient              # noqa: E402
 
 LINE = re.compile(r"\[\s*(?P<t>[\d.]+)\]\s+(?P<dev>\S+):\s+(?P<type>\S+)\s+"
                   r"(?P<code>\S+)\s+(?P<val>\S+)")
 MIN_SHOT_GAP = 0.45        # seconds; rapid taps share the newest screenshot
-IDLE_SHOT_EVERY = 15.0     # also grab context while nothing is happening
+IDLE_SHOT_EVERY = 1.0      # recent pre-touch context, even before input arrives
 SETTLE_AFTER = 0.9         # after a burst of taps, capture the RESULT
 
 
@@ -59,10 +58,17 @@ def main():
     print(f"recording -> {out}")
     print(f"stop with Ctrl-C, or:  echo x > {stop_file}")
 
-    proc = subprocess.Popen(
-        adb_args() + ["shell", "getevent", "-lt"],
-        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-        text=True, bufsize=1, creationflags=settings.NO_WINDOW)
+    serial = settings.instance()["serial"]
+    capabilities = adbclient.shell(serial, "getevent -lp").decode(errors="replace")
+    touch_devices = set()
+    for block in re.split(r"(?=add device)", capabilities):
+        match = re.match(r"add device \d+: (/dev/input/event\d+)", block)
+        if match and "ABS_MT_POSITION_X" in block:
+            touch_devices.add(match[1])
+    if not touch_devices:
+        raise RuntimeError("No readable touch devices found")
+    (out / "devices.txt").write_text(capabilities, encoding="utf-8")
+    frame_log = (out / "frames.jsonl").open("w", encoding="utf-8")
 
     state = {"n": 0, "last_shot": 0.0, "last_tap": 0.0, "frame": None,
              "stop": False}
@@ -85,6 +91,8 @@ def main():
             cv2.imwrite(str(out / "frames" / name), img,
                         [cv2.IMWRITE_JPEG_QUALITY, 80])
             state["frame"] = name
+            frame_log.write(json.dumps({"t_wall": now, "frame": name, "reason": reason}) + "\n")
+            frame_log.flush()
             return name
 
     def idle_shots():
@@ -105,7 +113,8 @@ def main():
             elif now - state["last_shot"] > IDLE_SHOT_EVERY:
                 shoot("idle")
 
-    threading.Thread(target=idle_shots, daemon=True).start()
+    idle_thread = threading.Thread(target=idle_shots, daemon=True)
+    idle_thread.start()
 
     shoot("start")
     counts = {"gestures": 0, "lines": 0}
@@ -114,18 +123,19 @@ def main():
         """Reading runs in its own thread: getevent blocks on readline during
         idle periods, so a single-threaded loop could neither notice the STOP
         file nor flush what it had already written."""
-        for line in proc.stdout:
+        for line in adbclient.stream_lines(serial, "getevent -lt", lambda: state["stop"]):
             if state["stop"]:
                 break
+            m = LINE.match(line)
+            if not m or m["dev"].rstrip(":") not in touch_devices:
+                continue
             raw.write(line)
             counts["lines"] += 1
             raw.flush()                 # so the log is inspectable live
-            m = LINE.match(line)
-            if not m:
-                continue
             # finger DOWN: a tracking id that is not the 'lifted' sentinel
             if m["code"] == "ABS_MT_TRACKING_ID" and m["val"] != "ffffffff":
                 state["last_tap"] = time.time()
+                previous_frame = state["frame"]
                 frame = shoot("tap")
                 counts["gestures"] += 1
                 marks.write(json.dumps({
@@ -134,22 +144,24 @@ def main():
                     "device": m["dev"].rstrip(":"),
                     "kind": "down",
                     "frame": frame,
+                    "previous_frame": previous_frame,
                 }) + "\n")
                 marks.flush()
 
     t = threading.Thread(target=reader, daemon=True)
     t.start()
     try:
-        while not stop_file.exists() and proc.poll() is None:
+        while not stop_file.exists() and t.is_alive():
             time.sleep(0.4)
     except KeyboardInterrupt:
         pass
     finally:
         state["stop"] = True
-        proc.terminate()
-        t.join(timeout=2)
+        t.join(timeout=20)
+        idle_thread.join(timeout=20)
         raw.close()
         marks.close()
+        frame_log.close()
         print(f"\nstopped. {counts['gestures']} gestures, {counts['lines']} raw "
               f"lines, {state['n']} frames -> {out}")
         print(f"decode with: python tools/decode_touches.py {out / 'getevent.log'}")
