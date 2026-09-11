@@ -27,6 +27,7 @@ import struct
 import subprocess
 import sys
 import threading
+from pathlib import Path
 from functools import wraps
 import time
 
@@ -1187,8 +1188,11 @@ def api_calibrate_start():
     if body.get("allow_navigation"):
         args.append("--allow-navigation")
     pyw = sys.executable.replace("python.exe", "pythonw.exe")
-    subprocess.Popen([pyw] + args, cwd=ROOT,
-                     creationflags=subprocess.DETACHED_PROCESS | NO_WINDOW)
+    log_dir = Path(ROOT) / 'logs' / inst
+    log_dir.mkdir(parents=True, exist_ok=True)
+    with (log_dir / 'calibration-worker.log').open('ab') as output:
+        subprocess.Popen([pyw] + args, cwd=ROOT, stdout=output, stderr=subprocess.STDOUT,
+                         creationflags=subprocess.DETACHED_PROCESS | NO_WINDOW)
     return jsonify({"ok": True, "phases": phases})
 
 
@@ -2740,18 +2744,15 @@ def api_wizard_resolution():
             "ok": False, "serial": serial,
             "error": f"{e} (no adb server, or the device is not attached - "
                      f"use adb connect above first)"}))
-    if (w, h) == (1080, 2560):
+    if 0 < w < h:
         # the device answered at the calibrated resolution: wiring proven
         _mark_setup_complete("resolution")
     return jsonify(_wiz_save("resolution", {
         "ok": True, "serial": serial, "width": int(w), "height": int(h),
-        "expected": (w, h) == (1080, 2560),
-        "note": ("" if (w, h) == (1080, 2560) else
-                 "Templates are calibrated for a 1080x2560 portrait frame."
-                 " MuMu: set the display to 1080x2560 @ 360. BlueStacks:"
-                 " 2560x1080 landscape @ 360 (Prepare writes it) and run"
-                 " this check while the game is in front - it rotates the"
-                 " panel.")}))
+        "expected": 0 < w < h,
+        "reference": (w, h) == (1080, 2560),
+        "note": ("Native display detected. Scanning applies its layout profile and verifies controls."
+                 if 0 < w < h else "Open The Tower in portrait, then check again.")}))
 
 
 @app.get("/api/wizard/templates")

@@ -7222,6 +7222,261 @@
     "/card_inventory/tile_width": "x",
     "/card_inventory/tile_height": "y",
     "/interface/screens/battle/orbiting_gem/reference_radius_pixels": "min",
-    "/interface/screens/tournament_prizes/collection/row_stride_reference": "y"
+    "/interface/screens/tournament_prizes/collection/row_stride_reference": "y",
+    "/flow_regions/home_battle": "xyxy",
+    "/flow_regions/sprint": "xyxy",
+    "/flow_regions/dialog": "xyxy",
+    "/flow_regions/exit_btn": "xyxy",
+    "/flow_regions/stats_hdr": "xyxy",
+    "/flow_regions/stats_btns": "xyxy",
+    "/flow_regions/uw_panel": "xyxy",
+    "/flow_regions/full": "xyxy",
+    "/flow_regions/stats_row": "yy",
+    "/flow_regions/dialog_row": "yy",
+    "/flow_regions/home_row": "yy",
+    "/module_inventory/columns": "xxxxx",
+    "/module_inventory/rows": "yyyyyy",
+    "/module_inventory/tile": "min",
+    "/module_inventory/close_strip": "yyxx",
+    "/module_inventory/head_dy": "yy",
+    "/module_inventory/head_x": "xx",
+    "/module_inventory/scrim_probe": "yyxx",
+    "/module_inventory/grid_band": "yy",
+    "/module_inventory/grid_touch": "yy",
+    "/module_inventory/grid_gap_y": "y",
+    "/module_inventory/page_drag": "yy",
+    "/module_inventory/swipe_x": "x",
+    "/module_inventory/grid_clear": "yy",
+    "/module_inventory/tile_half": "min",
+    "/module_inventory/grid_search": "yyxx",
+    "/module_inventory/inventory_tab": "yy",
+    "/runtime_layout/rois/wave_box": "xyxy",
+    "/runtime_layout/rois/intro_sprint": "xyxy",
+    "/runtime_layout/rois/ability_row": "xyxy",
+    "/runtime_layout/rois/hp_bar": "xyxy",
+    "/runtime_layout/rois/upgrade_panel": "xyxy",
+    "/runtime_layout/rois/cash_box": "xyxy",
+    "/runtime_layout/rois/wave_progress": "xyxy",
+    "/runtime_layout/rois/field": "xyxy",
+    "/runtime_layout/tabs/attack": "xy",
+    "/runtime_layout/tabs/defense": "xy",
+    "/runtime_layout/tabs/utility": "xy",
+    "/runtime_layout/tabs/uw": "xy",
+    "/flow_regions/wall_bar": "xyxy",
+    "/flow_regions/hp_bar": "xyxy",
+    "/runtime_layout/panel_shift": "y"
+  },
+  "flow_regions": {
+    "home_battle": [
+      250,
+      1950,
+      620,
+      240
+    ],
+    "sprint": [
+      0,
+      170,
+      170,
+      620
+    ],
+    "dialog": [
+      40,
+      980,
+      1010,
+      980
+    ],
+    "exit_btn": [
+      560,
+      480,
+      520,
+      940
+    ],
+    "stats_hdr": [
+      60,
+      150,
+      960,
+      900
+    ],
+    "stats_btns": [
+      40,
+      1260,
+      1000,
+      1000
+    ],
+    "uw_panel": [
+      0,
+      1800,
+      1080,
+      660
+    ],
+    "full": [
+      0,
+      0,
+      1080,
+      2560
+    ],
+    "stats_row": [
+      1310,
+      1450
+    ],
+    "dialog_row": [
+      1380,
+      1510
+    ],
+    "home_row": [
+      1680,
+      1790
+    ],
+    "wall_bar": [
+      84,
+      1559,
+      424,
+      44
+    ],
+    "hp_bar": [
+      34,
+      1696,
+      478,
+      64
+    ]
+  },
+  "module_inventory": {
+    "columns": [
+      126,
+      329,
+      533,
+      736,
+      939
+    ],
+    "rows": [
+      1082,
+      1285,
+      1488,
+      1691,
+      1894,
+      2097
+    ],
+    "tile": 150,
+    "close_strip": [
+      490,
+      950,
+      880,
+      975
+    ],
+    "head_dy": [
+      -30,
+      190
+    ],
+    "head_x": [
+      395,
+      985
+    ],
+    "scrim_probe": [
+      110,
+      150,
+      20,
+      300
+    ],
+    "grid_band": [
+      1000,
+      2260
+    ],
+    "grid_touch": [
+      1130,
+      2230
+    ],
+    "grid_gap_y": 1090,
+    "page_drag": [
+      2130,
+      1530
+    ],
+    "swipe_x": 538,
+    "grid_clear": [
+      1080,
+      2262
+    ],
+    "tile_half": 90,
+    "grid_search": [
+      1000,
+      2300,
+      40,
+      1040
+    ],
+    "inventory_tab": [
+      1000,
+      1100
+    ]
+  },
+  "runtime_layout": {
+    "rois": {
+      "wave_box": [
+        690,
+        1678,
+        170,
+        45
+      ],
+      "intro_sprint": [
+        10,
+        240,
+        110,
+        110
+      ],
+      "ability_row": [
+        10,
+        1495,
+        420,
+        120
+      ],
+      "wall_bar": null,
+      "hp_bar": [
+        34,
+        1696,
+        478,
+        64
+      ],
+      "upgrade_panel": [
+        0,
+        1800,
+        1080,
+        660
+      ],
+      "cash_box": [
+        30,
+        34,
+        320,
+        60
+      ],
+      "wave_progress": [
+        566,
+        1734,
+        482,
+        25
+      ],
+      "field": [
+        0,
+        300,
+        1080,
+        1330
+      ]
+    },
+    "tabs": {
+      "attack": [
+        136,
+        2507
+      ],
+      "defense": [
+        402,
+        2507
+      ],
+      "utility": [
+        672,
+        2507
+      ],
+      "uw": [
+        943,
+        2507
+      ]
+    },
+    "panel_shift": 679
   }
 }

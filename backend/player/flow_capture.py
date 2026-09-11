@@ -250,14 +250,16 @@ class _Flow:
 # ---------------------------------------------------------------- regions
 # Native 1080x2560 bands. Generous on purpose: locate() searches inside them by
 # OCR and returns None (never a blind tap) when the text is absent.
-R_HOME_BATTLE = (250, 1950, 620, 240)     # the Home BATTLE button (~621,2057)
-R_SPRINT = (0, 170, 170, 620)             # intro-sprint icon rail (detect.SPRINT_BAND)
-R_DIALOG = (40, 980, 1010, 980)           # dialog titles ~y1024/1083, buttons ~y1377/1437
-R_EXIT_BTN = (560, 480, 520, 940)         # in-run side menu (END ROUND / EXIT BATTLE ~888,786)
-R_STATS_HDR = (60, 150, 960, 900)         # GAME STATS header (~333,752)
-R_STATS_BTNS = (40, 1260, 1000, 1000)     # MORE STATS/PERKS ~y1343, HOME ~y1721
-R_UW_PANEL = (0, 1800, 1080, 660)         # in-run upgrade panel (CONFIG upgrade_panel)
-R_FULL = (0, 0, 1080, 2560)
+from player.bootstrap_layout import manifest
+
+R_HOME_BATTLE = tuple(manifest()["flow_regions"]["home_battle"])     # the Home BATTLE button (~621,2057)
+R_SPRINT = tuple(manifest()["flow_regions"]["sprint"])             # intro-sprint icon rail (detect.SPRINT_BAND)
+R_DIALOG = tuple(manifest()["flow_regions"]["dialog"])           # dialog titles ~y1024/1083, buttons ~y1377/1437
+R_EXIT_BTN = tuple(manifest()["flow_regions"]["exit_btn"])         # in-run side menu (END ROUND / EXIT BATTLE ~888,786)
+R_STATS_HDR = tuple(manifest()["flow_regions"]["stats_hdr"])         # GAME STATS header (~333,752)
+R_STATS_BTNS = tuple(manifest()["flow_regions"]["stats_btns"])     # MORE STATS/PERKS ~y1343, HOME ~y1721
+R_UW_PANEL = tuple(manifest()["flow_regions"]["uw_panel"])         # in-run upgrade panel (CONFIG upgrade_panel)
+R_FULL = tuple(manifest()["flow_regions"]["full"])
 
 # The Ultimate Weapon labels the game prints in the panel's UW tab, by the name
 # it shows. capture_uw_weapons cuts the OWNED ones (the only rows normally on
@@ -283,9 +285,9 @@ UW_WEAPONS = (
 # (No | Yes, MORE STATS | PERKS). Their identity is which SIDE they sit on, not
 # a globally unique face, so they are captured by position (left/right) and
 # written with unique=False. Measured centres: left x~352, right x~727.
-R_STATS_ROW = (1310, 1450)     # MORE STATS / PERKS band on the GAME STATS screen
-R_DIALOG_ROW = (1380, 1510)    # No / Yes band on a confirm dialog
-R_HOME_ROW = (1680, 1790)      # RETRY / HOME band on the GAME STATS screen
+R_STATS_ROW = tuple(manifest()["flow_regions"]["stats_row"])     # MORE STATS / PERKS band on the GAME STATS screen
+R_DIALOG_ROW = tuple(manifest()["flow_regions"]["dialog_row"])    # No / Yes band on a confirm dialog
+R_HOME_ROW = tuple(manifest()["flow_regions"]["home_row"])      # RETRY / HOME band on the GAME STATS screen
 
 
 def _row_buttons(frame, y_lo, y_hi, *, thresh=90):
@@ -717,8 +719,11 @@ def read_tier(frame):
 
 
 # The '<' / '>' difficulty arrows flanking 'Tier N' on Home (measured 2026-09-07)
-TIER_DEC = (397, 1398)
-TIER_INC = (687, 1398)
+def tier_point(direction):
+    spec = manifest()['interface']['screens']['home']['controls'][f'difficulty_{direction}']
+    x,y,w,h = spec['reference_rect']
+    return x+w//2, y+h//2
+
 
 
 # The battle HUD's two bars at native 1080x2560 (config.example.yaml's wall_bar
@@ -727,8 +732,8 @@ TIER_INC = (687, 1398)
 # beside it as proof the HUD is on screen - IS the wall. Measured 2026-09-08 on
 # real frames: wall 0.65-0.68 lit teal, HP 0.75-0.78; menus, dialogs and GAME
 # STATS under 0.1. Positive-only: nothing here ever records "no wall".
-WALL_BAR_ROI = (84, 1559, 424, 44)
-HP_BAR_ROI = (34, 1696, 478, 64)
+WALL_BAR_ROI = tuple(manifest()["flow_regions"]["wall_bar"])
+HP_BAR_ROI = tuple(manifest()["flow_regions"]["hp_bar"])
 BAR_LIT_MIN = 0.30
 
 
@@ -1038,7 +1043,7 @@ def set_tier(flow, target=TIER_FOR_END_ROUND):
         else:
             stall = 0
         prev = cur
-        flow.tap(*(TIER_INC if cur < target else TIER_DEC), f"tier {cur}->{target}")
+        flow.tap(*tier_point('right' if cur < target else 'left'), f"tier {cur}->{target}")
         flow.pause(0.5)
     return read_tier(flow.grab())
 
@@ -1284,6 +1289,7 @@ def capture_hud_digits(flow: _Flow) -> list[str]:
             text = textocr.read_text(crop[:,10:], scales=(3.0,4.0))
         return text
     got: dict = {d: None for d in '0123456789' if settings.template_path(f'digits/{d}.png').exists()}
+    written = []
     deadline = time.monotonic() + 180            # generous; stops early at 10/10
     last_progress = 0.0
     while time.monotonic() < deadline and len(got) < 10:
@@ -1302,13 +1308,15 @@ def capture_hud_digits(flow: _Flow) -> list[str]:
             if found:
                 number = found.group(1)
         for ch, glyph in bc.digit_glyphs(crop, number).items():
-            got.setdefault(ch, glyph)
+            if ch not in got:
+                rel = f'digits/{ch}.png'
+                if bc.write_template(rel, glyph) == 'written':
+                    written.append(rel)
+                got[ch] = glyph
         if time.monotonic() - last_progress >= 5:
-            flow.progress(f"Reading wave counter: {len(got)}/10 digits; up to {max(0, int(deadline-time.monotonic()))}s remaining")
+            flow.progress(f"Reading wave counter: {len(got)}/10 digits saved; waiting for {', '.join(d for d in '0123456789' if d not in got)}; up to {max(0, int(deadline-time.monotonic()))}s remaining")
             last_progress = time.monotonic()
         flow.pause(0.3)
-    written = [f"digits/{ch}.png" for ch, glyph in got.items()
-               if glyph is not None and bc.write_template(f"digits/{ch}.png", glyph) == "written"]
     if written:
         # wave_reader caches whatever it loaded (a PARTIAL dict survives the
         # "incomplete" raise) - drop it so the fresh font is read from disk.

@@ -77,3 +77,9 @@ def test_first_digit_window_matches_measured_layout():
     lo, hi = wave_reader.FIRST_DIGIT_X
     assert lo <= 16 <= 17 <= hi
     assert hi < 139
+
+
+def test_out_of_frame_alternative_layout_is_unreadable_not_a_crash(monkeypatch):
+    monkeypatch.setattr(capture, 'roi', lambda *a: np.zeros((0,170,3), np.uint8))
+    assert wave_reader.read_wave(np.zeros((1920,1080,3),np.uint8)) is None
+    assert capture.layout_offset == 0

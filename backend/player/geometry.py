@@ -36,7 +36,7 @@ def _slot(document, pointer):
     return node, key
 
 
-def scale_manifest(reference, display):
+def scale_manifest(reference, display, profile=None):
     """Scale explicitly declared JSON pointers, always from reference values.
 
     Source-art pixels, time, counts and thresholds are deliberately undeclared.
@@ -46,6 +46,14 @@ def scale_manifest(reference, display):
         raise ValueError('Scale the shipped reference, not a runtime copy')
     base = Display(**reference['layout'])
     sx, sy = display.width/base.width, display.height/base.height
+    if profile is None:
+        from pathlib import Path
+        profiles = json.loads(Path(__file__).with_name('resolution_profiles.json').read_text(encoding='utf-8'))
+        profile = profiles.get('profiles', {}).get(f'{display.width}x{display.height}@{display.dpi}', {})
+    default = profile.get('default', {})
+    sx, sy = default.get('scale_x', sx), default.get('scale_y', sy)
+    if any(type(v) not in (float, int) or not math.isfinite(v) or v <= 0 for v in (sx, sy)):
+        raise ValueError('Resolution multipliers must be positive and finite')
     result = deepcopy(reference)
     axes = {'x': sx, 'y': sy, 'min': min(sx, sy)}
     for pointer, units in reference.get('geometry_fields', {}).items():
@@ -61,9 +69,30 @@ def scale_manifest(reference, display):
             if units not in axes or type(value) not in (int, float) or not math.isfinite(value):
                 raise ValueError(f'Invalid geometry declaration: {pointer}')
             node[key] = round(value*axes[units])
+    for pointer, override in profile.get('overrides', {}).items():
+        if pointer not in reference.get('geometry_fields', {}):
+            raise ValueError(f'Override is not declared geometry: {pointer}')
+        node, key = _slot(result, pointer)
+        base_node, base_key = _slot(reference, pointer)
+        value = base_node[base_key]
+        if 'value' in override:
+            replacement = deepcopy(override['value'])
+        else:
+            factors = override.get('multiply', [1]*len(value))
+            offsets = override.get('offset', [0]*len(value))
+            if len(factors) != len(value) or len(offsets) != len(value):
+                raise ValueError(f'Invalid override length: {pointer}')
+            replacement = [round(v*f+o) for v,f,o in zip(value,factors,offsets)]
+        if isinstance(value,list) and (not isinstance(replacement,list) or len(value)!=len(replacement)):
+            raise ValueError(f'Invalid override value: {pointer}')
+        values = replacement if isinstance(replacement,list) else [replacement]
+        if any(type(v) not in (int,float) or not math.isfinite(v) for v in values):
+            raise ValueError(f'Invalid override numbers: {pointer}')
+        node[key] = replacement
     result['layout'] = asdict(display)
     result['_runtime_geometry'] = {'reference': asdict(base), 'display': asdict(display),
-                                   'revision': revision(reference), 'scale_x': sx, 'scale_y': sy}
+                                   'revision': revision(reference), 'profile_revision': revision(profile),
+                                   'scale_x': sx, 'scale_y': sy}
     return result
 
 
@@ -98,6 +127,7 @@ class Resolver:
                'confidence': confidence, 'verified_frames': verified_frames,
                'display': asdict(self.display), 'context': self.context,
                'manifest_revision': revision(self.reference), 'anchor': deepcopy(anchor),
+               'profile_revision': self.manifest['_runtime_geometry']['profile_revision'],
                'stable': stable}
         if stable:
             from player import learned
@@ -116,6 +146,8 @@ class Resolver:
         if not isinstance(row, dict) or row.get('screen') != screen or row.get('context') != self.context:
             return None
         if row.get('display') != asdict(self.display) or row.get('manifest_revision') != revision(self.reference):
+            return None
+        if row.get('profile_revision') != self.manifest['_runtime_geometry']['profile_revision']:
             return None
         if type(row.get('verified_frames')) is not int or row['verified_frames'] < 2:
             return None

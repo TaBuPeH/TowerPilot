@@ -95,3 +95,47 @@ def test_every_numeric_vector_has_explicit_units_or_source_art_exclusion():
             else:
                 for i,child in enumerate(value): yield from walk(child,path+'/'+str(i))
     assert set(walk(source))-set(source['geometry_fields']) == {'/asset_bindings/icons~1tile_events.png/source_crop'}
+
+
+def test_profile_default_and_explicit_outlier():
+    source=manifest()
+    profile={'default':{'scale_x':.5,'scale_y':.75},'overrides':{
+        '/navigation/cards':{'multiply':[1,1],'offset':[0,-640]}}}
+    mapped=scale_manifest(source,Display(540,1920,280),profile)
+    assert mapped['navigation']['battle']==[42,1852]
+    assert mapped['navigation']['cards']==[448,1830]
+    assert source['navigation']['cards']==[448,2470]
+    with pytest.raises(ValueError):
+        scale_manifest(source,Display(540,1920,280),{'overrides':{'/card_inventory/max_pages':{'value':99}}})
+
+
+def test_bound_worker_uses_transformed_manifest_and_restores_context():
+    from player.bootstrap_layout import bind_display, _display
+    token=bind_display(Display(540,1280,180))
+    try:
+        assert manifest()['layout']=={'width':540,'height':1280,'dpi':180}
+        assert manifest()['navigation']['cards']==[224,1235]
+    finally:
+        _display.reset(token)
+    assert manifest()['layout']['height']==2560
+
+
+def test_rendering_changes_calibration_storage(tmp_path):
+    from player.accounts import calibration_dir
+    cfg={'active_instance':'main','instances':{'main':{'account':'a','serial':'device'}},'accounts':{'a':{}},'adb':{'exe':'adb'}}
+    before=calibration_dir(tmp_path,cfg)
+    cfg['instances']['main']['rendering']={'width':1080,'height':2560,'dpi':360}
+    assert calibration_dir(tmp_path,cfg)==before
+    cfg['instances']['main']['rendering']={'width':1080,'height':1920,'dpi':280}
+    assert calibration_dir(tmp_path,cfg)!=before
+
+
+def test_bound_profile_is_frozen_until_next_display_bind(monkeypatch):
+    from player import bootstrap_layout as b, geometry
+    token=b.bind_display(Display(540,1280,180))
+    try:
+        monkeypatch.setattr(geometry, 'scale_manifest', lambda *a,**k: (_ for _ in ()).throw(AssertionError('rescaled during scan')))
+        first=b.manifest();first['navigation']['cards'][0]=999
+        assert b.manifest()['navigation']['cards']==[224,1235]
+    finally:
+        b._display.reset(token)

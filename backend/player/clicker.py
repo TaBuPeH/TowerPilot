@@ -24,6 +24,7 @@ ACTIONS = {
     "close_presets": {"label": "Close preset picker", "screen": "picker", "target": "presets/close_x.png", "destination": "home"},
     "cards_home": {"label": "Return from Cards to Home", "screen": "cards", "target": "navigation/cards_home.png", "destination": "home"},
     "guild_home": {"label": "Return from Guild to Home", "screen": "guild", "target": "buttons/return_to_game.png", "destination": "home"},
+    "reward_continue": {"label": "Collect displayed rewards", "screen": "reward_listing", "target": "reward_reveal", "destination": "daily_missions"},
 }
 
 
@@ -45,18 +46,17 @@ def locate(frame, template, rect, margin=24, threshold=.92, *, search=None):
     """Native-size match near a manifest position; reject weak/duplicate hits."""
     if template is None or frame is None or template.size == 0:
         return {"ok": False, "reason": "Capture this recognition image first"}
-    if frame.shape[:2] != (2560, 1080):
-        return {"ok": False, "reason": "Use Setup to configure the native display resolution"}
+    height, width = frame.shape[:2]
     try:
         if search is not None:
             rect, margin = search, 0
         x, y, w, h = map(int, rect)
-        if min(w, h) <= 0 or min(x, y) < 0 or x+w > 1080 or y+h > 2560:
+        if min(w, h) <= 0 or min(x, y) < 0 or x+w > width or y+h > height:
             raise ValueError()
     except (ValueError, TypeError, OverflowError):
         return {"ok": False, "reason": "Invalid manifest rectangle; scan this control again"}
     x0, y0 = max(0, x-margin), max(0, y-margin)
-    roi = frame[y0:min(2560, y+h+margin), x0:min(1080, x+w+margin)]
+    roi = frame[y0:min(height, y+h+margin), x0:min(width, x+w+margin)]
     th, tw = template.shape[:2]
     if roi.shape[0] < th or roi.shape[1] < tw or float(template.std()) < 4:
         return {"ok": False, "reason": "Recognition image does not fit the manifest position"}
@@ -80,6 +80,11 @@ def inspect(frame, action, learned, read_template, identify, asset_hit=None):
     name = identify(frame)
     if name != action["screen"]:
         return {"ok": False, "screen": name, "reason": f'Open {action["screen"]}; current screen is {name}'}
+    if action['target'] == 'reward_reveal':
+        from interactions.event_rewards import reward_dismiss
+        point = reward_dismiss(frame)
+        return {'ok':bool(point), 'screen':name, 'rect':[point[0]-1,point[1]-1,2,2] if point else [],
+                'reason':'Reward control text verified at manifest location' if point else 'No reward control verified'}
     if asset_hit:
         hit = asset_hit(action['target'], frame)
         if hit:
@@ -135,6 +140,12 @@ def main():
         # Overlay-first existing detector is deliberately stricter than OCR
         # anchors on the dimmed parent behind a dialog.
         sc = screen.identify(frame).name
+        if sc == 'unknown':
+            from interactions import missions, event_rewards
+            if missions.missions_screen(frame):
+                return 'daily_missions'
+            if event_rewards.reward_dismiss(frame):
+                return 'reward_listing'
         if sc in ("unknown", "home"):
             for name, rels in (("picker", ["presets/select_header.png"]),
                                ("events", ["icons/event_missions_tab.png", "buttons/event_bots_tab.png"])):

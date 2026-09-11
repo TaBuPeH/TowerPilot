@@ -34,3 +34,16 @@ def test_setup_rejects_unknown_device(monkeypatch):
     monkeypatch.setattr(settings, "CONFIG", {"instances": {}})
     with pytest.raises(KeyError, match="unknown instance"):
         settings.bind_device("missing")
+
+
+def test_binding_loads_saved_display_for_scans_and_runners(monkeypatch):
+    from device import layout
+    from player.geometry import Display
+    cfg={'active_instance':'main','instances':{'main':{'rendering':{'width':1080,'height':1920,'dpi':280}}}}
+    monkeypatch.setattr(settings,'CONFIG',cfg)
+    monkeypatch.setattr(settings,'_DEFAULTS',{})
+    monkeypatch.setattr(settings,'_ACCOUNT_DEFAULTS',{})
+    observed=[]
+    monkeypatch.setattr(layout,'activate',observed.append)
+    settings.bind_device('main')
+    assert observed == [Display(1080,1920,280)]

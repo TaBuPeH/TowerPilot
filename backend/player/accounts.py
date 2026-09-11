@@ -67,6 +67,9 @@ def calibration_dir(root, cfg):
     inst = valid_id(cfg.get("active_instance", "main"))
     device = (cfg.get("instances") or {}).get(inst) or {}
     signature = str(device.get("serial", "")) + "|" + str((cfg.get("adb") or {}).get("exe", "")).casefold()
+    rendering = device.get('rendering')
+    if rendering and rendering != {'width':1080, 'height':2560, 'dpi':360}:
+        signature += '|' + json.dumps(rendering, sort_keys=True)
     suffix = hashlib.sha256(signature.encode()).hexdigest()[:10]
     return Path(root) / "accounts" / account / "calibration" / f"{inst}-{suffix}"
 

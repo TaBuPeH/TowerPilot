@@ -21,6 +21,7 @@ test('primary setup includes battle verification and remembers automatic applica
 function setup(ready){
   const calls=[];
   const ctx=vm.createContext({S:{view:'home'},$:()=>null,
+    localStorage:{setItem:()=>{},removeItem:()=>{}},preparationStorageKey:()=> 'test-preparation',
     document:{querySelectorAll:()=>[]},window:{confirm:()=>false},confirmPreparation:async()=>false,
     api:async path=>path.includes('/status')?{running:false,state:{player:{card_presets:['farm']}}}:ready,
     post:async path=>{calls.push(path);return {};},

@@ -31,7 +31,8 @@ class Session:
         if getattr(scanner, 'display', None) is not None:
             from player.geometry import Resolver
             # Calibration directory identifies the account and connection.
-            self.geometry = Resolver(manifest(), scanner.display, scanner.cal.p,
+            from player.bootstrap_layout import reference_manifest
+            self.geometry = Resolver(reference_manifest(), scanner.display, scanner.cal.p,
                                      str(self.folder.resolve()))
         self.driver = Driver(observe=self.observe, locate=self.locate,
             tap=self.tap, collect=self.collect, publish=self.publish,

@@ -10,6 +10,8 @@ class CaptureError(RuntimeError):
     pass
 
 
+_resolved_serial = None
+
 def refresh_display(serial: str | None = None) -> str | None:
     """Re-derive the instance's game display id + input index from dumpsys.
 
@@ -56,7 +58,7 @@ def refresh_display(serial: str | None = None) -> str | None:
     return disp
 
 
-def grab(serial: str | None = None, display: str | None = None) -> np.ndarray:
+def grab(serial: str | None = None, display: str | None = None, *, discover=False) -> np.ndarray:
     """Return the current screen as a BGR ndarray at native resolution.
 
     Uses RAW screencap (no -p): ~344ms vs ~700ms for PNG - the on-device PNG
@@ -67,6 +69,13 @@ def grab(serial: str | None = None, display: str | None = None) -> np.ndarray:
     from_instance = serial is None and display is None
     if from_instance:
         from settings import instance
+        global _resolved_serial
+        bound_serial = instance()["serial"]
+        if _resolved_serial != bound_serial:
+            # The launcher may have exactly the game's dimensions. Select the
+            # game display before the first frame, not only on a size mismatch.
+            refresh_display(bound_serial)
+            _resolved_serial = bound_serial
         display = instance().get("display")   # active instance's game display
     # Straight to the adb SERVER socket - no adb.exe per frame. Spawning a
     # process ~3x a second is what exhausted Windows socket buffers and then
@@ -98,7 +107,7 @@ def grab(serial: str | None = None, display: str | None = None) -> np.ndarray:
         # once and retry; only for the instance's own display, never for
         # an explicitly requested one (wizard probes ask for exact ids).
         if from_instance and display and refresh_display(serial) not in (None, display):
-            return grab()
+            return grab(discover=discover)
         raise CaptureError(f"screencap returned {len(buf)} bytes")
     exp_w, exp_h = CONFIG["screen"]["width"], CONFIG["screen"]["height"]
     # multi-display instances (Main Tower) prepend a text warning line to the
@@ -106,13 +115,13 @@ def grab(serial: str | None = None, display: str | None = None) -> np.ndarray:
     for _ in range(4):
         w = int.from_bytes(buf[0:4], "little")
         h = int.from_bytes(buf[4:8], "little")
-        if (w, h) == (exp_w, exp_h):
+        if 0 < w <= 10000 and 0 < h <= 10000 and len(buf)-w*h*4 in (12,16):
             break
         nl = buf.find(b"\n", 0, 400)
         if nl < 0:
             break
         buf = buf[nl + 1:]
-    if (w, h) != (exp_w, exp_h):
+    if (w, h) != (exp_w, exp_h) and not discover:
         # A freshly adopted MuMu instance has serial + adb and NO display
         # configured (the wizard writes nothing else), so this reads MuMu's
         # default screen - the LANDSCAPE launcher - and the lock fires before
@@ -120,7 +129,7 @@ def grab(serial: str | None = None, display: str | None = None) -> np.ndarray:
         # lives on the secondary mumuscreen: derive it once and retry. Single-
         # display emulators return None from the probe and fall through.
         if from_instance and not display and refresh_display(serial):
-            return grab()
+            return grab(discover=discover)
         raise CaptureError(f"unexpected resolution {w}x{h}, expected {exp_w}x{exp_h} "
                            "(resolution lock violated - recalibrate or fix instance)")
     header = len(buf) - w * h * 4        # 12 (Android <12) or 16 bytes

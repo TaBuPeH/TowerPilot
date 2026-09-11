@@ -43,8 +43,8 @@ TAB_BANDS = {k: tuple(v) for k, v in _native_manifest()["tab_bands"].items()}
 # when its whole frame (TILE_HALF above and below the centre) lies between
 # them: a row half behind either bar reads and cuts a truncated tile (the
 # bottom-row cuts scored 0.73 against the same tile seen whole one page on).
-GRID_CLEAR = (1080, 2262)
-TILE_HALF = 90
+GRID_CLEAR = tuple(_native_manifest()["module_inventory"]["grid_clear"])
+TILE_HALF = _native_manifest()["module_inventory"]["tile_half"]
 
 
 def _hsv(bgr):
@@ -168,13 +168,15 @@ def header_slots(frame) -> list[dict]:
     return out
 
 
-def grid_row_spans(frame, y0: int = 1000, y1: int = 2300, x0: int = 40, x1: int = 1040,
+def grid_row_spans(frame, y0=None, y1=None, x0=None, x1=None,
                    min_lit: int = 40) -> list[tuple[int, int]]:
     """(start, end) of every run of rows with lit pixels in the grid band,
     full-frame y. The Inventory tab bar is the first run (it is lit); a
     tile row cut off by it fuses with it - that is what inventory.at_top
     reads (measured 2026-09-06: (1000,1080)+(1106,1290) parked at the top,
     one (1000,1205) run when scrolled)."""
+    default = _native_manifest()["module_inventory"]["grid_search"]
+    y0,y1,x0,x1 = [d if v is None else v for v,d in zip((y0,y1,x0,x1),default)]
     _h, s, v = _hsv(frame[y0:y1, x0:x1])
     lit = ((s > 90) & (v > 120)).sum(axis=1)
     spans, start = [], None
@@ -189,7 +191,7 @@ def grid_row_spans(frame, y0: int = 1000, y1: int = 2300, x0: int = 40, x1: int 
     return spans
 
 
-def grid_rows(frame, y0: int = 1000, y1: int = 2300, x0: int = 40, x1: int = 1040,
+def grid_rows(frame, y0=None, y1=None, x0=None, x1=None,
               min_run: int = 100, min_lit: int = 40) -> list[int]:
     """Centres of the WHOLE tile rows: runs of rows with lit pixels whose
     tile frame clears both bars (GRID_CLEAR). Rows cut by a bar are left to

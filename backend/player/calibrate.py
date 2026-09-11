@@ -723,6 +723,16 @@ def main() -> None:
         settings.instance()["allow_taps"] = True
     from runtime import logger
     from player import scan
+    from device import layout
+    try:
+        layout.prepare_scan()
+    except Exception as exc:
+        p = _paths()
+        st = _state_load(p)
+        st.setdefault('phases', {})['bootstrap'] = {
+            'status':'error', 'message':f'Display setup failed: {exc}', 'completed':0, 'total':0}
+        _state_save(p, st)
+        raise
     p = _paths()
     if a.observe:
         if os.path.exists(p["stop"]):

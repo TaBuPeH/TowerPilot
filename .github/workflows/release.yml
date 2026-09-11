@@ -1,0 +1,40 @@
+name: Build and publish beta
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check version
+        shell: pwsh
+        run: |
+          if ("v$((Get-Content VERSION -Raw).Trim())" -ne $env:GITHUB_REF_NAME) { throw 'Tag and VERSION differ' }
+      - name: Install build and test dependencies
+        run: python -m pip install -r requirements-portable.lock pytest
+      - name: Check source release boundary
+        run: python -m pytest backend/tests/test_release_clean.py backend/tests/test_release_bootstrap.py
+      - name: Check dashboard
+        run: node --test frontend/tests/*.test.cjs
+      - name: Build both distributions
+        run: |
+          python tools/build_release.py
+          python tools/build_portable.py
+      - name: Publish prerelease
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem dist -File | Where-Object { $_.Name -match '\.zip(\.sha256)?$' } | ForEach-Object { $_.FullName }
+          gh release create $env:GITHUB_REF_NAME @assets --verify-tag --prerelease --title "Tower Pilot $((Get-Content VERSION -Raw).Trim())" --notes-file docs/GITHUB_RELEASE.md
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }

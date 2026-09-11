@@ -32,6 +32,7 @@ __pycache__/
 backend/tools/platform-tools/
 backend/tools/adb-install-*/
 .local-backups/
+dist/
 venv/
 
 # --- editors / os ------------------------------------------------------

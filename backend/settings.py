@@ -95,6 +95,12 @@ def bind_device(name: str) -> None:
         if isinstance(override, dict):
             CONFIG[key].update(override)
 
+    rendering = inst.get('rendering')
+    if rendering:
+        from device import layout
+        from player.geometry import Display
+        layout.activate(Display(**rendering))
+
 
 def select_instance(name: str, preset: str | None = None) -> None:
     """Bind a run to its device, validating and compiling its profile."""

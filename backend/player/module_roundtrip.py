@@ -98,7 +98,9 @@ class ScreenDriver:
         from vision import textocr
         from interactions import inventory
         frame = capture.grab()
-        choices = [(x+20,y+1010) for y,x,t in textocr.read_lines(frame[1000:1100],1.0)
+        from player.bootstrap_layout import manifest
+        top,bottom = manifest()['module_inventory']['inventory_tab']
+        choices = [(x+20,y+top+10) for y,x,t in textocr.read_lines(frame[top:bottom],1.0)
                    if t.strip().casefold() == 'inventory']
         if len(choices) != 1:
             raise RuntimeError('Inventory tab is not recognizable')
@@ -491,7 +493,9 @@ class ManifestDriver(ScreenDriver):
         from device import capture, act
         from vision import textocr
         frame = self._module_frame()
-        choices = [(x+20,y+1010) for y,x,t in textocr.read_lines(frame[1000:1100],1.0)
+        from player.bootstrap_layout import manifest
+        top,bottom = manifest()['module_inventory']['inventory_tab']
+        choices = [(x+20,y+top+10) for y,x,t in textocr.read_lines(frame[top:bottom],1.0)
                    if t.strip().casefold() == 'assist']
         if len(choices) != 1:
             return False

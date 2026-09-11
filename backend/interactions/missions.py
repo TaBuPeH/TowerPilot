@@ -137,7 +137,8 @@ def find_claim(frame):
 def find_skip(frame):
     """SKIP pill on the reward listing: cyan-bordered button, upper right.
 
-    TEMPLATE ONLY. This used to fall back to a structural search - any
+    Image match, with exact manifest-bounded reward text as fallback.
+    This used to fall back to a structural search - any
     cyan-bordered pill of roughly the right shape in the upper right - and
     then SAVE whatever it found as the template. Both halves were wrong:
 
@@ -149,12 +150,16 @@ def find_skip(frame):
         of the user's card preset tabs, which would have poisoned every later run.
 
     A detector must never rewrite the thing it is measured against. If the
-    template is missing, this returns None and the caller does nothing, which
-    is the correct failure.
+    template is missing, only verified SKIP/NEXT reward text may substitute;
+    a cyan border alone is never sufficient.
     """
     hit, _, loc = detect._match(frame, "buttons/reward_skip.png", 0.75)
     if not hit:
-        return None
+        # A fresh installation may never have seen a reward reveal. Verify
+        # SKIP/NEXT text inside its manifest control instead of requiring an
+        # image that can only be obtained after opening a chest.
+        from interactions.event_rewards import reward_dismiss
+        return reward_dismiss(frame)
     tpl = detect._tpl("buttons/reward_skip.png")
     return (loc[0] + tpl.shape[1] // 2, loc[1] + tpl.shape[0] // 2)
 
@@ -440,14 +445,22 @@ def quest_flow():
         frame = yield                  # the listing takes a moment to render
         # reward listing popup -> SKIP it. The popup can be several pages
         # (1/4 ...), so keep skipping until the missions screen is back.
-        for _ in range(10):
-            if missions_screen(frame):
-                break
-            _tap(*(find_skip(frame) or SKIP_AREA), "reward_skip")
+        settled = 0
+        for _ in range(20):
+            point = find_skip(frame)
+            if point:
+                settled = 0
+                _tap(*point, "reward_skip")
+            elif missions_screen(frame):
+                settled += 1
+                if settled >= 3:
+                    break
+            else:
+                settled = 0
             frame = yield
-
-    logger.event("mission_done", claimed=claimed, chests=chests,
-                 shot=logger.shot(frame, "mission_done"))
+        else:
+            logger.event('mission_error', stage='weekly_reward_not_dismissed')
+            return
 
     # ---- back to the battle.
     # NOT "not missions_screen": a reward listing is not the missions screen
@@ -457,15 +470,17 @@ def quest_flow():
     # any listing on the way out.
     from vision import wave_reader
     for _ in range(10):
-        if wave_reader.read_wave(frame) is not None:
-            return                     # really back in the battle
-        if not missions_screen(frame):
-            pt = find_skip(frame)
-            if pt:                     # a reward listing is covering us
-                _tap(*pt, "reward_skip")
-                frame = yield
-                continue
-        _tap(*RETURN_STRIP, "return_to_game")
+        pt = find_skip(frame)
+        if pt:                         # reward animation outranks a number
+            _tap(*pt, "reward_skip")
+        elif missions_screen(frame):
+            _tap(*RETURN_STRIP, "return_to_game")
+        elif wave_reader.read_wave(frame) is not None:
+            logger.event("mission_done", claimed=claimed, chests=chests,
+                         shot=logger.shot(frame, "mission_done"))
+            return
+        # Unknown transition: wait; the return coordinate is not a generic
+        # dismiss control and may hit something unrelated on another screen.
         frame = yield
     logger.event("mission_error", stage="return",
                  shot=logger.shot(frame, "mission_return_fail"))

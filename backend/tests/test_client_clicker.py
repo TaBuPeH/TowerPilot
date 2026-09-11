@@ -15,7 +15,8 @@ def test_match_is_local_and_rejects_dimmed_parent():
     assert clicker.locate(frame, template, [300,600,16,16])["ok"]
     assert not clicker.locate(frame, template, [600,600,16,16])["ok"]
     assert not clicker.locate(frame//2, template, [300,600,16,16])["ok"]
-    assert not clicker.locate(frame[:1000], template, [300,600,16,16])["ok"]
+    assert clicker.locate(frame[:1920], template, [300,600,16,16])["ok"]
+    assert not clicker.locate(frame[:600], template, [300,600,16,16])["ok"]
 
 
 def test_duplicate_target_is_refused():

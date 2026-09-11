@@ -185,7 +185,9 @@ def preflight():
         command += f" -d {int(inst['input_display'])}"
     dpi = layout.density(adbclient.shell(inst["serial"], command).decode(errors="replace"))
     frame = capture.grab()
-    layout.require_native(frame.shape[1], frame.shape[0], dpi)
+    expected = manifest()['layout']
+    if (frame.shape[1], frame.shape[0], dpi) != (expected['width'], expected['height'], expected['dpi']):
+        raise RuntimeError('Display changed during setup; restart the scan for the new layout')
     wins = overlays.windows(inst["serial"])
     if not any(w.startswith(overlays.GAME_PKG) for w in wins) or any(overlays.offending(wins)):
         raise RuntimeError("The game must be visible with no other app or overlay covering it")
@@ -202,6 +204,9 @@ class Scanner:
         from device import capture, act
         from vision import textocr
         self.cal, self.state = cal, state
+        previous = state.get('phases', {}).get('bootstrap')
+        if previous:
+            state['scan_history'] = (state.get('scan_history', []) + [previous])[-8:]
         self.grab, self.tap = grab or capture.grab, tap or act.tap
         self.read, self.pause = read or (lambda f: textocr.read_lines(f, 1)), pause or time.sleep
         self.current = "home"
@@ -265,7 +270,7 @@ class Scanner:
         if not self.history or any(self.history[-1][key] != event[key] for key in ("step_id", "message", "status")):
             self.history.append(event)
         self.state.setdefault("phases", {})["bootstrap"] = {
-            "status":status, "message":message, "completed":self.completed,
+            "status":status, "message":message, "completed":self.completed, "kind":"battle" if self.battle_only else "full",
             "total":len(self.steps), "steps":self.steps, "history":self.history,
             "active_step":step["id"], "started_at":self.started_at, "updated_at":now,
             "assets":self.asset_summary,
@@ -680,7 +685,10 @@ class Scanner:
             self.finish_step(message="Battle and results captured")
         except Exception as e:                   # noqa: BLE001 - isolate
             logger.event("flow_battle_error", error=str(e)[:200])
-            flow_capture._safe_home(flow)
+            try:
+                flow_capture._safe_home(flow)
+            except Exception as recovery:
+                raise RuntimeError(f"Battle capture stopped: {e}. {recovery}") from e
             self.finish_step("needs_attention", "Battle capture interrupted; returned Home")
 
 

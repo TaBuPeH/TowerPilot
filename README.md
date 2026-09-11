@@ -1,5 +1,19 @@
 # Tower Pilot
 
+**0.1-beta — Windows x64 portable release.** Download the `windows-x64` ZIP,
+extract the whole folder, and double-click **Start Tower Pilot.cmd**. Python and
+dependencies are bundled; no separate Python installation is needed. The browser
+opens Setup automatically. The separate `source` ZIP requires Python 3.12.
+See [beta limits](docs/RELEASE_0.1_BETA.md).
+
+[Download 0.1-beta](https://github.com/TaBuPeH/TowerPilot/releases/tag/v0.1-beta)
+— choose **windows-x64.zip** for the app with Python included, or **source.zip**
+for development.
+
+Licensed under [MIT](LICENSE): extend the app, add configs and manifests, and
+share your improvements. Third-party libraries retain their own licenses.
+The license does not grant rights to The Tower's artwork or other game assets.
+
 > **Status:** Active
 > **Type:** Knowledge
 > **Created:** 2026-08-24
@@ -40,22 +54,25 @@ history shows the current action and step durations.
 | MuMu Player | **1080 × 2560 portrait** | **360 DPI** | 1080 × 2560 |
 | BlueStacks | **2560 × 1080 landscape** | **360 DPI** | 1080 × 2560 after the game rotates it |
 
-Use these reference settings; arbitrary resolutions and DPI values are not
-supported. On BlueStacks, **Prepare** configures the display and enables Android
+Use these reference settings. Manifest scaling and per-resolution overrides are
+experimental; other resolutions have not completed full validation. On BlueStacks,
+**Prepare** configures the display and enables Android
 Debug Bridge while the emulator is closed, keeping a backup. Restart after display
 changes. Run **Check now** with The Tower in front, not the Android launcher.
 The browser window size does not determine the captured game resolution.
 
 ## Quick start
 
-Use Windows with Python 3.12. Setup uses Windows text recognition. Install an
+Use Windows 10/11 x64. Setup uses Windows text recognition. Install an
 emulator and The Tower yourself, and sign into your game account first. MuMu and
 BlueStacks have been tested. You do not need a separate ADB installation.
 
+For the portable ZIP, launch **Start Tower Pilot.cmd** and continue at step 4.
+Steps 1–3 below apply only to the source distribution.
+
 1. Install [Python 3.12](https://www.python.org/downloads/)
    and an Android emulator with The Tower installed. The frame the
-   autopilot sees must be **1080 x 2560 portrait at 360 dpi** - every
-   template and coordinate assumes that layout. On MuMu Player (the
+   recommended for this beta is **1080 x 2560 portrait at 360 dpi**. On MuMu Player (the
    reference setup) that is the display setting itself; BlueStacks keeps a
    2560 x 1080 landscape panel that the game rotates, and the Setup page's
    **Prepare** button writes it - step by step in

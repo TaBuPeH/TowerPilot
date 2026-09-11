@@ -1,0 +1,823 @@
+{
+  "version": 1,
+  "profiles": {
+    "1080x1920@280": {
+      "default": {
+        "scale_x": 1.0,
+        "scale_y": 0.75
+      },
+      "overrides": {
+        "/screens/home/anchors/0/rect": {
+          "multiply": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "/screens/home/targets/0/rect": {
+          "multiply": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "/navigation_art/battle/search": {
+          "value": [
+            0,
+            1750,
+            180,
+            150
+          ]
+        },
+        "/navigation_art/workshop/search": {
+          "value": [
+            180,
+            1750,
+            180,
+            150
+          ]
+        },
+        "/navigation_art/cards/search": {
+          "value": [
+            360,
+            1750,
+            180,
+            150
+          ]
+        },
+        "/navigation_art/modules/search": {
+          "value": [
+            540,
+            1750,
+            180,
+            150
+          ]
+        },
+        "/navigation_art/lab/search": {
+          "value": [
+            720,
+            1750,
+            180,
+            150
+          ]
+        },
+        "/navigation_art/shop/search": {
+          "value": [
+            900,
+            1750,
+            180,
+            150
+          ]
+        },
+        "/tab_bands/cards": {
+          "multiply": [
+            1,
+            1
+          ]
+        },
+        "/screens/cards/anchors/0/rect": {
+          "multiply": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "/screens/cards/anchors/1/rect": {
+          "multiply": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "/screens/cards/anchors/2/rect": {
+          "multiply": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "/screens/cards/targets/0/rect": {
+          "multiply": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "/screens/cards/targets/1/rect": {
+          "multiply": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "/card_inventory/viewport": {
+          "value": [
+            20,
+            1030,
+            1040,
+            710
+          ]
+        },
+        "/card_inventory/columns": {
+          "multiply": [
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "/card_inventory/swipe_down": {
+          "value": [
+            535,
+            1550,
+            535,
+            1370
+          ]
+        },
+        "/card_inventory/swipe_up": {
+          "value": [
+            535,
+            1370,
+            535,
+            1550
+          ]
+        },
+        "/card_inventory/tile_width": {
+          "value": 244
+        },
+        "/card_inventory/tile_height": {
+          "value": 301
+        },
+        "/tab_bands/modules": {
+          "value": [
+            150,
+            340
+          ]
+        },
+        "/module_slots/large/0": {
+          "value": [
+            307,
+            518
+          ]
+        },
+        "/module_slots/large/1": {
+          "value": [
+            307,
+            755
+          ]
+        },
+        "/module_slots/large/2": {
+          "value": [
+            768,
+            518
+          ]
+        },
+        "/module_slots/large/3": {
+          "value": [
+            768,
+            755
+          ]
+        },
+        "/module_slots/small/0": {
+          "value": [
+            115,
+            518
+          ]
+        },
+        "/module_slots/small/1": {
+          "value": [
+            115,
+            755
+          ]
+        },
+        "/module_slots/small/2": {
+          "value": [
+            954,
+            518
+          ]
+        },
+        "/module_slots/small/3": {
+          "value": [
+            954,
+            755
+          ]
+        },
+        "/screens/modules/anchors/0/rect": {
+          "value": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        "/screens/modules/anchors/1/rect": {
+          "value": [
+            370,
+            325,
+            410,
+            100
+          ]
+        },
+        "/screens/modules/anchors/2/rect": {
+          "value": [
+            0,
+            990,
+            360,
+            90
+          ]
+        },
+        "/screens/modules/targets/0/rect": {
+          "value": [
+            25,
+            105,
+            365,
+            65
+          ]
+        },
+        "/screens/modules/targets/1/rect": {
+          "value": [
+            420,
+            337,
+            290,
+            65
+          ]
+        },
+        "/module_slots/radius/large": {
+          "value": 86
+        },
+        "/module_slots/radius/small": {
+          "value": 64
+        },
+        "/module_inventory/columns": {
+          "value": [
+            146,
+            346,
+            546,
+            746,
+            946
+          ]
+        },
+        "/module_inventory/rows": {
+          "value": [
+            1082,
+            1285,
+            1488,
+            1691,
+            1894,
+            2097
+          ]
+        },
+        "/module_inventory/tile": {
+          "value": 150
+        },
+        "/module_inventory/close_strip": {
+          "value": [
+            140,
+            1000,
+            890,
+            965
+          ]
+        },
+        "/module_inventory/head_dy": {
+          "value": [
+            -30,
+            190
+          ]
+        },
+        "/module_inventory/head_x": {
+          "value": [
+            395,
+            985
+          ]
+        },
+        "/module_inventory/scrim_probe": {
+          "value": [
+            110,
+            150,
+            20,
+            300
+          ]
+        },
+        "/module_inventory/grid_band": {
+          "value": [
+            1080,
+            1628
+          ]
+        },
+        "/module_inventory/grid_touch": {
+          "value": [
+            1140,
+            1570
+          ]
+        },
+        "/module_inventory/grid_gap_y": {
+          "value": 1090
+        },
+        "/module_inventory/page_drag": {
+          "value": [
+            1510,
+            1360
+          ]
+        },
+        "/module_inventory/swipe_x": {
+          "value": 538
+        },
+        "/module_inventory/grid_clear": {
+          "value": [
+            1080,
+            1628
+          ]
+        },
+        "/module_inventory/tile_half": {
+          "value": 90
+        },
+        "/module_inventory/grid_search": {
+          "value": [
+            980,
+            1628,
+            40,
+            1040
+          ]
+        },
+        "/module_inventory/inventory_tab": {
+          "value": [
+            980,
+            1080
+          ]
+        },
+        "/module_descriptor/icon_search": {
+          "value": [
+            100,
+            400,
+            320,
+            550
+          ]
+        },
+        "/module_descriptor/text_gap": {
+          "value": 35
+        },
+        "/module_descriptor/text_above": {
+          "value": 65
+        },
+        "/module_descriptor/text_below": {
+          "value": 200
+        },
+        "/module_descriptor/text_right": {
+          "value": 985
+        },
+        "/module_descriptor/icon_search_from_close/x": {
+          "value": 100
+        },
+        "/module_descriptor/icon_search_from_close/dy": {
+          "value": -40
+        },
+        "/module_descriptor/icon_search_from_close/width": {
+          "value": 320
+        },
+        "/module_descriptor/icon_search_from_close/height": {
+          "value": 340
+        },
+        "/interface/screens/home/controls/difficulty_left/reference_rect": {
+          "value": [
+            364,
+            1044,
+            56,
+            74
+          ]
+        },
+        "/interface/screens/home/controls/difficulty_right/reference_rect": {
+          "value": [
+            660,
+            1044,
+            60,
+            74
+          ]
+        },
+        "/screens/daily_missions/anchors/0/rect": {
+          "value": [
+            0,
+            100,
+            600,
+            80
+          ]
+        },
+        "/screens/daily_missions/anchors/1/rect": {
+          "value": [
+            0,
+            180,
+            1080,
+            120
+          ]
+        },
+        "/screens/daily_missions/targets/0/rect": {
+          "value": [
+            24,
+            108,
+            451,
+            54
+          ]
+        },
+        "/routes/17/verify/rect": {
+          "value": [
+            910,
+            185,
+            165,
+            100
+          ]
+        },
+        "/runtime_layout/rois/wave_box": {
+          "value": [
+            690,
+            1038,
+            170,
+            45
+          ]
+        },
+        "/runtime_layout/rois/intro_sprint": {
+          "value": [
+            10,
+            240,
+            110,
+            110
+          ]
+        },
+        "/runtime_layout/rois/ability_row": {
+          "value": [
+            10,
+            855,
+            420,
+            120
+          ]
+        },
+        "/runtime_layout/rois/hp_bar": {
+          "value": [
+            34,
+            1056,
+            478,
+            64
+          ]
+        },
+        "/runtime_layout/rois/upgrade_panel": {
+          "value": [
+            0,
+            1160,
+            1080,
+            660
+          ]
+        },
+        "/runtime_layout/rois/cash_box": {
+          "value": [
+            30,
+            34,
+            320,
+            60
+          ]
+        },
+        "/runtime_layout/rois/wave_progress": {
+          "value": [
+            566,
+            1094,
+            482,
+            25
+          ]
+        },
+        "/runtime_layout/rois/field": {
+          "value": [
+            0,
+            300,
+            1080,
+            690
+          ]
+        },
+        "/runtime_layout/tabs/attack": {
+          "value": [
+            136,
+            1867
+          ]
+        },
+        "/runtime_layout/tabs/defense": {
+          "value": [
+            402,
+            1867
+          ]
+        },
+        "/runtime_layout/tabs/utility": {
+          "value": [
+            672,
+            1867
+          ]
+        },
+        "/runtime_layout/tabs/uw": {
+          "value": [
+            943,
+            1867
+          ]
+        },
+        "/runtime_layout/panel_shift": {
+          "value": 679
+        },
+        "/side_menu/toggle/rect": {
+          "value": [
+            965,
+            18,
+            95,
+            92
+          ]
+        },
+        "/hud/battle/targets/0/rect": {
+          "value": [
+            864,
+            19,
+            92,
+            92
+          ]
+        },
+        "/hud/battle/targets/1/rect": {
+          "value": [
+            965,
+            18,
+            95,
+            92
+          ]
+        },
+        "/hud/battle_menu/targets/0/rect": {
+          "value": [
+            965,
+            18,
+            95,
+            92
+          ]
+        },
+        "/flow_regions/wall_bar": {
+          "value": [
+            84,
+            919,
+            424,
+            44
+          ]
+        },
+        "/flow_regions/hp_bar": {
+          "value": [
+            34,
+            1056,
+            478,
+            64
+          ]
+        },
+        "/flow_regions/stats_row": {
+          "value": [
+            990,
+            1130
+          ]
+        },
+        "/flow_regions/home_row": {
+          "value": [
+            1340,
+            1510
+          ]
+        },
+        "/flow_regions/stats_btns": {
+          "value": [
+            40,
+            940,
+            1000,
+            940
+          ]
+        },
+        "/flow_regions/dialog": {
+          "value": [
+            40,
+            660,
+            1010,
+            980
+          ]
+        },
+        "/flow_regions/dialog_row": {
+          "value": [
+            1060,
+            1190
+          ]
+        },
+        "/flow_regions/sprint": {
+          "value": [
+            0,
+            170,
+            170,
+            620
+          ]
+        },
+        "/flow_regions/uw_panel": {
+          "value": [
+            0,
+            1160,
+            1080,
+            660
+          ]
+        },
+        "/flow_regions/exit_btn": {
+          "value": [
+            560,
+            480,
+            520,
+            940
+          ]
+        },
+        "/screens/guild/anchors/0/rect": {
+          "value": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        "/screens/guild/targets/0/rect": {
+          "value": [
+            25,
+            105,
+            260,
+            65
+          ]
+        },
+        "/screens/guild/targets/1/rect": {
+          "value": [
+            25,
+            105,
+            260,
+            65
+          ]
+        },
+        "/screens/guild/targets/2/rect": {
+          "value": [
+            45,
+            288,
+            265,
+            60
+          ]
+        },
+        "/screens/guild/targets/3/rect": {
+          "value": [
+            365,
+            288,
+            270,
+            60
+          ]
+        },
+        "/screens/guild/targets/4/rect": {
+          "value": [
+            220,
+            1790,
+            640,
+            65
+          ]
+        },
+        "/screens/guild/selected_tab/rects/0": {
+          "value": [
+            40,
+            280,
+            230,
+            55
+          ]
+        },
+        "/screens/guild/selected_tab/rects/1": {
+          "value": [
+            370,
+            280,
+            230,
+            55
+          ]
+        },
+        "/screens/guild/selected_tab/rects/2": {
+          "value": [
+            730,
+            280,
+            200,
+            55
+          ]
+        },
+        "/screens/guild_hub/anchors/0/rect": {
+          "value": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        "/screens/guardians/anchors/0/rect": {
+          "value": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        "/screens/guardians/selected_tab/rects/0": {
+          "value": [
+            40,
+            280,
+            230,
+            55
+          ]
+        },
+        "/screens/guardians/selected_tab/rects/1": {
+          "value": [
+            370,
+            280,
+            230,
+            55
+          ]
+        },
+        "/screens/guardians/selected_tab/rects/2": {
+          "value": [
+            730,
+            280,
+            200,
+            55
+          ]
+        },
+        "/screens/guild_store/anchors/0/rect": {
+          "value": [
+            20,
+            105,
+            590,
+            65
+          ]
+        },
+        "/screens/guild_store/selected_tab/rects/0": {
+          "value": [
+            40,
+            280,
+            230,
+            55
+          ]
+        },
+        "/screens/guild_store/selected_tab/rects/1": {
+          "value": [
+            370,
+            280,
+            230,
+            55
+          ]
+        },
+        "/screens/guild_store/selected_tab/rects/2": {
+          "value": [
+            730,
+            280,
+            200,
+            55
+          ]
+        },
+        "/routes/5/verify/rect": {
+          "value": [
+            40,
+            280,
+            230,
+            70
+          ]
+        },
+        "/routes/6/verify/rect": {
+          "value": [
+            350,
+            275,
+            300,
+            80
+          ]
+        },
+        "/routes/7/verify/rect": {
+          "value": [
+            700,
+            275,
+            300,
+            80
+          ]
+        },
+        "/routes/8/verify/rect": {
+          "value": [
+            220,
+            1790,
+            640,
+            65
+          ]
+        },
+        "/return_strip": {
+          "value": [
+            538,
+            1815
+          ]
+        },
+        "/tab_bands/guardians": {
+          "value": [
+            330,
+            520
+          ]
+        }
+      }
+    }
+  }
+}

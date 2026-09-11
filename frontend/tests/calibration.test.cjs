@@ -5,6 +5,35 @@ const vm = require('node:vm');
 const html = fs.readFileSync(require('node:path').join(__dirname, '../webui/index.html'), 'utf8');
 const section = (start, end) => html.slice(html.indexOf(start), html.indexOf(end, html.indexOf(start)));
 
+test('refresh resumes preparation completion once, for the saved account and run', async () => {
+  const stored = new Map(), requests = [], messages = [];
+  const config = {active_instance:'main',instances:{main:{account:'alice',serial:'one',rendering:{width:1080,height:1920,dpi:280}}}};
+  const ctx = vm.createContext({S:{config},
+    localStorage:{getItem:k=>stored.get(k),setItem:(k,v)=>stored.set(k,v),removeItem:k=>stored.delete(k)},
+    preparationMessage:m=>messages.push(m),
+    post:async url=>requests.push(url), api:async url=>{requests.push(url); return {ready:true};},
+    loadStatus:async()=>{}, encodeURIComponent,
+  });
+  vm.runInContext(section('function preparationStorageKey(){','async function renderCalibrate(){'),ctx);
+  vm.runInContext("localStorage.setItem(preparationStorageKey(), JSON.stringify({preset:'bp_shard_run',started:100})); S={config:S.config};",ctx);
+  assert.equal(vm.runInContext('pendingPreparation().preset',ctx),'bp_shard_run');
+  vm.runInContext('S.config.instances.main.account="bob"',ctx);
+  assert.equal(vm.runInContext('pendingPreparation()',ctx),null);
+  vm.runInContext('S.config.instances.main.account="alice"',ctx);
+  const reconcile = section("  if (st.running && starter?.kind === 'battle'", '  const known = $("#calib-knowledge");');
+  ctx.st = {running:false};
+  ctx.starter = {kind:'battle',started_at:100,status:'done'};
+  // Two status polls may arrive before the apply request finishes.
+  vm.runInContext('{'+reconcile+'}',ctx);
+  vm.runInContext('{'+reconcile+'}',ctx);
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.deepEqual(requests,['/api/calibrate/apply','/api/readiness?preset=bp_shard_run']);
+  assert.equal(vm.runInContext('pendingPreparation()',ctx),null);
+  assert.match(messages.at(-1),/Setup complete/);
+  vm.runInContext('{'+reconcile+'}',ctx);
+  assert.equal(requests.length,2);
+});
+
 test('screen capture has separate persisted feedback and blocks duplicate starts', () => {
   const progress = {}, buttons = [{}, {}];
   const ctx = vm.createContext({$:()=>progress, document:{querySelectorAll:()=>buttons},

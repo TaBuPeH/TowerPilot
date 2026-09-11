@@ -777,9 +777,8 @@ async function renderSetup(){
 
   <article>
     <header><span class="step-num">2</span>Check the screen</header>
-    <p class="muted">The vision system is calibrated for a
-      <b>1080 × 2560 portrait</b> display. This checks your emulator reports
-      exactly that.</p>
+    <p class="muted">Keep your preferred portrait resolution. Scanning detects
+      its size and DPI, applies the layout profile, and verifies controls on your screen.</p>
     ${res ? (res.ok
         ? `<p>${res.expected ? '<span class="ok">✓ ' : '<span class="warn">⚠ '}
              ${res.width} × ${res.height}</span> ${esc(res.note || "")}</p>`
@@ -951,9 +950,18 @@ function calibrationKnowledge(st){
     return `<tr><th scope="row">${label}</th><td>${esc(phase?.status === "done" ? "Scanned" : phase?.status || (evidence.length ? "Saved evidence" : "Not scanned"))}${found ? `<div class="muted">${esc(found)}</div>` : ""}${phase?.error ? `<div class="bad">${esc(phase.error)}</div>` : ""}</td><td>${evidence.length ? `${verified} verified${attention ? `<div class="bad">${attention} need attention</div>` : ""}${unverified ? `<div class="muted">${unverified} not yet verified</div>` : ""}` : "No image verification recorded"}</td></tr>`;
   }).join("");
 }
+function preparationStorageKey(){
+  const cfg=S.config || {}, inst=(cfg.instances || {})[cfg.active_instance] || {};
+  return 'runPreparation:' + JSON.stringify([cfg.active_instance,inst.account,inst.serial,inst.rendering]);
+}
+function pendingPreparation(){
+  try { return JSON.parse(localStorage.getItem(preparationStorageKey())); } catch { return null; }
+}
 async function renderCalibrate(){
   // Direct links must bind account-scoped preferences before rendering them.
   S.config = await api("/api/config");
+  const pending = pendingPreparation();
+  if (pending) S.calibrationPreset = pending.preset;
   const prefs = calibrationPreferences();
   S.calibrationRuns = (await api("/api/runs").catch(() => ({runs:{}}))).runs || {};
   S.readiness = await api("/api/readiness" + (S.calibrationPreset ? "?preset=" + encodeURIComponent(S.calibrationPreset) : "")).catch(e => ({error:e.message}));
@@ -1027,7 +1035,7 @@ async function renderCalibrate(){
     </details>
       <details><summary>Advanced developer tools</summary><section id="client-clicker"><h3>Click a recognized control</h3>
         <p>Choose a menu control. Preview checks its saved image near the manifest position. Watch checks for up to two minutes and clicks once when it is verified. Keep this page open and leave the emulator untouched while watching.</p>
-        <label>Action <select id="clicker-action"><option value="guild">Open Guild</option><option value="events">Open Events</option><option value="presets">Open preset picker</option><option value="close_presets">Close preset picker</option><option value="cards_home">Return from Cards to Home</option><option value="guild_home">Return from Guild to Home</option></select></label>
+        <label>Action <select id="clicker-action"><option value="guild">Open Guild</option><option value="events">Open Events</option><option value="presets">Open preset picker</option><option value="close_presets">Close preset picker</option><option value="cards_home">Return from Cards to Home</option><option value="guild_home">Return from Guild to Home</option><option value="reward_continue">Collect displayed rewards</option></select></label>
         <button onclick="clientClicker('preview')">Preview target</button>
         <button onclick="clientClicker('once')">Verify and click once</button>
         <button onclick="clientClicker('watch')">Watch and click once</button>
@@ -1132,6 +1140,7 @@ async function renderCalibrate(){
     </article>
   </div>
   </div>`;
+  calibReport(await api("/api/calibrate/status"));
   pollCalibrate();
   pollScreenAnalysis();
   renderScanPlan();
@@ -1449,10 +1458,11 @@ async function prepareRun(selected){
       openEditor(run.replace(/^bp_/, ''));
       return;
     }
-    const accepted = await confirmPreparation('Prepare the missing run controls?\n\nYour completed discoveries have been saved. The automatic setup will reuse your menu and inventory scan and start a temporary normal battle to verify battle controls, weapons and the wave counter, then end only that battle. It will not enter a tournament or purchase anything.\n\nAllow approximately 3–6 minutes. Second Wind is optional and will not hold up preparation. Keep the game on Home, leave the emulator untouched, and keep this dashboard open so it can apply the results and check readiness.\n\nContinue?');
+    const accepted = await confirmPreparation('Prepare the missing run controls?\n\nYour completed discoveries have been saved. The automatic setup will reuse your menu and inventory scan and start a temporary normal battle to verify battle controls, weapons and the wave counter, then end only that battle. It will not enter a tournament or purchase anything.\n\nAllow approximately 3–6 minutes. Second Wind is optional and will not hold up preparation. Keep the game on Home, leave the emulator untouched, and you may refresh this dashboard; it will reconnect to the scan and apply the results when finished.\n\nContinue?');
     if (!accepted) { preparationMessage('Discoveries saved. Battle preparation has not started.'); return; }
     const previous = JSON.stringify(before.state);
     preparationMessage('Preparing recognition automatically…');
+    localStorage.setItem(preparationStorageKey(), JSON.stringify({preset:run,started:Date.now()/1000}));
     await post('/api/calibrate/start', {bootstrap:true, flows:true, battle_only:true, phases:'c,m', overwrite:false, allow_navigation:true});
     S.calibrationPreset = run;
     location.hash = '#calibrate';
@@ -1469,6 +1479,7 @@ async function prepareRun(selected){
         throw new Error('Preparation stopped. See the latest scan step for the reason.');
       await post('/api/calibrate/apply', {});
       result = await api('/api/readiness?preset=' + encodeURIComponent(run));
+      localStorage.removeItem(preparationStorageKey());
       preparationMessage(result.ready ? 'Ready. You can start this run from Control.' : 'Discoveries saved. ' + (result.message || 'Some controls were not visible during preparation. The remaining checks are listed below.'));
       await loadStatus();
       if (S.view === 'home') await renderHome(); else await renderCalibrate();
@@ -1610,10 +1621,15 @@ function calibReport(st){
     const pages = list ? `; ${list.pages} pages read${list.complete ? ', list end confirmed' : ', list incomplete'}` : '';
     return `<li>${esc(name.replaceAll('_',' '))}: ${row.verified}/${row.total} screen anchors verified${row.status === 'verified' ? '' : ' — mapping incomplete'}${esc(pages)}</li>`;
   }).join('');
+  const savedPlayer=st.state?.player || {};
+  const savedCards=(savedPlayer.cards_observed || []).length;
+  const savedModules=(savedPlayer.modules_equipped || []).length + (savedPlayer.modules_copies || []).length;
+  const savedCount=(st.state?.entries || []).filter(e=>e.verified).length;
+  const savedSummary=`Saved discoveries: ${savedCards} cards · ${savedModules} modules · ${savedCount} verified images. Refreshing keeps these results.`;
   const starterEl = $("#bootstrap-progress");
-  if (starterEl && starter) starterEl.textContent = `${starter.completed || 0}/${starter.total || 1} steps - ${starter.status}: ${starter.message || ""}${starter.skipped?.length ? ` ${starter.skipped.length} captures or menus need another pass.` : ""}`;
+  if (starterEl && starter) starterEl.textContent = `${savedSummary} ${starter.kind === "battle" ? "Battle preparation: " : "Current scan: "}${starter.completed || 0}/${starter.total || 1} steps - ${starter.status}: ${starter.message || ""}${starter.skipped?.length ? ` ${starter.skipped.length} captures or menus need another pass.` : ""}`;
   const starterRunning=st.running && calibrationMode(st) === "bootstrap";
-  renderScanTimeline("#bootstrap-timeline", starter || (S.starterPlan ? {steps:S.starterPlan.map(s=>({...s,status:"pending"}))} : null), starterRunning, "Extract, map and verify");
+  renderScanTimeline("#bootstrap-timeline", starter || (S.starterPlan ? {steps:S.starterPlan.map(s=>({...s,status:"pending"}))} : null), starterRunning, starter?.kind === "battle" ? "Battle preparation — saved inventory retained" : "Extract, map and verify");
   const libraryEl=$("#asset-library-summary");
   if (libraryEl) libraryEl.innerHTML=assetLibraryHTML(starter?.assets);
   const basic=basicScanProgress(st);
@@ -1621,20 +1637,32 @@ function calibReport(st){
   else if (calibrationMode(st) === "observe" && $("#calib-timeline")) $("#calib-timeline").innerHTML = "";
   if (S.bootstrapWasRunning && !st.running) renderScanPlan();
   S.bootstrapWasRunning = st.running;
-  if (!st.running && localStorage.getItem('finishFullSetup') &&
+  if (st.running && starter?.kind === 'battle' && !pendingPreparation()) {
+    localStorage.setItem(preparationStorageKey(), JSON.stringify({preset:S.calibrationPreset || S.readiness?.preset || 'bp_coin_default',started:starter.started_at}));
+  }
+  const pending = pendingPreparation();
+  const resumedPreparation = pending && !S.prepareBusy && starter?.started_at >= pending.started - 5;
+  if (resumedPreparation && st.running) preparationMessage('Battle preparation is running. Your earlier scan is saved.');
+  if (resumedPreparation && !st.running && ['error','stopped'].includes(starter?.status)) {
+    preparationMessage('Discoveries saved. Preparation stopped: ' + (starter.message || 'See the latest step.'));
+    localStorage.removeItem(preparationStorageKey());
+  }
+  if (!st.running && (localStorage.getItem('finishFullSetup') || resumedPreparation) &&
       ['done', 'needs_attention'].includes(starter?.status) && !S.finishingSetup) {
     S.finishingSetup = true;
     (async () => {
     try {
       if (st.restore_pending) throw new Error('Restore the saved module setup before completing setup.');
       await post('/api/calibrate/apply', {});
-      const ready = await api('/api/readiness?preset=bp_coin_default');
+      const ready = await api('/api/readiness?preset=' + encodeURIComponent(pending?.preset || 'bp_coin_default'));
       preparationMessage(ready.ready ? 'Setup complete. Open Control and Start farming.' :
         'Scan saved. ' + (ready.message || 'A required control still needs verification.'));
       localStorage.removeItem('finishFullSetup');
+      localStorage.removeItem(preparationStorageKey());
       await loadStatus();
     } catch(e) {
       localStorage.removeItem('finishFullSetup');
+      localStorage.removeItem(preparationStorageKey());
       preparationMessage('Setup could not finish: ' + e.message);
     } finally { S.finishingSetup = false; }
     })();

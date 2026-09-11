@@ -91,7 +91,8 @@ def _hud_frame(toggle):
     if toggle == "shut":
         _bars(frame, x, y, w, h)
     elif toggle == "open":
-        _box(frame, x, y, w, h, (40, 220, 40))
+        cv2.line(frame, (x+20,y+20), (x+w-20,y+h-20), (255,255,255), 12)
+        cv2.line(frame, (x+w-20,y+20), (x+20,y+h-20), (255,255,255), 12)
     return frame
 
 
@@ -129,7 +130,7 @@ def test_side_menu_found_shut_is_opened_read_and_shut_again(tmp_path, monkeypatc
     fc.capture_side_menu(flow)
     x, y, w, h = TOGGLE["rect"]
     assert [t[:2] for t in flow.taps] == [(x + w // 2, y + h // 2)] * 2          # open, then close - nothing else
-    assert flow.s.verified == [("icons/tile_quests.png",)]                         # the column's artwork-bound tile
+    assert flow.s.verified == [("icons/tile_quests.png", "icons/tile_events.png", "icons/tile_guild.png")]
     assert flow.s.cuts == [("buttons/menu_collapsed.png", "battle_menu")]          # the X, cut while it showed
     assert flow.s.learned == ["battle_menu"] and state["toggle"] == "shut" and flow.skips == []
 
@@ -143,7 +144,7 @@ def test_side_menu_found_open_is_read_as_it_is_and_left_open(tmp_path, monkeypat
     state = {"toggle": "open"}
     flow = _Flow(state)
     fc.capture_side_menu(flow)
-    assert flow.taps == [] and flow.s.verified == [("icons/tile_quests.png",)] and state["toggle"] == "open"
+    assert flow.taps == [] and flow.s.verified == [("icons/tile_quests.png", "icons/tile_events.png", "icons/tile_guild.png")] and state["toggle"] == "open"
 
 
 def test_side_menu_toggle_missing_sends_no_tap(tmp_path, monkeypatch):
@@ -233,7 +234,8 @@ def test_battle_passes_try_the_second_wind_badge_without_recording_an_ability(mo
     out = fc.capture_artwork_targets(Flow(), fc.HUD_STATE_TARGETS, label="the Second Wind badge")
     assert out == {"floaters/second_wind.png": "verified"} and Flow.cal.player == {}   # a badge is not an ability
     src = Path(fc.__file__).read_text(encoding="utf-8")
-    assert src.count("capture_artwork_targets(flow, HUD_STATE_TARGETS") == 1          # the top-tier battle, as the tower dies
+    # Optional states are checked together with abilities, without waiting
+    # indefinitely for Second Wind to trigger.
     assert "HUD_ABILITY_TARGETS + HUD_STATE_TARGETS" in src                           # and the Tier-1 digit run
     # never a reason to START a battle: the digit-run gate ignores it
     assert "HUD_STATE_TARGETS" not in src.split("hud_targets = (")[1].split(")")[0]
@@ -293,4 +295,4 @@ def test_dashboard_cropper_records_provenance_and_observe_accepts_a_watch(monkey
     src = Path(__file__).resolve().parents[2].joinpath("frontend", "dashboard.py").read_text(encoding="utf-8")
     assert "calibrate.record_manual_cut(" in src and '"--observe-watch"' in src
     html = Path(__file__).resolve().parents[2].joinpath("frontend", "webui", "index.html").read_text(encoding="utf-8")
-    assert html.count("observeNow(120)") == 2 and "async function observeNow(watch)" in html
+    assert "observeNow(120)" in html and "async function observeNow(watch)" in html

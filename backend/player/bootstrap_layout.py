@@ -2,6 +2,14 @@
 import json
 from functools import lru_cache
 from pathlib import Path
+from contextvars import ContextVar
+
+_display = ContextVar('manifest_display', default=None)
+
+def bind_display(display):
+    """Bind the native display for this worker, never mutate reference data."""
+    from player.geometry import scale_manifest
+    return _display.set((display, scale_manifest(reference_manifest(), display)))
 
 @lru_cache(maxsize=1)
 def reference_manifest():
@@ -12,7 +20,10 @@ def manifest(display=None):
     from copy import deepcopy
     from player.geometry import scale_manifest
     reference = reference_manifest()
-    return scale_manifest(reference, display) if display is not None else deepcopy(reference)
+    if display is not None:
+        return scale_manifest(reference, display)
+    bound = _display.get()
+    return deepcopy(bound[1] if bound is not None else reference)
 
 
 # Preserve callers that explicitly refresh the reference after editing it.

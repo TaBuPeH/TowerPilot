@@ -70,7 +70,10 @@ def read_wave(frame: np.ndarray) -> int | None:
 
 def _read(frame: np.ndarray) -> int | None:
     tpls = _load_templates()
-    gray = cv2.cvtColor(capture.roi(frame, "wave_box"), cv2.COLOR_BGR2GRAY)
+    crop = capture.roi(frame, "wave_box")
+    if crop.size == 0:
+        return None
+    gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
     bw = _binarize(gray)
 
     contours, _ = cv2.findContours(bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

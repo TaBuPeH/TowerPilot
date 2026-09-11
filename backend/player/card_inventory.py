@@ -89,11 +89,28 @@ def page_shift(previous,current):
         _,score,_,point=cv2.minMaxLoc(cv2.matchTemplate(search,tile,cv2.TM_CCOEFF_NORMED))
         dx=x-(point[0]+x0)
         dy=y-(point[1]+y0)
-        if score>.98 and abs(dx)<=3 and 0<=dy<=h0-2*h:
+        # Two agreeing cards can be siblings on one row. Requiring two full
+        # vertical tile heights rejects valid overlap on a shorter viewport.
+        if score>.98 and abs(dx)<=3 and 0<=dy<=h0-h:
             shifts.append(dy)
     if len(shifts)<2 or max(shifts)-min(shifts)>3:
         raise RuntimeError('Card scroll lost verified overlap; a row may have been skipped. Inventory remains incomplete.')
     return int(round(float(np.median(shifts))))
+
+
+def scroll_points(frame, direction, spec):
+    points=list(spec[direction])
+    if direction=='swipe_down':
+        rows=tile_rects(frame)
+        if not rows:
+            raise RuntimeError('No complete card row available to prove the next scroll')
+        # Keep the lowest complete row visible after movement. A fixed swipe
+        # loses it when the viewport currently starts midway through a row.
+        margin=round(spec['tile_height']*.04)
+        available=max(y for x,y,w,h in rows)-spec['viewport'][1]-margin
+        distance=min(points[1]-points[3],max(1,available//2))
+        points[3]=points[1]-distance
+    return points
 
 
 def scan(cal, *, grab=None, swipe=None, read=None, read_label=None, pause=time.sleep, check_stop=lambda:None, progress=lambda message:None, prove=None):
@@ -128,7 +145,7 @@ def scan(cal, *, grab=None, swipe=None, read=None, read_label=None, pause=time.s
         follow=observe()
         if similarity(grid(frame),grid(follow))<.98:
             raise RuntimeError('Card inventory changed before scrolling; retry when stable')
-        swipe(*spec[direction],ms=900,reason='card calibration: scroll inventory only')
+        swipe(*scroll_points(frame,direction,spec),ms=900,reason='card calibration: preserve a complete inventory row')
         pause(.8)
         previous=observe()
         stable_frames=0

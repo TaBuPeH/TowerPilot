@@ -34,60 +34,28 @@ from device import capture
 from runtime import logger
 from vision import pills
 
-COL_X = [126, 329, 533, 736, 939]
-ROW_Y = [1082, 1285, 1488, 1691, 1894, 2097]
-TILE = 150                       # icon box cut around a tile centre
+from player.bootstrap_layout import manifest
 
-# The close X is FOUND, not hardcoded. It rides the panel's top edge, which
-# moves with the rarity line: y=578 for "ANCESTRAL **", y=616 for "EPIC+".
-# A fixed (925,580) tap therefore closed some panels and missed others, and a
-# miss left the panel up for the next tile tap. BACK is not an alternative -
-# on this screen it does not dismiss the panel at all, it only dims it further.
-# The strip has to be generous: the card is vertically centred and its height
-# follows the number of effect rows, so a short panel (few effects) starts at
-# y~755 where a tall one starts at y~526.
-CLOSE_STRIP = (490, 950, 880, 975)     # y0,y1,x0,x1 - where the X can appear
-CLOSE_FALLBACK = (928, 600)
-# Rarity + name, cropped RELATIVE TO THE CLOSE X rather than at fixed y.
-# Nothing about this panel is at a fixed height: the card is vertically centred
-# and grows with its effect list, so its top ranges from y=526 (a long
-# Ancestral) to y=755 (a short Rare), and the rarity line gains a stars row on
-# top of that. The X tracks the card, so offsets from it hold for every variant.
-HEAD_DY = (-30, 190)                   # above/below the X centre
-HEAD_X = (395, 985)
-# Detect the panel by the SCRIM, not by anything inside the panel.
-#
-# Two content-region probes were tried and both failed, for the same reason:
-# THE PANEL LAYOUT MOVES. "ANCESTRAL **" carries a stars line that "EPIC+" does
-# not, so the name, the multiplier line and even the close X sit ~38px apart
-# between two rarities - a fixed flat-patch probe lands on empty card for one
-# module and on body text for the next.
-#
-# The scrim does not move: opening any panel dims the whole screen behind it.
-# Measured on the MODULES header, which no panel ever covers:
-#     154.1 with no panel, 43.0 with either panel type.
-# It also catches modals this routine did not open, which is what makes the
-# "did it actually close?" check trustworthy.
-SCRIM_PROBE = (110, 150, 20, 300)
+
+def configure_geometry():
+    """Use the active native manifest for every inventory search and gesture."""
+    global COL_X, ROW_Y, TILE, CLOSE_STRIP, HEAD_DY, HEAD_X, SCRIM_PROBE
+    global GRID_BAND, GRID_TOUCH, GRID_GAP_Y, PAGE_DRAG, SWIPE_X
+    spec = manifest()['module_inventory']
+    COL_X, ROW_Y = spec['columns'], spec['rows']
+    TILE = spec['tile']
+    CLOSE_STRIP = tuple(spec['close_strip'])
+    HEAD_DY, HEAD_X = tuple(spec['head_dy']), tuple(spec['head_x'])
+    SCRIM_PROBE = tuple(spec['scrim_probe'])
+    GRID_BAND, GRID_TOUCH = tuple(spec['grid_band']), tuple(spec['grid_touch'])
+    GRID_GAP_Y = spec['grid_gap_y']
+    PAGE_DRAG = (*spec['page_drag'], 1500)
+    SWIPE_X = spec['swipe_x']
+
+
+configure_geometry()
 SCRIM_DARK = 90.0
-
-GRID_BAND = (1000, 2260)
-# Where a fling may TOUCH. y=1000 is the Inventory/Merge tab bar, and a swipe
-# that starts on it goes to the bar, not the grid: the "park at the top"
-# fling was swallowed that way and the walk began on the LAST page while
-# labelling it page 0 (BlueStacks, 2026-09-06). Both ends stay on tiles.
-GRID_TOUCH = (1130, 2230)
-# At the top of the list there is a dark gap between the tab bar and the
-# first tile row; scrolled by any amount, the cut-off row touches the bar
-# and fuses with it in the lit-row projection (vision.pills.grid_row_spans).
-GRID_GAP_Y = 1090
-MAX_PAGES = 10
-# One page on: a slow 600 px drag. Measured 2026-09-06 (BlueStacks): 597 px
-# at release, gliding to a settled 794 px (3.9 rows) within ~2 s, so two
-# rows overlap between pages and the previous frame's last rows can still
-# be located to MEASURE the scroll. The old 1100 px / 180 ms fling glided
-# ~9 rows and skipped three rows between pages.
-PAGE_DRAG = (2130, 1530, 1500)          # y from, y to, ms
+MAX_PAGES = 40
 SETTLE_S = 6.0
 PANEL_WAIT = 0.45
 CLOSE_WAIT = 0.35
@@ -113,7 +81,10 @@ def _close_panel(tries: int = 4) -> bool:
         frame = capture.grab()
         if not _panel_open(frame):
             return True
-        act.tap(*(_find_close(frame) or CLOSE_FALLBACK),
+        spot = _find_close(frame)
+        if spot is None:
+            return False
+        act.tap(*spot,
                 "close detail panel", instant=True)
         time.sleep(CLOSE_WAIT)
     return not _panel_open()
@@ -151,7 +122,7 @@ def _same_icon(a, b) -> bool:
 def _fling(y0, y1, ms=180):
     lo, hi = GRID_TOUCH
     y0, y1 = (min(max(int(y), lo), hi) for y in (y0, y1))
-    act.swipe(538, y0, 538, y1, ms, reason="inventory page")
+    act.swipe(SWIPE_X, y0, SWIPE_X, y1, ms, reason="inventory page")
     time.sleep(0.7)
 
 
@@ -220,7 +191,7 @@ def next_page():
     row are normal here - which is why the movement is what decides."""
     prev = settle()
     y0, y1, ms = PAGE_DRAG
-    act.swipe(538, y0, 538, y1, ms, reason="inventory page")
+    act.swipe(SWIPE_X, y0, SWIPE_X, y1, ms, reason="inventory page")
     return scroll_delta(prev, settle())
 
 
