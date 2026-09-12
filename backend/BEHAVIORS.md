@@ -111,7 +111,12 @@ run start - P6), `end_sprint_after_sw` (at the Second Wind close: measured
 must clear it itself).
 
 ### Fleet-mark Nuke (schedule, not emergency)
-Marks at `fleet.first_wave + i*interval`. Fires on the first wave observed
+Marks come from `scheduling/fleets.py`, the per-tier spawn table picked by
+the run's tier (Tier 14: 2495 then every 1000; Tier 18: 95 then every 100;
+Tier 20+: wave 5 then every 10; bonus fleets every 100 from ~10000 on Tier
+14+; Tiers 1-13 from 15000 - 250 per tier). `fleet.by_tier` in config
+overrides a tier; the legacy `fleet.first_wave/interval` pair only applies
+to a preset that names no tier. Fires on the first wave observed
 in `[mark+after_waves, mark+window_waves]` - wave *skips* mean `mark+1` is
 often never displayed. `after_waves: 3` lets the 1/5-speed movers walk into
 the blast (one survived an on-time nuke and killed the run at wave 3516).
