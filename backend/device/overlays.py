@@ -86,6 +86,33 @@ def offending(wins: list[str]) -> tuple[list[str], list[str]]:
     return ads, unknown
 
 
+def game_on_screen(wins: list[str]) -> bool:
+    return any(w.startswith(GAME_PKG) for w in wins)
+
+
+def sweep(serial: str | None = None) -> bool:
+    """One cheap window-list read; dismiss whatever ad is drawn over the game.
+
+    The boot pipeline sweeps once, but MuMu Store draws its fullscreen promo
+    a minute or two AFTER the launcher is up (seen over the game 2026-09-12,
+    the starter scan refused on it while the emulator looked untouched from
+    Windows). So every stage that is about to trust the screen calls this
+    first: a clean list costs one `dumpsys` (~100ms) and returns True at
+    once; an ad goes through clean() - close button, else force-stop, each
+    verified against the window list. An overlay nobody can name stays a
+    refusal (False), never a blind tap. Never raises on adb trouble: the
+    caller's own capture reports that with a better message."""
+    from settings import instance
+    serial = serial or instance()["serial"]
+    try:
+        ads, unknown = offending(windows(serial))
+    except Exception:                       # noqa: BLE001 - adb hiccup
+        return True
+    if not ads and not unknown:
+        return True
+    return clean()
+
+
 def _grab(serial: str):
     """Frame in whatever orientation the screen is in right now.
 

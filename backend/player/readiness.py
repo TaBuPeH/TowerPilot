@@ -93,6 +93,14 @@ def requirements(cfg, body):
     if global_rewards.get('event_missions'):
         need('icons/event_missions_tab.png', 'Event Missions')
     generic = accounts.generic_names()
+    # Controls the game only shows sometimes are ADVISORY: the CLAIM button
+    # (finished quest) and the weekly-chest lock (an unclaimed chest). The
+    # runtime claims quests by shape + OCR, skips the chest pass with a
+    # mission_chests_skipped event while the lock image is missing, and the
+    # quest flow / observe pass cut both later - none of it holds a run
+    # (user, 2026-09-12: "must not lock the run but rather scan for this
+    # from time to time like multiple other optional flows").
+    sometimes = {"buttons/quest_claim.png", "icons/chest_lock.png"}
     for key, names in {
         "ad_gems": ["buttons/ad_gems_claim.png"],
         "free_store_gems": ["icons/premium_store.png", "icons/free_gems.png"],
@@ -103,7 +111,7 @@ def requirements(cfg, body):
     }.items():
         if gather.get(key, key not in ("free_store_gems", "guild_store")):
             for rel in names:
-                need(rel, key.replace("_", " ").capitalize(), blocking=key != 'ad_gems' and rel != 'buttons/quest_claim.png')
+                need(rel, key.replace("_", " ").capitalize(), blocking=key != 'ad_gems' and rel not in sometimes)
     for directive in body.get("shopping") or []:
         if not directive.get("enabled", True):
             continue

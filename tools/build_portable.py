@@ -34,10 +34,13 @@ def build():
         stage = Path(work) / prefix
         stage.mkdir()
         names = subprocess.check_output(['git', 'ls-files', '-z', '--cached', '--others', '--exclude-standard'], cwd=ROOT).decode().split('\0')
+        # The portable tree carries the full source, tests, agent rules and
+        # skills included (0.2-beta), so the extracted folder is also a
+        # working checkout. Only the source launchers are replaced below.
         for name in sorted(set(names)):
             if not name or not allowed(name) or not (ROOT / name).is_file():
                 continue
-            if '/tests/' in name or name in {'Start-TowerPilot.ps1', 'Start Tower Pilot.cmd'}:
+            if name in {'Start-TowerPilot.ps1', 'Start Tower Pilot.cmd'}:
                 continue
             dest = stage / name
             dest.parent.mkdir(parents=True, exist_ok=True)
@@ -63,7 +66,7 @@ def build():
             'Install an emulator and The Tower, then use Setup to install connection tools (internet required).\n'
             'Recommended: 1080x2560 portrait, 360 DPI. Initial scan takes approximately 20-30 minutes.\n'
             'Account data is stored beside the app. Preserve the folder when upgrading.\n'
-            'See docs/RELEASE_0.1_BETA.md for beta limitations.\n')
+            'See docs/RELEASE_0.2_BETA.md for what changed and the beta limitations.\n')
         subprocess.run([str(runtime / 'python.exe'), '-c',
             'import cv2,numpy,yaml,psutil,flask,pystray,PIL,UnityPy; print("Bundled imports OK")'],
             cwd=stage, check=True)

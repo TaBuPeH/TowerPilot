@@ -6,15 +6,28 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 TOP = {'VERSION', 'LICENSE', 'README.md', 'requirements.txt', 'requirements-dev.txt', 'requirements-portable.lock',
-       'pytest.ini', 'Start Tower Pilot.cmd', 'Start-TowerPilot.ps1', '.gitignore'}
+       'pytest.ini', 'Start Tower Pilot.cmd', 'Start-TowerPilot.ps1', '.gitignore', '.gitattributes',
+       # agent rules and skills ship with the source (0.2-beta): CLAUDE.md is
+       # the rule book, AGENTS.md points Codex and others at it
+       'CLAUDE.md', 'AGENTS.md'}
 DOCS = {'README.md', 'ACCOUNT_SETUP.md', 'BLUESTACKS.md', 'GLOBAL_REWARDS.md',
-        'RUN_TEMPLATES.md', 'RELEASE_0.1_BETA.md', 'RUNTIME_GEOMETRY.md', 'PORTABLE_BUILD.md'}
+        'RUN_TEMPLATES.md', 'RELEASE_0.1_BETA.md', 'RELEASE_0.2_BETA.md', 'RUNTIME_GEOMETRY.md',
+        'PORTABLE_BUILD.md'}
+# Whole folders that ship as they are: the Claude Code skills, agents, hooks
+# and workflow helpers, the project-local Codex config, the release workflow.
+# Personal files never do: .claude/settings.local.json is a per-machine
+# permission list and is excluded by name.
+AGENT_DIRS = {'.claude', '.codex', '.github'}
+AGENT_EXCLUDE = {'.claude/settings.local.json'}
 
 
 def allowed(name):
     p = Path(name)
     if name in TOP:
         return True
+    if p.parts[0] in AGENT_DIRS:
+        return (name not in AGENT_EXCLUDE and len(p.parts) > 1
+                and p.suffix in {'.md', '.json', '.js', '.cjs', '.ps1', '.toml', '.yml', '.yaml', '.txt'})
     if p.parts[0] == 'docs':
         return len(p.parts) == 2 and p.name in DOCS
     if name in {'backend/config.example.yaml', 'backend/profiles/default.yaml',

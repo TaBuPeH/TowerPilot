@@ -27,6 +27,7 @@ import psutil
 import settings
 from settings import CONFIG
 from device import capture
+from device import overlays
 from vision import wave_reader
 from vision import detect
 from runtime import logger
@@ -165,6 +166,7 @@ class RunState:
         self.menu_logged = False      # edge-log for leaving the battle screen
         self.off_battle_since = 0.0   # when we left the battle screen
         self.recover_try = 0.0        # throttle for stuck-popup recovery taps
+        self.overlay_sweep_at = 0.0   # throttle for the ad-overlay window check
         self.sprint_end_try = 0.0     # throttle for end-intro-sprint attempts
         self.sprint_ended = False     # the sprint has been ended this run
         self.bot_left_battle = False  # WE navigated off the battle screen
@@ -2279,6 +2281,26 @@ def main():
                 # name is what makes the recovery below safe, and it turns an
                 # off_battle log line into something diagnosable.
                 sc = screen.identify(frame)
+                if sc.name == "unknown" and now - rs.overlay_sweep_at > 60:
+                    # A screen we cannot name may be the game under an
+                    # emulator ad (MuMu Store's promo draws ABOVE the game,
+                    # 2026-09-12). The window list is evidence, not a guess:
+                    # a known ad owner is closed/force-stopped through
+                    # overlays.clean - no input reaches the game, so this is
+                    # not a tap into an unknown screen - and anything else
+                    # is only logged. Once a minute at most.
+                    rs.overlay_sweep_at = now
+                    try:
+                        ads, unknown = overlays.offending(
+                            overlays.windows(settings.instance()["serial"]))
+                    except Exception as e:      # noqa: BLE001 - adb hiccup
+                        ads, unknown = [], []
+                        logger.event("overlay_check_failed", error=str(e)[:120])
+                    if ads or unknown:
+                        logger.event("overlay_over_game", ads=ads, unknown=unknown)
+                        if ads and overlays.clean():
+                            rs.menu_logged = False   # re-identify on the next frame
+                            continue
                 if sc.name == "tournament_stats":
                     # THE TOURNAMENT'S DEATH SCREEN. A tournament run does not
                     # end on GAME STATS/RETRY - it ends on this dialog, which

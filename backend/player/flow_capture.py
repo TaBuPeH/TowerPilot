@@ -138,10 +138,17 @@ class _Flow:
     def progress(self, message, **extra):
         self.s.progress(message, **extra)
 
-    def skip(self, target, reason):
-        self.s.skipped.append({"target": target, "reason": reason})
+    def skip(self, target, reason, *, optional=False):
+        """Record a capture that did not happen. `optional` marks a target the
+        game only shows sometimes (a CLAIM button with no finished quest): it
+        is listed for the person but never turns the scan into needs_attention,
+        and a runner captures it later when the screen shows it."""
+        entry = {"target": target, "reason": reason}
+        if optional:
+            entry["optional"] = True
+        self.s.skipped.append(entry)
         from runtime import logger
-        logger.event("flow_skip", target=target, reason=reason)
+        logger.event("flow_skip", target=target, reason=reason, optional=optional)
 
     # -- guards
     def frame(self):
@@ -197,16 +204,19 @@ class _Flow:
                               lambda c, s: _read(c, s), scale=scale, cutoff=cutoff)
 
     def capture(self, rel, text, region, size, *, name=None, anchor=(0.12, 0.30),
-                frame=None, extra=None):
+                frame=None, extra=None, optional=False):
         """Find `text` in `region`, cut a `size` template around it, verify and
         write it through Calibration.cut (bootstrap allowlist). Returns the
-        cut entry dict, or None when the text is not on screen / not verified."""
+        cut entry dict, or None when the text is not on screen / not verified.
+        `optional`: the text is only on screen sometimes (see skip)."""
         from player import battle_capture as bc
         frame = self.grab() if frame is None else frame
         crop = bc.capture_by_text(frame, text, region, size,
                                   lambda c, s: _read(c, s), anchor=anchor)
         if crop is None:
-            self.skip(rel, f"'{text}' not visible where expected")
+            self.skip(rel, f"'{text}' not visible where expected"
+                      + (" (only shown while something is claimable)" if optional else ""),
+                      optional=optional)
             return None
         entry = self.cal.cut("bootstrap", rel, crop, frame, name or text,
                              dict(extra or {}, source="flow_ocr"))
@@ -1617,12 +1627,19 @@ def observe_optional_effects(flow, seconds=90):
 
 # ---------------------------------------------------------------- menu extras
 
+# Controls the game only draws while something is claimable: their absence
+# is not a failed capture. The runtime finds them by shape + OCR and cuts the
+# image itself when it claims one (missions.learn_claim_template).
+OPTIONAL_MENU_TARGETS = frozenset({"buttons/quest_claim.png"})
+
+
 def _menu_capture(flow: _Flow, targets):
     """Capture each (rel, text, size, anchor) currently visible; skip the rest.
     Never taps - only reads whatever menu the caller already navigated to."""
     frame = flow.grab()
     for rel, text, size, anchor in targets:
-        flow.capture(rel, text, R_FULL, size, frame=frame, anchor=anchor)
+        flow.capture(rel, text, R_FULL, size, frame=frame, anchor=anchor,
+                     optional=rel in OPTIONAL_MENU_TARGETS)
 
 
 def capture_menu_extras(flow: _Flow) -> None:

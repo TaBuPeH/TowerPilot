@@ -1543,7 +1543,7 @@ function scanTimelineHTML(record, running=false, title="Scan progress"){
       return `<li class="scan-step-${status}" data-step="${esc(step.id || i)}" ${status === "running" ? 'aria-current="step"' : ""} title="${esc(step.message || step.label)}"><span class="scan-dot" aria-hidden="true">${symbols[status]}</span><b>${esc(step.label)}</b><small>${labels[status]}${elapsed(step)}</small></li>`;
     }).join("")}</ol>
     ${history.length ? `<details open><summary>Activity history (${history.length})</summary><ol class="scan-history" reversed>${[...history].reverse().map(e=>`<li><time>${esc(clock(e.at))}</time>${esc(e.message)}</li>`).join("")}</ol></details>` : ""}
-    ${record.skipped?.length ? `<details open><summary>Skipped captures and menus (${record.skipped.length})</summary><ul>${record.skipped.map(e=>`<li>${esc(e.screen || e.target)}: ${esc(e.reason)}</li>`).join("")}</ul></details>` : ""}
+    ${record.skipped?.length ? `<details open><summary>Skipped captures and menus (${record.skipped.length})</summary><ul>${record.skipped.map(e=>`<li>${esc(e.screen || e.target)}: ${esc(e.reason)}${e.optional ? ' <span class="muted">(optional - captured during play when it appears)</span>' : ""}</li>`).join("")}</ul></details>` : ""}
   </section>`;
 }
 function renderScanTimeline(selector, record, running, title){
@@ -1627,7 +1627,7 @@ function calibReport(st){
   const savedCount=(st.state?.entries || []).filter(e=>e.verified).length;
   const savedSummary=`Saved discoveries: ${savedCards} cards · ${savedModules} modules · ${savedCount} verified images. Refreshing keeps these results.`;
   const starterEl = $("#bootstrap-progress");
-  if (starterEl && starter) starterEl.textContent = `${savedSummary} ${starter.kind === "battle" ? "Battle preparation: " : "Current scan: "}${starter.completed || 0}/${starter.total || 1} steps - ${starter.status}: ${starter.message || ""}${starter.skipped?.length ? ` ${starter.skipped.length} captures or menus need another pass.` : ""}`;
+  if (starterEl && starter) starterEl.textContent = `${savedSummary} ${starter.kind === "battle" ? "Battle preparation: " : "Current scan: "}${starter.completed || 0}/${starter.total || 1} steps - ${starter.status}: ${starter.message || ""}${starter.skipped?.filter(s=>!s.optional).length ? ` ${starter.skipped.filter(s=>!s.optional).length} captures or menus need another pass.` : ""}`;
   const starterRunning=st.running && calibrationMode(st) === "bootstrap";
   renderScanTimeline("#bootstrap-timeline", starter || (S.starterPlan ? {steps:S.starterPlan.map(s=>({...s,status:"pending"}))} : null), starterRunning, starter?.kind === "battle" ? "Battle preparation — saved inventory retained" : "Extract, map and verify");
   const libraryEl=$("#asset-library-summary");

@@ -188,9 +188,24 @@ def preflight():
     expected = manifest()['layout']
     if (frame.shape[1], frame.shape[0], dpi) != (expected['width'], expected['height'], expected['dpi']):
         raise RuntimeError('Display changed during setup; restart the scan for the new layout')
+    # Emulator ads are dismissed on evidence, not refused: MuMu Store's
+    # fullscreen promo (an APPLICATION_OVERLAY over the game, 2026-09-12)
+    # appears a minute or two after boot, well after boot.py's own sweep.
+    # clean() closes or force-stops every KNOWN ad owner and verifies it
+    # against the window list; an overlay it cannot name is still refused
+    # by name so the person knows what to close (hard rule 7).
     wins = overlays.windows(inst["serial"])
-    if not any(w.startswith(overlays.GAME_PKG) for w in wins) or any(overlays.offending(wins)):
-        raise RuntimeError("The game must be visible with no other app or overlay covering it")
+    ads, unknown = overlays.offending(wins)
+    if ads or unknown:
+        cleaned = overlays.clean()
+        wins = overlays.windows(inst["serial"])
+        ads, unknown = overlays.offending(wins)
+        if not cleaned or ads or unknown:
+            names = ", ".join(sorted(set(ads + unknown))) or "unknown window"
+            raise RuntimeError("The game must be visible with no other app or overlay "
+                               f"covering it (still on screen: {names})")
+    if not overlays.game_on_screen(wins):
+        raise RuntimeError("The Tower is not running in the emulator; open the game on Home first")
     from player import accounts
     if (accounts.calibration_dir(settings.ROOT, settings.CONFIG) / "module_restore.json").exists():
         raise RuntimeError("Restore the saved module setup before a starter scan")
@@ -200,14 +215,18 @@ def preflight():
 
 class Scanner:
     def __init__(self, cal, state, grab=None, tap=None, read=None, pause=None,
-                 flows=False, battle_only=False):
-        from device import capture, act
+                 flows=False, battle_only=False, sweep=None):
+        from device import capture, act, overlays
         from vision import textocr
         self.cal, self.state = cal, state
         previous = state.get('phases', {}).get('bootstrap')
         if previous:
             state['scan_history'] = (state.get('scan_history', []) + [previous])[-8:]
         self.grab, self.tap = grab or capture.grab, tap or act.tap
+        # Ad overlays are swept before each stage that trusts the screen
+        # (overlays.sweep). A scanner built on an injected frame source has
+        # no emulator to sweep, so it gets a no-op unless a sweep is injected.
+        self.sweep = sweep or (overlays.sweep if grab is None else (lambda: True))
         self.read, self.pause = read or (lambda f: textocr.read_lines(f, 1)), pause or time.sleep
         self.current = "home"
         self.visited = set()
@@ -246,6 +265,15 @@ class Scanner:
     def begin_step(self, index):
         self.active_step = index
         self.steps[index].update(status="running", started_at=time.time())
+        # Each stage starts on a screen nothing else is drawn over. An ad an
+        # emulator pops mid-scan (MuMu Store, 2026-09-12) is killed here on
+        # evidence; one nobody can name stops the scan by name, no blind tap.
+        if not self.sweep():
+            from device import overlays
+            import settings
+            ads, unknown = overlays.offending(overlays.windows(settings.instance()["serial"]))
+            names = ", ".join(sorted(set(ads + unknown))) or "unknown window"
+            raise RuntimeError(f"An overlay is covering the game and could not be dismissed: {names}")
 
     def finish_step(self, status="done", message=None):
         step = self.steps[self.active_step]
@@ -588,13 +616,16 @@ class Scanner:
         _merge_draft(self.cal.player)
         self.finish_step(message="Returned to Home; discoveries saved")
         attention = sum(not e.get("verified") for e in self.cal.entries)
+        # optional skips (a CLAIM button no finished quest shows) are listed,
+        # never a reason to hold the scan in needs_attention
+        skipped = [s for s in self.skipped if not s.get("optional")]
         incomplete = [name for name,row in self.state.get('screen_map',{}).items() if row['status']!='verified']
         tail = ("" if self.flows
                 else " Battle and rare-dialog captures remain separate.")
         if incomplete:
             tail += " Incomplete screen maps: " + ', '.join(incomplete) + "."
         self.progress(f"Starter scan finished on Home. {len(self.visited)} screens checked.{tail}",
-                      "needs_attention" if attention or self.skipped or incomplete else "done", screens=sorted(self.visited), needs_attention=attention)
+                      "needs_attention" if attention or skipped or incomplete else "done", screens=sorted(self.visited), needs_attention=attention)
 
     def learned_cuts(self, screen, frame, follow):
         """Cut every target the learned manifest places on `screen` that is
@@ -656,6 +687,14 @@ class Scanner:
         flow = flow_capture._Flow(self)
         if self.battle_only:
             import settings
+            # The mission controls are OPTIONAL to this pass: the runtime
+            # claims quests by the button's shape and OCR, never by this
+            # image, and CLAIM is only on screen while a quest is finished.
+            # So a missing mission route or an absent CLAIM is recorded and
+            # the battle preparation goes on; missions.quest_flow cuts the
+            # image itself the next time it claims one (user, 2026-09-12:
+            # "must not lock the run but rather scan for this from time to
+            # time like multiple other optional flows").
             if not settings.template_path('icons/chest_lock.png').exists() or not settings.template_path('buttons/quest_claim.png').exists():
                 from player.mapping_session import Session
                 from player.manifest_driver import transitions
@@ -665,9 +704,16 @@ class Scanner:
                         continue
                     self.progress('Checking missing mission controls')
                     if not session.driver.step(edge):
-                        raise RuntimeError('Could not verify the mission screen route; no further taps')
+                        flow.skip('buttons/quest_claim.png', 'Could not verify the mission screen route; '
+                                  'captured by the quest flow when a quest is claimable', optional=True)
+                        logger.event('flow_menu_error', error='mission screen route not verified', optional=True)
+                        flow_capture._safe_home(flow)
+                        break
                     if edge['destination'] == 'daily_missions':
-                        flow.capture('buttons/quest_claim.png','CLAIM',flow_capture.R_FULL,(160,50))
+                        entry = flow.capture('buttons/quest_claim.png','CLAIM',flow_capture.R_FULL,(160,50))
+                        if entry is None and self.skipped and self.skipped[-1].get('target') == 'buttons/quest_claim.png':
+                            self.skipped[-1].update(optional=True, reason='No finished quest shows CLAIM right now; '
+                                                    'captured by the quest flow when one is claimable')
         if not self.battle_only:
             self.begin_step(self.step_index("flow_menus"))
             self.progress("Capturing event, store and guild controls")

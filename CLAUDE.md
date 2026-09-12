@@ -47,6 +47,11 @@ portrait at 360 dpi.
    UW label from the panel it already has open. It writes account-local,
    git-ignored templates through the sanctioned writer, MISSING targets only,
    and NEVER replaces a file - a near-free no-op once every UW is known.
+   Its twin is `missions.learn_claim_template`: the quest CLAIM button only
+   exists while a quest is finished, so setup treats it as optional (never
+   needs_attention, never a blocked run) and the quest flow cuts it from the
+   button it is about to tap - same writer, same MISSING-only, never-replace
+   rules.
 7. **An Abort means the screen was not what the code expected.** Stop and
    log; never blind-tap into an unknown screen.
 8. **Machine and account state stay out of git**: `backend/config.yaml`,
@@ -60,7 +65,30 @@ portrait at 360 dpi.
    per install. The compiler regression fixture is
    `backend/tests/fixtures/golden_profile.yaml`.
 
+## Skill & Knowledge Trigger Map
+
+Skills live in `.claude/skills/`; the full trigger table is
+`.claude/skills/trigger-map.md` - match your task against it and load every
+matching skill (Skill tool) BEFORE writing code. Non-negotiable minimum:
+`verify-never-infer` before reporting any factual claim about code, data or
+process state (sub-agents must be told to load it explicitly - skills do not
+inherit). After a context compaction the hooks in `.claude/settings.json`
+BLOCK edits until previously loaded skills are reloaded - follow the injected
+reload list. Codex and other agents: `AGENTS.md` points here; the same rules
+and skills apply.
+
 ## Ops knowledge
+
+- Emulator ads are handled by EVIDENCE, never by vision: `device/overlays.py`
+  reads `dumpsys window windows`, dismisses known ad owners (`AD_PACKAGES`,
+  close button then `am force-stop`) and refuses unknown windows by name.
+  MuMu Store draws its fullscreen promo a minute or two AFTER boot, so every
+  stage that trusts the screen sweeps first: `overlays.sweep` runs in
+  `bootstrap.preflight`, before every scanner step, in `scan.py`, `boot.py`,
+  and once a minute from the orchestrator when the screen reads `unknown`.
+  Killing an ad process sends no input to the game, so it is not a tap into
+  an unknown screen. A new emulator's ad package earns its `AD_PACKAGES` row
+  from an `overlay_unknown` / `overlay_over_game` event.
 
 - Bound accounts keep calibration under `backend/accounts/<id>/calibration/`
   (git-ignored), separate for each emulator connection. Use `settings.template_path`

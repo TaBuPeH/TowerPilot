@@ -134,6 +134,38 @@ def find_claim(frame):
     return points[0] if points else None
 
 
+CLAIM_TEMPLATE = "buttons/quest_claim.png"
+CLAIM_SIZE = (160, 50)              # scan_targets.json reference_size
+
+
+def learn_claim_template(frame, point) -> bool:
+    """Runner-side opportunistic writer for the quest CLAIM image, the twin
+    of flow_capture.capture_missing_uw_labels: setup can only cut CLAIM
+    while a quest happens to be finished, so instead of holding a scan on
+    that lottery the quest flow cuts it from the button it is about to tap
+    (located by shape and verified by OCR in event_rewards.claim_buttons).
+    Written through the sanctioned writer, MISSING target only, NEVER
+    replacing a file (CLAUDE.md rule 6). One disk stat once it exists."""
+    import settings
+    from player import battle_capture as bc
+    try:
+        if settings.template_path(CLAIM_TEMPLATE).exists():
+            return False
+    except (OSError, KeyError, ValueError):
+        return False
+    w, h = CLAIM_SIZE
+    x = max(0, min(frame.shape[1] - w, int(point[0]) - w // 2))
+    y = max(0, min(frame.shape[0] - h, int(point[1]) - h // 2))
+    crop = frame[y:y + h, x:x + w].copy()
+    if crop.size == 0 or float(crop.std()) < 2:
+        return False
+    if bc.write_template(CLAIM_TEMPLATE, crop) != "written":
+        return False
+    logger.event("quest_claim_captured", rel=CLAIM_TEMPLATE, via="run_subroutine",
+                 x=x, y=y, w=w, h=h)
+    return True
+
+
 def find_skip(frame):
     """SKIP pill on the reward listing: cyan-bordered button, upper right.
 
@@ -431,6 +463,7 @@ def quest_flow():
             frame = yield
             continue
         previous_page = None
+        learn_claim_template(frame, pt)     # the image setup could not cut without a finished quest
         _tap(*pt, "quest_claim", instant=True)
         claimed += 1
         frame = yield

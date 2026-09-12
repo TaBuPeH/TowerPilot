@@ -1,0 +1,8 @@
+# Project-local Codex configuration - merged with ~/.codex/config.toml at
+# runtime. Rules for every agent are in AGENTS.md (which points to CLAUDE.md);
+# skills are under .claude/skills/. Nothing here carries secrets or machine
+# state: personal settings stay in the user-level config.
+
+# Codex reads AGENTS.md from the project root by default. Keep the project's
+# own instruction file as the single source of truth.
+project_doc_max_bytes = 65536
