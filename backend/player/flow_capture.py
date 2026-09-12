@@ -1101,6 +1101,37 @@ def capture_missing_uw_labels(frame) -> list[str]:
     return written
 
 
+def capture_missing_end_round(frame) -> bool:
+    """Runner-side opportunistic capture of the side menu's END ROUND button.
+
+    detect.side_menu_open PROVES the menu is open by this button (EXIT BATTLE
+    on low tiers, END ROUND on high ones), and every reward flow - the 8h
+    quests, guild, event missions - waits for that proof. Full setup only cuts
+    END ROUND on the tier it surrendered its own run at; an account farming
+    a higher tier than setup saw never has it, the menu never reads open, and
+    the quest flow never runs (tier-14 farm, 2026-09-12). Same rules as
+    capture_missing_uw_labels: sanctioned writer, MISSING target only, never
+    replaces a file; one disk stat once it exists. The caller rate-limits the
+    OCR."""
+    rel = "buttons/end_round.png"
+    import settings
+    from player import battle_capture as bc
+    from runtime import logger
+    try:
+        if settings.template_path(rel).exists():
+            return False
+    except (OSError, KeyError, ValueError):
+        return False
+    crop = bc.capture_by_text(frame, "END ROUND", R_EXIT_BTN, (154, 45),
+                              lambda c, s: _read(c, s), anchor=(0.1, 0.2))
+    if crop is None:
+        return False
+    if bc.write_template(rel, crop) != "written":
+        return False
+    logger.event("end_round_captured", rel=rel, via="run_subroutine")
+    return True
+
+
 # no grant by this wave -> the run's perk roll is spent; reroll for a fresh one
 # (flows/quest_sm.py RESTART_AT_WAVE, user-tuned 2026-08-16).
 UW_REROLL_WAVE = 1000

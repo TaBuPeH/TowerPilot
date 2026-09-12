@@ -167,6 +167,7 @@ class RunState:
         self.off_battle_since = 0.0   # when we left the battle screen
         self.recover_try = 0.0        # throttle for stuck-popup recovery taps
         self.overlay_sweep_at = 0.0   # throttle for the ad-overlay window check
+        self.end_round_learn_at = 0.0 # throttle for learning the END ROUND image
         self.sprint_end_try = 0.0     # throttle for end-intro-sprint attempts
         self.sprint_ended = False     # the sprint has been ended this run
         self.bot_left_battle = False  # WE navigated off the battle screen
@@ -2447,6 +2448,18 @@ def main():
                              ("quests_8h", "quest_rewards", "guild", "free_store_gems"))
             _want_menu = _want_menu or any(_global.values())
             _menu_open = detect.side_menu_open(frame)
+            if not _menu_open and _want_menu and now - rs.end_round_learn_at > 10:
+                # "menu open" is proven by the exit button image; on a tier
+                # above the one setup surrendered at that image (END ROUND)
+                # is missing and the menu could never read open. Learn it from
+                # the menu itself (one OCR every 10 s, missing target only).
+                rs.end_round_learn_at = now
+                try:
+                    from player import flow_capture
+                    if flow_capture.capture_missing_end_round(frame):
+                        _menu_open = detect.side_menu_open(frame)
+                except Exception as e:          # noqa: BLE001 - best effort
+                    logger.event("end_round_learn_error", error=str(e)[:150])
             if not _menu_open and not _want_menu:
                 rs.menu_open_frames = 0
             elif not _menu_open:
