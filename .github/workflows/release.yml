@@ -24,7 +24,9 @@ jobs:
         run: |
           $tag = "v$((Get-Content VERSION -Raw).Trim())"
           if ($env:GITHUB_REF_TYPE -eq 'tag' -and $tag -ne $env:GITHUB_REF_NAME) { throw 'Tag and VERSION differ' }
-          git fetch origin "refs/tags/${tag}:refs/tags/${tag}"
+          # --force: on a tag push the checkout already holds the tag and a
+          # plain fetch of an annotated tag is rejected as "would clobber"
+          git fetch --force origin "refs/tags/${tag}:refs/tags/${tag}"
           if ($LASTEXITCODE -ne 0) { throw 'Release tag does not exist' }
           git checkout --detach $tag
           if ($LASTEXITCODE -ne 0) { throw 'Cannot check out release tag' }
@@ -45,5 +47,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $assets = Get-ChildItem dist -File | Where-Object { $_.Name -match '\.zip(\.sha256)?$' } | ForEach-Object { $_.FullName }
-          gh release create $env:RELEASE_TAG @assets --verify-tag --prerelease --title "Tower Pilot $((Get-Content VERSION -Raw).Trim())" --notes-file docs/GITHUB_RELEASE.md
+          # A tag push and a master push can both build the same version:
+          # the first run creates the release, a later one refreshes its assets.
+          gh release view $env:RELEASE_TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            gh release upload $env:RELEASE_TAG @assets --clobber
+          } else {
+            gh release create $env:RELEASE_TAG @assets --verify-tag --prerelease --title "Tower Pilot $((Get-Content VERSION -Raw).Trim())" --notes-file docs/GITHUB_RELEASE.md
+          }
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
