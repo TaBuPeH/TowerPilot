@@ -61,9 +61,16 @@ rois:
   cash_box: [30, 34, 320, 60]
   wave_progress: [566, 1734, 482, 25]
   field: [0, 300, 1080, 1330]
-# Fleet waves: 2495 + k*1000. Chain Lightning choreography and the fleet Nuke
-# key off these marks.
-fleet: {first_wave: 2495, interval: 1000, hold_window: 100, post_window: 150}
+# Fleet timetable: built into scheduling/fleets.py PER TIER (Tower Hub / the
+# community wiki, 2026-07; Tier 14 = 2495 then every 1000, Tier 18 = 95 then
+# every 100, Tier 20+ = wave 5 then every 10, bonus fleets from ~10000 on
+# Tier 14+) and picked by the run's tier automatically. The fleet Nuke, the
+# Chain Lightning choreography and the shard loop all key off it.
+#   by_tier: override one tier when the game changes, e.g.
+#            by_tier: {14: {first_wave: 2495, interval: 1000}}
+#   first_wave / interval (no tier): the legacy single schedule, used only
+#            when a preset names no tier at all.
+fleet: {hold_window: 100, post_window: 150, by_tier: {}}
 # dry_run true = every tap is logged but never sent (the strongest read-only
 # rail, independent of allow_taps).
 loop: {fps: 2, dry_run: false}

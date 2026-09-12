@@ -101,9 +101,25 @@ def store_gems_mark_claimed():
     logger.event("store_gems_claimed", schedule='01:00 UTC +/-10 minutes')
 
 
+def run_tier() -> int | None:
+    """The tier this run is on, from the compiled preset (the blueprint's
+    `tier`, the one shard.set_tier dialled in before BATTLE). None for a
+    legacy preset that names no tier."""
+    try:
+        t = preset().get("tier")
+    except Exception:                       # noqa: BLE001 - no preset bound
+        return None
+    return int(t) if t else None
+
+
 def marks():
-    f = CONFIG["fleet"]
-    return [f["first_wave"] + i * f["interval"] for i in range(20)]
+    """Fleet spawn waves for THIS run's tier (scheduling.fleets: the per-tier
+    table, a config override, or the legacy single schedule when the preset
+    names no tier). Every fleet consumer - the fleet_mark rule, the
+    proactive Nuke in both loops, the Chain Lightning choreography and the
+    danger-window shots - reads this one list."""
+    from scheduling import fleets
+    return fleets.marks(run_tier(), CONFIG)
 
 
 # consecutive badge-free frames before the Second Wind window counts as closed.
@@ -2148,6 +2164,14 @@ def main():
     period = 1.0 / CONFIG["loop"]["fps"]
     logger.event("start", instance=CONFIG["active_instance"],
                  preset=CONFIG["preset"], dry_run=CONFIG["loop"]["dry_run"])
+    # Which fleet timetable this run keys off - per tier, so a reader can
+    # tell a T14 (2495 + 1000k) run from a T18 (95 + 100k) one in the log.
+    from scheduling import fleets
+    _sched = fleets.schedule(run_tier(), CONFIG)
+    logger.event("fleet_schedule", tier=run_tier(),
+                 **({k: _sched[k] for k in ("first_wave", "interval", "fleets_per_spawn",
+                                            "bonus_first_wave", "bonus_interval", "source")}
+                    if _sched else {"source": "none"}))
 
     # ---- STARTUP ATTESTATION. A compiled blueprint is invisible in the log
     # otherwise: bp_coin_default from yesterday's YAML and from today's read
