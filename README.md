@@ -1,12 +1,12 @@
 # Tower Pilot
 
-**0.2-beta — Windows x64 portable release.** Download the `windows-x64` ZIP,
+**0.3-beta — Windows x64 portable release.** Download the `windows-x64` ZIP,
 extract the whole folder, and double-click **Start Tower Pilot.cmd**. Python and
 dependencies are bundled; no separate Python installation is needed. The browser
 opens Setup automatically. The separate `source` ZIP requires Python 3.12.
-See [what changed and the beta limits](docs/RELEASE_0.2_BETA.md).
+See [what changed and the beta limits](docs/RELEASE_0.3_BETA.md).
 
-[Download 0.2-beta](https://github.com/TaBuPeH/TowerPilot/releases/tag/v0.2-beta)
+[Download 0.3-beta](https://github.com/TaBuPeH/TowerPilot/releases/tag/v0.3-beta)
 — choose **windows-x64.zip** for the app with Python included, or **source.zip**
 for development. Both now carry the full source, the agent rule book
 (`CLAUDE.md`, `AGENTS.md`) and the `.claude/` skills and hooks.
