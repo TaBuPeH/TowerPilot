@@ -1,14 +1,14 @@
 ## Recommended: Windows portable app
 
-Download **TowerPilot-0.2-beta-windows-x64.zip** below. Extract the whole ZIP into
+Download **TowerPilot-0.3-beta-windows-x64.zip** below. Extract the whole ZIP into
 a writable folder and double-click **Start Tower Pilot.cmd**. Your browser opens
 Setup. Python and dependencies are included—no Python installation or terminal
 commands are required. Keep the launcher window open while using the app.
 
 ## Source distribution / developers
 
-Download **TowerPilot-0.2-beta-source.zip** below, or clone the repository and
-check out `v0.2-beta`. Install Python 3.12, then double-click **Start Tower
+Download **TowerPilot-0.3-beta-source.zip** below, or clone the repository and
+check out `v0.3-beta`. Install Python 3.12, then double-click **Start Tower
 Pilot.cmd**; the source launcher creates its environment and installs dependencies.
 Alternatively run `py -3.12 -m pip install -r requirements.txt`, then
 `py -3.12 frontend/dashboard.py` and open http://127.0.0.1:8620/ui/index.html#setup.
