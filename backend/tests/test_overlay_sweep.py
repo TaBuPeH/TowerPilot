@@ -214,6 +214,31 @@ def test_quest_flow_learns_the_claim_image_it_taps_missing_only(tmp_path, monkey
     assert len(written) == 1
 
 
+def test_runner_learns_end_round_from_the_open_menu_missing_only(tmp_path, monkeypatch):
+    import settings
+    from player import battle_capture as bc
+    from runtime import logger
+    events, written, asked = [], [], []
+    monkeypatch.setattr(logger, "event", lambda kind, **kw: events.append(kind))
+    target = tmp_path / "buttons" / "end_round.png"
+    monkeypatch.setattr(settings, "template_path", lambda rel, **k: target)
+    frame = np.random.default_rng(4).integers(0, 255, (2560, 1080, 3), np.uint8)
+    monkeypatch.setattr(bc, "capture_by_text",
+                        lambda f, text, region, size, read, **k: asked.append((text, region, size)) or frame[:45, :154].copy())
+    monkeypatch.setattr(bc, "write_template", lambda rel, crop, **k: written.append(rel) or "written")
+    assert fc.capture_missing_end_round(frame) is True
+    assert asked == [("END ROUND", fc.R_EXIT_BTN, (154, 45))] and written == ["buttons/end_round.png"]
+    assert "end_round_captured" in events
+    target.parent.mkdir(parents=True)
+    target.write_bytes(b"png")
+    assert fc.capture_missing_end_round(frame) is False      # on disk: one stat, no OCR
+    assert len(asked) == 1
+    target.unlink()
+    monkeypatch.setattr(bc, "capture_by_text", lambda *a, **k: None)
+    assert fc.capture_missing_end_round(frame) is False      # menu shut: nothing written
+    assert written == ["buttons/end_round.png"]
+
+
 def test_sometimes_visible_quest_controls_never_block_a_run():
     from player import readiness
     rows = {tuple(r["alternatives"]): r for r in readiness.requirements(
