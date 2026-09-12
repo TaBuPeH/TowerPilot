@@ -47,6 +47,10 @@ portrait at 360 dpi.
    UW label from the panel it already has open. It writes account-local,
    git-ignored templates through the sanctioned writer, MISSING targets only,
    and NEVER replaces a file - a near-free no-op once every UW is known.
+   `flow_capture.capture_missing_end_round` is the same for the side menu's
+   END ROUND button (setup cuts it only on the tier it surrendered at; the
+   orchestrator learns it from the open menu so the menu can read open and
+   the reward flows run on any tier).
    Its twin is `missions.learn_claim_template`: the quest CLAIM button only
    exists while a quest is finished, so setup treats it as optional (never
    needs_attention, never a blocked run) and the quest flow cuts it from the

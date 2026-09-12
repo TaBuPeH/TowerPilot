@@ -30,6 +30,15 @@ Choose your own farming tier and equipment after mapping.
   a mission-screen route it could not verify. The quest flow cuts the image
   itself the next time it claims a quest (missing target only, never
   replacing a file), the same way Ultimate Weapon labels are learned during play.
+- **END ROUND is learned during play.** The side menu only reads "open" once
+  its exit button image exists, and setup cuts END ROUND only on the tier it
+  surrendered its own run at. A farm on a higher tier never had it, so the
+  8h quest, guild and event flows never ran. The runner now cuts it from the
+  open menu itself (one OCR every 10 seconds while missing), verified live on a
+  tier 14 farm: END ROUND, then the quest visit, then CLAIM, all learned in
+  under a minute.
+- **No captured image ever ships.** Every image comes from your own game on
+  your own machine; the packages carry the scan and learner code only.
 - **Full source in every package.** Both ZIPs now carry the tests, the agent
   rule book (`CLAUDE.md`, `AGENTS.md`), the `.claude/` skills, agents, hooks and
   workflow helpers, the project-local `.codex/config.toml` and the release
