@@ -101,6 +101,21 @@ HOME_BATTLE = (621, 2057)       # the big BATTLE button on the home screen
 
 SPRINT_WAVE = 100               # cancel the Intro Sprint the moment this lands
 NUKE_WAVE = 101                 # fire once this wave reaches the progress threshold
+# Both are the TIER 18 values (first fleet at 95): run() re-derives them for
+# the block's tier from the one fleet table (fleet_waves) before the loop.
+
+
+def fleet_waves(tier) -> tuple[int, int]:
+    """(sprint-cancel wave, Nuke wave) for `tier`: the fleet spawns at the
+    tier's first fleet wave (scheduling/fleets.py), the sprint is cancelled
+    five waves later and the Nuke fires as the wave after that begins - the
+    T18 recipe (95 -> 100 -> 101) generalised, so a T19 block (fleet at 45)
+    nukes at 51 instead of racing to 101. Unknown tier: the T18 defaults."""
+    from scheduling import fleets
+    first = fleets.first_wave(tier, CONFIG)
+    if first is None:
+        return SPRINT_WAVE, NUKE_WAVE
+    return int(first) + 5, int(first) + 6
 NUKE_AT_PROGRESS = 0.10         # how far through wave 101 to fire.
                                 # Fires almost as soon as 101 starts. The fleet
                                 # spawned back on wave 95 and has had six waves
@@ -833,6 +848,11 @@ def run(loops: int | None = None, do_setup: bool = True,
     never happen is blind tapping into an unknown screen. Stopping leaves a
     logged reason and a screenshot; guessing does not.
     """
+    global SPRINT_WAVE, NUKE_WAVE
+    if tier:
+        SPRINT_WAVE, NUKE_WAVE = fleet_waves(tier)
+        logger.event("shard_fleet_waves", tier=int(tier), sprint_wave=SPRINT_WAVE,
+                     nuke_wave=NUKE_WAVE)
     if do_setup:
         setup(tier)
     adb_fails = 0

@@ -94,6 +94,13 @@ and skills apply.
   an unknown screen. A new emulator's ad package earns its `AD_PACKAGES` row
   from an `overlay_unknown` / `overlay_over_game` event.
 
+- Fleet spawn waves are PER TIER and live in one place, `scheduling/fleets.py`
+  (Tower Hub / wiki table: T14 2495 + 1000k, T18 95 + 100k, T20+ 5 + 10k,
+  bonus fleets every 100 from ~10000 on T14+). `orchestrator.marks()` picks
+  the run's tier from the compiled preset; `flows/shard.py` derives its
+  sprint-cancel / Nuke waves from the same table. Never hardcode a fleet
+  wave elsewhere; override a tier with `fleet.by_tier` in config.
+
 - Bound accounts keep calibration under `backend/accounts/<id>/calibration/`
   (git-ignored), separate for each emulator connection. Use `settings.template_path`
   / `settings.template_files` or the pure `player.accounts` resolver for every
