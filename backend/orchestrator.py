@@ -184,6 +184,8 @@ class RunState:
         self.recover_try = 0.0        # throttle for stuck-popup recovery taps
         self.overlay_sweep_at = 0.0   # throttle for the ad-overlay window check
         self.end_round_learn_at = 0.0 # throttle for learning the END ROUND image
+        self.dm_always_try_at = 0.0   # throttle for the global Demon-Mode-on-cooldown fire
+        self.dm_always_count = 0      # confirmed global Demon Mode fires this run
         self.sprint_end_try = 0.0     # throttle for end-intro-sprint attempts
         self.sprint_ended = False     # the sprint has been ended this run
         self.bot_left_battle = False  # WE navigated off the battle screen
@@ -1788,6 +1790,42 @@ def _fast_wall_watch(rs: "RunState", ab: dict) -> str:
     return "timeout"
 
 
+DM_ALWAYS_RETRY_SEC = 15.0      # between attempts: a confirmed fire costs ~1s
+                                # and Demon Mode cools down for minutes, so a
+                                # 15 s grain loses nothing and never lets a
+                                # bright-field false "ready" stall the loop
+
+
+def demon_mode_always(rs: "RunState", frame, wave_now, now) -> bool:
+    """Global behaviour `demon_mode_always`: fire Demon Mode whenever it is
+    ready, on every run, WHATEVER the rescue policy does - the Demon Mode
+    kill quests count kills, and a Demon Mode held back for a wall rescue
+    earns none (user, 2026-09-14). Deliberately outside the Second Wind
+    hold and the rescue arm; the trade-off is a rescue that may find the
+    button cooling down, which the person accepts by switching this on.
+
+    Rails kept: the intro sprint locks the ability row (a tap there is the
+    no-op every early unconfirmed Demon Mode was), so nothing fires while
+    the sprint indicator is up; fire_button confirms the cooldown dim and
+    require_ready stays on, so a cooling button is never tapped blind.
+    Returns True on a confirmed fire."""
+    if not wave_now or now < rs.dm_always_try_at:
+        return False
+    try:
+        if not global_rewards.enabled(preset(), "demon_mode_always"):
+            return False
+    except Exception:                       # noqa: BLE001 - no preset bound
+        return False
+    rs.dm_always_try_at = now + DM_ALWAYS_RETRY_SEC
+    if not rs.sprint_ended and detect.intro_sprint_active(frame):
+        return False
+    if not fire_button(frame, "demon_mode", "demon_mode_always", require_ready=True):
+        return False
+    rs.dm_always_count += 1
+    logger.event("demon_mode_always", wave=wave_now, count=rs.dm_always_count)
+    return True
+
+
 def watch_frame(rs: "RunState", frame) -> str | None:
     """Constant monitoring, run on EVERY captured frame.
 
@@ -1957,6 +1995,8 @@ def watch_frame(rs: "RunState", frame) -> str | None:
                     logger.event("fleet_nuke", mark=m, wave=wave_now,
                                  shot=logger.shot(frame, f"fleet_nuke_w{wave_now}"))
             break                    # only the nearest pending mark matters
+
+    demon_mode_always(rs, frame, wave_now, now)
 
     # ---- rescue trigger: preset-defined bar + threshold.
     # normal_run: SW-gated Demon Mode on wall overheal (Nuke is on the fleet
@@ -2470,7 +2510,8 @@ def main():
             _global = preset().get('global_behaviors', {})
             _want_menu = any(_g.get(k, True) for k in
                              ("quests_8h", "quest_rewards", "guild", "free_store_gems"))
-            _want_menu = _want_menu or any(_global.values())
+            _want_menu = _want_menu or any(_global.get(k) is True
+                                           for k in global_rewards.REWARD_KEYS)
             _menu_open = detect.side_menu_open(frame)
             if not _menu_open and _want_menu and now - rs.end_round_learn_at > 10:
                 # "menu open" is proven by the exit button image; on a tier

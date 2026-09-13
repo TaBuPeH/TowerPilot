@@ -6,7 +6,13 @@ import time
 import settings
 from scheduling import daystate
 
-KEYS = ('free_store_gems', 'daily_missions', 'event_missions', 'guild_progress')
+# The reward clocks (side-menu visits on a 5-minute check) ...
+REWARD_KEYS = ('free_store_gems', 'daily_missions', 'event_missions', 'guild_progress')
+# ... plus the in-battle global behaviours: `demon_mode_always` fires Demon
+# Mode whenever it is ready, on every run, whatever the rescue policy says
+# (the Demon Mode kill quests need the kills, not a held rescue - user,
+# 2026-09-14). Every key here is a profile-level true/false switch.
+KEYS = REWARD_KEYS + ('demon_mode_always',)
 
 
 def enabled(body, name):

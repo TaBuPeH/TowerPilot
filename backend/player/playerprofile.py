@@ -3134,6 +3134,10 @@ def required_capabilities(compiled: dict) -> dict:
     wall = ab.get("rescue_bar") == "wall"
     if ab.get("dm_below") is not None:
         abilities.add("demon_mode")
+    # The global Demon-Mode-on-cooldown switch taps the button on every run:
+    # an account without Demon Mode must refuse it like any rescue would.
+    if _d(compiled.get("global_behaviors")).get("demon_mode_always") is True:
+        abilities.add("demon_mode")
     if ab.get("nuke_below") is not None or ab.get("nuke_on_fleet"):
         abilities.add("nuke")
     for rule in list(compiled.get("rules") or []) + \

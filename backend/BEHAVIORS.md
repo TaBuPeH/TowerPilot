@@ -123,6 +123,16 @@ the blast (one survived an on-time nuke and killed the run at wave 3516).
 `throttle_sec` paces retries; `require_ready` is per-site. Deliberately not
 Second-Wind-gated. *Knobs:* `fleet_mark` rule / `nuke_on_fleet`.
 
+### Demon Mode on cooldown (global behaviour, quest kills)
+`policies.global_behaviors.demon_mode_always: true` fires Demon Mode whenever
+the button reads ready, on every run, outside the Second Wind hold and the
+rescue arm (`orchestrator.demon_mode_always`, one attempt per 15 s,
+never while the intro sprint indicator is up, every tap confirmed by the
+cooldown dim). The Demon Mode kill quests need the kills; the trade-off, a
+rescue that finds the button cooling down, is the person's to accept.
+Readiness requires `buttons/demon_mode.png`; the compiler refuses it on an
+account without Demon Mode. *Knobs:* the global switch only.
+
 ### Ultimate-weapon management
 Three mechanisms, one owner (`shopper.uw_toggle`, verified tap + re-read,
 exponential backoff, give-up-after-3 so a failing panel never drags a whole

@@ -123,6 +123,9 @@ policies:
     daily_missions: true
     event_missions: true
     guild_progress: true
+    # Fire Demon Mode whenever it is ready, every run, whatever the rescue
+    # plan says - for the Demon Mode kill quests (a held rescue earns none).
+    demon_mode_always: false
   uw_policies:
     farm_cl_choreo:
       baseline: {black_hole: true, chronofield: true, death_wave: true, golden_tower: true,
