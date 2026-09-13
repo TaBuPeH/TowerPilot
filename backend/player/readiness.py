@@ -92,6 +92,8 @@ def requirements(cfg, body):
         gather['guild'] = global_rewards['guild_progress']
     if global_rewards.get('event_missions'):
         need('icons/event_missions_tab.png', 'Event Missions')
+    if global_rewards.get('demon_mode_always') is True:
+        need('buttons/demon_mode.png', 'Demon Mode on cooldown (global behaviour)')
     generic = accounts.generic_names()
     # Controls the game only shows sometimes are ADVISORY: the CLAIM button
     # (finished quest) and the weekly-chest lock (an unclaimed chest). The
