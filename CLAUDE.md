@@ -55,7 +55,13 @@ portrait at 360 dpi.
    exists while a quest is finished, so setup treats it as optional (never
    needs_attention, never a blocked run) and the quest flow cuts it from the
    button it is about to tap - same writer, same MISSING-only, never-replace
-   rules.
+   rules. The third twin is `missions.learn_lock_template`: the milestone
+   PADLOCK marks locked boxes on the guild and weekly-chest tracks, so the
+   guild flow cuts it from a locked box it already has open and accepts the
+   cut only when the same glyph matches another locked box on that frame.
+   Without it the claim pass is skipped, never crashed: a reward flow that
+   raises is dropped by `Mission.step` (`mission_crash`) and takes the
+   flows' own exit, because stuck recovery never touches Guild or Quests.
 7. **An Abort means the screen was not what the code expected.** Stop and
    log; never blind-tap into an unknown screen.
 8. **Machine and account state stay out of git**: `backend/config.yaml`,

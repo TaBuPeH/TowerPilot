@@ -12,6 +12,7 @@ flow is kept short and every tap is preceded by a screen-state check.
 """
 import random
 import time
+import traceback
 
 import cv2
 import numpy as np
@@ -166,6 +167,89 @@ def learn_claim_template(frame, point) -> bool:
     return True
 
 
+LOCK_TEMPLATE = "icons/chest_lock.png"
+LOCK_SIZE = (60, 55)            # scan_targets reference size for the padlock
+GUILD_CELL = (650, 770)         # y-range of one milestone box on the guild track
+LOCK_GLYPH = ((22, 48), (30, 56))   # (w, h) bounds of the white padlock glyph
+LOCK_REPEAT_MIN = 2             # a cut must match itself AND another slot
+
+
+def _lock_glyphs(frame):
+    """Centers of the white padlock glyphs in the guild milestone boxes: the
+    largest white blob of padlock proportions in each fixed box cell. Labels
+    ("100", "250"), the box outline and the green check never fit the
+    bounds; an unlocked box has no white glyph at all."""
+    found = []
+    for x in GUILD_SLOTS:
+        x0 = max(0, x - 70)
+        cell = frame[GUILD_CELL[0]:GUILD_CELL[1], x0:x + 70]
+        if cell.size == 0:
+            continue
+        white = cv2.inRange(cv2.cvtColor(cell, cv2.COLOR_BGR2HSV),
+                            (0, 0, 200), (180, 40, 255))
+        _, _, stats, _ = cv2.connectedComponentsWithStats(white)
+        best = None
+        for bx, by, bw, bh, area in stats[1:]:
+            if (LOCK_GLYPH[0][0] <= bw <= LOCK_GLYPH[0][1]
+                    and LOCK_GLYPH[1][0] <= bh <= LOCK_GLYPH[1][1]
+                    and (best is None or area > best[0])):
+                best = (int(area), int(x0 + bx + bw // 2), int(GUILD_CELL[0] + by + bh // 2))
+        if best is not None:
+            found.append((best[1], best[2]))
+    return found
+
+
+def learn_lock_template(frame) -> bool:
+    """Runner-side opportunistic writer for the milestone PADLOCK, the third
+    twin of capture_missing_uw_labels / learn_claim_template: the padlock is
+    the "sometimes visible" glyph that marks a locked box on the guild track
+    and the weekly chest track, and setup only cuts it while such a box is on
+    screen. Rather than block setup on that, the guild flow cuts it from the
+    track it already has open (guild_flow crashed on the missing image and
+    stranded the run on the Guild screen for hours, 2026-09-14). The cut is
+    accepted only when it REPEATS: the manifest marks the glyph repeated, so
+    the crop from one locked box must also match another locked box on the
+    same frame (a self-verification on the emulator screen). Sanctioned
+    writer, MISSING target only, NEVER replaces a file (CLAUDE.md rule 6).
+    One disk stat once it exists."""
+    import settings
+    from player import battle_capture as bc
+    try:
+        if settings.template_path(LOCK_TEMPLATE).exists():
+            return False
+    except (OSError, KeyError, ValueError):
+        return False
+    glyphs = _lock_glyphs(frame)
+    if len(glyphs) < LOCK_REPEAT_MIN:
+        logger.event("guild_lock_unlearned", reason="fewer than two padlocks on the track",
+                     glyphs=len(glyphs))
+        return False
+    w, h = LOCK_SIZE
+    cx, cy = glyphs[0]
+    x = max(0, min(frame.shape[1] - w, cx - w // 2))
+    y = max(0, min(frame.shape[0] - h, cy - h // 2))
+    crop = frame[y:y + h, x:x + w].copy()
+    if crop.size == 0 or float(crop.std()) < 2:
+        return False
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    tpl = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+    matches = 0
+    for gx, gy in glyphs:
+        cell = gray[max(0, gy - h):gy + h, max(0, gx - w):gx + w]
+        if (cell.shape[0] >= h and cell.shape[1] >= w
+                and cv2.matchTemplate(cell, tpl, cv2.TM_CCOEFF_NORMED).max() > 0.85):
+            matches += 1
+    if matches < LOCK_REPEAT_MIN:
+        logger.event("guild_lock_unlearned", reason="padlock cut does not repeat",
+                     matches=matches, glyphs=len(glyphs))
+        return False
+    if bc.write_template(LOCK_TEMPLATE, crop) != "written":
+        return False
+    logger.event("chest_lock_captured", rel=LOCK_TEMPLATE, via="run_subroutine",
+                 x=x, y=y, w=w, h=h, slots=matches)
+    return True
+
+
 def find_skip(frame):
     """SKIP pill on the reward listing: cyan-bordered button, upper right.
 
@@ -203,7 +287,7 @@ def claimable_chests(frame):
     edge, which the game keeps in view)."""
     band = frame[CHEST_BAND[0]:CHEST_BAND[1], 0:1080]
     try:
-        lock = cv2.cvtColor(detect._tpl("icons/chest_lock.png"), cv2.COLOR_BGR2GRAY)
+        lock = cv2.cvtColor(detect._tpl(LOCK_TEMPLATE), cv2.COLOR_BGR2GRAY)
     except detect.TemplateMissing:
         logger.event("mission_chests_skipped", reason="missing chest lock recognition")
         return []
@@ -277,10 +361,18 @@ def guild_claimables(frame):
     glowing boxes WITHOUT a padlock (locked) or green check (claimed)."""
     # milestones sit at FIXED positions with fixed icons (user-confirmed):
     # 100 / 250 / 500 / 750 boxes, centers y~708
-    lock = cv2.cvtColor(detect._tpl("icons/chest_lock.png"), cv2.COLOR_BGR2GRAY)
+    try:
+        lock = cv2.cvtColor(detect._tpl(LOCK_TEMPLATE), cv2.COLOR_BGR2GRAY)
+    except detect.TemplateMissing:
+        # Same contract as claimable_chests: no padlock image means locked
+        # boxes cannot be told apart, so nothing is claimable this visit and
+        # the flow goes on to its return taps (it used to raise here and
+        # strand the run on the Guild screen).
+        logger.event("guild_claims_skipped", reason="missing chest lock recognition")
+        return []
     targets = []
     for x in GUILD_SLOTS:
-        cell = frame[650:770, max(0, x - 70):x + 70]
+        cell = frame[GUILD_CELL[0]:GUILD_CELL[1], max(0, x - 70):x + 70]
         hsv = cv2.cvtColor(cell, cv2.COLOR_BGR2HSV)
         if (cv2.inRange(hsv, (50, 120, 120), (75, 255, 255)) > 0).mean() > 0.02:
             continue                           # green check = already claimed
@@ -316,6 +408,18 @@ class Mission:
             self._gen.send(frame)
         except StopIteration:
             self._gen = None
+        except Exception:                       # noqa: BLE001
+            # A flow that raises is over, and the menu it opened is OURS to
+            # close: the orchestrator's stuck recovery deliberately never
+            # touches the Guild or Quests screens, so a crashed flow used to
+            # park the run there until a human returned it (2026-09-14).
+            # Log it as an abort with the screen, drop the flow and take the
+            # flows' own exit (the return strip, only when off battle).
+            name = getattr(self._gen, "__name__", "?")
+            self._gen = None
+            logger.event("mission_crash", flow=name, trace=traceback.format_exc(),
+                         shot=logger.shot(frame, "mission_crash"))
+            bail(frame, "mission_crash")
 
     def abort(self):
         self._gen = None
@@ -373,6 +477,9 @@ def guild_flow():
     frame = yield
     frame = yield                            # let the tab content render
 
+    # the padlock image is learned from the locked boxes on this very track
+    # (missing only) so the claimable check below can tell them apart
+    learn_lock_template(frame)
     # tap each milestone box AREA (claimed/locked boxes ignore the tap);
     # after each, clear any reward listing via SKIP (template, else area)
     before = guild_claimables(frame)
