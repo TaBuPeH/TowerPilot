@@ -11,7 +11,7 @@ TOP = {'VERSION', 'LICENSE', 'README.md', 'requirements.txt', 'requirements-dev.
        # the rule book, AGENTS.md points Codex and others at it
        'CLAUDE.md', 'AGENTS.md'}
 DOCS = {'README.md', 'ACCOUNT_SETUP.md', 'BLUESTACKS.md', 'GLOBAL_REWARDS.md',
-        'RUN_TEMPLATES.md', 'RELEASE_0.1_BETA.md', 'RELEASE_0.2_BETA.md', 'RELEASE_0.3_BETA.md', 'RUNTIME_GEOMETRY.md',
+        'RUN_TEMPLATES.md', 'RELEASE_0.1_BETA.md', 'RELEASE_0.2_BETA.md', 'RELEASE_0.3_BETA.md', 'RELEASE_0.4_BETA.md', 'RUNTIME_GEOMETRY.md',
         'PORTABLE_BUILD.md'}
 # Whole folders that ship as they are: the Claude Code skills, agents, hooks
 # and workflow helpers, the project-local Codex config, the release workflow.
