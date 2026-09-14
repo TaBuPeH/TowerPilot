@@ -2425,6 +2425,8 @@ function openRunTemplate(id){
     <label>Run name<input id="template-label" value="${esc(label)}"></label>
     <label>Tier<input id="template-tier" type="number" min="1" value="1"></label>
     <label>Equipment<select id="template-loadout">${loadouts.map(k=>`<option value="${esc(k)}" ${k===t.blueprint.loadout?'selected':''}>${k==='as_is'?'Keep current equipment':esc(k)+(Object.keys(S.config.loadouts[k] || {}).length?'':' (current equipment; no changes configured)')}</option>`).join('')}</select></label>
+    ${t.blueprint.dissonant_tab?`<label>Disabled workshop tab<select id="template-tab">${dissonantTabs().map(k=>`<option value="${esc(k)}" ${k===t.blueprint.dissonant_tab?'selected':''}>${esc(dissonantTabLabel(k))}</option>`).join('')}</select></label>
+    <label>Perk bans<textarea id="template-bans" rows="4" placeholder="one perk per line - a fragment of its wording, e.g. coins, but tower max health"></textarea></label><small>Set on the Home Perks dialog before each entry. Numbers are ignored when matching; leave empty to ban nothing.</small>`:''}
     <details><summary>Advanced run behaviour</summary>
     ${t.blueprint.kind==='shard'?'<label>Runs per batch<input id="template-count" type="number" min="1" value="100"></label>':''}
     ${t.blueprint.kind==='tournament'?'<label>Maximum gems for entry<input id="template-gems" type="number" min="0" value="0"></label><small>0 allows existing tickets and free ad entries, with no gem purchases. Saving this template does not enter a tournament.</small>':''}
@@ -2440,6 +2442,9 @@ async function saveRunTemplate(){
   const options={label:$('#template-label').value.trim(),tier:Number($('#template-tier').value),loadout:$('#template-loadout').value};
   if ($('#template-count')) options.count=Number($('#template-count').value);
   if ($('#template-gems')) options.gem_entry_max=Number($('#template-gems').value);
+  if ($('#template-tab')) options.dissonant_tab=$('#template-tab').value;
+  // empty = leave the bans untouched (null); a list, even of one, is applied
+  if ($('#template-bans') && perkLines($('#template-bans').value).length) options.perk_bans=perkLines($('#template-bans').value);
   if ($('#template-uw')) options.enable_uw=$('#template-uw').checked;
   if ($('#template-rescue')) options.enable_rescue=$('#template-rescue').checked;
   if (!(await saveAll())) return;
@@ -2560,6 +2565,25 @@ function editorHtml(bpName){
       </div>
     </fieldset>
 
+    ${bp.kind === "coin" ? `<fieldset><legend>Dissonance</legend>
+      <div class="kv">
+        <label>Enter through the Dissonant Run dialog with this workshop disabled</label>
+        <select onchange="setBp('${esc(bpName)}', 'dissonant_tab', this.value || null)">
+          <option value="" ${!bp.dissonant_tab ? "selected" : ""}>(no - a normal run)</option>
+          ${dissonantTabs().map(k => `<option value="${esc(k)}" ${bp.dissonant_tab === k ? "selected" : ""}>${esc(dissonantTabLabel(k))}</option>`).join("")}
+        </select>
+      </div>
+      <p class="muted">Shopping on the disabled tab is skipped; disabling Ultimate Weapons also switches the weapon toggles off. Needs that tab's Dissonant Run dialog images.</p>
+    </fieldset>` : ""}
+    ${bp.kind === "coin" || bp.kind === "tournament" ? `<fieldset><legend>Perk bans</legend>
+      <label class="inline"><input type="checkbox" ${bp.perk_bans != null ? "checked" : ""}
+        onchange="setBp('${esc(bpName)}', 'perk_bans', this.checked ? [] : null)">
+        Set the Home Perks dialog's Ban Perks list before each entry
+        <span class="muted">(unchecked: the bans are left as they are)</span></label>
+      ${bp.perk_bans != null ? `<textarea rows="4" placeholder="one perk per line - a fragment of its wording, e.g. coins, but tower max health"
+        onchange="setBpLines('${esc(bpName)}', 'perk_bans', this.value)">${esc((bp.perk_bans || []).join("\n"))}</textarea>
+      <p class="muted">Numbers are ignored when matching. An empty list clears every ban. Applied again only when the list changes.</p>` : ""}
+    </fieldset>` : ""}
     ${bp.kind === "tournament" ? `<fieldset><legend>Entry spending limit</legend><div class="kv">${numField("Maximum gems per ticket (0 = no purchase)", "gem_entry_max", 'min="0"')}</div></fieldset>` : ""}
     <details id="run-advanced" open><summary>Advanced settings — gathering, policies, repeat counts and timing</summary>
     <fieldset><legend>After each run</legend>
@@ -2757,6 +2781,17 @@ function p2Cancel(){
 async function p2Commit(){
   if (await saveAll()) $("#editor2").close();
 }
+const DISSONANT_TAB_LABEL = { attack:"Attack", defense:"Defense", utility:"Utility",
+                              ultimate_weapons:"Ultimate Weapons" };
+function dissonantTabs(){
+  // the compiler's value space when the vocabulary carries it, else the
+  // four workshop tabs the game has
+  const spec = (((((S.vocab || {}).blueprint_fields || {}).fields || {}).coin || {}).fields || {}).dissonant_tab;
+  return (spec && spec.values) || Object.keys(DISSONANT_TAB_LABEL);
+}
+function dissonantTabLabel(k){ return DISSONANT_TAB_LABEL[k] || k; }
+function perkLines(v){ return String(v || "").split("\n").map(s => s.trim()).filter(Boolean); }
+function setBpLines(bpName, key, v){ setBp(bpName, key, perkLines(v), false); }
 function bpKindLabel(b){
   // what the badge says: the flow's label - except that a coin-flow run
   // with a dissonant workshop tab is an ACHIEVEMENT run, not coin farming

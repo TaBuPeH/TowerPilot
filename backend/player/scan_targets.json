@@ -1,5 +1,12 @@
 [
   {
+    "rel": "buttons/ad_gems_claim.png",
+    "reference_size": [
+      236,
+      133
+    ]
+  },
+  {
     "rel": "buttons/demon_mode.png",
     "reference_size": [
       125,
@@ -158,6 +165,27 @@
     "reference_size": [
       400,
       48
+    ]
+  },
+  {
+    "rel": "dialogs/dissonant_tile_attack.png",
+    "reference_size": [
+      120,
+      42
+    ]
+  },
+  {
+    "rel": "dialogs/dissonant_tile_defense.png",
+    "reference_size": [
+      150,
+      42
+    ]
+  },
+  {
+    "rel": "dialogs/dissonant_tile_ultimate_weapons.png",
+    "reference_size": [
+      290,
+      42
     ]
   },
   {
@@ -1135,13 +1163,6 @@
     "reference_size": [
       5,
       7
-    ]
-  },
-  {
-    "rel": "buttons/ad_gems_claim.png",
-    "reference_size": [
-      236,
-      133
     ]
   }
 ]

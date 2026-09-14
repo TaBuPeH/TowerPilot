@@ -342,7 +342,13 @@ def test_run_types_have_editable_display_names():
                    "function bpOptionText", "${esc(bpOptionText(n, b))}",
                    'title="${esc(n)}"', "used.map(n => esc(bpLabel(n)))",
                    "<legend>Name</legend>", "function bpKindLabel",
-                   "Achievement run (${b.dissonant_tab} dissonance)"):
+                   "Achievement run (${b.dissonant_tab} dissonance)",
+                   # the Dissonance run type (2026-09-14): disabled tab and
+                   # perk bans in the editor and in the template dialog
+                   "function dissonantTabs", "<legend>Dissonance</legend>",
+                   "<legend>Perk bans</legend>", "function setBpLines",
+                   'id="template-tab"', 'id="template-bans"',
+                   "options.dissonant_tab=", "options.perk_bans="):
         assert needle in html, needle
 
 

@@ -107,6 +107,17 @@ and skills apply.
   sprint-cancel / Nuke waves from the same table. Never hardcode a fleet
   wave elsewhere; override a tier with `fleet.by_tier` in config.
 
+- A coin-kind run is entered from Home through ONE function,
+  `flows/shard.enter_run(body)`: perk bans first (`interactions/perks.py`,
+  the Home Perks dialog's BAN PERKS tab read by OCR, every toggle verified,
+  remembered per account, degrades on failure), then the Dissonant Run dialog
+  when the blueprint names `dissonant_tab`, else BATTLE. A person's Start,
+  the death restart and the day plan's handoff all call it - until 2026-09-14
+  two of them tapped BATTLE and farmed a NORMAL run under a dissonance
+  blueprint. The compiler trims a dissonant preset to what the game renders
+  (`_apply_dissonance`: no shopping on the disabled tab, no UW toggles when
+  Ultimate Weapons are disabled).
+
 - Bound accounts keep calibration under `backend/accounts/<id>/calibration/`
   (git-ignored), separate for each emulator connection. Use `settings.template_path`
   / `settings.template_files` or the pure `player.accounts` resolver for every
