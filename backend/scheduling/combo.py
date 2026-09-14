@@ -967,8 +967,11 @@ def _block_handoff(b, instance: str) -> None:
                      block=b["id"], error=str(e))
     tourney.ensure_home()
     shard.set_tier(tier)
-    shard.start_battle()
-    logger.event("combo_handoff", phase=b["block"], block=b["id"], tier=tier)
+    # enter_run, not start_battle: a dissonance blueprint enters through its
+    # own dialog and a blueprint with perk bans sets them first (2026-09-14).
+    shard.enter_run(body)
+    logger.event("combo_handoff", phase=b["block"], block=b["id"], tier=tier,
+                 dissonant=body.get("dissonant_tab"))
 
 
 def _handoff(phase: str, instance: str) -> None:

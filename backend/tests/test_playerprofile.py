@@ -3736,6 +3736,7 @@ _LEGAL_BLUEPRINT_VALUE = {
     "cancel_sprint": True,
     "max_wave": 5000,
     "dissonant_tab": "utility",
+    "perk_bans": ["coins, but tower max health"],
     "count": 5,
     "gem_entry_max": 10,
     # EMPTY, because that is the only value validate() accepts today.

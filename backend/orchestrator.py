@@ -427,14 +427,11 @@ def restart_from_home(frame, tier: int | None) -> bool:
                 return False
             tourney.ensure_home()
         shard.set_tier(tier)
-        # Dissonance event (2026-08-31): a dissonant blueprint re-enters
-        # through the event's own dialog - the plain BATTLE button would
-        # start a NORMAL run and silently farm the wrong mode.
+        # Dissonance (2026-08-31): a dissonant blueprint re-enters through
+        # its own dialog - the plain BATTLE button would start a NORMAL run
+        # and silently farm the wrong mode. Perk bans ride the same entry.
         d_tab = preset().get("dissonant_tab")
-        if d_tab:
-            shard.start_dissonant(d_tab)
-        else:
-            shard.start_battle()
+        shard.enter_run(preset())
     except (tourney.Abort, act.TapRefused) as e:
         logger.event("restart_home", ok=False, error=str(e))
         return False
@@ -2193,8 +2190,9 @@ def _prepare_coin_start():
     if body.get("loadout"):
         loadout.apply(body["loadout"])
     shard.set_tier(body["tier"])
-    shard.start_battle()
-    logger.event("coin_start_prepared", tier=body["tier"], loadout=body.get("loadout"))
+    shard.enter_run(body)
+    logger.event("coin_start_prepared", tier=body["tier"], loadout=body.get("loadout"),
+                 dissonant=body.get("dissonant_tab"))
 
 
 def main():

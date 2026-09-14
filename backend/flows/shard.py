@@ -479,6 +479,25 @@ def start_dissonant(tab: str = "utility", settle: float = 15.0):
     raise Abort("dissonant run did not start")
 
 
+def enter_run(body: dict):
+    """The ONE way a coin-kind run is entered from Home, for every entry
+    point - a person's Start (orchestrator._prepare_coin_start), the death
+    restart (orchestrator.restart_home) and the day plan's handoff
+    (combo._block_handoff). Until 2026-09-14 only the restart knew about
+    `dissonant_tab`; the other two tapped BATTLE and silently farmed a NORMAL
+    run under a dissonance blueprint.
+
+    Order: perk bans first (the Perks dialog is only reachable from Home and
+    `perks.ensure_bans` degrades on failure), then the Dissonant Run dialog
+    when the blueprint names a disabled workshop tab, else BATTLE."""
+    from interactions import perks
+    perks.ensure_bans(body.get("perk_bans"))
+    tab = body.get("dissonant_tab")
+    if tab:
+        return start_dissonant(tab)
+    return start_battle()
+
+
 def start_battle(tries: int = 2, settle: float = 15.0):
     """Tap BATTLE and WAIT for the run to actually exist.
 

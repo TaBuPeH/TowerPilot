@@ -157,7 +157,13 @@ def requirements(cfg, body):
     if body.get("dissonant_tab"):
         for rel in ("dialogs/dissonant_header.png", "dialogs/dissonant_battle.png", "dialogs/dissonant_x.png",
                     f"dialogs/dissonant_tile_{body['dissonant_tab']}.png"):
-            need(rel, "Achievement run")
+            need(rel, "Dissonant run entry")
+    if body.get("perk_bans") is not None:
+        # The Perks dialog is driven by the mapping templates Prepare
+        # recognition cuts for the manifest routes (interactions/perks.py).
+        from interactions import perks
+        for rel in perks.templates():
+            need(rel, "Perk bans (Prepare recognition maps the Perks screens)")
     lo = (cfg.get("loadouts") or {}).get(body.get("loadout")) or {}
     if lo.get("global_preset"):
         need(f"presets/gp_{slug(lo['global_preset'])}.png", "Equipment preset")

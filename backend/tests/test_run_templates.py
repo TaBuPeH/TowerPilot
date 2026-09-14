@@ -17,7 +17,7 @@ def profile(monkeypatch):
     p.pop('plan',None)
     return p
 
-@pytest.mark.parametrize('template,kind',[('farm','coin'),('tournament','tournament'),('shard','shard')])
+@pytest.mark.parametrize('template,kind',[('farm','coin'),('tournament','tournament'),('shard','shard'),('dissonance','coin')])
 def test_generic_recipe_compiles_without_claiming_ownership(profile,template,kind):
     before=copy.deepcopy(profile)
     result=rt.instantiate(profile,template,'new_run')
@@ -79,7 +79,7 @@ def test_api_validates_before_writing_and_preserves_existing_runs(profile,tmp_pa
     assert yaml.safe_load(target.read_text(encoding='utf8'))==saved
     body['profile']='default'
     assert client.post('/api/run-templates/add',json=body).status_code==409
-    assert len(client.get('/api/run-templates').json['templates'])==3
+    assert len(client.get('/api/run-templates').json['templates'])==4
 
 
 def test_shard_uses_blueprint_equipment_not_legacy_name(monkeypatch):

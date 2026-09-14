@@ -42,8 +42,21 @@ def instantiate(profile, template_id, name, options=None):
     kind=template['blueprint']['kind']
     if kind=='shard': allowed.add('count')
     if kind=='tournament': allowed.add('gem_entry_max')
+    if template['blueprint'].get('dissonant_tab'):
+        allowed.update({'dissonant_tab','perk_bans'})
     if set(options)-allowed:
         raise ValueError('Unsupported choices: '+', '.join(sorted(set(options)-allowed)))
+    if 'dissonant_tab' in options:
+        from player.playerprofile import DISSONANT_TABS
+        if options['dissonant_tab'] not in DISSONANT_TABS:
+            raise ValueError('Choose the workshop tab to disable: '+', '.join(DISSONANT_TABS)+'.')
+    if 'perk_bans' in options:
+        bans=options['perk_bans']
+        if not isinstance(bans,list) or not all(isinstance(b,str) for b in bans):
+            raise ValueError('Perk bans must be a list of perk texts.')
+        options['perk_bans']=[b.strip() for b in bans if b.strip()]
+        if not options['perk_bans']:
+            options.pop('perk_bans')     # nothing named = leave the game's bans alone
     for key in ('enable_uw','enable_rescue'):
         if key in options and not isinstance(options[key],bool):
             raise ValueError(key+' must be true or false.')

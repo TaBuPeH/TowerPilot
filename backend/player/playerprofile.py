@@ -130,6 +130,11 @@ BAR_NAMES = ("wall", "hp")
 # Only tiles with harvested templates can actually be selected - an
 # unharvested one fails closed via TemplateMissing at run start.
 DISSONANT_TABS = ("attack", "defense", "utility", "ultimate_weapons")
+# Perk bans (2026-09-14): fragments of the perks' own wording a run type
+# wants banned on the Home Perks dialog before it enters a run
+# (interactions/perks.py). The dialog lists a few dozen perks; a list this
+# long is a typo, not a plan.
+MAX_PERK_BANS = 30
 
 # Buttons a `fire` action may name. Deliberately short: these are the two
 # abilities the orchestrator owns taps for.
@@ -409,9 +414,9 @@ RULE_KEYS = ("when", "do", "repeat", "refire_sec")
 # effect. So unknown/out-of-kind fields are reported, not ignored.
 _COMMON_FIELDS = ("kind", "label", "loadout", "tier", "policies")
 _KIND_FIELDS = {
-    "coin":           ("cancel_sprint", "max_wave", "dissonant_tab", "count",
-                       "restart_via_home", "shop_interval_sec", "shopping"),
-    "tournament":     ("gem_entry_max", "in_run_actions", "count",
+    "coin":           ("cancel_sprint", "max_wave", "dissonant_tab", "perk_bans",
+                       "count", "restart_via_home", "shop_interval_sec", "shopping"),
+    "tournament":     ("gem_entry_max", "in_run_actions", "perk_bans", "count",
                        "restart_via_home", "shop_interval_sec", "shopping"),
     # `count` lives HERE and nowhere else: it is what becomes `--loops`. It
     # stays listed on the other kinds only so that writing one gets the
@@ -1765,6 +1770,17 @@ def _validate_blueprint(path: str, bp: dict, player: dict, uw_policies: dict,
     if dt is not None and dt not in DISSONANT_TABS:
         out.append(f"{path}.dissonant_tab: unknown tab {dt!r} "
                    f"(known: {', '.join(DISSONANT_TABS)})")
+    pb = bp.get("perk_bans")
+    if pb is not None:
+        if (not isinstance(pb, list)
+                or not all(isinstance(t, str) and t.strip() for t in pb)):
+            out.append(f"{path}.perk_bans: must be a list of perk texts "
+                       f"(fragments of the perk's wording, e.g. "
+                       f"'coins, but tower max health'); null leaves the "
+                       f"bans untouched, [] clears them")
+        elif len(pb) > MAX_PERK_BANS:
+            out.append(f"{path}.perk_bans: {len(pb)} entries, at most "
+                       f"{MAX_PERK_BANS}")
     _check_pos_int(bp.get("rides"), f"{path}.rides", out)
     _check_pos_int(bp.get("cycles"), f"{path}.cycles", out)
     _check_pos_int(bp.get("reroll_at_wave"), f"{path}.reroll_at_wave", out)
@@ -2617,6 +2633,14 @@ def compile_preset(profile: dict, blueprint_name: str) -> dict:
         # BATTLE"; a tab name means "enter via the Dissonant Run dialog
         # with that tab disabled" (event mode, 2026-08-31).
         out["dissonant_tab"] = bp.get("dissonant_tab")
+        if out["dissonant_tab"]:
+            _apply_dissonance(out, out["dissonant_tab"])
+    if kind in ("coin", "tournament"):
+        # Always emitted on both kinds: None IS "never open the Perks
+        # dialog"; a list (even empty) is the exact ban set shard.enter_run
+        # has interactions/perks put in place before the run.
+        out["perk_bans"] = (list(bp["perk_bans"])
+                            if bp.get("perk_bans") is not None else None)
     if kind == "tournament":
         out["tournament_setup"] = True
         out["gem_entry_max"] = bp.get("gem_entry_max", 0)
@@ -2692,6 +2716,23 @@ def _runner_for(kind: str, bp: dict) -> tuple[str | None, list[str] | None]:
     if spec["runner"] is None:
         return None, None
     return spec["runner"], _flows_registry.extra_argv(kind, bp)
+
+
+def _apply_dissonance(out: dict, tab: str) -> None:
+    """A dissonant run DISABLES one workshop tab for the whole run, so what
+    the blueprint bound is trimmed to what the game will actually render:
+    shopping directives on the disabled tab go (the panel shows DISABLED
+    boxes - a sweep would scroll a dead tab every 90 s), and with Ultimate
+    Weapons disabled the UW panel has no toggles at all, so the weapon
+    normalization set and the Chain Lightning choreography are compiled
+    out. Done here, once, rather than taught to the shopper and the UW
+    normalizer as runtime conditionals (2026-09-14)."""
+    out["shopping"] = [d for d in out.get("shopping", []) if d.get("tab") != tab]
+    if tab == "ultimate_weapons":
+        out["uw_wanted"] = {}
+        out["chain_lightning"] = {"enabled": False, "always_on": False,
+                                  "always_on_above": None, "pre_mark_waves": None,
+                                  "off_after_waves": None}
 
 
 def _compile_shopping(entry) -> list[dict]:
@@ -3332,11 +3373,20 @@ def _blueprint_field_specs() -> dict:
                    "Unstated (null) is NO CAP, and one attempt per run",
             span=(1, None)),
         "dissonant_tab": _spec(
-            "str", "Dissonance event: enter runs via the Dissonant Run "
-                   "dialog with this upgrade tab disabled, instead of the "
-                   "BATTLE button. Unstated (null) is a normal run. Only "
-                   "tabs with harvested dialog templates can be selected",
+            "str", "Dissonance: enter runs via the Dissonant Run dialog "
+                   "with this workshop tab disabled, instead of the BATTLE "
+                   "button. Unstated (null) is a normal run. Shopping on the "
+                   "disabled tab is compiled out; ultimate_weapons also "
+                   "compiles the weapon toggles out. Needs the dialog "
+                   "images for that tab",
             values=DISSONANT_TABS),
+        "perk_bans": _spec(
+            "list", "perks to keep BANNED while this run type plays, as "
+                    "fragments of the perk's own wording (numbers are "
+                    "ignored: 'coins, but tower max health'). Set on the "
+                    "Home Perks dialog before each entry when it differs "
+                    "from what was last applied. Unstated (null) never "
+                    "opens the dialog; [] clears every ban"),
         "count": _spec(
             "int", "SHARD ONLY: it becomes `flows/shard.py --loops`. 0 means keep "
                    "going until the tray stops it. Runs-per-day for every "
