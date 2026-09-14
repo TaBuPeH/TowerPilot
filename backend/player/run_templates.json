@@ -395,6 +395,125 @@
         "Tier and equipment are local choices.",
         "Creation does not start a run or add a schedule."
       ]
+    },
+    {
+      "id": "dissonance",
+      "label": "Dissonance",
+      "description": "Farm-style runs entered through the Dissonant Run dialog with one workshop tab disabled, for the permanent Dissonant Boost. Its own equipment (cards, modules, guardians, bots, workshop preset), no upgrade shopping, every owned Ultimate Weapon on, and its own perk bans. Optional tournament-style wall rescue.",
+      "legacy_source": "coin_dissonance",
+      "blueprint": {
+        "kind": "coin",
+        "label": "Dissonance",
+        "loadout": "dissonance",
+        "tier": 1,
+        "dissonant_tab": "utility",
+        "restart_via_home": true,
+        "shop_interval_sec": 90,
+        "shopping": "no_shopping",
+        "policies": {
+          "gather": "all_on"
+        }
+      },
+      "optional_policies": {
+        "uw": "all_uw_on",
+        "rescue": "tournament_any_falling"
+      },
+      "policies": {
+        "gather": {
+          "all_on": {
+            "flying_gem": false,
+            "gem_delay_sec": [
+              3,
+              10
+            ],
+            "ad_gems": true,
+            "quests_8h": true,
+            "quest_rewards": true,
+            "guild": true,
+            "free_store_gems": false,
+            "gem_orbit": {
+              "enabled": true
+            }
+          }
+        },
+        "uw_policies": {
+          "all_uw_on": {
+            "label": "All Ultimate Weapons On",
+            "baseline": {
+              "black_hole": true,
+              "chronofield": true,
+              "death_wave": true,
+              "golden_tower": true,
+              "poison_swamp": true,
+              "spotlight": true,
+              "smart_missiles": true,
+              "inner_land_mines": true
+            },
+            "chain_lightning": {
+              "mode": "always_on"
+            }
+          }
+        },
+        "rescue_policies": {
+          "tournament_any_falling": {
+            "label": "Tournament Any Falling",
+            "arm": {
+              "on": "second_wind",
+              "immunity_sec": 8,
+              "watch_sec": null
+            },
+            "end_sprint_after_sw": false,
+            "rules": [
+              {
+                "when": {
+                  "bar": "wall",
+                  "below": 0.5,
+                  "falling_samples": 2,
+                  "deadband": 0.01
+                },
+                "do": {
+                  "burst": {
+                    "cancel_sprint": true,
+                    "fire": "demon_mode",
+                    "retaps": 3
+                  }
+                }
+              },
+              {
+                "when": {
+                  "wall_collapse": {
+                    "from_above": 0.3
+                  }
+                },
+                "do": {
+                  "burst": {
+                    "cancel_sprint": true,
+                    "fire": "demon_mode",
+                    "retaps": 3
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "shopping_lists": {
+          "no_shopping": {
+            "label": "No Shopping",
+            "enabled": false,
+            "directives": []
+          }
+        }
+      },
+      "requirements": [
+        "The Dissonant Run dialog images for the chosen workshop tab (Calibrate, step 8: header, BATTLE, close and that tab's label).",
+        "A `dissonance` loadout in Configuration naming this run's card, module, guardian, bot and workshop presets.",
+        "Perk bans need the Perks screens mapped by Prepare recognition."
+      ],
+      "notes": [
+        "Tier, equipment, the disabled tab and the perk bans are local choices; with no perk bans given the game's ban list is left as it is.",
+        "Creation does not start a run or add a schedule.",
+        "Boosts are per tier and max out at wave 5000; a run that dies restarts through Home and the same dialog."
+      ]
     }
   ]
 }

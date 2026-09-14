@@ -213,6 +213,10 @@ DOCS = {
     "dialogs/dissonant_header.png": {"label": "Dissonance dialog header", "what": "The header of the Dissonance (achievement run) dialog.", "where": "Home, dissonant run dialog.", "how": "Open the dialog and crop.", "art": []},
     "dialogs/dissonant_battle.png": {"label": "Dissonance BATTLE", "what": "The BATTLE button inside the Dissonance dialog.", "where": "Dissonant run dialog.", "how": "Open the dialog and crop.", "art": []},
     "dialogs/dissonant_x.png": {"label": "Dissonance close", "what": "The X that closes the Dissonance dialog.", "where": "Dissonant run dialog.", "how": "Open the dialog and crop.", "art": []},
+    "dialogs/dissonant_tile_utility.png": {"label": "Dissonance tile: Utility", "what": "The UTILITY label under its tile in the Dissonance dialog (the flow taps the tile above it).", "where": "Dissonant run dialog.", "how": "Open the dialog and crop the label.", "art": []},
+    "dialogs/dissonant_tile_attack.png": {"label": "Dissonance tile: Attack", "what": "The ATTACK label under its tile in the Dissonance dialog.", "where": "Dissonant run dialog.", "how": "Open the dialog and crop the label.", "art": []},
+    "dialogs/dissonant_tile_defense.png": {"label": "Dissonance tile: Defense", "what": "The DEFENSE label under its tile in the Dissonance dialog.", "where": "Dissonant run dialog.", "how": "Open the dialog and crop the label.", "art": []},
+    "dialogs/dissonant_tile_ultimate_weapons.png": {"label": "Dissonance tile: Ultimate Weapons", "what": "The ULTIMATE WEAPONS label under its tile in the Dissonance dialog.", "where": "Dissonant run dialog.", "how": "Open the dialog and crop the label.", "art": []},
 }
 
 FOLDERS = {
@@ -293,6 +297,8 @@ TEXT = {
     "icons/title_background.png": "BACKGROUND", "icons/title_banner.png": "BANNER", "icons/title_guardian.png": "GUARDIAN",
     "icons/title_menu.png": "MENU", "icons/title_tower.png": "TOWER",
     "dialogs/dissonant_header.png": "DISSONANCE", "dialogs/dissonant_battle.png": "BATTLE", "dialogs/dissonant_tile_utility.png": "UTILITY",
+    "dialogs/dissonant_tile_attack.png": "ATTACK", "dialogs/dissonant_tile_defense.png": "DEFENSE",
+    "dialogs/dissonant_tile_ultimate_weapons.png": "ULTIMATE WEAPONS",
     "presets/select_header.png": "SELECT", "presets/gp_none.png": "None",
     "modules/buy_module.png": "Buy Module", "modules/equip_btn.png": "EQUIP", "modules/v29_equip_btn.png": "EQUIP",
     "modules/primary_btn.png": "PRIMARY", "modules/assist_btn.png": "ASSIST", "modules/transfer_yes.png": "YES",

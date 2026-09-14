@@ -702,7 +702,10 @@ def test_a_plan_handoff_uses_the_blueprints_own_loadout_and_tier(combo, plan,
     lo.apply = lambda n: calls.append(("loadout", n))
     sh = types.ModuleType("shard")
     sh.set_tier = lambda t: calls.append(("tier", t))
-    sh.start_battle = lambda: calls.append(("battle",))
+    # enter_run, not start_battle: the handoff hands the whole compiled body
+    # over so a dissonance blueprint enters through its own dialog and perk
+    # bans are set first (2026-09-14)
+    sh.enter_run = lambda body: calls.append(("enter", body.get("tier")))
     tny = types.ModuleType("tourney")
     tny.Abort = type("Abort", (Exception,), {})
     tny.ensure_home = lambda: calls.append(("home",))
@@ -711,7 +714,7 @@ def test_a_plan_handoff_uses_the_blueprints_own_loadout_and_tier(combo, plan,
     _patch_flows_shard(monkeypatch, sh)
     combo._block_handoff(_block(0, blueprint="c"), "acct2")
     assert ("loadout", "tourney_1") in calls and ("tier", 11) in calls
-    assert calls[-1] == ("battle",)
+    assert calls[-1] == ("enter", 11)
 
 
 def test_a_quest_block_is_handed_off_by_its_own_runner(combo, plan,
