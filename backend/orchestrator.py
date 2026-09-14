@@ -2185,12 +2185,21 @@ def _prepare_coin_start():
     from vision import screen
     if screen.identify(capture.grab()).name != "home":
         return
-    from interactions import loadout
+    from interactions import loadout, tourney
     from flows import shard
-    if body.get("loadout"):
-        loadout.apply(body["loadout"])
-    shard.set_tier(body["tier"])
-    shard.enter_run(body)
+    try:
+        if body.get("loadout"):
+            loadout.apply(body["loadout"])
+        shard.set_tier(body["tier"])
+        shard.enter_run(body)
+    except (tourney.Abort, act.TapRefused) as e:
+        # Entry refused (a dissonant dialog image still missing, a control
+        # not found): HOLD on Home and say so - the observe loop adopts
+        # whatever run a person starts. Never a blind second attempt.
+        logger.event("coin_start_prepared", ok=False, tier=body["tier"],
+                     dissonant=body.get("dissonant_tab"), error=str(e),
+                     shot=logger.shot(capture.grab(), "coin_start_refused"))
+        return
     logger.event("coin_start_prepared", tier=body["tier"], loadout=body.get("loadout"),
                  dissonant=body.get("dissonant_tab"))
 
