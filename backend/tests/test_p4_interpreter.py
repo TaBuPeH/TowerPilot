@@ -91,7 +91,9 @@ def test_direct_coin_start_prepares_only_home(orchestrator, monkeypatch, screen_
     lo.apply = lambda name: pytest.fail("as-is must not equip anything")
     sh = types.ModuleType("flows.shard")
     sh.set_tier = lambda tier: calls.append(tier)
-    sh.start_battle = lambda: calls.append("start")
+    # a person's Start enters through shard.enter_run with the whole preset
+    # body (dissonant dialog or BATTLE, perk bans first) - 2026-09-14
+    sh.enter_run = lambda body: calls.append("start")
     monkeypatch.setitem(sys.modules, "interactions.loadout", lo)
     monkeypatch.setattr(interactions, "loadout", lo, raising=False)
     monkeypatch.setitem(sys.modules, "flows.shard", sh)
