@@ -155,9 +155,14 @@ def requirements(cfg, body):
         for rel in ("home/surrender.png", "buttons/end_round.png", "home/end_round_yes.png"):
             need(rel, "End a run started by this flow")
     if body.get("dissonant_tab"):
+        # The dialog images are what the RUNNER needs to enter a dissonant
+        # run by itself (a Start from Home, the restart after a death). A run
+        # a person starts by hand and the runner adopts, with no restart via
+        # Home, plays without them - so they block only when the blueprint
+        # restarts via Home, and are advisory otherwise (2026-09-14).
         for rel in ("dialogs/dissonant_header.png", "dialogs/dissonant_battle.png", "dialogs/dissonant_x.png",
                     f"dialogs/dissonant_tile_{body['dissonant_tab']}.png"):
-            need(rel, "Dissonant run entry")
+            need(rel, "Dissonant run entry", blocking=bool(body.get("restart_via_home")))
     if body.get("perk_bans") is not None:
         # The Perks dialog is driven by the mapping templates Prepare
         # recognition cuts for the manifest routes (interactions/perks.py).

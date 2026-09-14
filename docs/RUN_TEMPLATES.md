@@ -41,7 +41,9 @@ Start, the restart after a death and the day plan's handoff - enters it through
 `flows/shard.enter_run`, which opens the game's Dissonant Run dialog, verifies
 the red X sits on the wanted tab and taps the dialog's own BATTLE. Readiness
 lists the dialog images for that tab (header, BATTLE, close, the tab's label);
-capture them in Calibrate step 8 with the dialog open.
+capture them in Calibrate step 8 with the dialog open. They block only when the
+run restarts via Home (the runner enters runs itself); a run you start by hand
+that the runner adopts, with restart via Home off, plays without them.
 
 `perk_bans` (coin and tournament run types) is the list of perks to keep
 banned while that run type plays, as fragments of the perk's own wording:
