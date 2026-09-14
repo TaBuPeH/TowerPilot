@@ -167,6 +167,13 @@ def test_readiness_names_the_dialog_tab_image_and_the_perk_routes():
     needed = {r for row in rows for r in row["alternatives"]}
     assert "dialogs/dissonant_tile_defense.png" in needed
     assert set(perks.templates()) <= needed
+    # the dialog images BLOCK only when the runner must enter runs itself
+    # (restart via Home); a hand-started run it adopts plays without them
+    blocking = {r for row in rows if row["blocking"] for r in row["alternatives"]}
+    assert "dialogs/dissonant_tile_defense.png" not in blocking
+    rows = readiness.requirements({"loadouts": {}}, {**body, "restart_via_home": True})
+    blocking = {r for row in rows if row["blocking"] for r in row["alternatives"]}
+    assert "dialogs/dissonant_tile_defense.png" in blocking
     quiet = readiness.requirements({"loadouts": {}}, {**body, "dissonant_tab": None, "perk_bans": None})
     untouched = {r for row in quiet for r in row["alternatives"]}
     assert not (set(perks.templates()) & untouched)
