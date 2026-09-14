@@ -399,7 +399,7 @@
     {
       "id": "dissonance",
       "label": "Dissonance",
-      "description": "Farm-style runs entered through the Dissonant Run dialog with one workshop tab disabled, for the permanent Dissonant Boost. Its own equipment (cards, modules, guardians, bots, workshop preset), no upgrade shopping, every owned Ultimate Weapon on, and its own perk bans. Optional tournament-style wall rescue.",
+      "description": "Farm-style runs entered through the Dissonant Run dialog with one workshop tab disabled, for the permanent Dissonant Boost. Its own equipment (cards, modules, guardians, bots, workshop preset), no upgrade shopping, every owned Ultimate Weapon on, and its own perk bans. Optional tournament-style wall rescue with the fleet-mark Nuke.",
       "legacy_source": "coin_dissonance",
       "blueprint": {
         "kind": "coin",
@@ -416,7 +416,7 @@
       },
       "optional_policies": {
         "uw": "all_uw_on",
-        "rescue": "tournament_any_falling"
+        "rescue": "tournament_wall_nuke"
       },
       "policies": {
         "gather": {
@@ -455,8 +455,8 @@
           }
         },
         "rescue_policies": {
-          "tournament_any_falling": {
-            "label": "Tournament Any Falling",
+          "tournament_wall_nuke": {
+            "label": "Tournament Wall + Fleet Nuke",
             "arm": {
               "on": "second_wind",
               "immunity_sec": 8,
@@ -490,6 +490,20 @@
                     "cancel_sprint": true,
                     "fire": "demon_mode",
                     "retaps": 3
+                  }
+                }
+              },
+              {
+                "when": {
+                  "fleet_mark": {
+                    "after_waves": 3,
+                    "window_waves": 60
+                  }
+                },
+                "do": {
+                  "fire": {
+                    "button": "nuke",
+                    "throttle_sec": 5
                   }
                 }
               }

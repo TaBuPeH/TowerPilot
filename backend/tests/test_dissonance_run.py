@@ -79,6 +79,23 @@ def test_all_uw_on_policy_needs_chain_lightning_like_every_uw_policy(profile):
     assert c["uw_wanted"] and all(c["uw_wanted"].values())
 
 
+def test_dissonance_rescue_fires_the_fleet_nuke(profile):
+    """The optional rescue must carry the fleet-mark Nuke, like the farm's
+    high_tier_wall: a dissonance run bound to wall rules only compiled
+    `nuke_on_fleet: null` and let the Tier 14 fleet at 3495 through with Nuke
+    ready (2026-09-14)."""
+    result = rt.instantiate(profile, "dissonance", "d", {"enable_rescue": True})
+    player = result["player"]
+    player["abilities"] = {"nuke": True, "demon_mode": True}
+    player["abilities_verified"] = True
+    player["wall"] = True
+    assert pp.validate(result) == []
+    c = pp.compile_preset(result, "d")
+    fleet = c["abilities"]["nuke_on_fleet"]
+    assert fleet and fleet["after_waves"] == 3 and fleet["window_waves"] == 60
+    assert c["abilities"]["dm_below"] == 0.5          # the tournament wall rule is kept
+
+
 # ------------------------------------------------------------ compiler
 def _coin(profile, **extra):
     profile["blueprints"]["x"] = {"kind": "coin", "label": "X", "loadout": "as_is", "tier": 1,
