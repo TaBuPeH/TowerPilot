@@ -72,7 +72,7 @@ def build():
             'Install an emulator and The Tower, then use Setup to install connection tools (internet required).\n'
             'Recommended: 1080x2560 portrait, 360 DPI. Initial scan takes approximately 20-30 minutes.\n'
             'Account data is stored beside the app. Preserve the folder when upgrading.\n'
-            'See docs/RELEASE_0.4_BETA.md for what changed and the beta limitations.\n')
+            'See docs/RELEASE_0.5_BETA.md for what changed and the beta limitations.\n')
         subprocess.run([str(runtime / 'python.exe'), '-c',
             'import cv2,numpy,yaml,psutil,flask,pystray,PIL,UnityPy; print("Bundled imports OK")'],
             cwd=stage, check=True)
