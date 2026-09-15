@@ -3,7 +3,9 @@
 Download **TowerPilot-0.4-beta-windows-x64.zip** below. Extract the whole ZIP into
 a writable folder and double-click **Start Tower Pilot.cmd**. Your browser opens
 Setup. Python and dependencies are included—no Python installation or terminal
-commands are required. Keep the launcher window open while using the app.
+commands are required. No console window opens: Tower Pilot sits in the
+notification area near the clock. Click that icon to reopen the dashboard,
+right-click it to quit.
 
 ## Source distribution / developers
 

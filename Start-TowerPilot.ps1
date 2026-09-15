@@ -16,6 +16,10 @@ if (-not (Test-Path -LiteralPath $stamp) -or (Get-Content -LiteralPath $stamp -R
     Set-Content -LiteralPath $stamp -Value $hash
 }
 $port = if ($env:TOWER_PILOT_PORT) { $env:TOWER_PILOT_PORT } else { '8620' }
-Write-Host "Open http://127.0.0.1:$port/ui/index.html#setup in your browser. Keep this window open."
-& $python frontend/dashboard.py
-if ($LASTEXITCODE -ne 0) { throw 'Dashboard stopped with an error.' }
+# Windowless from here: pythonw has no console, and the launcher puts Tower
+# Pilot in the notification area instead (tools/portable_launcher.py). This
+# window is only needed for the environment setup above.
+$pythonw = Join-Path $PSScriptRoot '.venv\Scripts\pythonw.exe'
+if (-not (Test-Path -LiteralPath $pythonw)) { $pythonw = $python }
+Write-Host "Starting Tower Pilot. Its icon appears in the notification area; the dashboard is http://127.0.0.1:$port/ui/index.html#setup."
+Start-Process -FilePath $pythonw -ArgumentList (Join-Path $PSScriptRoot 'tools\portable_launcher.py') -WorkingDirectory $PSScriptRoot

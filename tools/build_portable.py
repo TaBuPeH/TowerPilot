@@ -56,13 +56,19 @@ def build():
         (stage / 'tools').mkdir(exist_ok=True)
         shutil.copyfile(ROOT / 'tools/portable_launcher.py', stage / 'tools/portable_launcher.py')
         shutil.copyfile(ROOT / 'requirements-portable.lock', stage / 'requirements-portable.lock')
+        # pythonw + start: no console window at all. The app lives in the
+        # notification area (tools/portable_launcher.py), so there is no
+        # window for the user to close by accident.
         (stage / 'Start Tower Pilot.cmd').write_text(
-            '@echo off\ncd /d "%~dp0"\n"%~dp0runtime\\python.exe" "%~dp0tools\\portable_launcher.py"\nif errorlevel 1 pause\n')
+            '@echo off\ncd /d "%~dp0"\n'
+            'start "" "%~dp0runtime\\pythonw.exe" "%~dp0tools\\portable_launcher.py"\n')
         (stage / 'START HERE.txt').write_text(
             'Tower Pilot '+version+' - Windows 10/11 x64\n\n'
             'Extract the entire ZIP into a writable folder, then double-click Start Tower Pilot.cmd.\n'
             'Python and dependencies are included. No Python, pip or admin install is needed.\n'
-            'Keep the launcher window open. Your browser opens Setup automatically.\n'
+            'No console window opens: Tower Pilot sits in the notification area '
+            '(near the clock). Click that icon to open the dashboard, right-click it to quit.\n'
+            'Your browser opens Setup automatically on the first start.\n'
             'Install an emulator and The Tower, then use Setup to install connection tools (internet required).\n'
             'Recommended: 1080x2560 portrait, 360 DPI. Initial scan takes approximately 20-30 minutes.\n'
             'Account data is stored beside the app. Preserve the folder when upgrading.\n'
