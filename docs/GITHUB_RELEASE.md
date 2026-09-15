@@ -1,6 +1,6 @@
 ## Recommended: Windows portable app
 
-Download **TowerPilot-0.4-beta-windows-x64.zip** below. Extract the whole ZIP into
+Download **TowerPilot-0.5-beta-windows-x64.zip** below. Extract the whole ZIP into
 a writable folder and double-click **Start Tower Pilot.cmd**. Your browser opens
 Setup. Python and dependencies are included—no Python installation or terminal
 commands are required. No console window opens: Tower Pilot sits in the
@@ -9,8 +9,8 @@ right-click it to quit.
 
 ## Source distribution / developers
 
-Download **TowerPilot-0.4-beta-source.zip** below, or clone the repository and
-check out `v0.4-beta`. Install Python 3.12, then double-click **Start Tower
+Download **TowerPilot-0.5-beta-source.zip** below, or clone the repository and
+check out `v0.5-beta`. Install Python 3.12, then double-click **Start Tower
 Pilot.cmd**; the source launcher creates its environment and installs dependencies.
 Alternatively run `py -3.12 -m pip install -r requirements.txt`, then
 `py -3.12 frontend/dashboard.py` and open http://127.0.0.1:8620/ui/index.html#setup.
@@ -18,17 +18,21 @@ Alternatively run `py -3.12 -m pip install -r requirements.txt`, then
 GitHub's automatically generated “Source code” downloads are also source-only;
 choose **windows-x64.zip** if you do not want to install Python.
 
-## What changed in 0.4-beta
+## What changed in 0.5-beta
 
-- The Guild reward flow no longer strands a run on the Guild screen: the
-  milestone padlock is learned during play from the locked boxes on the track,
-  a missing padlock skips the claim pass instead of crashing, and any reward
-  flow that raises is dropped with a `mission_crash` event and the return strip
-  taken.
-- New global behaviour `demon_mode_always` (off by default): fire Demon Mode
-  whenever it is ready, whatever the rescue plan, for the Demon Mode kill quests.
-- Fleet spawn waves per tier and the release workflow fixes from 0.3-beta are
-  included. Details: `docs/RELEASE_0.4_BETA.md`.
+- **No console window.** The launcher starts without one and puts Tower Pilot
+  in the notification area near the clock: click the icon to open the
+  dashboard, right-click it to quit. A run in progress keeps going.
+- **New run type: Dissonance.** Coin runs entered through the game's Dissonant
+  Run dialog with one workshop tab disabled, with its own equipment, no
+  shopping, optional all-weapons-on and a wall rescue that also fires the
+  fleet-mark Nuke.
+- **Perk bans per run type.** A run type can keep its own list of perks banned;
+  the app sets them on the Perks dialog before the run and verifies every
+  change.
+- One entry path for every coin-kind run, so a dissonance run type can never
+  start an ordinary run by mistake.
+- Details and the beta limits: `docs/RELEASE_0.5_BETA.md`.
 
 ## First setup
 
@@ -61,6 +65,6 @@ dependencies retain their own licenses; game artwork is not covered.
 - Keep your existing app folder/account data when upgrading; don't replace local
   configuration with someone else's settings.
 
-Local validation: **1,203 Python tests passed, 3 skipped; 25 frontend tests passed**.
+Local validation: **1,239 Python tests passed, 3 skipped; 25 frontend tests passed**.
 The release workflow checks package boundaries and the dashboard before building.
 SHA-256 sidecars accompany both ZIPs; each ZIP also contains per-file checksums.
