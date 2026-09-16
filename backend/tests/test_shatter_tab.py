@@ -19,13 +19,15 @@ from interactions import shatter
 from player.bootstrap_layout import manifest
 
 TAB_TOP, TAB_BOTTOM = manifest()["module_inventory"]["inventory_tab"]
-# Where the four labels read on the player's own frame (2026-09-16), as
-# OCR row tuples (y, x, text) INSIDE the band crop.
-BAR = [(13, 18, "Inventory"), (13, 300, "Merge"),
-       (13, 640, "Shatter"), (13, 960, "Assist")]
-# The bar as it read while a module detail panel covered it - the case that
-# used to pass on brightness alone.
-COVERED = [(13, 18, "Inv"), (15, 971, "it")]
+# How the four labels actually read, measured 2026-09-16 over six of the
+# player's own Modules frames, as OCR rows (y, x, text) inside the band crop.
+# The Shatter label lands at (589, 13) there, so its tap point is (609, 1023)
+# - the remembered point that caused the incident was (682, 923).
+BAR = [(13, 18, "Inventory"), (13, 332, "Merge"),
+       (13, 589, "Shatter"), (12, 873, "Assist")]
+# The same bar while a module detail panel covered it, measured off the frame
+# saved at the 2026-09-16 abort - the case that used to pass on brightness.
+COVERED = [(13, 18, "Inv"), (15, 989, "it")]
 
 
 def _frame():
@@ -98,7 +100,7 @@ def test_the_bar_is_read_and_a_name_it_reads_twice_is_dropped(bot):
     bot.bar = BAR + [(13, 700, "Shatter")]
     points = shatter.tab_points(_frame())
     assert "shatter" not in points                 # ambiguous: never guessed
-    assert points["merge"] == (320, TAB_TOP + 23)  # x+20, y+top+10
+    assert points["merge"] == (352, TAB_TOP + 23)  # x+20, y+top+10
 
 
 def test_a_covered_bar_reads_no_tab_at_all(bot):
@@ -109,8 +111,8 @@ def test_a_covered_bar_reads_no_tab_at_all(bot):
 # ------------------------------------------------------------ reaching the tab
 def test_the_tab_is_tapped_where_it_was_read(bot):
     shatter.open_shatter()
-    assert bot.taps == [(660, TAB_TOP + 23, "Shatter tab")]
-    assert bot.event("shatter_tab_tap") == {"x": 660, "y": TAB_TOP + 23}
+    assert bot.taps == [(609, TAB_TOP + 23, "Shatter tab")]
+    assert bot.event("shatter_tab_tap") == {"x": 609, "y": TAB_TOP + 23}
     assert bot.event("shatter_tab")["tabs"] == ["assist", "inventory", "merge",
                                                 "shatter"]
 
@@ -127,7 +129,7 @@ def test_a_panel_is_closed_before_the_bar_is_trusted(monkeypatch):
     bot = Bot(monkeypatch, panel=True)
     shatter.open_shatter()
     assert bot.closed == 1
-    assert bot.taps == [(660, TAB_TOP + 23, "Shatter tab")]
+    assert bot.taps == [(609, TAB_TOP + 23, "Shatter tab")]
 
 
 def test_a_panel_that_will_not_close_aborts_with_zero_taps(monkeypatch):
