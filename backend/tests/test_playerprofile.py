@@ -142,7 +142,7 @@ def _base_profile() -> dict:
                         # of the combinations the P3 evaluator can actually
                         # execute (wave_at_least -> stop_after_run).
                         {"when": {"wave_at_least": 6000},
-                         "do": {"stop_after_run": True}},
+                         "do": {"cancel_sprint": True}},
                     ],
                 },
                 "tournament_any_falling": {
@@ -345,7 +345,7 @@ def test_tier_b_gets_the_leftovers(prof):
     assert p["rules"][0] == {
         "id": "high_tier_wall#3",
         "when": {"kind": "wave_at_least", "wave": 6000},
-        "do": {"kind": "stop_after_run"},
+        "do": {"kind": "cancel_sprint"},
         "repeat": False,
         "refire_sec": 5.0,
         "latency": "main_loop",
@@ -550,7 +550,7 @@ def test_every_tier_b_rule_carries_what_it_needs(prof):
         # `toggle_uw` carries the other non-ability requirement.)
         {"when": {"wave_at_least": 200},
          "do": {"toggle_uw": {"weapon": "black_hole", "want_on": False}}},
-        {"when": {"wave_at_least": 300}, "do": {"stop_after_run": True}},
+        {"when": {"wave_at_least": 300}, "do": {"cancel_sprint": True}},
     ])
     rules = profile_mod.compile_preset(prof, "coin_default")["rules"]
     assert [r["requires"] for r in rules] == [
@@ -692,20 +692,19 @@ def test_a_fully_composable_policy_compiles_end_to_end(prof):
              "repeat": True},
             {"when": {"wave_at_least": 4000},
              "do": {"toggle_uw": {"weapon": "black_hole", "want_on": False}}},
-            {"when": {"death_screen": True}, "do": {"stop_after_run": True}},
         ]}
     prof["blueprints"]["coin_default"]["policies"]["rescue"] = "composable"
     assert profile_mod.validate(prof) == []
     rules = profile_mod.compile_preset(prof, "coin_default")["rules"]
-    assert [r["id"] for r in rules] == [f"composable#{i}" for i in range(4)]
+    assert [r["id"] for r in rules] == [f"composable#{i}" for i in range(3)]
     assert [r["when"]["kind"] for r in rules] == [
-        "bar", "fleet_mark", "wave_at_least", "death_screen"]
-    assert [r["do"]["kind"] for r in rules] == [
-        "burst", "fire", "toggle_uw", "stop_after_run"]
-    assert [r["repeat"] for r in rules] == [True, True, False, False]
-    assert [r["refire_sec"] for r in rules] == [20.0, 7.0, 5.0, 5.0]
-    assert [r["latency"] for r in rules] == ["main_loop"] * 3 + \
-        ["death_handler"]
+        "bar", "fleet_mark", "wave_at_least"]
+    assert [r["do"]["kind"] for r in rules] == ["burst", "fire", "toggle_uw"]
+    assert [r["repeat"] for r in rules] == [True, True, False]
+    assert [r["refire_sec"] for r in rules] == [20.0, 7.0, 5.0]
+    # EVERY rule the compiler can build is a main-loop rule since the
+    # death-screen vocabulary was retired (2026-09-27).
+    assert [r["latency"] for r in rules] == ["main_loop"] * 3
     # EVERY key on EVERY rule, so the interpreter never calls .get(k, default)
     for rule in rules:
         assert set(rule) == {"id", "when", "do", "repeat", "refire_sec",
@@ -740,15 +739,14 @@ def test_a_plain_threshold_compiles_zero_not_one(prof):
 
 
 @pytest.mark.parametrize("when,do,keys", [
-    ({"wave_at_least": 4000}, {"stop_after_run": True}, {"kind", "wave"}),
+    ({"wave_at_least": 4000}, {"cancel_sprint": True}, {"kind", "wave"}),
     ({"wave_between": [10, 20]}, {"cancel_sprint": True}, {"kind", "value"}),
     ({"bar": "hp", "below": 0.3}, {"cancel_sprint": True},
      {"kind", "bar", "below", "falling_samples", "deadband"}),
     ({"fleet_mark": {}}, {"fire": {"button": "nuke"}},
      {"kind", "after_waves", "window_waves"}),
-    ({"second_wind": {"state": "open"}}, {"stop_after_run": True},
+    ({"second_wind": {"state": "open"}}, {"cancel_sprint": True},
      {"kind", "state", "min_procs"}),
-    ({"death_screen": True}, {"stop_after_run": True}, {"kind"}),
 ])
 def test_every_compiled_trigger_param_is_explicit(prof, when, do, keys):
     """THE RUNTIME APPLIES NO DEFAULTS - absence is an admission error there -
@@ -810,7 +808,7 @@ def test_refuse_non_finite_numbers(prof, bad):
      {"fire": {"button": "nuke"}}),
     ({"wave_between": [10, float("inf")]}, {"cancel_sprint": True}),
     ({"second_wind": {"state": "open", "min_procs": float("nan")}},
-     {"stop_after_run": True}),
+     {"cancel_sprint": True}),
     ({"wave_at_least": 100},
      {"fire": {"button": "nuke", "throttle_sec": float("nan")}}),
 ])
@@ -1040,8 +1038,6 @@ def test_shopping_unknown_list_reference_refused(prof):
 @pytest.mark.parametrize("rule,when_kind,do_kind", [
     # THE THREE SHAPES P3 REFUSED WITH "not supported until P4". P4 is the
     # promotion, so each is now accepted, compiled and gated - never dropped.
-    ({"when": {"death_screen": True}, "do": {"stop_after_run": True}},
-     "death_screen", "stop_after_run"),
     ({"when": {"wave_at_least": 100}, "do": {"surrender_retry": True}},
      "wave_at_least", "surrender_retry"),
     ({"when": {"wave_at_least": 100},
@@ -1101,19 +1097,45 @@ def test_switch_cards_is_refused_in_every_phase(prof, when):
     assert "switch_cards" in str(e.value) and "no verified route" in str(e.value)
 
 
-def test_the_death_screen_refusal_is_the_one_that_speaks_first(prof):
-    """A death-phase switch_cards rule keeps its OWN message - the death
-    screen is a different obstacle one screen later, and it was refused first.
-    Unchanged by the fix-round, and pinned so it stays that way."""
-    prof["policies"]["rescue_policies"]["high_tier_wall"]["rules"].append(
-        {"when": {"death_screen": True},
-         "do": {"switch_cards": {"preset": "disco"}}})
-    problems = profile_mod.validate(prof)
-    assert any("cannot run on the death screen" in p for p in problems)
-    # ...and not the main-loop one, which is what naming orchestrator.run_in_run_actions
-    # identifies (both messages happen to contain the words "verified route" -
-    # they are two statements of one obstacle, one screen apart).
-    assert not any("orchestrator.run_in_run_actions" in p for p in problems), problems
+def test_a_retired_death_rule_is_dropped_rather_than_breaking_the_profile(prof):
+    """THE UPGRADE PATH (2026-09-27). `death_screen` and `stop_after_run` were
+    retired because they were the only way a RUN TYPE could end the farm by
+    itself - and a saved profile still carries them.
+
+    Refusing would be this module's habit, and here it would be the wrong one:
+    a profile that will not compile is a farm that will not run. The rule is
+    dropped, the rest of the policy compiles untouched, and validate() stays
+    quiet so the dashboard does not send the player hunting for a rule that
+    no longer exists."""
+    pol = prof["policies"]["rescue_policies"]["high_tier_wall"]
+    before = profile_mod.compile_preset(prof, "coin_default")["rules"]
+    pol["rules"].append({"when": {"death_screen": True},
+                         "do": {"stop_after_run": True}})
+    assert profile_mod.validate(prof) == []
+    assert profile_mod.compile_preset(prof, "coin_default")["rules"] == before
+    assert profile_mod.retired_rules(pol) == [
+        {"when": {"death_screen": True}, "do": {"stop_after_run": True}}]
+
+
+def test_the_retired_action_cannot_come_back_through_another_trigger(prof):
+    """Retiring the trigger alone would leave `{wave_at_least: 1} ->
+    stop_after_run`, which stops the farm just as dead."""
+    pol = prof["policies"]["rescue_policies"]["high_tier_wall"]
+    before = profile_mod.compile_preset(prof, "coin_default")["rules"]
+    pol["rules"].append({"when": {"wave_at_least": 1},
+                         "do": {"stop_after_run": True}})
+    assert profile_mod.validate(prof) == []
+    assert profile_mod.compile_preset(prof, "coin_default")["rules"] == before
+
+
+def test_the_retired_names_are_gone_from_the_vocabulary(prof):
+    """The dashboard builds its rule editor from vocab(), so a name left here
+    is a name a player can pick again."""
+    v = profile_mod.vocab()
+    assert "death_screen" not in v["rule_triggers"]["fields"]
+    assert "stop_after_run" not in v["rule_actions"]["fields"]
+    assert "death_screen_actions" not in v
+    assert "stop_after_run" not in profile_mod.FLAG_ACTIONS
 
 
 def test_the_compiler_and_the_runtime_refuse_for_the_same_reason():
@@ -1169,7 +1191,7 @@ def test_second_wind_states_compile(prof, state):
 def test_second_wind_defaults_to_one_proc(prof):
     prof["policies"]["rescue_policies"]["high_tier_wall"]["rules"].append(
         {"when": {"second_wind": {"state": "closed"}},
-         "do": {"stop_after_run": True}})
+         "do": {"cancel_sprint": True}})
     rule = profile_mod.compile_preset(prof, "coin_default")["rules"][-1]
     assert rule["when"]["min_procs"] == 1
 
@@ -1181,7 +1203,7 @@ def test_second_wind_defaults_to_one_proc(prof):
 ])
 def test_refuse_bad_second_wind(prof, when, fragment):
     prof["policies"]["rescue_policies"]["high_tier_wall"]["rules"].append(
-        {"when": when, "do": {"stop_after_run": True}})
+        {"when": when, "do": {"cancel_sprint": True}})
     assert any(fragment in p for p in profile_mod.validate(prof))
 
 
@@ -1321,11 +1343,14 @@ def test_the_documented_composable_example_compiles_as_written(prof):
     prof["blueprints"]["coin_default"]["policies"]["rescue"] = "doc_example"
     assert profile_mod.validate(prof) == []
     rules = profile_mod.compile_preset(prof, "coin_default")["rules"]
+    # The documented block's last rule is written against the retired
+    # death-screen vocabulary, so the compiler drops it (see RETIRED in
+    # playerprofile.py) and the three that remain are all main-loop rules.
     assert [r["do"]["kind"] for r in rules] == [
-        "toggle_uw", "cancel_sprint", "burst", "stop_after_run"]
+        "toggle_uw", "cancel_sprint", "burst"]
     assert rules[0]["do"]["on"] is False        # source `want_on`, compiled `on`
     assert rules[2]["refire_sec"] == 20.0 and rules[2]["repeat"] is True
-    assert rules[3]["latency"] == "death_handler"
+    assert all(r["latency"] == "main_loop" for r in rules)
 
 
 def test_the_yaml_arm_trap_is_named_not_shrugged_at(prof):
@@ -1387,55 +1412,6 @@ def test_wall_shapes_spill_to_tier_b_as_observations(prof, rule, kind):
     assert compiled["when"]["kind"] == kind
     assert compiled["latency"] == "main_loop"
     assert compiled["requires"]["wall"] is True
-
-
-@pytest.mark.parametrize("do,why", [
-    # No battlefield: no ability row, no sprint, no wall.
-    ({"fire": {"button": "nuke"}}, "no ability row"),
-    ({"burst": {"fire": "demon_mode"}}, "no ability row"),
-    ({"cancel_sprint": True}, "no sprint button"),
-    # ...and not Home either. These two USED to be accepted here, until the
-    # runtime worker showed both are refused at the death phase: apply_cards
-    # navigates from Home (which the stats dialog has no verified route to)
-    # and abandon_run surrenders a LIVE battle (there is none left).
-    ({"switch_cards": {"preset": "disco"}}, "navigates from HOME"),
-    ({"surrender_retry": True}, "surrenders a LIVE battle"),
-])
-def test_refuse_every_death_screen_action_but_stop_after_run(prof, do, why):
-    """The refusal names the OBSTACLE, not just the whitelist: an author who
-    is told "only stop_after_run" learns nothing about where the card swap
-    belongs (the between-run chores path)."""
-    prof["policies"]["rescue_policies"]["high_tier_wall"]["rules"].append(
-        {"when": {"death_screen": True}, "do": do})
-    problems = profile_mod.validate(prof)
-    assert any("cannot run on the death screen" in p and why in p
-               for p in problems)
-
-
-def test_the_one_death_screen_action_that_runs(prof):
-    """`stop_after_run` writes the run flag and touches no screen at all -
-    which is exactly why it is the only one left."""
-    prof["policies"]["rescue_policies"]["high_tier_wall"]["rules"].append(
-        {"when": {"death_screen": True}, "do": {"stop_after_run": True}})
-    assert profile_mod.validate(prof) == []
-    rule = profile_mod.compile_preset(prof, "coin_default")["rules"][-1]
-    assert rule["do"] == {"kind": "stop_after_run"}
-    # WHERE it runs is part of the contract: the observe loop has already
-    # exited by the time the death screen exists.
-    assert rule["latency"] == "death_handler"
-
-
-@pytest.mark.parametrize("value", [False, None, {}, 0])
-def test_flag_trigger_must_be_exactly_true(prof, value):
-    """The mirror of the flag-ACTION rule, and live now that death_screen is:
-    `{death_screen: false}` reads as 'switched off' and compiles to a rule that
-    fires on every death, because the trigger is recognised by its NAME."""
-    prof["policies"]["rescue_policies"]["high_tier_wall"]["rules"].append(
-        {"when": {"death_screen": value}, "do": {"stop_after_run": True}})
-    problems = profile_mod.validate(prof)
-    assert any("death_screen" in p and "exactly" in p for p in problems)
-    with pytest.raises(ProfileError, match="exactly"):
-        profile_mod.compile_preset(prof, "coin_default")
 
 
 def test_refuse_require_match_on_a_tier_b_burst(prof):
@@ -1560,12 +1536,12 @@ def test_refuse_bad_refire_sec(prof):
 
 @pytest.mark.parametrize("value", [False, None, {}, 0])
 def test_flag_action_must_be_exactly_true(prof, value):
-    """`{stop_after_run: false}` reads as 'this rule does nothing', but an
-    evaluator dispatching on key presence stops the run anyway. `null` is the
-    same hazard in disguise: YAML writes a valueless key as None, which looks
-    deliberate and means nothing."""
+    """`{cancel_sprint: false}` reads as 'this rule does nothing', but an
+    evaluator dispatching on key presence cancels the sprint anyway. `null` is
+    the same hazard in disguise: YAML writes a valueless key as None, which
+    looks deliberate and means nothing."""
     prof["policies"]["rescue_policies"]["high_tier_wall"]["rules"][-1][
-        "do"] = {"stop_after_run": value}
+        "do"] = {"cancel_sprint": value}
     assert any("exactly" in p and "true" in p
                for p in profile_mod.validate(prof))
     with pytest.raises(ProfileError, match="exactly"):
@@ -1574,7 +1550,7 @@ def test_flag_action_must_be_exactly_true(prof, value):
 
 def test_flag_action_true_is_accepted(prof):
     prof["policies"]["rescue_policies"]["high_tier_wall"]["rules"][-1][
-        "do"] = {"stop_after_run": True}
+        "do"] = {"cancel_sprint": True}
     assert profile_mod.validate(prof) == []
 
 
@@ -3316,10 +3292,11 @@ def test_acct2_live_test_profile_is_runnable():
     assert body["uw_wanted"] == {}                    # no normalization sweep
     assert body["chain_lightning"]["enabled"] is False   # ...and CL is unowned
     assert body["abilities"]["rescue_bar"] is None    # no rescue: no abilities
-    assert [r["id"] for r in body["rules"]] == [
-        "rule_walk#0", "rule_walk#1", "rule_walk#2"]
+    # its third rule is written against the retired death-screen vocabulary
+    # and is dropped by the compiler (2026-09-27)
+    assert [r["id"] for r in body["rules"]] == ["rule_walk#0", "rule_walk#1"]
     assert [r["do"]["kind"] for r in body["rules"]] == [
-        "toggle_uw", "toggle_uw", "stop_after_run"]
+        "toggle_uw", "toggle_uw"]
     # the gate must PASS for this one, against its own player section
     assert profile_mod.check_capabilities(body, prof["player"]) == []
     assert profile_mod.required_capabilities(body)["uws"] == ["golden_tower"]
@@ -3658,7 +3635,6 @@ def test_vocab_is_json_able_and_a_fresh_object_each_call():
     ("sw_states", "SW_STATES"), ("cl_modes", "CL_MODES"),
     ("weekdays", "WEEKDAYS"), ("shop_tabs", "SHOP_TABS"),
     ("shop_modes", "SHOP_MODES"),
-    ("death_screen_actions", "DEATH_SCREEN_ACTIONS"),
     ("in_run_action_kinds", "IN_RUN_ACTIONS"),
 ])
 def test_vocab_enums_are_derived_not_retyped(section, source):
@@ -3782,7 +3758,7 @@ def _profile_with(prof, path, spec, value):
             body[param] = value
         when = {name: body or value} if section == "rule_triggers" \
             else {"wave_at_least": 100}
-        do = {"stop_after_run": True} if section == "rule_triggers" \
+        do = {"cancel_sprint": True} if section == "rule_triggers" \
             else {name: body or value}
         if name == "bar":               # its params are SIBLINGS of the key
             when = {"bar": body.pop("bar", "hp"), **body}

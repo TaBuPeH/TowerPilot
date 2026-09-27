@@ -727,7 +727,7 @@ def api_status():
     except (OSError, ValueError):
         pass
     inst = cfg.get("active_instance", "main")
-    flag = os.path.join(ROOT, "logs", inst, "stop_after_run")
+    flag = _stop_flag_path(inst)
     return jsonify({
         "processes": _procs_cached(),
         "daily_state": daily,
@@ -932,6 +932,22 @@ def api_stream():
                     headers={"Cache-Control": "no-cache"})
 
 
+def _stop_flag_path(inst: str) -> str:
+    """The runflag file (scheduling/runflag.py) for this instance."""
+    return os.path.join(ROOT, "logs", inst, "stop_after_run")
+
+
+def _clear_stop_flag(inst: str) -> bool:
+    """Drop a pending "stop when this run ends", reporting whether one was
+    there. The runner only reads it at its death handler, so a flag nobody
+    cancelled is invisible until it costs a whole night of farming."""
+    try:
+        os.remove(_stop_flag_path(inst))
+        return True
+    except FileNotFoundError:
+        return False
+
+
 # ------------------------------------------------------------------ control
 @app.post("/api/control")
 def api_control():
@@ -939,16 +955,17 @@ def api_control():
     action = body.get("action")
     cfg = load_config()
     inst = cfg.get("active_instance", "main")
-    if action == "stop_after_run":
-        path = os.path.join(ROOT, "logs", inst, "stop_after_run")
-        with open(path, "w", encoding="utf-8") as fh:
-            fh.write("dashboard")
-        return jsonify({"ok": True})
+    # THERE IS NO "stop after this run" ACTION HERE ANY MORE (2026-09-27).
+    # One press of it wrote a flag that outlived the runner: the run ended,
+    # the runner left, and every runner started afterwards read the same
+    # stale flag and left again at its first death. The farm sat dead from
+    # 22:50 to 09:23 and the next two starts lasted ten seconds each. A stop
+    # a person asks for is "Stop now", which never touches the game; the flag
+    # is left to the day plan, which writes it to SWITCH activities at a run
+    # boundary (scheduling/combo.py, the runflag contract) and clears it
+    # itself. `clear_flag` stays so such a pending switch can be cancelled.
     if action == "clear_flag":
-        try:
-            os.remove(os.path.join(ROOT, "logs", inst, "stop_after_run"))
-        except FileNotFoundError:
-            pass
+        _clear_stop_flag(inst)
         return jsonify({"ok": True})
     if action == "kill":
         import psutil
@@ -1012,6 +1029,11 @@ def api_control():
             return jsonify({"ok": False, "error": str(e)}), 400
         if preset not in runnable_presets(cfg):
             return jsonify({"ok": False, "error": "unknown preset"}), 400
+        # A pending "stop when this run ends" NEVER survives a Start. Someone
+        # pressing Start is asking for a run now, and the runner reads the
+        # flag at its own death handler - so a flag left over from a previous
+        # session would end this run too, minutes after it was asked for.
+        started_stop = _clear_stop_flag(inst)
         runner = cfg["presets"].get(preset, {}).get("runner") or "orchestrator.py"
         args = cfg["presets"].get(preset, {}).get("runner_args") or []
         pyw = sys.executable.replace("python.exe", "pythonw.exe")
@@ -1049,7 +1071,8 @@ def api_control():
                             "error": f"runner exited immediately (code "
                                      f"{child.returncode}) - check logs"}), 500
         _procs_refresh()
-        return jsonify({"ok": True, "cmd": cmd, "pid": child.pid})
+        return jsonify({"ok": True, "cmd": cmd, "pid": child.pid,
+                        "cleared_stop": started_stop})
     return jsonify({"ok": False, "error": "unknown action"}), 400
 
 
