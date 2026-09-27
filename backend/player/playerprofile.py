@@ -53,7 +53,7 @@ Tier B rules are NORMALIZED at compile time (P4), not handed over raw: every
 compiled rule carries `{id, when, do, repeat, refire_sec, latency, requires}`,
 each of `when`/`do` a mapping with an explicit `kind` and every parameter
 present as a number or a bool. The runtime therefore never parses a string,
-never dispatches on key presence (which is how `{stop_after_run: false}` would
+never dispatches on key presence (which is how `{cancel_sprint: false}` would
 stop a run), and never has to know a default. See profiles/SCHEMA.md, "RULES",
 for the field-by-field contract - it is what the main-loop interpreter reads.
 """
@@ -168,7 +168,6 @@ TRIGGERS = {
     "wave_at_least": ((), ()),          # scalar: {wave_at_least: 4000}
     "wave_between":  ((), ()),          # pair:   {wave_between: [1000, 2000]}
     "second_wind":   (("state",), ("min_procs",)),
-    "death_screen":  ((), ()),          # flag: {death_screen: true}
 }
 
 # `second_wind.state`, and each one is a question the RunState can already
@@ -205,14 +204,13 @@ ACTIONS = {
     # ever sees it.
     "toggle_uw":       (("weapon",), ("want_on",)),
     "surrender_retry": ((), ()),        # flag
-    "stop_after_run":  ((), ()),        # flag
 }
 
-# Actions whose whole body is a boolean. `{stop_after_run: false}` is a rule
+# Actions whose whole body is a boolean. `{cancel_sprint: false}` is a rule
 # with its action SWITCHED OFF - and an evaluator that dispatches on key
 # presence would stop the run anyway. Refused at compile time so no evaluator
 # ever has to be trusted to check truthiness.
-FLAG_ACTIONS = ("cancel_sprint", "surrender_retry", "stop_after_run")
+FLAG_ACTIONS = ("cancel_sprint", "surrender_retry")
 
 # WHAT TIER B CAN EXECUTE (P4 - the composable vocabulary).
 #
@@ -231,25 +229,25 @@ TIER_B_TRIGGERS = tuple(TRIGGERS)
 TIER_B_BARS = BAR_NAMES
 TIER_B_ACTIONS = tuple(ACTIONS)
 
-# ...and what may fire ON THE DEATH SCREEN: writing the run flag, and nothing
-# else. Three separate reasons, all of them the same reason - the stats dialog
-# is not a screen anything else here knows how to stand on:
+# RETIRED 2026-09-27: `death_screen` and `stop_after_run`.
 #
-#   * `fire` / `burst` / `cancel_sprint` - there is no ability row, no sprint
-#     button and no wall, so the tap lands at a fixed coordinate inside a
-#     dialog. That is the no-clicking-in-menus rule verbatim.
-#   * `switch_cards` - loadout.apply_cards navigates FROM HOME, and the stats
-#     dialog has no verified route there; the death path would have to be
-#     refactored to provide one. Card swaps between runs already have a home:
-#     the chores registry (P5/P6).
-#   * `surrender_retry` - shard.abandon_run surrenders a LIVE battle. On the
-#     stats dialog the run is already over, so it is semantically null.
+# They were the only way a RUN TYPE could end the loop by itself, and that is
+# what they did: a rule on a rescue policy wrote the run flag on every death,
+# so the tower played one run and stopped. Farming is the point of this app -
+# a run type that ends the night is not a behaviour anyone wants configured by
+# accident, and the player asked for the capability to go entirely.
 #
-# The runtime refuses all five loudly (orchestrator.py, death phase). Accepting them
-# HERE would compile a rule that validates, appears in the dashboard, and is
-# retired with `rule_unsupported` the first time the player dies - the
-# accepted-but-ignored shape this module exists to abolish.
-DEATH_SCREEN_ACTIONS = ("stop_after_run",)
+# The FLAG itself stays. The day plan writes it to SWITCH activities at a run
+# boundary and clears it again (scheduling/combo.py, the runflag contract);
+# hard rule 5 exists because the alternative is killing a live run. What is
+# gone is every way to ARM it from a profile or the dashboard.
+#
+# A saved profile may still carry such a rule, and a profile that will not
+# compile is a farm that will not run - so `_rules_of` DROPS a retired rule
+# instead of refusing it, and says so in `retired_rules` on the compiled
+# preset. That is the one place in this module where dropping beats refusing.
+RETIRED_TRIGGERS = ("death_screen",)
+RETIRED_ACTIONS = ("stop_after_run",)
 
 # THERE IS NO VERIFIED ROUTE FROM A LIVE BATTLE TO THE CARDS SCREEN, so nothing
 # that would walk one is accepted - not the Tier B `switch_cards` action, not a
@@ -283,23 +281,6 @@ NO_CARDS_ROUTE = (
 # The token that marks a vocabulary entry as offered-but-not-yet-runnable, so
 # the dashboard (and the tests) can key off it instead of matching prose.
 PENDING_ROUTE = "PENDING VERIFIED ROUTE"
-
-# Why each refused action cannot run there, so the message names the actual
-# obstacle instead of listing what is allowed and leaving the author guessing.
-_DEATH_SCREEN_WHY = {
-    "fire": "there is no ability row on the stats dialog, so the tap would "
-            "land at a fixed coordinate inside a menu",
-    "burst": "there is no ability row and no sprint on the stats dialog, so "
-             "the taps would land at fixed coordinates inside a menu",
-    "cancel_sprint": "there is no sprint button on the stats dialog - the run "
-                     "is already over",
-    "switch_cards": "loadout.apply_cards navigates from HOME and the stats "
-                    "dialog has no verified route there; between-run card "
-                    "swaps belong to the chores path (P5/P6)",
-    "surrender_retry": "shard.abandon_run surrenders a LIVE battle, and on "
-                       "the stats dialog the run is already over - there is "
-                       "nothing left to surrender",
-}
 
 # Per-rule refire floor when nothing states one. 5s is the literal the P3
 # evaluator used (orchestrator.RULE_REFIRE_SEC) for exactly this purpose.
@@ -786,14 +767,6 @@ def _trigger(when, path: str) -> tuple[str, dict]:
     if name == "bar" and params["bar"] not in BAR_NAMES:
         raise ProfileError(f"{path}.when.bar: unknown bar {params['bar']!r} "
                            f"(known: {', '.join(BAR_NAMES)})")
-    # A FLAG TRIGGER MUST BE EXACTLY `true`, for the same reason a flag action
-    # must: `{death_screen: false}` reads as "this rule is switched off" and
-    # compiles to a rule that fires on every death, because the trigger is
-    # recognised by its NAME. One spelling, checked once.
-    if name == "death_screen" and value is not True:
-        raise ProfileError(f"{path}.when.death_screen: flag trigger must be "
-                           f"exactly `true`, got {value!r}. Delete the rule "
-                           f"instead of switching its own trigger off")
     return name, params
 
 
@@ -839,12 +812,12 @@ def _action(do, path: str) -> tuple[str, dict]:
     if name in ("fire", "burst") and button not in BUTTONS:
         raise ProfileError(f"{path}.do.{name}: unknown button {button!r} "
                            f"(known: {', '.join(BUTTONS)})")
-    # A FLAG ACTION MUST BE EXACTLY `true`. `{stop_after_run: false}` reads as
+    # A FLAG ACTION MUST BE EXACTLY `true`. `{cancel_sprint: false}` reads as
     # "this rule does nothing", but an evaluator that dispatches on key
-    # presence stops the run regardless. `null` and `{}` are the same hazard
-    # wearing a different hat - YAML writes `stop_after_run:` with no value as
-    # None, which looks deliberate and means nothing. One spelling, checked
-    # once, so no evaluator ever has to be trusted to test truthiness.
+    # presence cancels the sprint regardless. `null` and `{}` are the same
+    # hazard wearing a different hat - YAML writes `cancel_sprint:` with no
+    # value as None, which looks deliberate and means nothing. One spelling,
+    # checked once, so no evaluator ever has to test truthiness.
     if name in FLAG_ACTIONS and do[name] is not True:
         raise ProfileError(f"{path}.do.{name}: flag action must be exactly "
                            f"`true`, got {do[name]!r}. Delete the rule instead "
@@ -852,9 +825,28 @@ def _action(do, path: str) -> tuple[str, dict]:
     return name, params
 
 
+def _is_retired(rule) -> bool:
+    """A rule written against the retired death-screen vocabulary."""
+    rule = _d(rule)
+    when, do = _d(rule.get("when")), _d(rule.get("do"))
+    return (any(t in when for t in RETIRED_TRIGGERS)
+            or any(a in do for a in RETIRED_ACTIONS))
+
+
+def retired_rules(policy: dict) -> list[dict]:
+    """The retired rules this policy still carries, for the compiled preset."""
+    return [_d(r) for r in (policy.get("rules") or []) if _is_retired(r)]
+
+
 def _rules_of(policy: dict) -> list:
     rules = policy.get("rules")
-    return rules if isinstance(rules, list) else []
+    if not isinstance(rules, list):
+        return []
+    # DROPPED, NOT REFUSED - the one exception in this module, and it is
+    # deliberate: refusing would mean a saved profile stops compiling, and a
+    # profile that will not compile is a farm that will not run. See the
+    # RETIRED note at the top.
+    return [r for r in rules if not _is_retired(r)]
 
 
 def _classify_rules(policy: dict, path: str) -> list[dict]:
@@ -1576,23 +1568,13 @@ def _refuse_unsupported_tier_b(entry: dict) -> list[str]:
     if act not in TIER_B_ACTIONS:
         out.append(f"{path}.do.{act}: has no main-loop executor "
                    f"(main-loop actions: {', '.join(sorted(TIER_B_ACTIONS))})")
-    # THE DEATH SCREEN IS NOT A BATTLEFIELD, AND IT IS NOT HOME EITHER. The
-    # runtime refuses every action but `stop_after_run` there, so accepting one
-    # here would compile a rule that validates, shows up in the dashboard, and
-    # is retired with `rule_unsupported` the first time the player dies.
-    if trig == "death_screen" and act not in DEATH_SCREEN_ACTIONS:
-        out.append(f"{path}.do.{act}: cannot run on the death screen - "
-                   f"{_DEATH_SCREEN_WHY.get(act, 'the stats dialog cannot run it')}"
-                   f". Death rules may only "
-                   f"{', '.join(f'`{a}`' for a in DEATH_SCREEN_ACTIONS)}")
-    # ...AND A LIVE BATTLE IS NOT HOME. Same obstacle as the death-screen
-    # refusal above, one screen earlier: orchestrator retires `switch_cards` the first
+    # A LIVE BATTLE IS NOT HOME: orchestrator retires `switch_cards` the first
     # time it SEES the rule, in every phase, so a compiler that still accepted
     # it would ship a rule that renders, reads as configured and never runs.
     # This is a main-loop refusal because main-loop is where the rule would be:
     # no Tier A slot takes `switch_cards` (they take `burst` and `fire`), so
     # every switch_cards rule is a main_loop rule.
-    elif act == "switch_cards":
+    if act == "switch_cards":
         out.append(f"{path}.do.switch_cards: {NO_CARDS_ROUTE}")
     return out
 
@@ -2877,7 +2859,7 @@ def _compile_trigger(trig: str, tp: dict) -> dict:
     OF TRUTH for every default in this shape.
 
     `kind` is a field, not the dict's first key, because dispatching on key
-    PRESENCE is what makes `{stop_after_run: false}` stop a run.
+    PRESENCE is what makes `{cancel_sprint: false}` cancel the sprint.
     """
     if trig == "wave_at_least":
         return {"kind": "wave_at_least",
@@ -2918,7 +2900,7 @@ def _compile_trigger(trig: str, tp: dict) -> dict:
         return {"kind": "wall_collapse",
                 "from_above": _finite(tp["from_above"],
                                       "when.wall_collapse.from_above")}
-    return {"kind": trig}                       # death_screen: no parameters
+    return {"kind": trig}                       # no parameters
 
 
 def _compile_action(act: str, ap: dict) -> dict:
@@ -3016,10 +2998,10 @@ def _compile_tier_b_rule(entry: dict, policy_name: str) -> dict:
         "repeat": bool(rule.get("repeat", trig == "fleet_mark")),
         "refire_sec": (float(DEFAULT_RULE_REFIRE_SEC) if refire is None
                        else _finite(refire, f"{rid}.refire_sec")),
-        # WHERE it runs, which is also WHEN: a death_screen rule cannot be
-        # evaluated by the observe loop, because that loop has already exited
-        # by the time the screen exists.
-        "latency": "death_handler" if trig == "death_screen" else "main_loop",
+        # WHERE it runs, which is also WHEN. Every rule the compiler can
+        # build is a main-loop rule now that the death-screen vocabulary is
+        # retired; the field stays because the runtime dispatches on it.
+        "latency": "main_loop",
         "requires": _rule_requires(trig, tp, act, ap),
     }
 
@@ -3282,7 +3264,7 @@ def check_capabilities(compiled: dict, player: dict | None = None) -> list[str]:
 VOCAB_SECTIONS = (
     "kinds", "blueprint_fields", "loadout_specials", "bar_names", "buttons",
     "sw_states", "cl_modes", "uw_names", "gather_keys", "shop_tabs", "shop_modes",
-    "shop_stats", "rule_triggers", "rule_actions", "death_screen_actions",
+    "shop_stats", "rule_triggers", "rule_actions",
     "in_run_action_kinds", "weekdays", "block_fields", "plan_tri_state",
     "chore_names",
 )
@@ -3550,9 +3532,6 @@ def vocab() -> dict:
                 "state": _enum(SW_STATES, "which moment of the proc"),
                 "min_procs": _spec("int", "procs required this run so far",
                                    span=(1, None))}),
-        "death_screen": _spec(
-            "bool", "flag: {death_screen: true} - fires once on the stats "
-                    "dialog, and must be exactly true", values=(True,)),
     }
     actions = {
         "burst": _spec(
@@ -3663,10 +3642,6 @@ def vocab() -> dict:
         "rule_actions": _spec(
             "object", "rescue-rule `do` vocabulary", required=(),
             fields=actions),
-        "death_screen_actions": _enum(
-            DEATH_SCREEN_ACTIONS,
-            "the only actions a `death_screen` rule may take - the stats "
-            "dialog is a menu, and everything else would tap into it"),
         "in_run_action_kinds": _enum(
             IN_RUN_ACTIONS,
             f"{PENDING_ROUTE}: tournament in_run_actions vocabulary (v1). One "

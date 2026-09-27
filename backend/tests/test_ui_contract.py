@@ -75,7 +75,7 @@ def test_trigger_seed_validates(profile, trig):
     death_screen rules only accept stop_after_run; everything else is
     paired with a neutral toggle_uw - the dropdown's own default action.
     """
-    do = ({"stop_after_run": True} if trig == "death_screen"
+    do = ({"cancel_sprint": True} if trig == "death_screen"
           else copy.deepcopy(SEEDS["actions"]["toggle_uw"]))
     profile["policies"]["rescue_policies"]["zz_seed"] = {
         "arm": "always", "end_sprint_after_sw": False,
@@ -91,7 +91,6 @@ _ACTION_CASES = [
     ("toggle_uw", "always"),
     ("cancel_sprint", "always"),
     ("surrender_retry", "always"),
-    ("stop_after_run", "always"),
 ]
 
 

@@ -161,6 +161,23 @@ def _fires(orchestrator, monkeypatch):
     return seen
 
 
+def _hits(orchestrator, monkeypatch):
+    """Rule ids that actually RAN, recorded from fire_button.
+
+    These tests used to prove a rule fired by counting run-flag writes -
+    `stop_after_run` was the one action that touched no screen. It was retired
+    on 2026-09-27 (a run type must not be able to end the farm), so the rules
+    here fire the Nuke and the fake records which rule id asked for it.
+    """
+    out: list[str] = []
+
+    def fake(frame, name, why, require_ready=True):
+        out.append(why)
+        return True
+    monkeypatch.setattr(orchestrator, "fire_button", fake)
+    return out
+
+
 def _ev(orchestrator, name):
     return [kw for n, kw in orchestrator._log.events if n == name]
 
@@ -185,14 +202,14 @@ def test_wave_at_least_reads_both_compiled_shapes(orchestrator, monkeypatch, rul
 
 def test_wave_between_is_a_window_not_a_threshold(orchestrator, monkeypatch, rules):
     rules([{"when": {"wave_between": [1000, 2000]}, "repeat": True,
-            "do": {"stop_after_run": True}}])
-    rf = _f(orchestrator, "runflag")
-    rf.__dict__["requests"] = []
+            "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
+    hits = _hits(orchestrator, monkeypatch)
     rs = _rs()
     for w in (999, 1000, 1500, 2000, 2001):
         rs.rule_next.clear()
         orchestrator.eval_rules(rs, "FRAME", w)
-    assert len(rf.__dict__["requests"]) == 3      # 1000, 1500, 2000
+    assert len(hits) == 3      # 1000, 1500, 2000
 
 
 def test_wave_window_shapes(orchestrator):
@@ -232,9 +249,9 @@ def test_bar_wall_honours_falling_samples_and_deadband(orchestrator, monkeypatch
     and jitter inside the deadband is not a fall."""
     rules([{"when": {"kind": "bar", "bar": "wall", "below": 0.5,
                      "falling_samples": 2, "deadband": 0.01},
-            "repeat": True, "do": {"stop_after_run": True}}])
-    rf = _f(orchestrator, "runflag")
-    rf.__dict__["requests"] = []
+            "repeat": True, "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
+    hits = _hits(orchestrator, monkeypatch)
     seq = [0.40, 0.399, 0.398,      # jitter inside the deadband: not falling
            0.30, 0.20]              # two real falls -> fires on the second
     det = _f(orchestrator, "detect")
@@ -244,7 +261,7 @@ def test_bar_wall_honours_falling_samples_and_deadband(orchestrator, monkeypatch
                             (v, "normal"))
         rs.rule_next.clear()
         orchestrator.eval_rules(rs, "FRAME", 100)
-    assert rf.__dict__["requests"] == ["rule0"]
+    assert hits == ["rule0"]
 
 
 def test_a_compiled_bar_rule_must_state_every_number(orchestrator, monkeypatch,
@@ -258,14 +275,14 @@ def test_a_compiled_bar_rule_must_state_every_number(orchestrator, monkeypatch,
         when = {"kind": "bar", "bar": "hp", "below": 0.3,
                 "falling_samples": 0, "deadband": 0.0}
         when.pop(missing)
-        rules([{"when": when, "do": {"stop_after_run": True}}])
+        rules([{"when": when, "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
         monkeypatch.setattr(_f(orchestrator, "detect"), "hp_fill", lambda frame: 0.1)
-        rf = _f(orchestrator, "runflag")
-        rf.__dict__["requests"] = []
+        hits = _hits(orchestrator, monkeypatch)
         orchestrator.eval_rules(_rs(), "FRAME", 100)
         why = _ev(orchestrator, "rule_unsupported")[0]["why"]
         assert missing in why and "no default" in why
-        assert rf.__dict__["requests"] == []
+        assert hits == []
 
 
 def test_a_compiled_plain_threshold_fires_on_the_first_sample(orchestrator,
@@ -277,26 +294,26 @@ def test_a_compiled_plain_threshold_fires_on_the_first_sample(orchestrator,
     for when in ({"kind": "bar", "bar": "hp", "below": 0.3,
                   "falling_samples": 0, "deadband": 0.0},
                  {"bar": "hp", "below": 0.3}):        # the raw P3 shape
-        rules([{"when": when, "do": {"stop_after_run": True}}])
+        rules([{"when": when, "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
         monkeypatch.setattr(_f(orchestrator, "detect"), "hp_fill", lambda frame: 0.1)
-        rf = _f(orchestrator, "runflag")
-        rf.__dict__["requests"] = []
+        hits = _hits(orchestrator, monkeypatch)
         orchestrator.eval_rules(_rs(), "FRAME", 100)
-        assert rf.__dict__["requests"] == ["rule0"], when   # FIRST pass
+        assert hits == ["rule0"], when   # FIRST pass
 
 
 def test_bar_immune_reading_is_not_a_wall_reading(orchestrator, monkeypatch, rules):
     """During a Second Wind the wall ROI shows the pink immunity countdown.
     Treating that as a wall value fires the rule on every single proc."""
     rules([{"when": {"bar": "wall", "below": 0.9}, "repeat": True,
-            "do": {"stop_after_run": True}}])
-    rf = _f(orchestrator, "runflag")
-    rf.__dict__["requests"] = []
+            "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
+    hits = _hits(orchestrator, monkeypatch)
     monkeypatch.setattr(_f(orchestrator, "detect"), "wall_overheal",
                         lambda frame: (0.0, "immune"))
     rs = _rs()
     orchestrator.eval_rules(rs, "FRAME", 100)
-    assert rf.__dict__["requests"] == []
+    assert hits == []
 
 
 def test_a_proc_wipes_the_falling_history(orchestrator, monkeypatch, rules):
@@ -306,9 +323,9 @@ def test_a_proc_wipes_the_falling_history(orchestrator, monkeypatch, rules):
     after every proc, so the history has to die with the proc."""
     rules([{"when": {"kind": "bar", "bar": "wall", "below": 0.5,
                      "falling_samples": 1, "deadband": 0.01},
-            "repeat": True, "do": {"stop_after_run": True}}])
-    rf = _f(orchestrator, "runflag")
-    rf.__dict__["requests"] = []
+            "repeat": True, "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
+    hits = _hits(orchestrator, monkeypatch)
     det = _f(orchestrator, "detect")
     rs = _rs()
     #        pre-proc fall            proc          harmless rebuild
@@ -318,20 +335,20 @@ def test_a_proc_wipes_the_falling_history(orchestrator, monkeypatch, rules):
                             (v, st))
         rs.rule_next.clear()
         orchestrator.eval_rules(rs, "FRAME", 100)
-    assert rf.__dict__["requests"] == []
+    assert hits == []
 
 
 def test_bar_rebuilding_is_below_every_threshold(orchestrator, monkeypatch, rules):
     """A broken wall shows the 'Rebuilding' banner instead of a value. It is
     the one state a slow sample can never misread, so it triggers outright."""
     rules([{"when": {"bar": "wall", "below": 0.02},
-            "do": {"stop_after_run": True}}])
-    rf = _f(orchestrator, "runflag")
-    rf.__dict__["requests"] = []
+            "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
+    hits = _hits(orchestrator, monkeypatch)
     monkeypatch.setattr(_f(orchestrator, "detect"), "wall_overheal",
                         lambda frame: (0.0, "rebuilding"))
     orchestrator.eval_rules(_rs(), "FRAME", 100)
-    assert rf.__dict__["requests"] == ["rule0"]
+    assert hits == ["rule0"]
 
 
 def test_wall_collapse_needs_a_fat_wall_first(orchestrator, monkeypatch, rules):
@@ -341,16 +358,16 @@ def test_wall_collapse_needs_a_fat_wall_first(orchestrator, monkeypatch, rules):
 
     def drive(seq):
         rules([{"when": {"kind": "wall_collapse", "from_above": 0.3},
-                "do": {"stop_after_run": True}}])
-        rf = _f(orchestrator, "runflag")
-        rf.__dict__["requests"] = []
+                "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
+        hits = _hits(orchestrator, monkeypatch)
         rs = _rs()
         for v, st in seq:
             monkeypatch.setattr(det, "wall_overheal",
                                 lambda frame, v=v, st=st: (v, st))
             rs.rule_next.clear()
             orchestrator.eval_rules(rs, "FRAME", 100)
-        return rf.__dict__["requests"]
+        return hits
 
     assert drive([(0.9, "normal"), (0.0, "rebuilding")]) == ["rule0"]
     assert drive([(0.1, "normal"), (0.0, "rebuilding")]) == []
@@ -404,33 +421,37 @@ def test_second_wind_states_read_the_run_state(orchestrator, monkeypatch, rules)
     ]
     for params, state, want in cases:
         rules([{"when": {"kind": "second_wind", **params},
-                "do": {"stop_after_run": True}}])
-        rf = _f(orchestrator, "runflag")
-        rf.__dict__["requests"] = []
+                "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
+        hits = _hits(orchestrator, monkeypatch)
         orchestrator.eval_rules(_rs(**state), "FRAME", 100)
-        assert bool(rf.__dict__["requests"]) is want, (params, state)
+        assert bool(hits) is want, (params, state)
 
 
-def test_second_wind_after_immunity_waits_for_the_window(orchestrator, rules):
+def test_second_wind_after_immunity_waits_for_the_window(orchestrator, monkeypatch,
+                                                        rules):
     import time
     rules([{"when": {"second_wind": {"state": "after_immunity"}},
-            "do": {"stop_after_run": True}}])
-    rf = _f(orchestrator, "runflag")
-    rf.__dict__["requests"] = []
+            "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
+    hits = _hits(orchestrator, monkeypatch)
     rs = _rs(sw_proc_count=1, sw_floater_seen=False,
              sw_immune_until=time.monotonic() + 60)
     orchestrator.eval_rules(rs, "FRAME", 100)
-    assert rf.__dict__["requests"] == []
+    assert hits == []
     rs.sw_immune_until = 0.0
     orchestrator.eval_rules(rs, "FRAME", 100)
-    assert rf.__dict__["requests"] == ["rule0"]
+    assert hits == ["rule0"]
 
 
 # --------------------------------------------- retired: wrong tier, wrong phase
 
 @pytest.mark.parametrize("rule,fragment", [
+    # RETIRED VOCABULARY (2026-09-27): `death_screen` is not a trigger any
+    # more, so a saved rule that names it is unreadable rather than
+    # wrong-phase - and is refused with everything else this loop cannot run.
     ({"when": {"death_screen": True}, "do": {"surrender_retry": True}},
-     "death handler"),
+     "no known trigger"),
     ({"when": {"bar": "hp"}, "do": {"fire": {"button": "nuke"}}},
      "no `below` threshold"),
     ({"when": {"bar": "hp", "below": 0.3}, "do": {"fire": {"button": "wall"}}},
@@ -439,11 +460,14 @@ def test_second_wind_after_immunity_waits_for_the_window(orchestrator, rules):
      "card preset name"),
     ({"when": {"wave_at_least": 10}, "do": {"toggle_uw": {}}},
      "weapon name"),
-    ({"when": {"wall_collapse": {}}, "do": {"stop_after_run": True}},
+    ({"when": {"wall_collapse": {}}, "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}},
      "from_above"),
     ({"when": {"second_wind": {"state": "sideways"}},
-      "do": {"stop_after_run": True}}, "unknown second_wind state"),
-    ({"when": {"nonsense": 1}, "do": {"stop_after_run": True}},
+      "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}, "unknown second_wind state"),
+    ({"when": {"nonsense": 1}, "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}},
      "no known trigger"),
     ({"when": {"wave_at_least": 10}, "do": {"nonsense": True}},
      "no known action"),
@@ -476,7 +500,7 @@ def test_repeat_does_not_resurrect_an_unsupported_rule(orchestrator, monkeypatch
     on every single pass, ~1.4 times a second. RETIRED is a separate state that
     nothing overrides."""
     rules([{"when": {"nonsense": 1}, "repeat": True,
-            "do": {"stop_after_run": True}}])
+            "do": {"cancel_sprint": True}}])
     rs = _rs()
     for _ in range(10):
         rs.rule_next.clear()
@@ -484,43 +508,46 @@ def test_repeat_does_not_resurrect_an_unsupported_rule(orchestrator, monkeypatch
     assert len(_ev(orchestrator, "rule_unsupported")) == 1
 
 
-def test_a_death_rule_is_skipped_by_the_observe_loop_not_retired(orchestrator, rules):
-    """A properly compiled death rule belongs to the other phase. The observe
-    loop must leave it alone - skipping it in silence, with nothing logged and
-    nothing retired, so the death handler still finds it armed."""
+def test_a_preset_compiled_before_the_retirement_is_refused_not_obeyed(
+        orchestrator, monkeypatch, rules):
+    """THE UPGRADE PATH. A preset compiled before 2026-09-27 can still carry
+    `latency: death_handler` with `stop_after_run`, and that rule is exactly
+    the one the player asked to be rid of: it ended the farm at every death.
+
+    It is refused in BOTH phases and says so - the observe loop retires it on
+    sight, and the death handler runs nothing at all - so the worst an old
+    profile can do is log."""
     rules([{"id": "rescue#2", "latency": "death_handler",
             "when": {"kind": "death_screen"},
             "do": {"kind": "stop_after_run"}}])
+    hits = _hits(orchestrator, monkeypatch)
     rf = _f(orchestrator, "runflag")
     rf.__dict__["requests"] = []
     rs = _rs()
     orchestrator.eval_rules(rs, "FRAME", 100)
-    assert orchestrator._log.events == [] and rf.__dict__["requests"] == []
-    assert rs.rules_fired == set()
-    # ...and the death handler runs it
-    orchestrator.run_death_rules(rs, "FRAME")
-    assert rf.__dict__["requests"] == ["rescue#2"]
-    assert rs.rules_fired == {"rescue#2"}
+    assert orchestrator.run_death_rules(rs, "FRAME") is False
+    assert hits == []
+    assert rf.__dict__["requests"] == []          # THE FARM IS NOT STOPPED
+    assert _ev(orchestrator, "rule_unsupported")  # and it is not silent
 
 
 def test_the_death_screen_refuses_every_navigating_action(orchestrator, monkeypatch,
                                                           rules):
-    """Codex P4 #3. stop_after_run is the ONLY death-phase action, because it
-    is the only one that touches nothing.
+    """Codex P4 #3, and now the whole phase. The stats dialog has no ability
+    row, no sprint and no wall, so fire/burst/cancel_sprint were never
+    candidates; switch_cards navigates FROM HOME and surrender_retry surrenders
+    a LIVE battle, so neither has anywhere to stand here either.
 
-    fire/burst/cancel_sprint were never candidates - the stats dialog has no
-    ability row, no sprint and no wall. switch_cards and surrender_retry looked
-    like candidates and are not: loadout.apply_cards navigates FROM HOME, and
-    the only verified way off the stats dialog is restart_from_home's
-    HOME-then-poll sequence, which does not stop at Home - it ends in a running
-    battle, leaving the handler nowhere to resume from. shard.abandon_run
-    surrenders a LIVE battle and would hunt for an EXIT BATTLE button that does
-    not exist here. So both are refused, out loud, instead of tapping."""
+    `stop_after_run` was the one action that could run, and it is in this list
+    now: it was retired on 2026-09-27 because a run type that writes the run
+    flag on every death is a farm that stops every night. Nothing may run on
+    this screen any more, and every attempt is refused out loud."""
     for do in ({"kind": "fire", "button": "nuke"},
                {"kind": "burst", "button": "demon_mode"},
                {"kind": "cancel_sprint"},
                {"kind": "switch_cards", "preset": "disco"},
-               {"kind": "surrender_retry"}):
+               {"kind": "surrender_retry"},
+               {"kind": "stop_after_run"}):
         rules([{"id": "p#0", "latency": "death_handler",
                 "when": {"kind": "death_screen"}, "do": do}])
         for name in ("fire_button", "end_intro_sprint", "_rule_switch_cards",
@@ -530,7 +557,7 @@ def test_the_death_screen_refuses_every_navigating_action(orchestrator, monkeypa
         _patch_flows_shard(monkeypatch, types.ModuleType("shard"))
         assert orchestrator.run_death_rules(_rs(), "FRAME") is False
         why = _ev(orchestrator, "rule_unsupported")[0]["why"]
-        assert "death screen" in why and orchestrator._taps == []
+        assert "death-screen trigger" in why and orchestrator._taps == []
         assert orchestrator._loadout.calls == []
 
 
@@ -559,11 +586,11 @@ def test_a_non_finite_cooldown_is_refused(orchestrator, monkeypatch, rules, valu
     wins every one, so it suppresses the rule forever. Both are silent, which
     is what makes them worth refusing rather than clamping."""
     rules([{"when": {"wave_at_least": 1}, "repeat": True,
-            "refire_sec": value, "do": {"stop_after_run": True}}])
-    rf = _f(orchestrator, "runflag")
-    rf.__dict__["requests"] = []
+            "refire_sec": value, "do": {"kind": "fire", "button": "nuke",
+                   "require_ready": False}}])
+    hits = _hits(orchestrator, monkeypatch)
     orchestrator.eval_rules(_rs(), "FRAME", 10)
-    assert rf.__dict__["requests"] == []
+    assert hits == []
     assert "finite" in _ev(orchestrator, "rule_unsupported")[0]["why"]
 
 
@@ -616,27 +643,25 @@ def test_only_one_screen_touching_action_per_tick(orchestrator, monkeypatch, rul
     assert [f[0] for f in fired] == ["nuke", "nuke"]
 
 
-def test_a_non_tapping_action_does_not_spend_the_budget(orchestrator, monkeypatch,
-                                                        rules):
-    """stop_after_run writes a flag file and moves nothing on screen, so it
-    cannot be what stops a real action from happening in the same pass.
+def test_no_action_left_in_the_vocabulary_writes_the_run_flag(orchestrator):
+    """THE RETIREMENT, AS A PROPERTY OF THE RUNTIME (2026-09-27).
 
-    (P6: this used to pair stop_after_run with switch_cards. switch_cards is
-    now retired at admission - see the P6 note on _rule_admits_action - so the
-    partner is toggle_uw, which is what the test was always about: the budget,
-    not the card screen.)
+    This used to be "a non-tapping action does not spend the budget", and the
+    non-tapping action was `stop_after_run` - the only one in the vocabulary
+    that moved nothing on screen because all it did was write the run flag.
+    That is exactly why it had to go: a rule could end the farm from inside a
+    run type. Nothing in RULE_ACTIONS can reach the flag any more, and the
+    death phase has no action table at all.
+
+    The budget itself is still proven by its neighbours either side of this
+    one: contact spends it, evaluation does not.
     """
-    rules([{"when": {"wave_at_least": 1}, "do": {"stop_after_run": True}},
-           {"when": {"wave_at_least": 1},
-            "do": {"toggle_uw": {"weapon": "black_hole", "state": "on"}}}])
-    rf = _f(orchestrator, "runflag")
-    rf.__dict__["requests"] = []
-    uw = []
-    monkeypatch.setattr(orchestrator.shopper, "uw_toggle",
-                        lambda w, on: uw.append((w, on)) or True)
-    orchestrator.eval_rules(_rs(), "FRAME", 10)
-    assert rf.__dict__["requests"] == ["rule0"]
-    assert uw == [("black_hole", True)]
+    assert "stop_after_run" not in orchestrator.RULE_ACTIONS
+    assert orchestrator.RULE_DEATH_ACTIONS == ()
+    assert orchestrator.RULE_DEATH_TRIGGERS == ()
+    src = (ROOT / "orchestrator.py").read_text(encoding="utf-8")
+    body = src[src.index("def _rule_act("):src.index("def run_death_rules(")]
+    assert "runflag.request" not in body,         "a rule action can reach the run flag again"
 
 
 def test_the_budget_is_spent_on_contact_not_on_success(orchestrator, monkeypatch,
@@ -670,15 +695,12 @@ def test_a_rule_that_only_evaluated_spends_nothing(orchestrator, monkeypatch, ru
     rules([{"when": {"wave_at_least": 9999}, "repeat": True,
             "do": {"kind": "fire", "button": "nuke"}},
            {"when": {"wave_at_least": 1}, "repeat": True,
-            "do": {"stop_after_run": True}},
-           {"when": {"wave_at_least": 1}, "repeat": True,
             "do": {"kind": "fire", "button": "demon_mode"}}])
     fired = _fires(orchestrator, monkeypatch)
-    rf = _f(orchestrator, "runflag")
-    rf.__dict__["requests"] = []
     orchestrator.eval_rules(_rs(), "FRAME", 10)
-    assert rf.__dict__["requests"] == ["rule1"]     # no contact
-    assert [f[0] for f in fired] == ["demon_mode"]  # ...so rule 2 still ran
+    # rule 0's trigger was false: it touched nothing, so rule 1 still ran on
+    # the same pass instead of waiting for the next one.
+    assert [f[0] for f in fired] == ["demon_mode"]
 
 
 # ---------------------------------------- THE ABSOLUTE RULE: no tournament abort
@@ -920,7 +942,7 @@ def test_bars_are_read_at_most_once_per_pass(orchestrator, monkeypatch, rules):
     the frame, not five. The observe loop's budget is already spent on wave
     OCR, the badge match and the gem search."""
     rules([{"when": {"bar": "hp", "below": 0.01}, "repeat": True,
-            "do": {"stop_after_run": True}} for _ in range(5)])
+            "do": {"cancel_sprint": True}} for _ in range(5)])
     reads = []
     monkeypatch.setattr(_f(orchestrator, "detect"), "hp_fill",
                         lambda frame: reads.append(1) or 0.9)
@@ -1060,7 +1082,7 @@ def test_gate_refuses_when_the_profile_layer_reports_problems(orchestrator,
     preset. A non-empty list stops the process before the first capture - the
     cost of getting it wrong is a rescue tapping a FIXED COORDINATE for an
     ability the account does not have."""
-    rules([{"when": {"wave_at_least": 1}, "do": {"stop_after_run": True}}])
+    rules([{"when": {"wave_at_least": 1}, "do": {"cancel_sprint": True}}])
     _gate(monkeypatch, lambda compiled: ["taps 'demon_mode', unowned"])
     assert orchestrator._gate_preset() is False
     assert _ev(orchestrator, "rule_gate_refused")[0]["problems"] == \
@@ -1068,14 +1090,14 @@ def test_gate_refuses_when_the_profile_layer_reports_problems(orchestrator,
 
 
 def test_gate_passes_on_an_empty_problem_list(orchestrator, monkeypatch, rules):
-    rules([{"when": {"wave_at_least": 1}, "do": {"stop_after_run": True}}])
+    rules([{"when": {"wave_at_least": 1}, "do": {"cancel_sprint": True}}])
     _gate(monkeypatch, lambda compiled: [])
     assert orchestrator._gate_preset() is True
     assert _ev(orchestrator, "rule_gate_ok")[0]["helper"] == "<lambda>"
 
 
 def test_a_raising_gate_is_a_refusal(orchestrator, monkeypatch, rules):
-    rules([{"when": {"wave_at_least": 1}, "do": {"stop_after_run": True}}])
+    rules([{"when": {"wave_at_least": 1}, "do": {"cancel_sprint": True}}])
 
     def boom(compiled):
         raise RuntimeError("profile is not bound")
@@ -1088,7 +1110,7 @@ def test_an_unavailable_gate_fails_CLOSED(orchestrator, monkeypatch, rules):
     """Codex P4 #2. For a COMPILED preset there is no "probably fine": no
     helper, or a profile layer that will not import, means the process refuses
     to start rather than tapping fixed coordinates ungated."""
-    rules([{"when": {"wave_at_least": 1}, "do": {"stop_after_run": True}}])
+    rules([{"when": {"wave_at_least": 1}, "do": {"cancel_sprint": True}}])
     _gate(monkeypatch)                              # no helper on it at all
     assert orchestrator._gate_preset() is False
     ev = _ev(orchestrator, "rule_gate_unavailable")

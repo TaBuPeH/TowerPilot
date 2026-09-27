@@ -494,13 +494,15 @@ _COOLDOWN_KEYS = (("rule", "refire_sec"), ("rule", "cooldown_sec"),
 # point of profiles is that a rule the player wrote either runs or says why not.
 RULE_TRIGGERS = ("wave_at_least", "wave_between", "bar", "wall_collapse",
                  "fleet_mark", "second_wind")
-RULE_ACTIONS = ("fire", "burst", "cancel_sprint", "stop_after_run",
+RULE_ACTIONS = ("fire", "burst", "cancel_sprint",
                 "switch_cards", "toggle_uw", "surrender_retry")
-# THE DEATH SCREEN IS ITS OWN PHASE, not a trigger the observe loop can see:
-# by the time the dialog exists the loop has already returned "dead" and handed
-# over. A death rule is recognised by the compiler's own `latency` field and
-# runs from run_death_rules() below.
-RULE_DEATH_TRIGGERS = ("death_screen",)
+# THE DEATH SCREEN WAS ITS OWN PHASE until 2026-09-27, when its trigger and
+# its one action (`stop_after_run`) were retired: they were the only way a run
+# type could end the farm by itself. The compiler cannot build such a rule any
+# more (player/playerprofile.py, the RETIRED note), so the phase has nothing
+# left to run and the death handler owns that screen alone. The run flag still
+# exists - the day plan writes it to switch activities at a run boundary.
+RULE_DEATH_TRIGGERS = ()
 # ...and ONE action may fire there: the one that touches no screen at all.
 #
 # (Codex P4 #3.) The stats dialog has no ability row, no sprint and no wall, so
@@ -517,9 +519,11 @@ RULE_DEATH_TRIGGERS = ("death_screen",)
 #     On a stats dialog there is nothing to surrender and no such button; it
 #     would hunt, fail and Abort.
 # So both are refused with a message naming the reason. That is deliberately
-# NARROWER than playerprofile.DEATH_SCREEN_ACTIONS: a compiled rule of that
-# kind is retired LOUDLY here rather than tapping into a menu.
-RULE_DEATH_ACTIONS = ("stop_after_run",)
+# EMPTY since the retirement, and kept empty rather than deleted: a preset
+# compiled BEFORE it still carries `latency: death_handler`, and an empty
+# table retires such a rule loudly (`rule_unsupported`) instead of letting an
+# old profile quietly stop the farm one more time.
+RULE_DEATH_ACTIONS = ()
 # (There is deliberately no "acting actions" table any more. Whether an action
 # touched the screen is REPORTED BY THE ACTION, from where it actually knows -
 # see _rule_act's two return values - rather than predicted from its name.)
@@ -1301,13 +1305,6 @@ def _rule_act(rs: "RunState", frame, i: int, rid: str, name: str,
         ok = end_intro_sprint(rs, rid)
         rs.sprint_ended = rs.sprint_ended or bool(ok)
         return True, bool(ok)
-    if name == "stop_after_run":
-        # NOT an interrupt: the runner still leaves at its death handler, at a
-        # run boundary (the runflag contract). No rule ends a live run. The one
-        # action in the vocabulary that touches no screen at all, which is also
-        # why it is the only one allowed in the death phase.
-        runflag.request(rid)
-        return False, True
     if name == "switch_cards":
         return _rule_switch_cards(rs, p["preset"], i)
     if name == "toggle_uw":
@@ -1353,16 +1350,12 @@ def run_death_rules(rs: "RunState", frame) -> bool:
     """The DEATH PHASE of the same interpreter, called once from the death
     handler after the run log is collected and before the restart.
 
-    Separate from eval_rules because the two phases see different screens: on
-    the stats dialog there is no ability row, no sprint and no wall, so only
-    RULE_DEATH_ACTIONS may run (see that constant - it is exactly one action,
-    and it touches nothing) and the whole bar/wave vocabulary is meaningless.
-    The death handler keeps RETRY, the restart and the screen.
-
-    Returns True if a rule touched the screen. Nothing in RULE_DEATH_ACTIONS
-    can today, so it is always False - the contract is kept live because the
-    caller re-grabs on it, and that is what makes narrowing the action set the
-    safe default rather than a thing to remember.
+    Nothing can run here any more: the death-screen trigger and its one
+    action were retired (RULE_DEATH_ACTIONS above), and the compiler no longer
+    builds a rule that claims this phase. What is left is the RETIREMENT path
+    for a preset compiled before that - such a rule is refused loudly here
+    instead of stopping the farm - so this returns False, and the caller's
+    re-grab contract stays live for whenever the phase earns an action again.
     """
     return _run_rules(rs, frame, rs.tracker.last, "death")
 
