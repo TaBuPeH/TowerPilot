@@ -85,8 +85,25 @@ def test_sighting_sticks_after_the_pentagon_leaves_the_frame(gate):
     assert orchestrator.fleet_gate(gate, _frame(), 3745, 3750) == "fleet_commander"
 
 
-def test_no_sighting_never_fires(gate):
-    assert orchestrator.fleet_gate(gate, _frame(), 1495, 1520) is None
+def test_unsighted_mark_holds_then_fires_on_schedule_at_mark_plus_after(gate):
+    assert orchestrator.fleet_gate(gate, _frame(), 4495, 4495, after=3) is None
+    assert orchestrator.fleet_gate(gate, _frame(), 4495, 4497, after=3) is None
+    assert orchestrator.fleet_gate(gate, _frame(), 4495, 4498, after=3) == "schedule_unsighted"
+
+
+def test_sighting_fires_from_the_mark_itself_before_after_waves(gate):
+    f = _frame()
+    _poly(f, (400, 900), 45, HUE["saboteur"], 5)
+    assert orchestrator.fleet_gate(gate, f, 4495, 4495, after=3) == "fleet_saboteur"
+
+
+def test_first_look_at_a_mark_keeps_one_frame(gate, monkeypatch):
+    events = []
+    monkeypatch.setattr(orchestrator.logger, "event",
+                        lambda kind, **kw: events.append(kind))
+    for wave in (4495, 4496):
+        orchestrator.fleet_gate(gate, _frame(), 4495, wave, after=3)
+    assert events.count("fleet_watch") == 1
 
 
 def test_gate_can_be_switched_off_for_the_plain_schedule(gate, monkeypatch):
