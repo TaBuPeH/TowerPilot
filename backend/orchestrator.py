@@ -123,7 +123,7 @@ def marks():
     return fleets.marks(run_tier(), CONFIG)
 
 
-def fleet_gate(rs, frame, mark: int, wave: int) -> str | None:
+def fleet_gate(rs, frame, mark: int, wave: int, after: int = 0) -> str | None:
     """Why the fleet Nuke may fire for `mark` on this frame, or None = hold.
 
     A fleet is ONE big outlined pentagon of a random type (saboteur red,
@@ -135,16 +135,26 @@ def fleet_gate(rs, frame, mark: int, wave: int) -> str | None:
     2026-10-18): the Nuke refreshes in ~300 waves and fleets come every 750,
     holding it saves nothing. Blue or not only labels the event.
 
-    The gate still refuses to fire before a fleet is on screen, so the
-    schedule alone never burns the Nuke (a wrong tier row, a mark the run
-    skipped past). Once sighted the decision sticks for the mark, so a
-    pentagon that scrolls off between frames still gets its Nuke.
-    `fleet.sighting.enabled: false` restores the plain schedule. The caller
-    has already applied nuke_on_fleet.after_waves / window_waves."""
+    SCANNED FROM THE MARK ITSELF, with the schedule as the floor (user,
+    2026-10-20): the callers used to consult this only from mark+after_waves
+    (3), and the 4495 fleet killed the tower at 4497 before the first look,
+    at 4499 two seconds after a sighting-and-Nuke at +4, and at 4506 with
+    no sighting at all in 4498-4506 (no frame kept, so no post-mortem). Now
+    a sighting fires from mark+0, an unsighted mark fires on schedule at
+    mark+`after` anyway (the Nuke is free), and the first look at every mark
+    keeps a frame (`fleet_watch`) so a miss can be diagnosed.
+    Once sighted the decision sticks for the mark, so a pentagon that
+    scrolls off between frames still gets its Nuke. `fleet.sighting.enabled:
+    false` restores the plain schedule. The caller has already applied
+    nuke_on_fleet.window_waves."""
     cfg = (CONFIG.get("fleet") or {}).get("sighting") or {}
     if not cfg.get("enabled", True):
         return "schedule"
     seen = rs.fleet_seen.setdefault(mark, {"types": {}, "blue": False})
+    if not seen.get("watched"):
+        seen["watched"] = True
+        logger.event("fleet_watch", mark=mark, wave=wave,
+                     shot=logger.shot(frame, f"fleet_watch_w{wave}"))
     try:
         from player.bootstrap_layout import manifest
         x, y, w, h = manifest()["side_menu"]["column"]
@@ -165,6 +175,8 @@ def fleet_gate(rs, frame, mark: int, wave: int) -> str | None:
         return "blue_fleet"
     if seen["types"]:
         return "fleet_" + max(seen["types"], key=seen["types"].get)
+    if wave >= mark + int(after):
+        return "schedule_unsighted"
     return None
 
 
@@ -1646,8 +1658,8 @@ def _fast_wall_watch(rs: "RunState", ab: dict) -> str:
                         if wv > m + window:
                             rs.nuked_marks.add(m)
                             continue
-                        if wv >= m + after and now_m >= rs.fleet_try_at:
-                            why = fleet_gate(rs, frame, m, wv)
+                        if wv >= m and now_m >= rs.fleet_try_at:
+                            why = fleet_gate(rs, frame, m, wv, after)
                             if why is None:
                                 break
                             rs.fleet_try_at = now_m + throttle
@@ -2042,8 +2054,8 @@ def watch_frame(rs: "RunState", frame) -> str | None:
                 # the mark silently so it can never fire late
                 rs.nuked_marks.add(m)
                 continue
-            if wave_now >= m + after and now >= rs.fleet_try_at:
-                why = fleet_gate(rs, frame, m, wave_now)
+            if wave_now >= m and now >= rs.fleet_try_at:
+                why = fleet_gate(rs, frame, m, wave_now, after)
                 if why is None:
                     break
                 # THROTTLED: a confirmed fire costs ~1.1s (tap + settle +
