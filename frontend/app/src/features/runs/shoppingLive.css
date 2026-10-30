@@ -1,0 +1,18 @@
+.tp-shopping-live,
+.tp-shopping-try {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tp-shopping-live > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  margin: var(--tp-space-2);
+}
+.tp-shopping-try > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2);
+  margin-block: var(--tp-space-2);
+}

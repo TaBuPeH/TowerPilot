@@ -8,7 +8,10 @@ import tempfile
 import urllib.request
 import zipfile
 
-URL = "https://dl.google.com/android/repository/platform-tools-latest-windows.zip"
+# Verified against Google's repository XML and archive; evidence: tools/portable_pins.json.
+VERSION = "37.0.1"
+URL = f"https://dl.google.com/android/repository/platform-tools_r{VERSION}-win.zip"
+SHA256 = "45f4d63113e895ebde0c90f194099a4676b6ac653bd28d54314a9e022bbc1a99"
 MAX_BYTES = 128 * 1024 * 1024
 FILES = ("adb.exe", "AdbWinApi.dll", "AdbWinUsbApi.dll")
 
@@ -16,8 +19,9 @@ FILES = ("adb.exe", "AdbWinApi.dll", "AdbWinUsbApi.dll")
 def ensure_server(root, executable, run):
     """Start the daemon once on a cold machine; never replace a live server."""
     import socket
+    from device import adbclient
     try:
-        with socket.create_connection(("127.0.0.1", 5037), timeout=1):
+        with socket.create_connection(adbclient._HOST, timeout=1):
             return
     except OSError:
         pass
@@ -76,10 +80,13 @@ def install(root, progress):
                 digest.update(chunk)
                 progress("downloading", f"Downloaded {received // 1048576} MB",
                          min(90, int(received / total * 90)) if total else None)
+        if digest.hexdigest() != SHA256:
+            raise ValueError("Platform-tools download checksum mismatch")
         progress("installing", "Installing connection tools locally", 95)
         staged = Path(work) / "platform-tools"
         unpack(archive, staged)
-        (staged / "source.json").write_text(json.dumps({"url": URL, "sha256": digest.hexdigest()}))
+        (staged / "source.json").write_text(json.dumps(
+            {"version": VERSION, "url": URL, "sha256": SHA256}))
         dest = parent / "platform-tools"
         if dest.exists():
             raise RuntimeError("An incomplete tools folder exists; rename it before retrying")

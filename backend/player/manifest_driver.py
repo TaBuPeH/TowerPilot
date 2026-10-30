@@ -91,11 +91,12 @@ class Driver:
     publish persists progress before input as well as after verification.
     """
     def __init__(self, *, observe, locate, tap, collect, publish, check_stop,
-                 tournament_open=False, geometry=None):
+                 tournament_open=False, geometry=None, before_input=None):
         self.observe, self.locate, self.tap = observe, locate, tap
         self.collect, self.publish, self.check_stop = collect, publish, check_stop
         self.tournament_open = tournament_open
         self.geometry = geometry
+        self.before_input = before_input
 
     def _observe(self):
         frame, screen = self.observe()
@@ -178,6 +179,9 @@ class Driver:
             self.publish(dict(id=edge['id'], status='needs_local_verification',
                               first_match=hit, second_match=other, observed_screen=screen))
             return False
+        self.check_stop()
+        if self.before_input is not None:
+            self.before_input(edge, first, hit, second, other)
         self.check_stop()
         self.publish(dict(id=edge['id'], status='input_pending'))
         if self.geometry is not None:

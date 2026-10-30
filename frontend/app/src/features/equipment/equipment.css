@@ -1,0 +1,104 @@
+.tp-equipment {
+  display: grid;
+  gap: var(--tp-space-4);
+}
+.tp-equipment__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--tp-space-4);
+}
+.tp-equipment__layout > *,
+.tp-equipment__fields > * {
+  min-width: 0;
+}
+.tp-equipment__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.tp-equipment__card {
+  display: grid;
+  gap: var(--tp-space-2);
+  min-width: 0;
+  padding-block: var(--tp-space-3);
+  padding-inline-start: var(--tp-space-3);
+  border-inline-start: 3px solid transparent;
+  border-block-end: 1px solid var(--tp-color-border);
+}
+.tp-equipment__card[data-selected='true'] {
+  border-inline-start-color: var(--tp-color-focus);
+}
+.tp-equipment__card .tp-button {
+  justify-content: flex-start;
+}
+.tp-equipment__card p {
+  margin: 0;
+}
+.tp-equipment__consumers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+.tp-equipment__consumers a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tp-control-height);
+}
+.tp-equipment__editor {
+  display: grid;
+  gap: var(--tp-space-3);
+  min-width: 0;
+}
+.tp-equipment label:not(.tp-check-field) {
+  display: grid;
+  gap: var(--tp-space-1);
+  min-width: 0;
+  margin: 0;
+}
+.tp-equipment .tp-control-row > label {
+  flex: 1 1 12rem;
+}
+.tp-equipment .tp-field-control {
+  width: 100%;
+}
+.tp-equipment__revisions,
+.tp-equipment__result {
+  overflow-wrap: anywhere;
+  font-size: var(--tp-font-size-small);
+}
+.tp-equipment__revisions {
+  color: var(--tp-color-text-muted);
+}
+.tp-equipment__revision-full {
+  display: block;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.tp-equipment__warning {
+  color: var(--tp-color-warn);
+  overflow-wrap: anywhere;
+}
+.tp-equipment__restore-row {
+  min-inline-size: 0;
+  margin: 0;
+  padding: var(--tp-space-2) 0 0;
+  border: 0;
+  border-block-start: 1px solid var(--tp-color-border);
+}
+.tp-equipment__restore-row > :is(p, pre) {
+  flex-basis: 100%;
+}
+.tp-equipment pre {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: var(--tp-font-size-small) var(--tp-font-mono);
+}
+@media (max-width: 1100px) {
+  .tp-equipment__layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

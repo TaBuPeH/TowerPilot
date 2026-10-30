@@ -1,0 +1,88 @@
+{
+ "about": "BattleSession.from_environment predecessor link (T3-0)",
+ "rebased_on": {
+  "head": "38e15ec9f088da4cea78e3aeb47186c05c72ff3c",
+  "note": "scenarios unchanged; re-verified on this HEAD after the backend/dashboard.py move and the test reorganization",
+  "sources": {
+   "backend/control/battles.py": "A5A68B064D22A912FDFF86C285EF56E1AAE280219B9190C2118A8C7D20D80617",
+   "backend/runtime/battle_session.py": "126E378581544B013C381C058B1AC837E7522724DB90EEB78091F86C868122C4",
+   "backend/towerpilot_workflows/battles.py": "426E491C96E7131016C80F1381FCF444FBD1627E66B9B84D6192FE7AD7B69961"
+  }
+ },
+ "recorded_on": {
+  "backend/control/battles.py": "A5A68B064D22A912FDFF86C285EF56E1AAE280219B9190C2118A8C7D20D80617",
+  "backend/runtime/battle_session.py": "EB5004876F241040B2B35D7673212D42BF6480EECC62B3BA0C233571DCE3941F",
+  "backend/towerpilot_workflows/battles.py": "426E491C96E7131016C80F1381FCF444FBD1627E66B9B84D6192FE7AD7B69961"
+ },
+ "scenarios": {
+  "accepted_envelope_is_used": {
+   "matching_preset_key": {
+    "envelope_keys": ["config", "controls", "preset", "preset_key", "profile", "source", "source_revision"],
+    "gates": {"rewards": false},
+    "preset_key": "bp_farm",
+    "preset_label": "from the envelope",
+    "refused": null
+   },
+   "other_preset_key": {
+    "envelope_keys": ["config", "controls", "preset", "source", "source_revision"],
+    "gates": {"abilities": true, "ad_gems": true, "floating_gems": false, "repeat": true, "rescue": true, "rewards": true, "shopping": false},
+    "preset_key": null,
+    "preset_label": null,
+    "refused": null
+   }
+  },
+  "first_battle_origin_adopted": {
+   "ledger": [
+    {"battle": "battle-1", "envelope_keys": ["config", "controls", "preset", "source", "source_revision"], "origin": "adopted", "outcome": "unknown", "preset_key": null, "previous": null, "reason": null, "setup": "adopted", "start_certainty": "unknown", "status": "prepared"}
+   ],
+   "previous": null,
+   "refused": null,
+   "session_origin": "adopted"
+  },
+  "first_battle_origin_started": {
+   "ledger": [
+    {"battle": "battle-1", "envelope_keys": ["config", "controls", "preset", "source", "source_revision"], "origin": "started", "outcome": "unknown", "preset_key": null, "previous": null, "reason": null, "setup": "as_is", "start_certainty": "prepared", "status": "prepared"}
+   ],
+   "previous": null,
+   "refused": null,
+   "session_origin": "started"
+  },
+  "no_operation_in_the_environment": {
+   "session": null
+  },
+  "predecessor_already_reconciled": {
+   "ledger": [
+    {"battle": "battle-1", "envelope_keys": ["config", "controls", "preset"], "origin": "started", "outcome": "unknown", "preset_key": null, "previous": null, "reason": "driver_observation_lost", "setup": null, "start_certainty": "prepared", "status": "interrupted"},
+    {"battle": "battle-2", "envelope_keys": ["config", "controls", "preset", "source", "source_revision"], "origin": "started", "outcome": "unknown", "preset_key": null, "previous": null, "reason": null, "setup": "as_is", "start_certainty": "prepared", "status": "prepared"}
+   ],
+   "live_records_the_successor_could_find": [],
+   "refused": null
+  },
+  "predecessor_of_an_ended_driver": {
+   "adopted": {
+    "ledger": [{"battle": "battle-1", "envelope_keys": ["config", "controls", "preset"], "origin": "started", "outcome": "unknown", "preset_key": null, "previous": null, "reason": "driver_operation_ended", "setup": null, "start_certainty": "prepared", "status": "interrupted"}, {"battle": "battle-2", "envelope_keys": ["config", "controls", "preset", "source", "source_revision"], "origin": "partial_adoption", "outcome": "unknown", "preset_key": null, "previous": "battle-1", "reason": null, "setup": "adopted", "start_certainty": "unknown", "status": "prepared"}],
+    "old_is": "battle-1",
+    "refused": null,
+    "successor_previous": "battle-1"
+   },
+   "started": {
+    "ledger": [{"battle": "battle-1", "envelope_keys": ["config", "controls", "preset"], "origin": "started", "outcome": "unknown", "preset_key": null, "previous": null, "reason": "driver_operation_ended", "setup": null, "start_certainty": "prepared", "status": "interrupted"}, {"battle": "battle-2", "envelope_keys": ["config", "controls", "preset", "source", "source_revision"], "origin": "partial_adoption", "outcome": "unknown", "preset_key": null, "previous": "battle-1", "reason": null, "setup": "adopted", "start_certainty": "unknown", "status": "prepared"}],
+    "old_is": "battle-1",
+    "refused": null,
+    "successor_previous": "battle-1"
+   }
+  },
+  "predecessor_with_a_running_owner": {
+   "ledger": [
+    {"battle": "battle-1", "envelope_keys": ["config", "controls", "preset"], "origin": "started", "outcome": "unknown", "preset_key": null, "previous": null, "reason": null, "setup": null, "start_certainty": "prepared", "status": "prepared"}
+   ],
+   "old_is": "battle-1",
+   "refused": {
+    "message": "A live battle already owns this device",
+    "raised": "Conflict"
+   },
+   "session_is_none": true
+  }
+ },
+ "version": 1
+}

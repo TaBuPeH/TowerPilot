@@ -1,0 +1,233 @@
+// @ts-check
+/**
+ * Extracts the data the R6 spec tests run on from the approved Dashboard
+ * specification (backend/logs/reviews/ui-dashboard-rebuild/dashboard-spec.md):
+ * the safety-rule ledger of section 5 and the revocation scenario matrix of
+ * section 9.1 (sample rows, X rows, W rows). The spec lives under the
+ * git-ignored backend/logs/, so CI cannot read it: the extraction is written
+ * to tests/unit/spec/specData.ts (generated, never hand-edited) and
+ * tests/unit/spec/specData.test.ts re-extracts and compares whenever the spec is in
+ * the checkout, so the committed data cannot drift from the spec.
+ *
+ *   node scripts/spec-data.mjs          write tests/unit/spec/specData.ts
+ *   node scripts/spec-data.mjs --check  exit 1 when it differs from the spec
+ */
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { format, resolveConfig } from 'prettier';
+
+const APP = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+export const SPEC_NAME = 'backend/logs/reviews/ui-dashboard-rebuild/dashboard-spec.md';
+export const SPEC_PATH = path.resolve(APP, '../..', SPEC_NAME);
+export const DATA_PATH = path.join(APP, 'tests/unit/spec/specData.ts');
+
+/**
+ * The cells of the markdown table rows in `block` (header and separator rows excluded).
+ * @param {string} block
+ * @returns {string[][]}
+ */
+function tableRows(block) {
+  /** @type {string[][]} */
+  const rows = [];
+  for (const line of block.split('\n')) {
+    if (!line.startsWith('|') || /^\|\s*-/.test(line)) continue;
+    const cells = line
+      .slice(1, line.trimEnd().endsWith('|') ? line.trimEnd().length - 1 : undefined)
+      .split(' | ')
+      .map((cell) => cell.trim());
+    rows.push(cells);
+  }
+  return rows;
+}
+
+/**
+ * The text between two markers (exclusive), failing loudly when either is missing.
+ * @param {string} text
+ * @param {string} start
+ * @param {string} end
+ */
+function between(text, start, end) {
+  const from = text.indexOf(start);
+  const to = text.indexOf(end, from + start.length);
+  if (from < 0 || to < 0) {
+    throw new Error(`The spec lacks the section between "${start}" and "${end}"`);
+  }
+  return text.slice(from + start.length, to);
+}
+
+/** @param {string} cell */
+function testReferences(cell) {
+  /** @type {{ file: string, ruleId: string | null }[]} */
+  const refs = [];
+  // Keep legacy prefixes visible so the safety-ledger validator can reject stale paths.
+  for (const match of cell.matchAll(/`((?:tests|e2e)\/[^`]+)`(?:\s*>\s*(S-\d{3}))?/g)) {
+    refs.push({ file: match[1] ?? '', ruleId: match[2] ?? null });
+  }
+  return refs;
+}
+
+/**
+ * The spec data the R6 tests use.
+ * @param {string} text the spec's markdown
+ */
+export function extractSpecData(text) {
+  const normalized = text.replaceAll('\r\n', '\n');
+  const ledger = between(normalized, '<!-- ledger:safety:start -->', '<!-- ledger:safety:end -->');
+  const safety = tableRows(ledger)
+    .filter((cells) => /^S-\d{3}$/.test(cells[0] ?? ''))
+    .map((cells) => {
+      if (cells.length !== 7) {
+        throw new Error(
+          `Safety ledger row ${cells[0] ?? '?'} has ${cells.length} cells, expected 7`,
+        );
+      }
+      return {
+        id: cells[0] ?? '',
+        rule: cells[1] ?? '',
+        layer: cells[2] ?? '',
+        module: cells[3] ?? '',
+        tests: testReferences(cells[4] ?? ''),
+        testCell: cells[4] ?? '',
+      };
+    });
+  const matrixBlock = between(normalized, '### 9.1 Revocation scenario matrix', '\n## 10.');
+  const rows = tableRows(matrixBlock);
+  const matrix = rows
+    .filter((cells) => /^`S:status\.[a-z_]+`$/.test(cells[0] ?? ''))
+    .map((cells) => {
+      if (cells.length !== 7) {
+        throw new Error(`Matrix row ${cells[0] ?? '?'} has ${cells.length} cells, expected 7`);
+      }
+      return {
+        sample: (cells[0] ?? '').slice('`S:status.'.length, -1),
+        pause: cells[1] ?? '',
+        turnInputOff: cells[2] ?? '',
+        stopTargets: cells[3] ?? '',
+        gem: cells[4] ?? '',
+        input: cells[5] ?? '',
+        automation: cells[6] ?? '',
+      };
+    });
+  const xRows = rows
+    .filter((cells) => /^X\d+[a-z]?$/.test(cells[0] ?? ''))
+    .map((cells) => ({
+      id: cells[0] ?? '',
+      scenario: cells[1] ?? '',
+      base: cells[2] ?? '',
+      pause: cells[3] ?? '',
+      turnInputOff: cells[4] ?? '',
+      stop: cells[5] ?? '',
+      other: cells[6] ?? '',
+    }));
+  const wRows = rows
+    .filter((cells) => /^W\d+$/.test(cells[0] ?? ''))
+    .map((cells) => ({
+      id: cells[0] ?? '',
+      laterRead: cells[1] ?? '',
+      d4: cells[2] ?? '',
+      allowTaps: cells[3] ?? '',
+      inputRevoked: cells[4] ?? '',
+      enables: cells[5] ?? '',
+      input: cells[6] ?? '',
+      turnInputOff: cells[7] ?? '',
+      answerLine: cells[8] ?? '',
+    }));
+  return { safety, matrix, xRows, wRows };
+}
+
+/**
+ * The generated module for `text`. Plain data, regenerated by hand when the
+ * ledger or the matrix changes; the spec's hash is not pinned (F1 trim).
+ * @param {string} text
+ */
+export async function generateSpecData(text) {
+  const data = extractSpecData(text);
+  const source = [
+    '// Generated by scripts/spec-data.mjs from the approved Dashboard specification.',
+    '// Do not edit: run `node scripts/spec-data.mjs` (tests/unit/spec/specData.test.ts checks drift).',
+    '',
+    `export const SPEC: { readonly name: string } = { name: ${JSON.stringify(SPEC_NAME)} };`,
+    '',
+    '/** A test the ledger names: its file and, when given, the rule id its title starts with. */',
+    'export interface TestReference { readonly file: string; readonly ruleId: string | null }',
+    '',
+    'export interface SafetyRow {',
+    '  readonly id: string;',
+    '  readonly rule: string;',
+    '  readonly layer: string;',
+    '  readonly module: string;',
+    '  readonly tests: readonly TestReference[];',
+    '  readonly testCell: string;',
+    '}',
+    '',
+    'export interface MatrixRow {',
+    '  readonly sample: string;',
+    '  readonly pause: string;',
+    '  readonly turnInputOff: string;',
+    '  readonly stopTargets: string;',
+    '  readonly gem: string;',
+    '  readonly input: string;',
+    '  readonly automation: string;',
+    '}',
+    '',
+    'export interface ScenarioRow {',
+    '  readonly id: string;',
+    '  readonly scenario: string;',
+    '  readonly base: string;',
+    '  readonly pause: string;',
+    '  readonly turnInputOff: string;',
+    '  readonly stop: string;',
+    '  readonly other: string;',
+    '}',
+    '',
+    'export interface WarmRow {',
+    '  readonly id: string;',
+    '  readonly laterRead: string;',
+    '  readonly d4: string;',
+    '  readonly allowTaps: string;',
+    '  readonly inputRevoked: string;',
+    '  readonly enables: string;',
+    '  readonly input: string;',
+    '  readonly turnInputOff: string;',
+    '  readonly answerLine: string;',
+    '}',
+    '',
+    '/** Section 5: every safety rule, its layer and the tests that prove it. */',
+    `export const SAFETY_LEDGER: readonly SafetyRow[] = ${JSON.stringify(data.safety)};`,
+    '',
+    '/** Section 9.1: one row per status sample under environment E0. */',
+    `export const MATRIX: readonly MatrixRow[] = ${JSON.stringify(data.matrix)};`,
+    '',
+    '/** Section 9.1: the scenarios beyond the samples. */',
+    `export const X_ROWS: readonly ScenarioRow[] = ${JSON.stringify(data.xRows)};`,
+    '',
+    '/** Section 9.1: warm Game input after a proving turn-off answer. */',
+    `export const W_ROWS: readonly WarmRow[] = ${JSON.stringify(data.wRows)};`,
+    '',
+  ].join('\n');
+  const config = (await resolveConfig(DATA_PATH)) ?? {};
+  return format(source, { ...config, filepath: DATA_PATH });
+}
+
+async function main() {
+  if (!existsSync(SPEC_PATH)) {
+    throw new Error(`The spec is not in this checkout: ${SPEC_PATH}`);
+  }
+  const text = readFileSync(SPEC_PATH, 'utf8');
+  const generated = await generateSpecData(text);
+  if (process.argv.includes('--check')) {
+    const current = existsSync(DATA_PATH) ? readFileSync(DATA_PATH, 'utf8') : '';
+    if (current !== generated) {
+      console.error(`${DATA_PATH} differs from ${SPEC_NAME}; run node scripts/spec-data.mjs`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+  writeFileSync(DATA_PATH, generated);
+  console.log(`wrote ${path.relative(APP, DATA_PATH)} from ${SPEC_NAME}`);
+}
+
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  await main();
+}

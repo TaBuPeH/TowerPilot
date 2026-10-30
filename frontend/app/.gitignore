@@ -1,0 +1,12 @@
+
+# Review evidence written by authors; kept local, never shipped
+review-artifacts/
+
+# Playwright output written under e2e/ by per-author runs
+e2e/playwright-report/
+e2e/test-results/
+playwright-report/
+test-results/
+# gate and probe logs, npm cache written by a misread --cache flag
+*.log
+/false/

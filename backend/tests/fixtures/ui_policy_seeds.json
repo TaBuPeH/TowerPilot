@@ -1,0 +1,38 @@
+{
+  "templates": {
+    "gather": { "flying_gem": true, "gem_delay_sec": [3, 10], "ad_gems": true,
+                "quests_8h": true, "quest_rewards": true, "guild": true },
+    "uw_policies": { "baseline": {}, "chain_lightning": { "mode": "off" } },
+    "rescue_policies": { "arm": "always", "end_sprint_after_sw": false, "rules": [] },
+    "shopping_lists": { "enabled": true, "directives": [] }
+  },
+  "triggers": {
+    "bar": { "bar": "hp", "below": 0.25 },
+    "wall_collapse": { "wall_collapse": { "from_above": 0.3 } },
+    "fleet_mark": { "fleet_mark": { "after_waves": 3, "window_waves": 60 } },
+    "wave_at_least": { "wave_at_least": 1000 },
+    "wave_between": { "wave_between": [1000, 2000] },
+    "second_wind": { "second_wind": { "state": "after_immunity" } }
+  },
+  "actions": {
+    "burst": { "burst": { "fire": "demon_mode", "cancel_sprint": true } },
+    "burst_tier_a": { "burst": { "fire": "demon_mode", "cancel_sprint": true, "retaps": 3 } },
+    "fire": { "fire": { "button": "nuke" } },
+    "toggle_uw": { "toggle_uw": { "weapon": "chain_lightning", "want_on": true } },
+    "cancel_sprint": { "cancel_sprint": true },
+    "surrender_retry": { "surrender_retry": true }
+  },
+  "cl_modes": {
+    "off": {},
+    "always_on": {},
+    "fleet_marks": { "pre_mark_waves": [5, 25], "off_after_waves": [53, 72] },
+    "off_until_wave": { "on_above": [500, 550] }
+  },
+  "arm": {
+    "always": "always",
+    "second_wind": { "on": "second_wind", "immunity_sec": null, "watch_sec": 30 }
+  },
+  "new_rule": { "when": { "wave_at_least": 1000 },
+                "do": { "toggle_uw": { "weapon": "chain_lightning", "want_on": true } } },
+  "new_directive": { "enabled": true, "tab": "attack", "stats": ["damage"], "mode": "once" }
+}

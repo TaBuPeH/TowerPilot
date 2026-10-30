@@ -5,6 +5,8 @@ import subprocess
 from pathlib import Path
 import yaml
 
+from runtime import config_seed
+
 # A process launched from pythonw.exe has NO console, so every console child
 # (adb.exe, powershell.exe) would pop its own window - roughly one flashing
 # window per second under the tray supervisor. CREATE_NO_WINDOW suppresses it.
@@ -16,6 +18,13 @@ def run_hidden(args, **kw):
     calls in the autopilot must go through this."""
     kw.setdefault("creationflags", NO_WINDOW)
     return subprocess.run(args, **kw)
+
+
+def spawn_hidden(args, **kw):
+    """subprocess.Popen counterpart of run_hidden, for a long-lived helper
+    process (the warm OCR reader); the same no-console rule applies."""
+    kw.setdefault("creationflags", NO_WINDOW)
+    return subprocess.Popen(args, **kw)
 
 ROOT = Path(__file__).resolve().parent
 CONFIG_PATH = ROOT / "config.yaml"
@@ -29,15 +38,11 @@ def seed_config(path: Path = CONFIG_PATH, example: Path = CONFIG_EXAMPLE) -> boo
     git-ignored). Before this every `import settings` died with
     FileNotFoundError at import - the dashboard's own scan endpoint included,
     so a new install could not even run the wizard that would have written
-    the file. Returns True when the file was created. The dashboard has a
-    copy of this rule (it deliberately never imports settings).
+    the file. Returns True when the file was created. The rule itself (a
+    byte copy) is runtime/config_seed.py, which the dashboard shares - it
+    deliberately never imports settings.
     """
-    if path.exists():
-        return False
-    if not example.exists():
-        raise FileNotFoundError(f"{path} is missing and so is {example}")
-    path.write_text(example.read_text(encoding="utf-8"), encoding="utf-8")
-    return True
+    return config_seed.seed(path, example)
 
 
 seed_config()
@@ -104,6 +109,21 @@ def bind_device(name: str) -> None:
 
 def select_instance(name: str, preset: str | None = None) -> None:
     """Bind a run to its device, validating and compiling its profile."""
+    global _DEFAULTS, _ACCOUNT_DEFAULTS
+    from runtime.battle_source import accepted_source
+    accepted = accepted_source(name, preset)
+    if accepted is not None:
+        frozen, profile = accepted
+        CONFIG.clear()
+        CONFIG.update(frozen)
+        _DEFAULTS = {key: copy.deepcopy(frozen[key]) for key in _OVERRIDABLE if key in frozen}
+        _ACCOUNT_DEFAULTS = {key: copy.deepcopy(frozen.get(key)) for key in
+                             ('loadouts', 'active_profile', 'tourney_card_tweaks')}
+        bind_device(name)
+        if profile is not None:
+            from player import playerprofile
+            playerprofile.PROFILE = profile
+        return
     bind_device(name)
     inst = CONFIG["instances"][name]
     # ---- PROFILE LAYER (P3). A profile compiles its blueprints into extra

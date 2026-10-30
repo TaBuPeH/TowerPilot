@@ -37,24 +37,34 @@ find/wait_for/require/tap_at/ensure_home/end_round machinery was built and
 debugged for the tournament routine and the screens are the same.
 """
 import random
+import math
 import sys
 import time
+import uuid
 from pathlib import Path
 
 # Flow files are runnable as scripts (`python flows/shard.py`) with the
 # backend root as cwd - put that root on sys.path so sibling modules resolve.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from collections.abc import Callable
+
 import cv2
+import numpy as np
 
 from device import act
 from device import capture
 from scheduling import daystate
 from vision import detect
 from runtime import logger
+from runtime.stage_clock import clock
 from scheduling import runflag
 from vision import screen
 from vision import wave_reader
+from vision.ocr import gem_balance_crop, read_gem_balance
+from vision.orbit_gems import Glance, OrbitGem, OrbitSensing, field_region, find_orbit_gem, reference_geometry
+from player.gather_settings import ORBIT_TIMING_FIELDS, validate_orbit_timing
+from towerpilot_workflows.action_contract import AppearanceDriven
 import settings
 from settings import CONFIG
 
@@ -131,7 +141,7 @@ NUKE_AT_PROGRESS = 0.10         # how far through wave 101 to fire.
                                 # nothing, and the loop cannot tell the
                                 # difference.
 EXIT_POLL = 0.10        # how often to look for the next exit screen
-ADB_MAX_FAILS = 5       # consecutive daemon restarts before giving up: a
+ADB_MAX_FAILS = 5       # consecutive device recoveries before giving up: a
                         # dead emulator must not become an infinite retry loop
 OFF_BATTLE_FRAMES = 10  # ~3s of no battle before it is treated as real
 TIER_TRIES = 25    # was 12: Tier 14 -> Tier 1 (the ILM quest) needs 13 taps
@@ -140,44 +150,27 @@ WAVE_TIMEOUT = 240.0            # generous: the sprint to wave 100 took ~77s
 
 
 
-# Orbiting-gem BLIND HARVEST (measured live 2026-09-07 on BlueStacks Pie64):
+# Orbiting-gem arc harvest (initial reference measured 2026-09-07):
 # the collectible gem (a magenta square + pink diamond) circles the tower CORE
-# on a fixed path. Template matching on it is flaky under heavy effects (1/4 hit,
-# a false positive at that), so instead we periodically tap the 135deg (top-left)
-# arc - clear of the ability row - and a pass of the continuously-orbiting gem
-# lands under a tap over a session. Centre is the tower core, NOT the field-ROI
+# on a fixed path. The current frame's HUD diamond verifies the visible gem,
+# whose measured radius places bounded taps on the 135deg (top-left) arc,
+# clear of the ability row. A stable +2 HUD balance confirms collection;
+# attempts without confirmation use a separate retry backoff. Centre is the tower core, NOT the field-ROI
 # centre (which sits ~160px lower). Camera zoom shifts these per install, so all
 # are overridable via gather.gem_orbit in a blueprint.
-GEM_ORBIT_CENTER = (510, 805)   # tower core (orbit centre), native px
-GEM_ORBIT_RADIUS = 170          # orbit radius (gem square ~70px wide forgives the band)
 GEM_ORBIT_ANGLE = 135.0         # degrees above +x, the safe top-left quadrant
-GEM_ORBIT_INTERVAL = 25.0       # seconds between tap-sets
+GEM_ORBIT_INTERVAL = ORBIT_TIMING_FIELDS["interval_sec"]["default"]
 GEM_ORBIT_TAPS = 3              # points per set, spread over the arc
 GEM_ORBIT_JITTER = 0.03         # +-3% radius/position randomisation
 GEM_ORBIT_SPREAD = 6.0          # degrees between adjacent points in a set
 
-# WHAT A READABLE WAVE DOES NOT PROVE (2026-10-13). This harvest taps points
-# it never looks at, and its only gate was "wave_reader reads a number". That
-# is true of every frame of a run - INCLUDING one where the player has a panel
-# open over the battlefield, because the wave counter sits above it. On
-# 2026-10-13 the taps went into such a panel and bought gems with medals.
-#
-# So the tap set is now gated on evidence that the place about to be tapped
-# IS the battlefield, right now:
-#   * the wave reads AND the screen classifies as `battle` (a menu with digits
-#     in the wave box cannot pass both);
-#   * the GAME is the window on screen - `dumpsys window windows`, the same
-#     evidence overlays.py uses, because a Play Store page over the game still
-#     leaves the last game frame in a screencap;
-#   * the arc itself is MOVING. A live battlefield never holds still: measured
-#     over 0.4s on wave 4465 it changes by 25-70 mean abs diff, while a panel
-#     drawn over it is static. This is the one that catches an in-game panel,
-#     which no window list and no wave counter can see.
-# Any of them failing skips the set - a missed diamond costs nothing, and this
-# routine has no business tapping a screen it cannot vouch for.
-ORBIT_PROBE_PAD = 60            # the arc neighbourhood watched for movement
-ORBIT_MOTION_MIN = 8.0          # mean abs diff; 3x below the measured minimum
-ORBIT_MOTION_GAP = 0.4          # seconds between the two frames compared
+# A readable wave can remain above a menu, and a screencap can retain a game
+# frame behind another app. Require battle classification, visible foreground
+# window evidence and motion around the tap arc before permitting a set.
+# Guard ported from origin/develop (26d9ca6, 5f5e2b3).
+ORBIT_PROBE_PAD = 60
+ORBIT_MOTION_MIN = 8.0
+ORBIT_MOTION_GAP = 0.4
 
 # The game-speed widget ("- x5.0 +"), panel-open layout; rides the shifting
 # bottom HUD, so capture.layout_offset applies to every y here.
@@ -196,6 +189,7 @@ def _in_ability_row(pt, margin: int = 25) -> bool:
     applied.
     """
     x, y, w, h = CONFIG["rois"]["ability_row"]
+    y += capture.layout_offset
     return (x - margin <= pt[0] <= x + w + margin
             and y - margin <= pt[1] <= y + h + margin)
 
@@ -203,16 +197,37 @@ def _in_ability_row(pt, margin: int = 25) -> bool:
 class GemWatch:
     """Collect Ad Gems and orbiting diamonds using their separate policies."""
 
-    def __init__(self):
-        self.orbit = GemOrbitTapper(**gem_orbit_opts())
+    def __init__(self, gather=None, *, guard=None, session=None):
+        """session: the host's `ActionSession`. Every host passes one (or None when it runs outside a ledger
+        operation), so each window is recorded from one construction point."""
+        self.guard = guard
+        self.session = session
+        opts = {"guard": guard} if guard is not None else {}
+        self.orbit = GemOrbitTapper(**gem_orbit_opts(gather), **opts,
+                                    recorder=None if session is None else session.recorder("floating_gems"))
         from interactions.ad_gems import AdGemCollector
-        gather = (CONFIG.get("presets", {}).get(CONFIG.get("preset")) or {}).get("gather") or {}
-        self.ad_gems = AdGemCollector(gather.get("ad_gems", True))
+        if gather is None:
+            gather = (CONFIG.get("presets", {}).get(CONFIG.get("preset")) or {}).get("gather") or {}
+        self.ad_gems = AdGemCollector(gather.get("ad_gems", True),
+                                      delay=gather.get("gem_delay_sec", (3, 10)),
+                                      options=gather.get("ad_gem_options"), **opts,
+                                      recorder=None if session is None else session.recorder("ad_gems"))
 
-    def poll(self, frame) -> None:
-        self.ad_gems.poll(frame)
-        # Refresh after a possible ad claim; the orbit collector checks battle state.
-        self.orbit.poll(capture.grab() if self.orbit.enabled else frame)
+    def busy(self):
+        """What a host that wants to stop must wait out, as reason codes; empty at a safe point."""
+        return [why for why in (self.ad_gems.busy(), self.orbit.busy()) if why]
+
+    def poll(self, frame, reads=None):
+        """Return the latest frame; callers must discard an older decision frame.
+        reads: the host's `FrameReads` of `frame`; each owner reuses it only for that same frame object."""
+        if self.guard is not None:
+            frame = self.guard(frame, "battle")
+        frame = self.ad_gems.poll(frame, reads=reads)
+        if self.guard is not None:
+            frame = self.guard(frame, "battle")
+        # Idle orbit sensing reuses this frame; only a recognized appearance
+        # opens the existing guarded capture/claim path.
+        return self.orbit.poll(frame, reads=reads)
 
 
 def _orbit_points(center, radius, angle, taps, jitter, spread):
@@ -241,131 +256,587 @@ def _probe_box(points, pad: int = ORBIT_PROBE_PAD) -> tuple[int, int, int, int]:
             max(0, min(xs) - pad), max(xs) + pad)
 
 
-def battlefield_live(points, frame=None) -> tuple[bool, str]:
+def battlefield_live(points, frame=None, *, guard=None) -> tuple[bool, str]:
+    """Boolean guard contract for callers that do not consume its latest frame."""
+    ok, why, _ = battlefield_observation(points, frame, guard=guard)
+    return ok, why
+
+
+def battlefield_observation(points: list[tuple[int, int]], frame: np.ndarray | None = None,
+                            *, guard: Callable[[np.ndarray, str], np.ndarray] | None = None
+                            ) -> tuple[bool, str, np.ndarray | None]:
     """Is the tower on screen with nothing over `points`, RIGHT NOW?
 
-    Returns (ok, why) - `why` is logged on a refusal so a run that collects
+    Returns (ok, why, verified_frame); refusals expose no usable frame.
+    `why` is logged on a refusal so a run that collects
     nothing says which gate stopped it rather than going quiet. See the note
     above GEM_ORBIT_* for why each of the three checks is here.
     """
     frame = capture.grab() if frame is None else frame
+    if guard is not None:
+        frame = guard(frame, "battle")
+    if not points:
+        return False, "no_points", None
     if wave_reader.read_wave(frame) is None:
-        return False, "no_wave"
+        return False, "no_wave", None
+    layout_offset = capture.layout_offset
     name = screen.identify(frame).name
     if name != "battle":
-        return False, f"screen:{name}"
+        return False, f"screen:{name}", None
     try:
         from device import overlays
-        wins = overlays.windows(settings.instance()["serial"])
+        wins = overlays.windows(settings.instance()["serial"], visible_only=True)
     except Exception as exc:                      # noqa: BLE001
         # The window list is EVIDENCE, and evidence that cannot be read is not
         # permission: an adb hiccup must not turn into a blind tap.
-        return False, f"windows_unreadable:{type(exc).__name__}"
-    if not wins:
-        return False, "no_windows"
+        return False, f"windows_unreadable:{type(exc).__name__}", None
     # IN FRONT, not merely present. `dumpsys window windows` lists front to
     # back, and a backgrounded activity stays in it: the Play Store sat at #1
     # behind the game (#0) all day on 2026-10-13 while the game played
     # normally, so "is it in the list" would refuse every set forever. What
     # matters is whether anything that is not system chrome is ABOVE the game.
-    for w in wins:
-        if w.startswith(overlays.GAME_PKG):
-            break
-        if not any(w.startswith(p) for p in overlays.EXPECTED_PREFIXES):
-            return False, "in_front:" + w.split("/")[0]
-    else:
-        return False, "game_not_on_screen"
+    blocker = overlays.foreground_blocker(wins)
+    if blocker:
+        return False, blocker, None
     y0, y1, x0, x1 = _probe_box(points)
     time.sleep(ORBIT_MOTION_GAP)
     after = capture.grab()
+    if guard is not None:
+        after = guard(after, "battle")
     if wave_reader.read_wave(after) is None:
-        return False, "no_wave"
+        return False, "no_wave", None
+    if capture.layout_offset != layout_offset:
+        return False, "layout_changed", None
+    name = screen.identify(after).name
+    if name != "battle":
+        return False, f"screen:{name}", None
+    if frame.shape != after.shape or not (0 <= y0 < y1 <= frame.shape[0]
+                                         and 0 <= x0 < x1 <= frame.shape[1]):
+        return False, "invalid_probe", None
     motion = float(cv2.absdiff(frame[y0:y1, x0:x1],
                                after[y0:y1, x0:x1]).mean())
     if motion < ORBIT_MOTION_MIN:
-        return False, f"static:{motion:.1f}"
-    return True, "live"
+        return False, f"static:{motion:.1f}", None
+    return True, "live", after
+
+ORBIT_SENSING_BEAT_SEC = 60     # idle sensing is logged this often (battle time), only while it senses
 
 
 class GemOrbitTapper:
-    """Detection-free harvest of the orbiting gem: every `interval` seconds tap a
-    few points on the top-left (135deg) arc it circles, clear of the ability row,
-    and a pass of the continuously-orbiting gem eventually lands under a tap.
+    """Recognized appearances open bounded attempts; stable +2 confirms a claim.
 
-    Fires ONLY in a bot-owned battle (a readable wave), never over the ability
-    row, and only when explicitly enabled (gather.gem_orbit.enabled) - so it is
-    inert for every existing preset. The cadence carries its own jitter so the
-    tap phase drifts across the ~15s orbit and reliably coincides over a session.
+    Gem recognition never proves a reward. Each set retains the battlefield, window,
+    motion, layout and ability-row guards. The observe loop runs between sets.
+
+    Idle sensing is counted (`sensing()`): every frame its host hands over while the tapper is enabled, idle and
+    free to look is tallied with what the recognizer made of it. The tally reads nothing: the frame is the one
+    the host already judged part of a battle (the collector hands over only frames its own `live` check passed),
+    and the tally is of the search that already runs. A finder that starts rejecting gems at the glyph check shows
+    there as frames and near misses rising with nothing recognized (control/harvest.py decides what that means).
+    Known blind spot: a gem rejected earlier (size, shape or pink border, or an unreadable HUD diamond) leaves
+    only quiet frames, the same as an empty battle; only the frame counts and `reasons` show it.
     """
 
-    def __init__(self, enabled=False, center=GEM_ORBIT_CENTER,
-                 radius=GEM_ORBIT_RADIUS, angle=GEM_ORBIT_ANGLE,
+    def __init__(self, enabled=False, center=None,
+                 radius=None, angle=GEM_ORBIT_ANGLE,
                  interval=GEM_ORBIT_INTERVAL, taps=GEM_ORBIT_TAPS,
-                 jitter=GEM_ORBIT_JITTER, spread=GEM_ORBIT_SPREAD):
+                 jitter=GEM_ORBIT_JITTER, spread=GEM_ORBIT_SPREAD,
+                 retry_interval_sec=None, attempt_timeout_sec=None,
+                 retry_backoff_sec=None, guard=None, recorder=None):
+        self.guard = guard
+        self.recorder = recorder
+        self.manual_command_id = None
+        self._window_taps = 0
+        self._schedule = AppearanceDriven()
+        timing = dict(interval_sec=interval, retry_interval_sec=retry_interval_sec,
+                      attempt_timeout_sec=attempt_timeout_sec, retry_backoff_sec=retry_backoff_sec)
+        timing = {key: ORBIT_TIMING_FIELDS[key]['default'] if value is None else value
+                  for key, value in timing.items()}
+        errors = validate_orbit_timing(timing)
+        if errors:
+            raise ValueError('; '.join(errors))
         self.enabled = bool(enabled)
-        self.center = tuple(center)
-        self.radius = float(radius)
+        self.center = tuple(center) if center is not None else None
+        self.radius = float(radius) if radius is not None else None
         self.angle = float(angle)
-        self.interval = float(interval)
+        self.interval = float(timing['interval_sec'])
+        self.retry_interval = float(timing['retry_interval_sec'])
+        self.attempt_timeout = float(timing['attempt_timeout_sec'])
+        self.retry_backoff = float(timing['retry_backoff_sec'])
         self.taps = int(taps)
         self.jitter = float(jitter)
         self.spread = float(spread)
         self.next_at = 0.0
-        self._last_skip = None      # the refusal reason already logged
+        self.next_window_at = 0.0
+        self._last_skip = None
+        self.last_refusal = None
+        self.last_window_started_at = None
+        self._timeout_ready_at = 0.0
+        self._failed_retry_anchor = None
+        self.manual_requested = False
+        self.manual_active = False
+        self.last_outcome = None
+        self.window_id = None
+        self.attempt_id = None
+        self._sensing = OrbitSensing()
+        self._beat_started_at = None
+        self._beat_due = False
+        self._reset_attempt()
 
-    def points(self):
-        return _orbit_points(self.center, self.radius, self.angle, self.taps,
+    def configure(self, values):
+        from player.run_controls import validate_patch
+        validate_patch({'routines': {'floating_gems': values}})
+        if values.get('enabled') is not None:
+            self.enabled = values['enabled']
+        if values.get('interval_sec') is not None:
+            self.interval = values['interval_sec']
+            if self.last_window_started_at is not None and (
+                    self.attempt_started is not None or not self.last_outcome
+                    or not self.last_outcome['confirmed']):
+                anchor = self.last_window_started_at
+                if self.attempt_started is None and self.last_outcome is not None:
+                    anchor = self._failed_retry_anchor
+                self._set_retry_spacing(anchor)
+        if values.get('window_sec') is not None:
+            self.attempt_timeout = values['window_sec']
+            if self.attempt_started is not None:
+                self.window_ends_at = self._schedule.window_end(self.attempt_started, self.attempt_timeout, self.window_ends_at)
+                self.next_at = min(self.next_at, self.window_ends_at)
+        if values.get('tap_interval_sec') is not None:
+            self.retry_interval = values['tap_interval_sec']
+        self._expire_attempt(None)
+
+    def request_now(self):
+        if self.manual_requested or self.attempt_started is not None:
+            return False
+        self.manual_requested = True
+        return True
+
+    def busy(self):
+        """Why the host must not stop now, or None at a safe point: a recognized appearance's attempt window is open
+        (taps may have been sent and the +2 not yet confirmed). The tap burst itself runs inside poll(), so it never
+        spans a host's loop iteration. An attempt past its input window is expired here (no input, no capture): off
+        the battle screen nothing else polls the tapper, and an expired attempt must not hold the host forever."""
+        if self.attempt_started is not None:
+            self._expire_attempt(None)
+        return 'orbit_attempt' if self.attempt_started is not None else None
+
+    def status(self):
+        now, epoch = time.monotonic(), time.time()
+        return dict(enabled=self.enabled, state='active' if self.attempt_started is not None else 'scheduled' if self.enabled else 'off',
+                    next_due_at=epoch+self.next_window_at-now if self.next_window_at else epoch,
+                    window_ends_at=None if self.attempt_started is None else epoch+self.window_ends_at-now,
+                    manual_pending=self.manual_requested, manual_active=self.manual_active,
+                    window_id=self.window_id, attempt_id=self.attempt_id,
+                    last_outcome=self.last_outcome, last_refusal=self.last_refusal,
+                    server_time=epoch)
+
+    def sensing(self):
+        """What idle sensing has seen so far (OrbitSensing.snapshot), None before its first frame."""
+        return self._sensing.snapshot()
+
+    def _sense(self, frame):
+        """One idle search for an appearance, counted. Returns the gem or None, exactly as find_orbit_gem would."""
+        glance = Glance()
+        with clock.stage('orbit.search'):
+            gem = find_orbit_gem(frame, layout_offset=capture.layout_offset, glance=glance)
+        self._sensing.record(glance, gem is not None)
+        now = time.monotonic()
+        if self._beat_started_at is None:
+            self._beat_started_at = now
+        elif now - self._beat_started_at >= ORBIT_SENSING_BEAT_SEC:
+            self._beat_started_at, self._beat_due = now, True
+        return gem
+
+    def _epoch(self, value):
+        return None if value is None else time.time() + value - time.monotonic()
+
+    def _record_open(self, manual, scheduled_for):
+        """Open this attempt's execution. Recording never changes what the tapper does."""
+        if self.recorder is None:
+            return
+        command_id, self.manual_command_id = (self.manual_command_id if manual else None), None
+        self._window_taps = 0
+        self.recorder.opened(trigger='manual' if manual else 'automatic', occurrence_key=f'window:{self.window_id}',
+                             scheduled_for=scheduled_for, command_id=command_id, refs=dict(window_id=self.window_id))
+
+    def _record_close(self, reason):
+        """A confirmed balance increase is a success; taps nobody could confirm are `failed/unconfirmed`; an attempt that
+        sent no tap is a no-op carrying the last refusal that stopped it."""
+        if self.recorder is None or self.recorder.execution_id is None:
+            return
+        taps, self._window_taps = self._window_taps, 0
+        refs = dict(window_id=self.window_id)
+        if reason == 'confirmed':
+            self.recorder.closed(result='succeeded', reason='balance_increased', effect='confirmed', attempts=taps,
+                                 confirmed=1, evidence=['balance_increased'], refs=refs)
+        elif taps:
+            self.recorder.closed(result='failed', reason='attempt_timeout', effect='unconfirmed', attempts=taps, refs=refs)
+        else:
+            self.recorder.closed(result='no_op', reason=(self.last_refusal or {}).get('reason') or 'no_taps', effect='none', refs=refs)
+
+    def _reset_attempt(self):
+        self.balance_before = None
+        self.attempt_started = None
+        self.sent_tap = False
+        self._attempt_had_input = False
+        self.manual_active = False
+        self._balance_diagnostic_written = False
+        self._gem_observation_states = set()
+        self._gem_diagnostic_stages = set()
+        self._input_ready_at = 0.0
+        self._confirmation_ends_at = 0.0
+
+    def _balance_unreadable(self, frame, stage):
+        # Keep the exact supplied pixels, once per window; never capture again
+        # here or turn an unknown reading into evidence of a reward.
+        if not self._balance_diagnostic_written:
+            self._balance_diagnostic_written = True
+            crop = gem_balance_crop(frame)
+            filename = logger.shot(crop, 'gem_balance_unreadable') if crop is not None else None
+            logger.event('gem_orbit_balance_unreadable', stage=stage,
+                         counter_frame=filename, before=self.balance_before,
+                         tap_sent=self.sent_tap)
+        self._backoff('balance_unreadable')
+
+    def _pending_balance(self) -> int | None:
+        return self.balance_before if self.sent_tap else None
+
+    def _is_collection_balance(self, value: int | None) -> bool:
+        baseline = self._pending_balance()
+        return baseline is not None and value == baseline + 2
+
+    def _wait_to_retry(self) -> None:
+        self.next_at = time.monotonic() + self.retry_interval
+        self._input_ready_at = self.next_at
+
+    def _backoff(self, reason):
+        self.last_refusal = dict(reason=reason, observed_at=time.time(),
+                                 window_id=self.window_id, attempt_id=self.attempt_id)
+        if reason != self._last_skip:
+            logger.event("gem_orbit_skip", reason=reason)
+            self._last_skip = reason
+        now = time.monotonic()
+        if reason in ('balance_unreadable', 'gem_not_detected'):
+            # A refused observation dispatched no input. Retry sensing on the
+            # next supplied frame once actual input pacing permits another set.
+            # Preserve pending proof; never invent a counter or gem reading.
+            self.next_at = min(max(now, self._input_ready_at), self.window_ends_at)
+        else:
+            self.balance_before = None
+            self.sent_tap = False
+            self.next_at = min(now + self.retry_backoff, self.window_ends_at)
+            self._input_ready_at = self.next_at
+
+    def _orbit_geometry(self) -> tuple[tuple[float, float], float]:
+        center, radius = reference_geometry()
+        center = center if self.center is None else self.center
+        radius = radius if self.radius is None else self.radius
+        return (center[0], center[1] + capture.layout_offset / 2), radius
+
+    def points(self, radius: float | None = None) -> list[tuple[int, int]]:
+        center, configured_radius = self._orbit_geometry()
+        radius = configured_radius if radius is None else radius
+        return _orbit_points(center, radius, self.angle, self.taps,
                              self.jitter, self.spread)
 
-    def poll(self, frame) -> None:
-        """Tap the arc if enabled and due - and only over a battlefield this
-        frame can vouch for (battlefield_live; rule 4/7). The checks run only
-        when the timer is due, so they cost nothing between sets."""
-        if not self.enabled:
-            return
-        now = time.monotonic()
-        if now < self.next_at:
-            return
-        points = self.points()
-        ok, why = battlefield_live(points, frame)
-        if not ok:
-            # Once per reason, not once per poll: a player sitting in a menu
-            # would otherwise write a line every 25 seconds all evening.
-            if why != self._last_skip:
-                self._last_skip = why
-                logger.event("gem_orbit_skip", reason=why)
-            self.next_at = now + self.interval
-            return
+    def _record_gem_unknown(self, frame: np.ndarray, stage: str) -> None:
+        if stage not in self._gem_diagnostic_stages:
+            self._gem_diagnostic_stages.add(stage)
+            fx, fy, fw, fh = field_region(capture.layout_offset)
+            crop = (frame[fy:fy+fh, fx:fx+fw]
+                    if getattr(frame, 'ndim', None) == 3
+                    and 0 <= fx < fx+fw <= frame.shape[1]
+                    and 0 <= fy < fy+fh <= frame.shape[0] else None)
+            filename = logger.shot(crop, 'gem_not_detected') if crop is not None else None
+            logger.event('gem_orbit_recognition_unknown', stage=stage, field_frame=filename)
+
+    def _gem_geometry(self, frame, stage: str) -> tuple[OrbitGem, float] | None:
+        gem = find_orbit_gem(frame, layout_offset=capture.layout_offset)
+        visible = gem is not None
+        center, configured_radius = self._orbit_geometry()
+        radius = math.dist(gem.center, center) if visible else None
+        if visible not in self._gem_observation_states:
+            self._gem_observation_states.add(visible)
+            logger.event('gem_orbit_geometry', stage=stage,
+                         recognition='visible' if visible else 'not_detected',
+                         orbit_center=center, configured_radius=configured_radius,
+                         measured_radius=radius,
+                         gem_center=gem.center if visible else None,
+                         gem_rect=gem.rect if visible else None,
+                         score=gem.score if visible else None)
+        if not visible:
+            self._record_gem_unknown(frame, stage)
+            self._backoff('gem_not_detected')
+            return None
+        return gem, radius
+
+    def _input_window_closed(self) -> bool:
+        return self.attempt_started is not None and time.monotonic() >= self.window_ends_at
+
+    def _expire_attempt(self, balance: int | None) -> bool:
+        if not self._input_window_closed():
+            return False
+        # Input still ends at window_ends_at. A recently dispatched tap keeps
+        # only its existing retry period to supply stable reward evidence.
+        # This cutoff is frozen at dispatch; unreadable pixels cannot extend it.
+        if self._pending_balance() is not None and time.monotonic() < self._confirmation_ends_at:
+            return False
+        with logger.context(window_id=self.window_id, attempt_id=self.attempt_id):
+            logger.event("gem_orbit_claim", confirmed=False, reason="attempt_timeout",
+                         before=self.balance_before, after=balance)
+        self.last_outcome = dict(confirmed=False, reason='attempt_timeout', observed_at=time.time(),
+                                 window_id=self.window_id, attempt_id=self.attempt_id)
+        self._failed_retry_anchor = self._schedule.retry_anchor(self.attempt_started, self._attempt_had_input)
+        input_ready_at = self._input_ready_at
+        self._reset_attempt()
+        # Only real dispatched input consumes the long retry spacing. An
+        # optical refusal still keeps safety backoff and prior input pacing.
+        self._timeout_ready_at = self._schedule.safety_floor(time.monotonic(), self.retry_backoff, input_ready_at)
+        self._set_retry_spacing(self._failed_retry_anchor)
+        self._record_close('timeout')
+        return True
+
+    def _set_retry_spacing(self, anchor: float | None) -> None:
+        """Keep the timeout safety floor separate from editable retry spacing."""
+        self.next_window_at = self._schedule.spacing_floor(anchor, self.interval, self._timeout_ready_at)
+        if self.attempt_started is None:
+            self.next_at = self.next_window_at
+
+    def poll(self, frame, reads=None):
+        candidate = self.window_id if self.attempt_started is not None else uuid.uuid4().hex
+        attempt_id = uuid.uuid4().hex
+        with logger.context(window_id=candidate, attempt_id=attempt_id):
+            result = self._poll(frame, reads)
+        if self._beat_due:                  # outside the window context: the beat belongs to no window
+            self._beat_due = False
+            logger.event('gem_orbit_sensing', **self._sensing.snapshot())
+        return result
+
+    def _poll(self, frame, reads=None):
+        read_wave = wave_reader.read_wave if reads is None else reads.wave
+        identify = screen.identify if reads is None else reads.screen
+        if self.guard is not None:
+            frame = self.guard(frame, "battle")
+        if self._expire_attempt(None):
+            return frame
+        manual = self.manual_requested
+        if not manual and not self.manual_active and not self.enabled:
+            return frame
+        confirmation_only = self._input_window_closed() or (not manual and time.monotonic() < self.next_at)
+        if confirmation_only and not (self.attempt_started is not None
+                                      and self._pending_balance() is not None):
+            return frame
+        if self.attempt_started is None:
+            # UNKNOWN is not absence. It authorizes neither an attempt nor
+            # more captures: inspect only the loop's already supplied pixels.
+            # An explicit manual request retains its bounded seeking attempt.
+            with clock.stage('orbit.appearance'):    # includes orbit.search and the reads a hit triggers
+                appearance = manual or (
+                    self._sense(frame) is not None
+                    and read_wave(frame) is not None
+                    and identify(frame).name == 'battle')
+            decision, _ = self._schedule.evaluate(
+                time.monotonic(), dict(next_window_at=self.next_window_at, window_open=False),
+                dict(manual=manual, appearance=appearance))
+            if decision.kind != 'due':
+                return frame
+            scheduled_for = self._epoch(self.next_window_at) if self.next_window_at else None
+            window = self._schedule.open_window(time.monotonic(), self.attempt_timeout)
+            self.attempt_started = window['started_at']
+            self._timeout_ready_at = 0.0
+            self._failed_retry_anchor = None
+            self.window_id = logger.current_context()['window_id']
+            self.last_window_started_at = self.attempt_started
+            self.manual_requested = False
+            self.manual_active = manual
+            self._set_retry_spacing(self.attempt_started)
+            self.window_ends_at = window['deadline']
+            logger.event("gem_orbit_window", duration_sec=window['duration'],
+                         interval_sec=self.interval)
+            self._record_open(manual, scheduled_for)
+        self.attempt_id = logger.current_context()['attempt_id']
+        if read_wave(frame) is None:
+            self._backoff("no_wave")
+            return frame
+        prior_frame = frame
+        prior_balance = read_gem_balance(frame)
+        # Backoff paces input, not proof of an already dispatched tap. Inspect
+        # supplied frames without more I/O until a readable change warrants
+        # the same fresh-pair validation used on a normal collection poll.
+        if confirmation_only and (prior_balance is None or prior_balance == self.balance_before):
+            return frame
+        if prior_balance is None and self.balance_before is None:
+            # No pending baseline can be confirmed or contradicted by another
+            # reading. Keep these pixels and retry on the next supplied frame.
+            self._balance_unreadable(prior_frame, 'prior')
+            return frame
+        frame = capture.grab()
+        if self.guard is not None:
+            frame = self.guard(frame, "battle")
+        if wave_reader.read_wave(frame) is None or screen.identify(frame).name != "battle":
+            self._backoff("not_in_battle")
+            return frame
+        balance = read_gem_balance(frame)
+        if self._expire_attempt(balance):
+            return frame
+        # Unknown or not-yet-stable pairs must not hide a readable conflicting
+        # amount. Only the baseline and a dispatched tap's expected reward are
+        # compatible; confirming that reward still requires both fresh reads.
+        if self.balance_before is not None and any(
+                value is not None and value != self.balance_before
+                and not self._is_collection_balance(value)
+                for value in (prior_balance, balance)):
+            self._backoff('balance_changed_without_confirmation')
+            return frame
+        if balance is None or prior_balance is None:
+            self._balance_unreadable(prior_frame if prior_balance is None else frame,
+                                     'prior' if prior_balance is None else 'fresh')
+            return frame
+        if self.balance_before is not None and balance != self.balance_before:
+            if self._is_collection_balance(balance):
+                if prior_balance == balance:
+                    # A confirmed collectible is gone. Resume appearance
+                    # sensing after input pacing, without another timed window.
+                    ready_at = self._schedule.resume_at(time.monotonic(), self._input_ready_at)
+                    pause = ready_at - time.monotonic()
+                    logger.event("gem_orbit_claim", confirmed=True,
+                                 before=self.balance_before, after=balance, pause_sec=round(pause, 3))
+                    self.last_outcome = dict(confirmed=True, reason='balance_increased', observed_at=time.time(),
+                                             window_id=self.window_id, attempt_id=self.attempt_id)
+                    self._reset_attempt()
+                    self.next_at = self.next_window_at = ready_at
+                    self._record_close('confirmed')
+                else:
+                    # Let the HUD settle, without sending another tap.
+                    self._wait_to_retry()
+                return frame
+            self._backoff("balance_changed_without_confirmation")
+            return frame
+        if balance != prior_balance:
+            self._backoff("balance_unstable")
+            return frame
+        if confirmation_only or self._input_window_closed():
+            return frame
+        layout_offset = capture.layout_offset
+        geometry = self._gem_geometry(frame, 'fresh')
+        if geometry is None:
+            return frame
+        _, measured_radius = geometry
+        points = self.points(measured_radius)
+        fx, fy, fw, fh = field_region(layout_offset)
+        if any(not (fx <= x < fx+fw and fy <= y < fy+fh) for x, y in points):
+            self._backoff('invalid_orbit_arc')
+            return frame
+        ok, why, verified_frame = battlefield_observation(points, frame,
+                                    **({"guard": self.guard} if self.guard is not None else {}))
+        if not ok or verified_frame is None:
+            self._backoff(why if not ok else 'battle_frame_unreadable')
+            return frame
         self._last_skip = None
-        self.next_at = now + self.interval * (1.0 + random.uniform(-0.12, 0.12))
-        for (x, y) in points:
+        if self.balance_before is None:
+            self.balance_before = balance
+        for index, (x, y) in enumerate(points):
+            # The motion probe's final frame is already fresh. Keep its
+            # pixels for the first input decision instead of discarding them
+            # and requiring another independent clean observation.
+            if index:
+                # The rate cap paces each tap. Wait it out BEFORE capturing so
+                # the frame that aims this tap is not older than the wait.
+                act.wait_for_tap_slot()
+            frame = verified_frame if index == 0 else capture.grab()
+            motion_balance = read_gem_balance(frame) if index == 0 else None
+            motion_unknown = (
+                index == 0
+                and motion_balance == self.balance_before
+                and find_orbit_gem(frame, layout_offset=layout_offset) is None
+            )
+            if motion_unknown:
+                self._record_gem_unknown(frame, 'motion')
+            if index == 0 and (motion_balance is None or motion_unknown):
+                # Retain the original fresh-capture opportunity when the
+                # motion frame cannot supply optical evidence for input.
+                # A readable changed balance must reach the conflict/reward
+                # handling below; a missing gem must never hide it.
+                frame = capture.grab()
+            if self.guard is not None:
+                frame = self.guard(frame, "battle")
+            if wave_reader.read_wave(frame) is None or screen.identify(frame).name != "battle":
+                self._backoff("not_in_battle")
+                return frame
+            if capture.layout_offset != layout_offset:
+                self._backoff("layout_changed")
+                return frame
+            balance = read_gem_balance(frame)
+            if self._expire_attempt(balance):
+                return frame
+            if balance != self.balance_before:
+                if self._is_collection_balance(balance):
+                    self._wait_to_retry()
+                elif balance is None:
+                    self._balance_unreadable(frame, 'pre_tap')
+                else:
+                    self._backoff("balance_changed_without_confirmation")
+                return frame
+            if self._input_window_closed():
+                return frame
             if _in_ability_row((x, y)):
-                logger.event("gem_orbit_skip", reason="ability_row", x=x, y=y)
-                continue
+                self._backoff("ability_row")
+                return frame
+            geometry = self._gem_geometry(frame, 'pre_tap')
+            if geometry is None:
+                return frame
+            gem, current_radius = geometry
+            # Camera/layout changes cannot turn an old arc into a new target.
+            # Keep radius error well inside the recognized square's half-width.
+            if abs(current_radius-measured_radius) > .15*min(gem.rect[2:]):
+                self._backoff('gem_geometry_changed')
+                return frame
             try:
-                logger.event("gem_orbit_tap", **act.tap(x, y, reason="gem_orbit"))
-            except act.TapRefused as e:
-                logger.event("tap_refused", button="gem_orbit", error=str(e))
+                event = act.tap(x, y, reason="gem_orbit", deadline=self.window_ends_at)
+                logger.event("gem_orbit_tap", gem_center=gem.center,
+                             measured_radius=current_radius, **event)
+                dispatched = not event.get('dry_run', False)
+                self.sent_tap = self.sent_tap or dispatched
+                self._attempt_had_input = self._attempt_had_input or dispatched
+                self._window_taps += 1 if dispatched else 0
+                # Interrupted sets must retain pacing from their last input,
+                # while the remaining taps inside this guarded set stay paced
+                # by the shared input boundary as before.
+                self._wait_to_retry()
+                if dispatched:
+                    self._confirmation_ends_at = self._input_ready_at
+            except act.TapRefused as exc:
+                logger.event("tap_refused", button="gem_orbit", error=str(exc))
+                self._backoff("tap_refused")
+                return frame
+        self._wait_to_retry()
+        frame = capture.grab()  # no caller acts on a frame from before the last tap
+        return self.guard(frame, "battle") if self.guard is not None else frame
 
 
 def _kick_adb():
-    """Restart the adb server after it drops its socket."""
+    """Bring the device back after a capture failure: adbclient.recover over
+    the server socket (host:connect for a missing device; for an offline one
+    host:disconnect first, but only after adbclient._OFFLINE_STALE_S offline
+    in this process, otherwise just the connect), and `adb start-server`
+    through run_hidden only when no server listens - the sanctioned daemon-lifecycle
+    spawn (CLAUDE.md), window-suppressed. Logs the state it ends on.
+
+    Never kill-server (architecture review R15): the first version killed
+    the server on every capture failure, which drops MuMu's TCP device with
+    it and bounces the daemon for every other client."""
     from settings import CONFIG as _C, run_hidden
+    from device import adbclient
     exe = _C["adb"]["exe"]
     serial = _C["instances"][_C["active_instance"]]["serial"]
-    # RECONNECT is not optional. MuMu is reached over TCP, so kill-server drops
-    # the device with it and every later screencap fails with "device not
-    # found" - which is exactly what the first version did: it restarted the
-    # daemon five times, each time into a session with no device attached, and
-    # then gave up. Restarting the server without reconnecting is not recovery.
-    # Daemon lifecycle is the ONE sanctioned adb.exe spawn (CLAUDE.md) - and
-    # it must be window-suppressed: 3 consoles flashed per kick before.
-    for args in (["kill-server"], ["start-server"], ["connect", serial]):
+
+    def start_server():
         try:
-            run_hidden([exe, *args], capture_output=True, timeout=20)
-        except Exception:                       # noqa: BLE001
+            run_hidden([exe, "start-server"], capture_output=True, timeout=20)
+        except Exception:                       # noqa: BLE001 - recover re-reads the state
             pass
-    time.sleep(1.5)
+    logger.event("shard_adb_recover", state=adbclient.recover(serial, start_server))
 
 
 def read_tier(frame) -> int | None:
@@ -469,20 +940,23 @@ def preset_active(frame, pt) -> bool:
     return green > cyan
 
 
-def gem_orbit_opts() -> dict:
+def gem_orbit_opts(gather=None) -> dict:
     """GemOrbitTapper kwargs from the active blueprint's gather.gem_orbit policy.
     Off unless a compiled preset sets gather.gem_orbit.enabled true; geometry
     defaults to the measured module constants, each overridable per-account."""
     name = CONFIG.get("preset") or ""
-    o = {}
-    if name.startswith("bp_"):
+    o = (gather or {}).get("gem_orbit") or {}
+    if gather is None and name.startswith("bp_"):
         o = ((CONFIG["presets"].get(name) or {}).get("gather") or {}).get("gem_orbit") or {}
     kw = {"enabled": bool(o.get("enabled", False))}
     if "center" in o:
         kw["center"] = tuple(o["center"])
     for src, dst in (("radius", "radius"), ("angle_deg", "angle"),
                      ("interval_sec", "interval"), ("taps", "taps"),
-                     ("jitter_frac", "jitter"), ("spread_deg", "spread")):
+                     ("jitter_frac", "jitter"), ("spread_deg", "spread"),
+                     ("retry_interval_sec", "retry_interval_sec"),
+                     ("attempt_timeout_sec", "attempt_timeout_sec"),
+                     ("retry_backoff_sec", "retry_backoff_sec")):
         if src in o:
             kw[dst] = o[src]
     return kw
@@ -587,7 +1061,7 @@ def enter_run(body: dict):
     return start_battle()
 
 
-def start_battle(tries: int = 2, settle: float = 15.0):
+def start_battle(tries: int = 2, settle: float = 15.0, *, guard=None):
     """Tap BATTLE and WAIT for the run to actually exist.
 
     Returning the moment the tap lands is what killed the first forever-loop:
@@ -598,10 +1072,17 @@ def start_battle(tries: int = 2, settle: float = 15.0):
     is swallowed, and a swallowed tap leaves us on Home forever.
     """
     for i in range(tries):
-        tap_at(HOME_BATTLE, "start battle")
+        if guard is not None:
+            frame = guard(capture.grab(), "start_home")
+            ev = act.tap(*HOME_BATTLE, reason="start battle")
+            guard(frame, "start_dispatched", ev)
+        else:
+            tap_at(HOME_BATTLE, "start battle")
         deadline = time.monotonic() + settle
         while time.monotonic() < deadline:
             frame = capture.grab()
+            if guard is not None:
+                frame = guard(frame, "start_wait")
             if _in_run(frame):
                 logger.event("shard_battle", started=True, attempt=i + 1)
                 return frame
@@ -615,7 +1096,8 @@ def start_battle(tries: int = 2, settle: float = 15.0):
 # ----------------------------------------------------------------- the loop
 
 def wait_for_wave(target: int, timeout: float = WAVE_TIMEOUT,
-                  gems: "GemWatch | None" = None):
+                  gems: "GemWatch | None" = None, *, guard=None,
+                  recover_home: bool = True):
     """Block until the wave counter reaches `target`. Returns the frame.
 
     Waves SKIP during the Intro Sprint (observed 30 -> 40 -> 50), so this
@@ -625,7 +1107,11 @@ def wait_for_wave(target: int, timeout: float = WAVE_TIMEOUT,
     off = 0
     while time.monotonic() < deadline:
         frame = capture.grab()
+        if guard is not None:
+            frame = guard(frame, "wave")
         w = wave_reader.read_wave(frame)
+        if guard is not None and screen.identify(frame).name != "battle":
+            w = None
         if w is not None and w >= target:
             return frame, w
         if w is None and not _in_run(frame):
@@ -635,7 +1121,7 @@ def wait_for_wave(target: int, timeout: float = WAVE_TIMEOUT,
             # the old code raced that gap and lost on loop 10 of 100.
             off += 1
             if off >= OFF_BATTLE_FRAMES:
-                if on_home(frame):
+                if recover_home and on_home(frame):
                     # RETRY did not take and we are parked on Home. This is a
                     # screen the routine navigated to itself, so starting the
                     # battle again is recovery, not a stray tap.
@@ -648,7 +1134,8 @@ def wait_for_wave(target: int, timeout: float = WAVE_TIMEOUT,
         else:
             off = 0
         if gems and w is not None:      # in-run only, never on a menu screen
-            gems.poll(frame)
+            if gems.poll(frame) is not frame:
+                continue                # collection observed a newer screen
         time.sleep(0.3)
     raise Abort(f"wave {target} not reached within {timeout:.0f}s")
 
@@ -658,19 +1145,31 @@ def _in_run(frame) -> bool:
             or screen.identify(frame).name == "battle")
 
 
-def cancel_sprint():
+def cancel_sprint(*, guard=None):
     """Tap the Intro Sprint indicator and confirm. Verified at every step."""
     frame = capture.grab()
+    if guard is not None:
+        frame = guard(frame, "battle")
     sc = screen.identify(frame)
     if sc.name != "intro_sprint_end":
         pt = detect.find_intro_sprint(frame)
         if pt is None:
             logger.event("shard_sprint", result="indicator not found")
             return False
-        tap_at(pt, "intro sprint indicator")
+        if guard is not None:
+            frame = guard(frame, "sprint_begin")
+        if guard is None:
+            tap_at(pt, "intro sprint indicator")
+        else:
+            ev = act.tap(*pt, reason="intro sprint indicator")
+            guard(frame, "sprint_dispatched", ev)
         frame = capture.grab()
+        if guard is not None:
+            frame = guard(frame, "sprint_open_wait")
         sc = screen.identify(frame)
     if sc.name != "intro_sprint_end":
+        if guard is not None:
+            guard(frame, "battle")
         logger.event("shard_sprint", result="no confirm dialog", screen=sc.name,
                      shot=logger.shot(frame, "shard_sprint_nodialog"))
         return False
@@ -679,10 +1178,20 @@ def cancel_sprint():
     score, yes = screen._match(frame, "home/intro_sprint_yes.png",
                                ((1320, 1580), (540, 940)))
     if score < 0.90:
+        if guard is not None:
+            guard(frame, "sprint_confirm")
         logger.event("shard_sprint", result="Yes not found", score=round(score, 3))
         return False
-    tap_at(yes, "intro sprint: yes")
+    if guard is not None:
+        guard(frame, "sprint_confirm")
+    if guard is None:
+        tap_at(yes, "intro sprint: yes")
+    else:
+        ev = act.tap(*yes, reason="intro sprint: yes")
+        guard(frame, "sprint_confirm_dispatched", ev)
     after = capture.grab()
+    if guard is not None:
+        after = guard(after, "sprint_after")
     confirmed = (screen.identify(after).name != "intro_sprint_end"
                  and detect.find_intro_sprint(after) is None
                  and _in_run(after))
@@ -707,7 +1216,8 @@ def wait_for_nuke_point(timeout: float = 120.0,
             logger.event("shard_nuke_point", missed=True, wave=w)
             return frame            # overshot - fire immediately
         if gems and w is not None:
-            gems.poll(frame)
+            if gems.poll(frame) is not frame:
+                continue                # never fire Nuke from a pre-collection frame
         if w == NUKE_WAVE:
             best = max(best, p)
             if p >= NUKE_AT_PROGRESS:
@@ -740,7 +1250,7 @@ def fire_nuke(frame) -> bool:
     return fired
 
 
-def _confirm_exit(frame=None) -> bool:
+def _confirm_exit(frame=None, *, guard=None) -> bool:
     """Tap whichever exit confirm dialog is up, if any.
 
     The exit button's LABEL does not predict the DIALOG: tapping END ROUND on
@@ -755,6 +1265,8 @@ def _confirm_exit(frame=None) -> bool:
                         ("home/end_round_yes.png", "end round yes")):
         hit = find(frame, rel, 0.90)
         if hit:
+            if guard is not None:
+                guard(frame, "exit_confirm")
             # NOT instant, and SETTLE afterwards (acct2, 2026-08-19, proven
             # by an instrumented repro): at poll speed the dialog is re-
             # matched mid-fade right after being answered and the re-tap
@@ -763,13 +1275,15 @@ def _confirm_exit(frame=None) -> bool:
             # At a 1s cadence the same flow succeeds every time. So: full-
             # duration press, then give the transition its second before any
             # caller can re-poll.
-            act.tap(*hit[0], reason=reason)
+            ev = act.tap(*hit[0], reason=reason)
+            if guard is not None:
+                guard(frame, "confirm_dispatched", ev)
             time.sleep(1.2)
             return True
     return False
 
 
-def abandon_run(to_home: bool = False):
+def abandon_run(to_home: bool = False, before_restart=None, *, guard=None):
     """Side menu -> EXIT BATTLE / END ROUND -> confirm -> RETRY, at speed.
 
     to_home=True taps HOME instead of RETRY at the stats dialog - the
@@ -790,27 +1304,37 @@ def abandon_run(to_home: bool = False):
         see _confirm_exit.
     """
     frame = capture.grab()
+    if guard is not None:
+        frame = guard(frame, "exit_begin")
     # ABSOLUTE RULE (user, 2026-08-15): "you NEVER cancel a tournament run
     # EVER". tourney.end_round has carried this guard at its chokepoint ever
     # since a freshly bought 10-gem entry was surrendered at wave 1; THIS is
     # the other chokepoint. Every surrender in shard/quest land funnels
-    # through here, including the quest runners' "adopt the running battle
-    # via retry" path, which calls it on whatever happens to be on screen.
+    # through here. Quest callers additionally carry process-local cycle
+    # authority through every observation and exit/retry input below.
     if screen.in_tournament(frame):
         logger.shot(frame, "shard_abandon_refused")
         raise Abort("a TOURNAMENT run is on screen - automation never "
                     "cancels a tournament run")
-    if not _confirm_exit(frame):        # leftover dialog from a failed exit
+    if not _confirm_exit(frame, guard=guard):  # leftover dialog from a failed exit
         if not detect.side_menu_open(frame):
-            act.tap(*CONFIG["side_menu"]["toggle"], reason="open side menu",
-                    instant=True)
+            ev = act.tap(*CONFIG["side_menu"]["toggle"], reason="open side menu",
+                         instant=True)
+            if guard is not None:
+                guard(frame, "menu_dispatched", ev)
         deadline = time.monotonic() + 6.0
         while time.monotonic() < deadline:
             frame = capture.grab()
+            if guard is not None:
+                frame = guard(frame, "exit_menu")
             hit = (find(frame, "buttons/end_round.png", 0.85)
                    or find(frame, "buttons/exit_battle.png", 0.85))
             if hit:
-                act.tap(*hit[0], reason="exit battle", instant=True)
+                if guard is not None:
+                    guard(frame, "exit_button")
+                ev = act.tap(*hit[0], reason="exit battle", instant=True)
+                if guard is not None:
+                    guard(frame, "button_dispatched", ev)
                 break
             time.sleep(EXIT_POLL)
         else:
@@ -819,7 +1343,10 @@ def abandon_run(to_home: bool = False):
                         "on the side menu")
         deadline = time.monotonic() + 6.0
         while time.monotonic() < deadline:
-            if _confirm_exit():
+            frame = capture.grab()
+            if guard is not None:
+                frame = guard(frame, "exit_poll")
+            if _confirm_exit(frame, guard=guard):
                 break
             time.sleep(EXIT_POLL)
         else:
@@ -829,15 +1356,21 @@ def abandon_run(to_home: bool = False):
     deadline = time.monotonic() + 20.0
     while time.monotonic() < deadline:
         frame = capture.grab()
+        if guard is not None:
+            frame = guard(frame, "exit_poll")
         # A confirm tap can land during the dialog's fade-in and never
         # register (observed live on acct2, 2026-08-19: end_round_yes
         # matched at 0.99 on the timeout shot - found, tapped, swallowed).
         # The dialog still being up is proof the tap did not take; re-answer
         # it. _confirm_exit is template-gated, so this can never blind-tap.
-        if _confirm_exit(frame):
+        if _confirm_exit(frame, guard=guard):
             time.sleep(EXIT_POLL)
             continue
         dead, retry = detect.death_screen(frame)
+        if dead and before_restart is not None:
+            if before_restart() is False:
+                return True
+            before_restart = None
         if dead and to_home:
             logger.event("shard_result", shot=logger.shot(frame, "shard_result"))
             # Quest cycles (user, 2026-08-16): "just restart, don't store
@@ -845,20 +1378,32 @@ def abandon_run(to_home: bool = False):
             # the runlog.collect that tourney.end_round would do.
             hit = find(frame, "home/game_stats_home.png")
             if hit:
-                act.tap(*hit[0], reason="game stats: HOME", instant=True)
+                if guard is not None:
+                    guard(frame, "exit_home")
+                ev = act.tap(*hit[0], reason="game stats: HOME", instant=True)
+                if guard is not None:
+                    guard(frame, "home_dispatched", ev)
                 # HOME fades in after the tap. Returning immediately let
                 # cards_restore tap the navigation row during that fade.
                 home_deadline = time.monotonic() + 8.0
                 while time.monotonic() < home_deadline:
                     time.sleep(EXIT_POLL)
-                    if on_home(capture.grab()):
+                    home_frame = capture.grab()
+                    if guard is not None:
+                        home_frame = guard(home_frame, "home_wait")
+                    if (screen.identify(home_frame).name == "home" if guard is not None
+                            else on_home(home_frame)):
                         time.sleep(0.5)
                         logger.event("shard_exit_home", ok=True)
                         return True
                 raise Abort("HOME was tapped but the Home screen did not appear")
         elif dead and retry:
             logger.event("shard_result", shot=logger.shot(frame, "shard_result"))
-            act.tap(*retry, reason="RETRY", instant=True)
+            if guard is not None:
+                guard(frame, "exit_retry")
+            ev = act.tap(*retry, reason="RETRY", instant=True)
+            if guard is not None:
+                guard(frame, "retry_dispatched", ev)
             logger.event("shard_retry", ok=True)
             return True
         time.sleep(EXIT_POLL)
@@ -890,7 +1435,7 @@ def _speed_maxed(frame) -> bool:
     return float(cv2.matchTemplate(live, tpl, cv2.TM_CCORR_NORMED).max()) > 0.85
 
 
-def ensure_max_speed():
+def ensure_max_speed(*, guard=None):
     """Press the speed '+' until the label reads x5.0.
 
     Added 2026-08-14: a run came back from RETRY at x1.0 - no tap of ours
@@ -901,6 +1446,8 @@ def ensure_max_speed():
     """
     for i in range(SPEED_TAPS + 1):
         frame = capture.grab()
+        if guard is not None:
+            frame = guard(frame, "battle")
         if _speed_maxed(frame):
             if i:
                 logger.event("shard_speed", presses=i, fixed=True)
@@ -964,7 +1511,8 @@ def run(loops: int | None = None, do_setup: bool = True,
     if do_setup:
         setup(tier)
     adb_fails = 0
-    gems = GemWatch()   # preserve collection cadence across the batch
+    from runtime.action_session import ActionSession
+    gems = GemWatch(session=ActionSession.for_operation('shard'))   # preserve collection cadence across the batch
     n = 0
     while loops is None or n < loops:
         # Honour the scheduler's stop flag at the loop boundary (2026-08-17).
@@ -976,7 +1524,9 @@ def run(loops: int | None = None, do_setup: bool = True,
         # a leftover battle, it ADOPTS it (coin) or HOLDS on it
         # (tournament - which would stall the block for hours), and the
         # cards restore below needs the nav row. Degrades loudly: a failed
-        # close must not lose the stop itself.
+        # close must not lose the stop itself - it is logged and the run
+        # returns WITHOUT the cards restore, whose first act is a tap on the
+        # nav row of a screen the failed close just proved unknown (rule 7).
         why = runflag.requested()
         if why is not None:
             logger.event("shard_stop_flag", after_loop=n, reason=why)
@@ -984,18 +1534,18 @@ def run(loops: int | None = None, do_setup: bool = True,
                 abandon_run(to_home=True)
             except (Abort, act.TapRefused) as e:
                 logger.event("shard_stop_close_fail", error=str(e))
+                return n
             break
         n += 1
         try:
             one_loop(n, gems=gems,
                      last=(loops is not None and n == loops))
         except capture.CaptureError as e:
-            # NOT a logic failure: adb itself died. On Windows a long run
-            # spawns tens of thousands of `adb screencap`/`input` processes
-            # and the daemon eventually loses its socket ("the system lacked
-            # sufficient buffer space"). Killed the first infinite run at loop
-            # 12. Restart the daemon and retry the same loop rather than
-            # ending a farm session over an infrastructure hiccup.
+            # Treated as an adb hiccup, not a logic failure: the device or the
+            # daemon dropped (the first infinite run, when every screencap
+            # still spawned adb.exe, lost the daemon at loop 12). Recover the
+            # device (_kick_adb) and retry the same loop rather than ending a
+            # farm session over an infrastructure hiccup.
             n -= 1
             adb_fails += 1
             logger.event("shard_adb", fails=adb_fails, error=str(e)[:120])
@@ -1011,7 +1561,7 @@ def run(loops: int | None = None, do_setup: bool = True,
         # Persist today's completed-run total after EVERY loop, not at exit:
         # an abort (a human taking the screen counts) must not lose the
         # count - combo resumes the remainder from this number.
-        daystate.set_today("shard_runs", daystate.get_today("shard_runs") + 1)
+        daystate.increment_today("shard_runs")      # one locked step: a get followed by a set would lose a run another process counted in between
     # v29 (user, 2026-08-28): put the farming deck back on the cards screen
     # before leaving. The coin block's global preset only SELECTS presets at
     # battle entry - nothing else moves the cards screen off this block's
@@ -1050,6 +1600,8 @@ def _cli():
 if __name__ == "__main__":
     import settings
     _a = _cli()
+    from runtime.device_lease import prepare_instance
+    prepare_instance(_a.instance)
     # ONLY a compiled blueprint is bound as the process preset. The tray
     # still passes --preset shard_farm (a runner-only entry with no settings);
     # binding that would change nothing here and could raise on a placeholder,

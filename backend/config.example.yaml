@@ -11,9 +11,9 @@
 # cut at) - see docs/BLUESTACKS.md for the emulator side.
 
 # The adb binary of YOUR emulator. The Setup wizard writes the right path once
-# it finds the emulator (MuMu: nx_main\adb.exe, BlueStacks: HD-Adb.exe,
-# LDPlayer: adb.exe). Never mix emulators: two different adb builds kill each
-# other's daemon. Runners never spawn this binary per command - they talk to
+# it finds the emulator (MuMu: nx_main\adb.exe, BlueStacks: HD-Adb.exe).
+# Never mix emulators: two different adb builds kill each other's daemon.
+# Runners never spawn this binary per command - they talk to
 # the adb server socket (device/adbclient.py); it is used only to start the
 # daemon and to `connect`.
 adb: {exe: adb}
@@ -30,11 +30,18 @@ instances:
     allow_taps: false
     preset: normal_run
     autostart: false
+    # Video preview only; automation keeps its foreground-screen screenshot guards.
+    # Auto prefers verified local MuMu native capture, optional scrcpy, then ADB.
+    preview:
+      backend: auto
+      fps: 15
+      mumu: {install_dir: '', index: -1}  # -1 = resolve from this serial
+      scrcpy: {bitrate: 8000000}
     # MuMu Player runs the game on a SECONDARY display: add
     #   display: '<physical display id>'   (screencap -d)
     #   input_display: <logical display id> (input -d)
-    # capture.refresh_display() re-derives them at runtime. BlueStacks and
-    # LDPlayer use the default display - leave both keys out.
+    # capture.refresh_display() re-derives them at runtime. BlueStacks uses
+    # the default display - leave both keys out.
     #
     # Per-instance overrides of the global blocks below (rois, tabs, loop,
     # missions, side_menu, fleet) go here, e.g. a wall_bar ROI once your

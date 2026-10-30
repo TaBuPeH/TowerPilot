@@ -51,7 +51,7 @@ known account inventory and verified actionable controls.
 - Python used successfully: `C:\Python312\python.exe`.
 - Dashboard: `http://127.0.0.1:8621/ui/index.html#calibrate`.
 - Dashboard was restarted during the last implementation turn, using
-  `TOWER_PILOT_PORT=8621` and `pythonw frontend/dashboard.py` from the repo root.
+  `TOWER_PILOT_PORT=8621` and `pythonw backend/dashboard.py` from the repo root.
   Do not reuse a recorded PID. Re-identify the listener and command line.
 - MuMu was the active emulator; native game capture is 1080 x 2560 at 360 dpi.
   The game uses a secondary Android display. Resolve it before sending input.
@@ -163,7 +163,7 @@ screen detection. `git diff --stat` excludes untracked files; inspect both.
 | `backend/player/manifest_contribution.py` | Sanitized export and declared reference promotion |
 | `backend/vision/screen.py`, `detect.py` | Runtime screen/template recognition |
 | `backend/interactions/missions.py`, `store.py` | New no-fallback dynamic menu lookup; audit remaining navigation |
-| `frontend/dashboard.py` | API, action lock, worker lifecycle, account binding, capture/readiness |
+| `backend/dashboard.py` | API, action lock, worker lifecycle, account binding, capture/readiness |
 | `frontend/webui/index.html` | Setup, scan progress, coverage, account discoveries, advanced tester |
 
 Useful symbols: `Scanner.harvest`, `update_screen_map`, `learned_cuts`,
@@ -557,7 +557,7 @@ leaking account data or becoming unreviewed click scripts.
 Last focused backend run passed 32 tests:
 
 ```powershell
-C:\Python312\python.exe -m pytest backend/tests/test_interface_coverage.py backend/tests/test_client_clicker.py backend/tests/test_bootstrap_manifest.py backend/tests/test_manifest_screen_detection.py backend/tests/test_release_clean.py -q
+C:\Python312\python.exe -m pytest backend/tests/unit/test_interface_coverage.py backend/tests/unit/test_client_clicker.py backend/tests/unit/test_bootstrap_manifest.py backend/tests/unit/test_manifest_screen_detection.py backend/tests/unit/test_release_clean.py -q
 ```
 
 Frontend run passed 17 tests:

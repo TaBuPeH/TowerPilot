@@ -1294,13 +1294,14 @@
       "from": "home",
       "to": "daily_missions",
       "optional": true,
+      "capture_rel": "mapping/v11/route_17_label.png",
       "verify": {
         "text": "MISSIONS",
         "rect": [
           910,
           185,
           165,
-          100
+          48
         ]
       }
     },
@@ -1970,6 +1971,9 @@
       "names": [
         "Attack"
       ],
+      "locked_art": [
+        "lock"
+      ],
       "screen": "guardians",
       "search": [
         25,
@@ -1989,6 +1993,9 @@
       "names": [
         "Ally"
       ],
+      "locked_art": [
+        "lock"
+      ],
       "screen": "guardians",
       "search": [
         25,
@@ -2004,9 +2011,34 @@
         115
       ]
     },
+    "guardian/chip_bounty.png": {
+      "names": [
+        "Steal"
+      ],
+      "locked_art": [
+        "lock"
+      ],
+      "screen": "guardians",
+      "search": [
+        25,
+        1160,
+        1020,
+        1140
+      ],
+      "locate_navigation": false,
+      "reference_rect": [
+        801,
+        1352,
+        129,
+        96
+      ]
+    },
     "guardian/chip_fetch.png": {
       "names": [
         "Fetch"
+      ],
+      "locked_art": [
+        "lock"
       ],
       "screen": "guardians",
       "search": [
@@ -2027,6 +2059,9 @@
       "names": [
         "Scout"
       ],
+      "locked_art": [
+        "lock"
+      ],
       "screen": "guardians",
       "search": [
         25,
@@ -2045,6 +2080,9 @@
     "guardian/chip_summon.png": {
       "names": [
         "Summon"
+      ],
+      "locked_art": [
+        "lock"
       ],
       "screen": "guardians",
       "search": [
@@ -4011,9 +4049,19 @@
         },
         "orbiting_gem": {
           "identity": "faceted diamond in thin pink square",
-          "reference_radius_pixels": 168,
-          "rule": "Collect with configured timed clicks on the tower-relative orbit arc, only in a verified battle and away from abilities. No artwork capture or image matching is required. Do not scale by attack-range meters.",
-          "reference_only": true
+          "reference_radius_pixels": 170,
+          "rule": "Verify the pink square and faceted glyph against the same frame HUD diamond; measure the current tower-relative radius before bounded arc clicks. Recheck recognition and radius before each click, only in a verified battle and away from abilities. A failed detection is unknown. Only a stable exact +2 balance confirms collection. No stored artwork or template writes are required. Do not scale by attack-range meters.",
+          "reference_only": true,
+          "reference_center": [
+            510,
+            805
+          ],
+          "hud_icon_rect": [
+            25,
+            190,
+            55,
+            54
+          ]
         }
       },
       "battle_attack": {
@@ -6817,6 +6865,8 @@
     "/asset_bindings/guardian~1chip_attack.png/reference_rect": "xyxy",
     "/asset_bindings/guardian~1chip_ally.png/search": "xyxy",
     "/asset_bindings/guardian~1chip_ally.png/reference_rect": "xyxy",
+    "/asset_bindings/guardian~1chip_bounty.png/search": "xyxy",
+    "/asset_bindings/guardian~1chip_bounty.png/reference_rect": "xyxy",
     "/asset_bindings/guardian~1chip_fetch.png/search": "xyxy",
     "/asset_bindings/guardian~1chip_fetch.png/reference_rect": "xyxy",
     "/asset_bindings/guardian~1chip_scout.png/search": "xyxy",
@@ -7264,7 +7314,9 @@
     "/runtime_layout/tabs/uw": "xy",
     "/flow_regions/wall_bar": "xyxy",
     "/flow_regions/hp_bar": "xyxy",
-    "/runtime_layout/panel_shift": "y"
+    "/runtime_layout/panel_shift": "y",
+    "/interface/screens/battle/orbiting_gem/reference_center": "xy",
+    "/interface/screens/battle/orbiting_gem/hud_icon_rect": "xyxy"
   },
   "flow_regions": {
     "home_battle": [

@@ -1,0 +1,87 @@
+/*
+ * HelpTip (src/ui/HelpTip.tsx): a small info icon beside a heading or field and
+ * the tip it opens. The icon is subordinate (muted, 14px glyph) but keeps a
+ * reachable hit box: 24px on a fine pointer, 44px on touch. Its layout box reserves
+ * that same area so adjacent controls never share a touch target.
+ */
+.tp-help__trigger {
+  --tp-help-size: 1.5rem;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  inline-size: var(--tp-help-size);
+  block-size: var(--tp-help-size);
+  min-inline-size: 0;
+  min-block-size: 0;
+  margin: 0;
+  margin-inline-start: var(--tp-space-1);
+  padding: 0;
+  border: 0;
+  border-radius: var(--tp-radius-pill);
+  background: transparent;
+  color: var(--tp-color-text-muted);
+  font: inherit;
+  line-height: 1;
+  vertical-align: middle;
+  cursor: help;
+}
+.tp-help__trigger:hover,
+.tp-help__trigger[aria-expanded='true'] {
+  color: var(--tp-color-text-strong);
+}
+.tp-help__glyph {
+  inline-size: 0.875rem;
+  block-size: 0.875rem;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+.tp-help__dot {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* Fixed in the viewport (placed by HelpTip), wrapped to the screen, scrolling if taller than it. */
+.tp-help__tip {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: 40;
+  box-sizing: border-box;
+  inline-size: max-content;
+  max-inline-size: min(24rem, calc(100vw - 1rem));
+  max-block-size: calc(100vh - 1rem);
+  overflow-y: auto;
+  padding: var(--tp-space-2) var(--tp-space-3);
+  border: 1px solid var(--tp-color-border-active);
+  border-radius: var(--tp-radius-control);
+  background: var(--tp-color-surface-strong);
+  box-shadow: 0 0.25rem 1rem rgb(0 0 0 / 45%);
+  color: var(--tp-color-text);
+  font-size: var(--tp-font-size-13);
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: start;
+  text-transform: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.tp-help__tip > :first-child {
+  margin-block-start: 0;
+}
+.tp-help__tip > :last-child {
+  margin-block-end: 0;
+}
+
+@media (max-width: 600px), (pointer: coarse) {
+  .tp-help__trigger {
+    --tp-help-size: var(--tp-control-height-touch);
+  }
+  .tp-help__tip {
+    font-size: var(--tp-font-size-14);
+  }
+}

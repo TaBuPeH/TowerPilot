@@ -1,4 +1,8 @@
 # Tower Pilot
+> **Status:** Active
+> **Type:** Project guidance
+> **Created:** 2026-09-05
+> **Updated:** 2026-10-24
 
 Vision-driven autopilot for "The Tower" in an Android emulator: adb
 screencaps in, human-like taps out. No memory reading, no modded APK.
@@ -28,8 +32,8 @@ portrait at 360 dpi.
    dashboard popup, gated on a clean Home (`can_start_battle`), and refused
    over any run it did not start or any tournament.
 4. **Tower on screen or hands off.** No taps while a human owns the screen;
-   recovery taps only in menus the bot itself opened (`rs.bot_left_battle`
-   in the orchestrator, `_hold_while_unknown` in the scheduler).
+   recovery taps only in menus the bot itself opened (the mission flow's
+   revocable ownership guard, `_hold_while_unknown` in the scheduler).
 5. **Phase switches at run boundaries only** - the runflag contract
    (`backend/scheduling/runflag.py`): write the flag, the runner leaves at
    its death handler. Never kill a live run to switch activities.
@@ -60,8 +64,8 @@ portrait at 360 dpi.
    guild flow cuts it from a locked box it already has open and accepts the
    cut only when the same glyph matches another locked box on that frame.
    Without it the claim pass is skipped, never crashed: a reward flow that
-   raises is dropped by `Mission.step` (`mission_crash`) and takes the
-   flows' own exit, because stuck recovery never touches Guild or Quests.
+   raises is dropped by `Mission.step` (`mission_crash`); recovery requires
+   retained flow ownership and a freshly recognized dismiss or exit target.
 7. **An Abort means the screen was not what the code expected.** Stop and
    log; never blind-tap into an unknown screen.
 8. **Machine and account state stay out of git**: `backend/config.yaml`,
@@ -70,7 +74,7 @@ portrait at 360 dpi.
    data**: no preset names, no module icons or equipped/inventory tables,
    no tiers above 1, no deck tweaks - `config.example.yaml` loadouts are
    empty, `backend/profiles/default.yaml` owns nothing, and
-   `backend/tests/test_release_clean.py` fails when something slips back.
+   `backend/tests/unit/test_release_clean.py` fails when something slips back.
    The Calibrate cropper, the scan and the config editor produce all of it
    per install. The compiler regression fixture is
    `backend/tests/fixtures/golden_profile.yaml`.
@@ -142,8 +146,11 @@ and skills apply.
   crops included; setup and the observe pass cut missing targets from it on
   that screen at the same size (`player/learned.py`, `Scanner.learned_cuts`).
 
-- **Deploy = kill + relaunch.** Runners never see code edits. Every runner
+- **Deploy = relaunch.** Runners never see code edits. Every runner
   adopts in-progress state (live battle -> straight to the observe loop).
+  The gem collector is not killed for a deploy: `python tools/collector_restart.py`
+  asks it to leave at a safe point and the dashboard's harvest tick relaunches it
+  (README, "Putting new code live in the gem collector").
 - Detached spawns on Windows: `Start-Process pythonw -WorkingDirectory
   backend`.
 - Logs: `backend/logs/<instance>/events_*.jsonl`, one file per process
@@ -168,7 +175,8 @@ and skills apply.
 ## Verification habits
 
 - After edits: `python -m py_compile <files>` before any relaunch.
-- `python -m pytest` from the repo root (offline, 790+ tests).
+- `python -m pytest backend/tests/unit` from the repo root (offline; `pytest.ini` makes
+  that the default, test layout in README.md Development).
 - Template work: self-match must score ~1.0, next-best clearly below.
 - New behavior: watch the first live occurrence in the events log before
   trusting it.

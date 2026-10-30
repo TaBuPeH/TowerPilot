@@ -1,0 +1,154 @@
+/* Collection-specific content layout; shared ui.css owns surfaces and controls. */
+.tp-collection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-3);
+  max-width: 1100px;
+  min-width: 0;
+}
+
+.tp-collection .tp-region__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-3);
+}
+
+.tp-collection__not-sent {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+}
+
+.tp-collection__help {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-collection__policies,
+.tp-collection__chores {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-collection__policies [data-policy],
+.tp-collection__chores li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-3);
+}
+
+.tp-collection__policies .tp-facts {
+  margin: 0;
+}
+
+/* :where() keeps these at the 24px floor without outranking the shared touch target (44px). */
+:where(.tp-collection__policies a, .tp-collection [data-used-by] a) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  min-width: 24px;
+}
+
+.tp-collection [data-used-by] dd {
+  min-width: 0;
+}
+
+.tp-collection__uses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-collection__policies a[aria-current='true'] {
+  font-weight: 600;
+}
+
+.tp-collection__id {
+  color: var(--tp-color-text-muted);
+  font-weight: 400;
+}
+
+.tp-collection__row {
+  margin: var(--tp-space-2) 0;
+}
+
+.tp-collection__field {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.tp-collection__input {
+  width: 14rem;
+}
+
+.tp-collection__invalid {
+  color: var(--tp-color-bad);
+  font-size: var(--tp-font-size-12);
+}
+
+.tp-collection__check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+}
+
+.tp-collection__check input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--tp-color-busy);
+}
+
+.tp-collection__warn {
+  color: var(--tp-color-bad);
+  font-size: var(--tp-font-size-13);
+}
+
+/* Only the outer fieldset disables active-profile settings while editing another. */
+.tp-collection__module {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tp-collection__form {
+  min-width: 0;
+}
+
+.tp-collection__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+}
+
+.tp-collection__problems ul {
+  margin: var(--tp-space-1) 0;
+  padding-left: var(--tp-space-4);
+}
+
+@media (max-width: 700px) {
+  .tp-collection__field,
+  .tp-collection__input,
+  .tp-collection__field select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px), (pointer: coarse) {
+  .tp-collection__check {
+    min-height: var(--tp-control-height-touch);
+  }
+}

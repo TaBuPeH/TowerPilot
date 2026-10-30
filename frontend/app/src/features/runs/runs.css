@@ -1,0 +1,407 @@
+/* The Runs page (brief backend/logs/reviews/ui-pages/runs-brief.md, section 4). */
+.tp-runs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-4);
+  max-width: 1100px;
+  min-width: 0;
+}
+
+.tp-region[data-region='runsLive'],
+.tp-region[data-region='runsSaved'] {
+  container-type: inline-size;
+}
+
+.tp-runs__battle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-3);
+}
+
+.tp-runs__picker-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+}
+
+.tp-runs__readiness,
+.tp-runs__note,
+.tp-runs__scope {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-runs__scope,
+.tp-runs__note,
+.tp-runs__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  margin: var(--tp-space-2) 0;
+}
+
+/* RUN-02: one compact row per routine; the column labels once on wide layouts. */
+.tp-run-rows {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-run-row,
+.tp-run-columns {
+  display: grid;
+  grid-template-columns:
+    minmax(7rem, 0.9fr) minmax(3rem, 0.4fr) repeat(3, minmax(9rem, 1fr))
+    minmax(8rem, 1fr);
+  align-items: start;
+  gap: var(--tp-space-2);
+  padding-block: var(--tp-space-1);
+  border-bottom: 1px solid var(--tp-color-border);
+}
+
+.tp-run-columns {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-small);
+}
+
+.tp-run-row__name {
+  grid-column: 1;
+  align-self: center;
+}
+
+.tp-run-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.tp-run-cell[data-field='enabled'] {
+  grid-column: 2;
+  justify-content: center;
+}
+.tp-run-cell[data-field='interval_sec'] {
+  grid-column: 3;
+}
+.tp-run-cell[data-field='window_sec'] {
+  grid-column: 4;
+}
+.tp-run-cell[data-field='tap_interval_sec'] {
+  grid-column: 5;
+}
+
+.tp-run-row__mark {
+  grid-column: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-run-row--switches {
+  display: block;
+}
+
+.tp-run-switches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2) var(--tp-space-6);
+}
+
+.tp-run-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+  font-weight: 600;
+}
+
+.tp-run-switch[data-edited='true'] .tp-run-toggle {
+  outline: 2px dashed var(--tp-color-busy);
+  outline-offset: 1px;
+}
+
+.tp-run-row__edited {
+  color: var(--tp-color-busy);
+}
+
+.tp-run-cell__note,
+.tp-run-cell__unit {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-14);
+}
+
+.tp-run-cell__invalid {
+  color: var(--tp-color-bad);
+  font-size: var(--tp-font-size-14);
+}
+
+.tp-run-number {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1);
+}
+
+/*
+ * The Runs regions sit in a run-entry fieldset whose field rule stretches every text input to
+ * the full width (run-entry.css); a run number keeps its own width so its unit and duration stay
+ * beside it (root note, 390).
+ */
+.tp-run-cell .tp-run-number > .tp-run-input {
+  width: 6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Root note (390): "= 12 m" is one unbroken note; it moves below the input whole if it must. */
+.tp-run-cell__duration {
+  white-space: nowrap;
+}
+
+/* A2-7 AC2: descriptor labels; every field shows its own name, in descriptor order. */
+.tp-run-fields {
+  grid-column: 2 / 6;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  align-items: start;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+
+.tp-run-fields > .tp-run-cell[data-field] {
+  grid-column: auto;
+  grid-row: auto;
+  justify-content: flex-start;
+}
+
+.tp-run-cell__name {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+  overflow-wrap: anywhere;
+}
+
+.tp-run-row--read-only .tp-run-row__reason {
+  grid-column: 2 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-run-input {
+  width: 6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tp-run-cell[data-edited='true'] .tp-run-input,
+.tp-run-cell[data-edited='true'] .tp-run-toggle {
+  outline: 2px dashed var(--tp-color-busy);
+  outline-offset: 1px;
+}
+
+.tp-run-toggle {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--tp-color-busy);
+}
+
+.tp-run-editor__actions {
+  margin-top: var(--tp-space-2);
+}
+
+.tp-run-editor__count {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-run-outcome {
+  margin-top: var(--tp-space-2);
+}
+
+/* The lead's parts ("Last request:", the age, an earlier battle's name) keep a space between them. */
+.tp-run-outcome .tp-notice__lead,
+.tp-run-outcome [data-earlier-battle] {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 0.4em;
+}
+
+.tp-run-outcome__attempt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+}
+
+@container (min-width: 700.02px) {
+  /* Wide: the header row names the columns; each cell keeps its own label for screen readers. */
+  .tp-run-row .tp-run-cell__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@container (max-width: 700px) {
+  .tp-run-editor__actions .tp-actions__buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tp-run-columns {
+    display: none;
+  }
+  .tp-run-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding-block: var(--tp-space-2);
+  }
+  .tp-run-row__name {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .tp-run-cell[data-field='enabled'] {
+    grid-column: 2;
+    grid-row: 1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--tp-space-2);
+  }
+  /* Brief section 5 (390): every number on its own line, below the routine name. */
+  .tp-run-row > .tp-run-cell:not([data-field='enabled']) {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+  .tp-run-row__mark {
+    grid-column: 1 / -1;
+  }
+  .tp-run-input,
+  .tp-run-cell .tp-run-number > .tp-run-input {
+    width: 5rem;
+  }
+  .tp-run-cell__label {
+    color: var(--tp-color-text-muted);
+    font-size: var(--tp-font-size-13);
+  }
+  /* A2-7 AC2 (brief section 8, 390): each described field is a labelled block of its own. */
+  .tp-run-fields,
+  .tp-run-row--read-only .tp-run-row__reason {
+    grid-column: 1 / -1;
+  }
+  .tp-run-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.tp-run-resets {
+  margin: var(--tp-space-2) 0;
+  min-width: 0;
+}
+
+.tp-run-resets__title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  margin: 0 0 var(--tp-space-1);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-run-resets__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-run-reset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  min-width: 0;
+}
+
+.tp-run-reset__name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 var(--tp-space-1);
+  font-weight: 600;
+}
+@media (max-width: 600px) {
+  .tp-run-reset > .tp-button {
+    flex-basis: 100%;
+    width: 100%;
+  }
+}
+
+/* F6-11 RL7: battle details per routine, read-only. */
+.tp-run-details-all {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  min-width: 0;
+}
+
+.tp-run-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+
+.tp-run-details__row {
+  display: contents;
+}
+
+.tp-run-details__row dt {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--tp-space-1);
+  font-weight: 600;
+}
+
+.tp-run-details__row dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.tp-run-details__pair {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 var(--tp-space-1);
+}
+
+.tp-run-details__inspect {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  align-self: flex-start;
+}
+
+.tp-run-reset--all {
+  padding-block-start: var(--tp-space-1);
+}
+
+.tp-run-resets__confirm-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  margin: 0 0 var(--tp-space-2);
+  padding-inline-start: var(--tp-space-3);
+}

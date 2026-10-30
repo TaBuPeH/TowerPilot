@@ -1,0 +1,3095 @@
+{
+ "automation_access": {
+  "disable_driver_input_refused": {
+   "body": {
+    "enabled": false,
+    "ok": true,
+    "revocation": {"config_persisted": true, "errors": [], "fenced": true, "harvest": {"paused": false, "revision": null}, "latched": true, "revoked_at": 1800000000.0, "state": "input_stopped", "still_owned": [{"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "input": "refused", "kind": "operation", "operation_id": "00000035-0000-4000-8000-000000000000", "operation_kind": "run", "pid": 1, "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "00000035-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "running"}], "stopped": [], "stopping": []}
+   },
+   "status": 200
+  },
+  "disable_during_action_lock": {
+   "body": {
+    "enabled": false,
+    "ok": true,
+    "revocation": {"config_persisted": true, "errors": [], "fenced": true, "harvest": {"paused": false, "revision": null}, "latched": true, "revoked_at": 1800000000.0, "state": "nothing_running", "still_owned": [], "stopped": [], "stopping": []}
+   },
+   "status": 200
+  },
+  "disable_input_stopped": {
+   "body": {
+    "enabled": false,
+    "ok": true,
+    "revocation": {"config_persisted": true, "errors": [], "fenced": true, "harvest": {"paused": true, "revision": 2}, "latched": true, "revoked_at": 1800000000.0, "state": "input_stopped", "still_owned": [], "stopped": ["00000033-0000-4000-8000-000000000000"], "stopping": []}
+   },
+   "status": 200
+  },
+  "disable_lease_scan_failed": {
+   "body": {
+    "enabled": false,
+    "ok": true,
+    "revocation": {"config_persisted": true, "errors": [{"message": "OSError: probe cannot inspect lease", "step": "lease_state"}], "fenced": false, "harvest": {"paused": false, "revision": null}, "latched": false, "revoked_at": 1800000000.0, "state": "stopping", "still_owned": [], "stopped": [], "stopping": []}
+   },
+   "status": 200
+  },
+  "disable_marker_write_failed": {
+   "body": {
+    "code": "input_revocation_failed",
+    "error": "Game input could not be revoked, so a running automation may still send input. The revocation field says what was stopped; send the request again to retry.",
+    "ok": false,
+    "revocation": {"config_persisted": true, "errors": [{"message": "PermissionError: [Errno 13] denied", "step": "revoke_input"}], "fenced": false, "harvest": {"paused": true, "revision": 2}, "latched": false, "revoked_at": null, "state": "failed", "still_owned": [], "stopped": ["00000036-0000-4000-8000-000000000000"], "stopping": []}
+   },
+   "status": 500
+  },
+  "disable_not_enforced": {
+   "body": {
+    "enabled": false,
+    "ok": true,
+    "revocation": {"config_persisted": true, "errors": [], "fenced": true, "harvest": {"paused": false, "revision": null}, "latched": true, "revoked_at": 1800000000.0, "state": "not_enforced", "still_owned": [{"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "input": "unfenced", "kind": "operation", "operation_id": "00000035-0000-4000-8000-000000000000", "operation_kind": "run", "pid": 1, "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "00000035-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "running"}], "stopped": [], "stopping": []}
+   },
+   "status": 200
+  },
+  "disable_nothing_running": {
+   "body": {
+    "enabled": false,
+    "ok": true,
+    "revocation": {"config_persisted": true, "errors": [], "fenced": true, "harvest": {"paused": false, "revision": null}, "latched": true, "revoked_at": 1800000000.0, "state": "nothing_running", "still_owned": [], "stopped": [], "stopping": []}
+   },
+   "status": 200
+  },
+  "disable_stopping": {
+   "body": {
+    "enabled": false,
+    "ok": true,
+    "revocation": {"config_persisted": true, "errors": [], "fenced": true, "harvest": {"paused": true, "revision": 2}, "latched": true, "revoked_at": 1800000000.0, "state": "stopping", "still_owned": [{"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": true, "input": "unfenced", "kind": "operation", "operation_id": "00000034-0000-4000-8000-000000000000", "operation_kind": "gems", "pid": 4242, "recovery": {"action": "pause_harvesting", "expected_revision": 2, "operation_id": "00000034-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "cancelling"}], "stopped": [], "stopping": ["00000034-0000-4000-8000-000000000000"]}
+   },
+   "status": 200
+  },
+  "enable_during_action_lock": {
+   "body": {
+    "code": "action_lock",
+    "error": "Another action is in progress; wait for its result",
+    "ok": false
+   },
+   "status": 409
+  },
+  "enable_ok": {
+   "body": {
+    "enabled": true,
+    "ok": true
+   },
+   "status": 200
+  },
+  "enable_refused_owner": {
+   "body": {
+    "code": "device_owned",
+    "error": "Stop automation before changing its tap permission.",
+    "ok": false,
+    "owner": {"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "operation", "operation_id": "00000035-0000-4000-8000-000000000000", "operation_kind": "run", "pid": 1, "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "00000035-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "running"},
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "00000035-0000-4000-8000-000000000000"},
+    "retry": "after_confirmed_stop"
+   },
+   "status": 409
+  }
+ },
+ "generated_by": "backend/tests/test_harvest_contract.py",
+ "notes": {
+  "automation_access": "POST /api/automation-access answers; revocation.state tells input_stopped from stopping.",
+  "post_harvest": "POST /api/harvest answers as {status, body}. Off is never refused by the global action lock.",
+  "refusals": "The shared 409 body of every route that needs an idle emulator ({status, body}).",
+  "start_transfer": "POST /api/control start while only the standalone collector runs; operation is trimmed here.",
+  "status": "GET /api/status.harvest, one sample per state or condition. server_time is the fixed test clock.",
+  "stop_operation": "A person's Stop and the runner kill, every sample from the real route. cancel: POST /api/operations/<id>/cancel (also /api/scan/stop and /api/calibrate/stop) answers {ok, operation, stop:{state, reason, holder, by_this_request}}. state: stopped (the verified family exited AND the device lease is free) | released (a person released an unverifiable worker; nothing was signalled) | stopping (signalled, a member has not exited) | unverified (the stop cannot be confirmed; the operation stays the owner) | ended (it ended on its own or another writer settled it) | active (accepted/running/applying: defensive, the routes cannot return it after a cancel). reason, for unverified: worker_not_verifiable_lease_free|_lease_held|_lease_unreadable (the worker's identity cannot be proven) and lease_held_after_stop|lease_unreadable_after_stop (the worker is gone or was stopped but something outside the verified family still holds the lease, or the lease cannot be read). holder: the device_owned lease owner body while the reason names a held lease; owner pid and script stay null (the lease is not a process row) and lease.holders lists the live processes its lock files name. unverified_lease_free, ended and ended_after_termination are real-route races driven deterministically between the route's steps (the lease holder lets go after the release check; another writer settles the operation first, or after this request terminated the worker). by_this_request is what THIS request did, always present: {paused: harvesting was turned off by this call (a replay of another request's pause is false), requested: the stop was recorded on the operation, signalled: the pids TerminateProcess was called on, family: how the verified family ended (stopped|stopping|unverified|gone|null), released: an unverifiable worker was released}. state ended with signalled non-empty means this request stopped the worker and another writer settled the operation in the same moment: it was stopped, not found already ended. A Harvest Off never releases, only a person's Stop does. conflicts: a Stop that is answered 409 {ok:false, code, error, operation}. Before anything was done the code is operation_changed (stale revision or an operation that already ended; operation is the current one) | operation_unknown | operation_required (no operation_id / expected_revision) | not_cancellable; nothing was changed. Once anything was done (harvesting paused, the stop recorded, a process signalled, a worker released) a conflict is stop_outcome_partial: {conflict, error, operation (current), stop (how it stands now, with by_this_request)}, never a plain refusal; the client reads the operation again before stopping again. These routes are never refused with action_lock. repeat: a second Stop (repeat.*.after_release is the operation as the next read-write path settles it plus operations.stop_state(), not a route reply). kill: POST /api/control action=kill with {pid, created} as the list drew them; processes is the /api/status.processes projection, created is null when the scan could not pin the row."
+ },
+ "post_harvest": {
+  "action_lock": {
+   "body": {
+    "code": "action_lock",
+    "error": "Another action is in progress; wait for its result",
+    "ok": false
+   },
+   "status": 409
+  },
+  "context_changed": {
+   "body": {
+    "code": "context_changed",
+    "error": "Account, profile or emulator changed; review harvesting again",
+    "ok": false
+   },
+   "status": 409
+  },
+  "enable_ok": {
+   "body": {
+    "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "on", "enabled": true, "label": "Farm", "preset": "bp_farm", "reason": "enabled_by_person", "request_key": "contract-0001", "revision": 1},
+    "harvest": {"attempts": 0, "circuit_open": false, "code": "launch_due", "collection_guard": {"blocks_launch": false, "code": null, "evidence": "none_recorded", "evidence_revision": null, "handoff_id": null, "instance": "main", "message": null, "operation_id": null, "recorded_status": null, "scope": "collection", "serial": "fake:1", "setup_battle_id": null}, "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "on", "enabled": true, "label": "Farm", "preset": "bp_farm", "reason": "enabled_by_person", "request_key": "contract-0001", "revision": 1}, "failures": 0, "host": {"last_error": null, "last_tick_at": null, "reconciler": "inactive"}, "identity": {"account": null, "instance": "main", "profile": "mine", "serial": "fake:1"}, "input_revoked": false, "last_outcome": null, "message": "The collector will start for the battle on screen.", "next_attempt_at": null, "operation": null, "overlay": null, "owner": null, "server_time": 1800000000.0, "source": {"changed_since_enable": false, "code": null, "edit": {"blueprint": "farm", "page": "runs"}, "label": "Farm", "message": null, "policy": {"ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60}, "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60}}, "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "preset": "bp_farm", "profile": "mine", "valid": true}, "state": "starting", "transfer": null, "version": 1},
+    "ok": true,
+    "overlay": null,
+    "replayed": false,
+    "stop": {"errors": [], "requested": false, "stopped": [], "stopping": []}
+   },
+   "status": 200
+  },
+  "enable_replayed": {
+   "body": {
+    "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "on", "enabled": true, "label": "Farm", "preset": "bp_farm", "reason": "enabled_by_person", "request_key": "contract-0001", "revision": 1},
+    "harvest": {"attempts": 0, "circuit_open": false, "code": "launch_due", "collection_guard": {"blocks_launch": false, "code": null, "evidence": "none_recorded", "evidence_revision": null, "handoff_id": null, "instance": "main", "message": null, "operation_id": null, "recorded_status": null, "scope": "collection", "serial": "fake:1", "setup_battle_id": null}, "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "on", "enabled": true, "label": "Farm", "preset": "bp_farm", "reason": "enabled_by_person", "request_key": "contract-0001", "revision": 1}, "failures": 0, "host": {"last_error": null, "last_tick_at": null, "reconciler": "inactive"}, "identity": {"account": null, "instance": "main", "profile": "mine", "serial": "fake:1"}, "input_revoked": false, "last_outcome": null, "message": "The collector will start for the battle on screen.", "next_attempt_at": null, "operation": null, "overlay": null, "owner": null, "server_time": 1800000000.0, "source": {"changed_since_enable": false, "code": null, "edit": {"blueprint": "farm", "page": "runs"}, "label": "Farm", "message": null, "policy": {"ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60}, "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60}}, "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "preset": "bp_farm", "profile": "mine", "valid": true}, "state": "starting", "transfer": null, "version": 1},
+    "ok": true,
+    "overlay": null,
+    "replayed": true,
+    "stop": {"errors": [], "requested": false, "stopped": [], "stopping": []}
+   },
+   "status": 200
+  },
+  "harvest_revision_changed": {
+   "body": {
+    "code": "harvest_revision_changed",
+    "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "on", "enabled": true, "label": "Farm", "preset": "bp_farm", "reason": "enabled_by_person", "request_key": "contract-0006", "revision": 1},
+    "error": "Harvesting settings changed; refresh before changing them again",
+    "ok": false
+   },
+   "status": 409
+  },
+  "idempotency_key_reused": {
+   "body": {
+    "code": "idempotency_key_reused",
+    "error": "That request identity already belongs to a different harvesting request",
+    "ok": false
+   },
+   "status": 409
+  },
+  "invalid_request": {
+   "body": {
+    "code": "invalid_request",
+    "error": "idempotency_key is required (8-100 letters, digits, - or _)",
+    "ok": false
+   },
+   "status": 400
+  },
+  "off_during_action_lock": {
+   "body": {
+    "desired": {"bound": {"account": null, "instance": "main", "policy_revision": null, "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "off", "enabled": false, "label": null, "preset": null, "reason": "paused_by_person", "request_key": "contract-0011", "revision": 1},
+    "harvest": {"attempts": 0, "circuit_open": false, "code": "paused", "collection_guard": null, "desired": {"bound": {"account": null, "instance": "main", "policy_revision": null, "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "off", "enabled": false, "label": null, "preset": null, "reason": "paused_by_person", "request_key": "contract-0011", "revision": 1}, "failures": 0, "host": {"last_error": null, "last_tick_at": null, "reconciler": "inactive"}, "identity": {"account": null, "instance": "main", "profile": "mine", "serial": "fake:1"}, "input_revoked": false, "last_outcome": null, "message": "Harvesting is off.", "next_attempt_at": null, "operation": null, "overlay": null, "owner": null, "server_time": 1800000000.0, "source": null, "state": "off", "transfer": null, "version": 1},
+    "ok": true,
+    "overlay": null,
+    "replayed": false,
+    "stop": {"errors": [], "requested": true, "stopped": [], "stopping": []}
+   },
+   "status": 200
+  },
+  "off_ok_replayed": {
+   "body": {
+    "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "off", "enabled": false, "label": "Farm", "preset": "bp_farm", "reason": "paused_by_person", "request_key": "contract-0003", "revision": 2},
+    "harvest": {"attempts": 0, "circuit_open": false, "code": "paused", "collection_guard": null, "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "off", "enabled": false, "label": "Farm", "preset": "bp_farm", "reason": "paused_by_person", "request_key": "contract-0003", "revision": 2}, "failures": 0, "host": {"last_error": null, "last_tick_at": 1800000000.0, "reconciler": "inactive"}, "identity": {"account": null, "instance": "main", "profile": "mine", "serial": "fake:1"}, "input_revoked": false, "last_outcome": null, "message": "Harvesting is off.", "next_attempt_at": null, "operation": null, "overlay": null, "owner": null, "server_time": 1800000000.0, "source": {"changed_since_enable": false, "code": null, "edit": {"blueprint": "farm", "page": "runs"}, "label": "Farm", "message": null, "policy": {"ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60}, "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60}}, "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "preset": "bp_farm", "profile": "mine", "valid": true}, "state": "off", "transfer": null, "version": 1},
+    "ok": true,
+    "overlay": null,
+    "replayed": true,
+    "stop": {"errors": [], "requested": true, "stopped": [], "stopping": []}
+   },
+   "status": 200
+  },
+  "off_ok_stopped": {
+   "body": {
+    "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "off", "enabled": false, "label": "Farm", "preset": "bp_farm", "reason": "paused_by_person", "request_key": "contract-0003", "revision": 2},
+    "harvest": {"attempts": 0, "circuit_open": false, "code": "paused", "collection_guard": null, "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "off", "enabled": false, "label": "Farm", "preset": "bp_farm", "reason": "paused_by_person", "request_key": "contract-0003", "revision": 2}, "failures": 0, "host": {"last_error": null, "last_tick_at": 1800000000.0, "reconciler": "inactive"}, "identity": {"account": null, "instance": "main", "profile": "mine", "serial": "fake:1"}, "input_revoked": false, "last_outcome": null, "message": "Harvesting is off.", "next_attempt_at": null, "operation": null, "overlay": null, "owner": null, "server_time": 1800000000.0, "source": {"changed_since_enable": false, "code": null, "edit": {"blueprint": "farm", "page": "runs"}, "label": "Farm", "message": null, "policy": {"ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60}, "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60}}, "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "preset": "bp_farm", "profile": "mine", "valid": true}, "state": "off", "transfer": null, "version": 1},
+    "ok": true,
+    "overlay": null,
+    "replayed": false,
+    "stop": {"errors": [], "requested": true, "stopped": ["0000002b-0000-4000-8000-000000000000"], "stopping": []}
+   },
+   "status": 200
+  },
+  "off_ok_stopping": {
+   "body": {
+    "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "off", "enabled": false, "label": "Farm", "preset": "bp_farm", "reason": "paused_by_person", "request_key": "contract-0005", "revision": 2},
+    "harvest": {"attempts": 0, "circuit_open": false, "code": "collector_stopping", "collection_guard": null, "desired": {"bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "profile": "mine", "serial": "fake:1"}, "changed_at": 1800000000.0, "changed_by": "person", "choice": "off", "enabled": false, "label": "Farm", "preset": "bp_farm", "reason": "paused_by_person", "request_key": "contract-0005", "revision": 2}, "failures": 0, "host": {"last_error": null, "last_tick_at": 1800000000.0, "reconciler": "inactive"}, "identity": {"account": null, "instance": "main", "profile": "mine", "serial": "fake:1"}, "input_revoked": false, "last_outcome": null, "message": "The collector is stopping; the battle is not ended.", "next_attempt_at": null, "operation": {"battle": null, "claims": null, "desire_revision": 1, "evidence": null, "harvest_managed": true, "id": "0000002c-0000-4000-8000-000000000000", "kind": "gems", "revision": 4, "routines": null, "status": "cancelling", "worker_alive": true}, "overlay": null, "owner": null, "server_time": 1800000000.0, "source": {"changed_since_enable": false, "code": null, "edit": {"blueprint": "farm", "page": "runs"}, "label": "Farm", "message": null, "policy": {"ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60}, "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60}}, "policy_revision": "0000000000000000000000000000000000000000000000000000000000000004", "preset": "bp_farm", "profile": "mine", "valid": true}, "state": "stopping", "transfer": null, "version": 1},
+    "ok": true,
+    "overlay": null,
+    "replayed": false,
+    "stop": {"errors": [], "requested": true, "stopped": [], "stopping": ["0000002c-0000-4000-8000-000000000000"]}
+   },
+   "status": 200
+  },
+  "outcome_unknown": {
+   "body": {
+    "code": "harvest_outcome_unknown",
+    "error": "The request may have been recorded. Send the same request again to read the outcome back.",
+    "ok": false,
+    "outcome": "unknown",
+    "request_key": "contract-0012"
+   },
+   "status": 500
+  },
+  "policy_invalid": {
+   "body": {
+    "code": "policy_invalid",
+    "error": "Enable Ad Gems or timed orbit clicks in this run's gathering settings.",
+    "ok": false,
+    "source": {"code": "gathering_disabled", "edit": {"blueprint": "farm", "page": "runs"}, "label": "Farm", "message": "Enable Ad Gems or timed orbit clicks in this run's gathering settings.", "policy": null, "policy_revision": null, "preset": "bp_farm", "profile": "mine", "valid": false}
+   },
+   "status": 409
+  }
+ },
+ "refusals": {
+  "action_lock": {
+   "body": {
+    "code": "action_lock",
+    "error": "Another action is in progress; wait for its result",
+    "ok": false
+   },
+   "status": 409
+  },
+  "collector_running": {
+   "body": {
+    "code": "collector_running",
+    "error": "Automation is already running. Stop it before starting the diamond collector.",
+    "ok": false,
+    "owner": {"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": true, "kind": "operation", "operation_id": "0000002e-0000-4000-8000-000000000000", "operation_kind": "gems", "pid": 4242, "recovery": {"action": "pause_harvesting", "expected_revision": 1, "operation_id": "0000002e-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "running"},
+    "recovery": {"action": "pause_harvesting", "expected_revision": 1, "operation_id": "0000002e-0000-4000-8000-000000000000"},
+    "retry": "after_confirmed_stop"
+   },
+   "status": 409
+  },
+  "collector_running_manual": {
+   "body": {
+    "code": "collector_running",
+    "error": "Automation is already running. Stop it before starting the diamond collector.",
+    "ok": false,
+    "owner": {"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "operation", "operation_id": "0000002f-0000-4000-8000-000000000000", "operation_kind": "gems", "pid": 4242, "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "0000002f-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "running"},
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "0000002f-0000-4000-8000-000000000000"},
+    "retry": "after_confirmed_stop"
+   },
+   "status": 409
+  },
+  "collector_stopping": {
+   "body": {
+    "code": "collector_stopping",
+    "error": "The diamond collector is still stopping. Wait for it to release the emulator, then start the run again.",
+    "ok": false,
+    "owner": {"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": true, "kind": "operation", "operation_id": "00000031-0000-4000-8000-000000000000", "operation_kind": "gems", "pid": 4242, "recovery": {"action": "pause_harvesting", "expected_revision": 1, "operation_id": "00000031-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "running"},
+    "recovery": {"action": "pause_harvesting", "expected_revision": 1, "operation_id": "00000031-0000-4000-8000-000000000000"},
+    "retry": "after_confirmed_stop",
+    "stop": {"errors": [], "requested": true, "stopped": [], "stopping": ["00000031-0000-4000-8000-000000000000"]},
+    "waited_sec": 0.3
+   },
+   "status": 409
+  },
+  "device_owned_collector": {
+   "body": {
+    "code": "device_owned",
+    "error": "Stop automation before changing accounts.",
+    "ok": false,
+    "owner": {"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": true, "kind": "operation", "operation_id": "0000002e-0000-4000-8000-000000000000", "operation_kind": "gems", "pid": 4242, "recovery": {"action": "pause_harvesting", "expected_revision": 1, "operation_id": "0000002e-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "running"},
+    "recovery": {"action": "pause_harvesting", "expected_revision": 1, "operation_id": "0000002e-0000-4000-8000-000000000000"},
+    "retry": "after_confirmed_stop"
+   },
+   "status": 409
+  },
+  "device_owned_lease": {
+   "body": {
+    "code": "device_owned",
+    "error": "Stop automation before changing accounts.",
+    "ok": false,
+    "owner": {"claims": null, "evidence": null, "foreign": true, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "process", "lease": {"delegated": false, "held": true, "holders": [{"pid": 4242, "role": "primary"}], "input_gate": "enforced"}, "operation_id": null, "operation_kind": null, "pid": null, "recovery": null, "routines": null, "script": null, "status": null},
+    "recovery": null,
+    "retry": "after_confirmed_stop"
+   },
+   "status": 409
+  },
+  "device_owned_pre_spawn": {
+   "body": {
+    "code": "device_owned",
+    "error": "Stop automation before changing accounts.",
+    "ok": false,
+    "owner": {"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "operation", "operation_id": "00000030-0000-4000-8000-000000000000", "operation_kind": "run", "pid": null, "recovery": {"action": "stop_operation", "expected_revision": 1, "operation_id": "00000030-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "accepted"},
+    "recovery": {"action": "stop_operation", "expected_revision": 1, "operation_id": "00000030-0000-4000-8000-000000000000"},
+    "retry": "after_confirmed_stop"
+   },
+   "status": 409
+  },
+  "device_owned_process": {
+   "body": {
+    "code": "device_owned",
+    "error": "runners alive - stop them first",
+    "ok": false,
+    "owner": {"claims": null, "evidence": null, "foreign": true, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "process", "operation_id": null, "operation_kind": null, "pid": 4242, "recovery": null, "routines": null, "script": "orchestrator", "status": null},
+    "recovery": null,
+    "retry": "after_confirmed_stop"
+   },
+   "status": 409
+  },
+  "device_owned_run": {
+   "body": {
+    "code": "device_owned",
+    "error": "Stop automation before changing accounts.",
+    "ok": false,
+    "owner": {"battle": null, "claims": null, "evidence": null, "foreign": false, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "operation", "operation_id": "0000002d-0000-4000-8000-000000000000", "operation_kind": "run", "pid": 4242, "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "0000002d-0000-4000-8000-000000000000"}, "routines": null, "script": null, "status": "running"},
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "0000002d-0000-4000-8000-000000000000"},
+    "retry": "after_confirmed_stop"
+   },
+   "status": 409
+  },
+  "device_owner_unreadable": {
+   "body": {
+    "code": "device_owner_unreadable",
+    "error": "Could not read which automation holds the emulator (database is locked); try again.",
+    "ok": false
+   },
+   "status": 409
+  },
+  "reserved_fields": {
+   "body": {
+    "code": "invalid_request",
+    "error": "Automatic harvesting fields are reserved for the lifecycle host",
+    "ok": false
+   },
+   "status": 400
+  },
+  "setup_battle_unresolved": {
+   "body": {
+    "code": "setup_battle_unresolved",
+    "error": "The setup test battle from operation 00000032 was never verified back on Home (recorded: unknown; No fresh matching control for 'open intro sprint dialog'). Start and Collect are refused because they could adopt a battle still on screen. A later setup or calibration on this emulator that verifies Home lifts this.",
+    "ok": false,
+    "setup_battle_guard": {"blocks_launch": true, "code": "setup_battle_unresolved", "evidence": "setup_battle_recorded", "evidence_revision": "0000000000000000000000000000000000000000000000000000000000000005", "handoff_id": null, "instance": "main", "message": "The setup test battle from operation 00000032 was never verified back on Home (recorded: unknown; No fresh matching control for 'open intro sprint dialog'). Start and Collect are refused because they could adopt a battle still on screen. A later setup or calibration on this emulator that verifies Home lifts this.", "operation_id": "00000032-0000-4000-8000-000000000000", "recorded_status": "unknown", "scope": "run", "serial": "fake:1", "setup_battle_id": "battle-1"}
+   },
+   "status": 409
+  }
+ },
+ "start_transfer": {
+  "run_takes_over_collector": {
+   "body": {
+    "ok": true,
+    "operation": {"id": "00000037-0000-4000-8000-000000000000", "kind": "run", "revision": 2, "status": "accepted"},
+    "operation_id": "00000037-0000-4000-8000-000000000000",
+    "transfer": {"stopped": ["00000038-0000-4000-8000-000000000000"], "stopping": [], "waited_sec": 0.0}
+   },
+   "status": 200
+  }
+ },
+ "status": {
+  "backing_off": {
+   "attempts": 1,
+   "circuit_open": false,
+   "code": "backing_off",
+   "collection_guard": {
+    "blocks_launch": false,
+    "code": null,
+    "evidence": "none_recorded",
+    "evidence_revision": null,
+    "handoff_id": null,
+    "instance": "main",
+    "message": null,
+    "operation_id": null,
+    "recorded_status": null,
+    "scope": "collection",
+    "serial": "fake:1",
+    "setup_battle_id": null
+   },
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 1,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": {
+    "at": 1800000000.0,
+    "error": null,
+    "kind": "exited",
+    "message": null,
+    "operation_id": "00000001-0000-4000-8000-000000000000",
+    "ran_sec": 5.0,
+    "status": "failed"
+   },
+   "message": "Waiting before starting the collector again.",
+   "next_attempt_at": 1800000030.0,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000001.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "backing_off",
+   "transfer": null,
+   "version": 1
+  },
+  "circuit_open": {
+   "attempts": 5,
+   "circuit_open": true,
+   "code": "collector_failing",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 5,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": {
+    "at": 1800000450.0,
+    "error": null,
+    "kind": "exited",
+    "message": null,
+    "operation_id": "00000002-0000-4000-8000-000000000000",
+    "ran_sec": 5.0,
+    "status": "failed"
+   },
+   "message": "The collector failed 5 times in a row; turn harvesting on again to retry.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000930.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "blocked",
+   "transfer": null,
+   "version": 1
+  },
+  "collecting": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "collecting",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Collecting gems in the battle on screen.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "00000004-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": {"at": 1799999900.0, "code": "no_offer_seen"}, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": 1},
+    "desire_revision": 1,
+    "evidence": {"ad_claim_confirmations": 2, "coverage": "sampled_driver_observations", "generation": "g1", "latest_confirmations": {"ad_gems": {"id": "claim-2", "observed_at": 1799999960.0}}, "observed_through_at": 1799999999.0, "orbit_balance_confirmations": 0, "orbit_recorded_increase": 0, "started_at": 1799999700.0},
+    "harvest_managed": true,
+    "id": "00000003-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": {"ad_gems": {"blocker": null, "counters": {"attempts": 8, "checks": 9, "confirmed": 2, "seen": 7, "skips": 0, "windows_missed": 1}, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}, "floating_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}},
+    "status": "running",
+    "worker_alive": true
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "collecting",
+   "transfer": null,
+   "version": 1
+  },
+  "context_changed": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "context_changed",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "another",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Harvesting was turned on for another account, profile or emulator; turn it on again here.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "another",
+    "valid": true
+   },
+   "state": "blocked",
+   "transfer": null,
+   "version": 1
+  },
+  "emulator_offline": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "emulator_offline",
+   "collection_guard": {
+    "blocks_launch": false,
+    "code": null,
+    "evidence": "none_recorded",
+    "evidence_revision": null,
+    "handoff_id": null,
+    "instance": "main",
+    "message": null,
+    "operation_id": null,
+    "recorded_status": null,
+    "scope": "collection",
+    "serial": "fake:1",
+    "setup_battle_id": null
+   },
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": {
+    "at": 1800000000.0,
+    "code": "emulator_offline",
+    "kind": "refused",
+    "message": "The emulator is not online (adb state offline)."
+   },
+   "message": "The emulator is not online (adb state offline).",
+   "next_attempt_at": 1800000010.0,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "blocked",
+   "transfer": null,
+   "version": 1
+  },
+  "foreign_process": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "process_owns_device",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Another automation process (orchestrator, PID 4242) is using the emulator and is not tracked here, so gem handling is unknown.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": {
+    "claims": null,
+    "evidence": null,
+    "foreign": true,
+    "gathers": null,
+    "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null},
+    "harvest_managed": false,
+    "kind": "process",
+    "operation_id": null,
+    "operation_kind": null,
+    "pid": 4242,
+    "recovery": null,
+    "routines": null,
+    "script": "orchestrator",
+    "status": null
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "input_revoked": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "input_revoked",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": true,
+   "last_outcome": null,
+   "message": "Automation input was revoked for this emulator; allow taps again to resume harvesting.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "blocked",
+   "transfer": null,
+   "version": 1
+  },
+  "live_paused": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "gem_routines_paused",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Both gem routines are switched off for this battle; nothing is collected.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "00000006-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "desire_revision": 1,
+    "evidence": null,
+    "harvest_managed": true,
+    "id": "00000005-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": {"ad_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}, "floating_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}},
+    "status": "running",
+    "worker_alive": true
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "live_paused",
+   "transfer": null,
+   "version": 1
+  },
+  "manual_collector": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "collecting",
+   "collection_guard": null,
+   "desired": {
+    "bound": null,
+    "changed_at": null,
+    "changed_by": null,
+    "choice": "unset",
+    "enabled": null,
+    "label": null,
+    "preset": null,
+    "reason": null,
+    "request_key": null,
+    "revision": 0
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Collecting gems in the battle on screen.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "00000008-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "desire_revision": null,
+    "evidence": {"ad_claim_confirmations": 2, "coverage": "sampled_driver_observations", "generation": "g1", "latest_confirmations": {"ad_gems": {"id": "claim-2", "observed_at": 1799999960.0}}, "observed_through_at": 1799999999.0, "orbit_balance_confirmations": 0, "orbit_recorded_increase": 0, "started_at": 1799999700.0},
+    "harvest_managed": false,
+    "id": "00000007-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": {"ad_gems": {"blocker": null, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}, "floating_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}},
+    "status": "running",
+    "worker_alive": true
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": null,
+   "state": "collecting",
+   "transfer": null,
+   "version": 1
+  },
+  "off": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "paused",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "off",
+    "enabled": false,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "paused_by_person",
+    "request_key": "req-000002",
+    "revision": 2
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Harvesting is off.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "off",
+   "transfer": null,
+   "version": 1
+  },
+  "overlay_applied": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "owner_gathers_off",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and its own gem routines are off for this battle.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": {
+    "battle_id": "0000000a-0000-4000-8000-000000000000",
+    "cadence_source": "current_battle",
+    "choice_revision": 1,
+    "command_id": "0000000b-0000-4000-8000-000000000000",
+    "generation": "g1",
+    "paths": ["routines.ad_gems.enabled"],
+    "request_key": "harvest-overlay-0000000a-0000-4000-8000-000000000000-g1-1",
+    "skipped": {},
+    "state": "applied",
+    "targets": {"ad_gems": true, "floating_gems": false}
+   },
+   "owner": {
+    "battle": {"control_revision": 1, "fresh": true, "generation": "g1", "id": "0000000a-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "evidence": null,
+    "foreign": false,
+    "gathers": false,
+    "gems": {"ad_gems": false, "basis": "published_routines", "floating_gems": false},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "00000009-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "00000009-0000-4000-8000-000000000000"},
+    "routines": {"ad_gems": {"enabled": false}, "floating_gems": {"enabled": false}},
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "overlay_live_choice": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "operation_owns_device",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and handles gems with its own battle controls.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": {
+    "battle_id": "0000000d-0000-4000-8000-000000000000",
+    "cadence_source": "current_battle",
+    "choice_revision": 1,
+    "command_id": null,
+    "generation": "g1",
+    "paths": [],
+    "request_key": "harvest-overlay-0000000d-0000-4000-8000-000000000000-g1-1",
+    "skipped": {"ad_gems": "live_choice", "floating_gems": "unchanged"},
+    "state": "live_choice",
+    "targets": {"ad_gems": true, "floating_gems": false}
+   },
+   "owner": {
+    "battle": {"control_revision": 1, "fresh": true, "generation": "g1", "id": "0000000d-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "evidence": null,
+    "foreign": false,
+    "gathers": true,
+    "gems": {"ad_gems": true, "basis": "published_routines", "floating_gems": false},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "0000000c-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "0000000c-0000-4000-8000-000000000000"},
+    "routines": {"ad_gems": {"blocker": null, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}, "floating_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}},
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "overlay_off_pending": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "operation_owns_device",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "off",
+    "enabled": false,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "paused_by_person",
+    "request_key": "req-000003",
+    "revision": 2
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and handles gems with its own battle controls.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": {
+    "battle_id": "0000000f-0000-4000-8000-000000000000",
+    "cadence_source": "current_battle",
+    "choice_revision": 2,
+    "command_id": "00000010-0000-4000-8000-000000000000",
+    "generation": "g1",
+    "paths": ["routines.ad_gems.enabled"],
+    "request_key": "harvest-overlay-0000000f-0000-4000-8000-000000000000-g1-2",
+    "skipped": {},
+    "state": "requested",
+    "targets": {"ad_gems": false, "floating_gems": false}
+   },
+   "owner": {
+    "battle": {"control_revision": 1, "fresh": true, "generation": "g1", "id": "0000000f-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "evidence": null,
+    "foreign": false,
+    "gathers": true,
+    "gems": {"ad_gems": true, "basis": "published_routines", "floating_gems": false},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "0000000e-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "0000000e-0000-4000-8000-000000000000"},
+    "routines": {"ad_gems": {"blocker": null, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}, "floating_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}},
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "overlay_requested": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "owner_gathers_off",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and its own gem routines are off for this battle.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": {
+    "battle_id": "00000012-0000-4000-8000-000000000000",
+    "cadence_source": "current_battle",
+    "choice_revision": 1,
+    "command_id": "00000013-0000-4000-8000-000000000000",
+    "generation": "g1",
+    "paths": ["routines.ad_gems.enabled"],
+    "request_key": "harvest-overlay-00000012-0000-4000-8000-000000000000-g1-1",
+    "skipped": {},
+    "state": "requested",
+    "targets": {"ad_gems": true, "floating_gems": false}
+   },
+   "owner": {
+    "battle": {"control_revision": 1, "fresh": true, "generation": "g1", "id": "00000012-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "evidence": null,
+    "foreign": false,
+    "gathers": false,
+    "gems": {"ad_gems": false, "basis": "published_routines", "floating_gems": false},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "00000011-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "00000011-0000-4000-8000-000000000000"},
+    "routines": {"ad_gems": {"enabled": false}, "floating_gems": {"enabled": false}},
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "overlay_unsupported": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "owner_gathers_off",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and its own gem routines are off for this battle.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": {
+    "battle_id": "00000015-0000-4000-8000-000000000000",
+    "cadence_source": "current_battle",
+    "choice_revision": 1,
+    "command_id": null,
+    "generation": "g1",
+    "paths": [],
+    "request_key": "harvest-overlay-00000015-0000-4000-8000-000000000000-g1-1",
+    "skipped": {"ad_gems": "unsupported", "floating_gems": "unsupported"},
+    "state": "unsupported",
+    "targets": {"ad_gems": true, "floating_gems": false}
+   },
+   "owner": {
+    "battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "00000015-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "evidence": null,
+    "foreign": false,
+    "gathers": false,
+    "gems": {"ad_gems": false, "basis": "published_routines", "floating_gems": false},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "00000014-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "00000014-0000-4000-8000-000000000000"},
+    "routines": {"ad_gems": {"enabled": false}, "floating_gems": {"enabled": false}},
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "overlay_waiting": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "owner_gathers_off",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and its own gem routines are off for this battle.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": {
+    "battle_id": "00000017-0000-4000-8000-000000000000",
+    "cadence_source": "current_battle",
+    "choice_revision": 1,
+    "command_id": null,
+    "generation": "g1",
+    "paths": ["routines.ad_gems.enabled"],
+    "request_key": "harvest-overlay-00000017-0000-4000-8000-000000000000-g1-1",
+    "skipped": {"floating_gems": "unchanged"},
+    "state": "not_requested",
+    "targets": {"ad_gems": true, "floating_gems": false}
+   },
+   "owner": {
+    "battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "00000017-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "evidence": null,
+    "foreign": false,
+    "gathers": false,
+    "gems": {"ad_gems": false, "basis": "published_routines", "floating_gems": false},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "00000016-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "00000016-0000-4000-8000-000000000000"},
+    "routines": {"ad_gems": {"enabled": false}, "floating_gems": {"enabled": false}},
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "owned_by_run_gathers": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "operation_owns_device",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and handles gems with its own battle controls.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": {
+    "battle_id": "00000019-0000-4000-8000-000000000000",
+    "cadence_source": "current_battle",
+    "choice_revision": 1,
+    "command_id": null,
+    "generation": "g1",
+    "paths": [],
+    "request_key": "harvest-overlay-00000019-0000-4000-8000-000000000000-g1-1",
+    "skipped": {"ad_gems": "unchanged", "floating_gems": "unchanged"},
+    "state": "not_needed",
+    "targets": {"ad_gems": true, "floating_gems": false}
+   },
+   "owner": {
+    "battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "00000019-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": {"at": 1799999940.0, "code": "window_ran_out"}, "failing": false, "failure_streak": 1, "finder_suspected": null, "windows_missed": 2},
+    "evidence": {"ad_claim_confirmations": 2, "coverage": "sampled_driver_observations", "generation": "g1", "latest_confirmations": {"ad_gems": {"id": "claim-2", "observed_at": 1799999960.0}}, "observed_through_at": 1799999999.0, "orbit_balance_confirmations": 0, "orbit_recorded_increase": 0, "started_at": 1799999700.0},
+    "foreign": false,
+    "gathers": true,
+    "gems": {"ad_gems": true, "basis": "published_routines", "floating_gems": false},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "00000018-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "00000018-0000-4000-8000-000000000000"},
+    "routines": {"ad_gems": {"blocker": null, "counters": {"attempts": 8, "checks": 9, "confirmed": 2, "seen": 7, "skips": 0, "windows_missed": 2}, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}, "floating_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}},
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "owned_by_run_not_gathering": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "owner_gathers_off",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and its own gem routines are off for this battle.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": {
+    "battle_id": "0000001b-0000-4000-8000-000000000000",
+    "cadence_source": "current_battle",
+    "choice_revision": 1,
+    "command_id": null,
+    "generation": "g1",
+    "paths": ["routines.ad_gems.enabled"],
+    "request_key": "harvest-overlay-0000001b-0000-4000-8000-000000000000-g1-1",
+    "skipped": {"floating_gems": "unchanged"},
+    "state": "not_requested",
+    "targets": {"ad_gems": true, "floating_gems": false}
+   },
+   "owner": {
+    "battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "0000001b-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "evidence": null,
+    "foreign": false,
+    "gathers": false,
+    "gems": {"ad_gems": false, "basis": "published_routines", "floating_gems": false},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "0000001a-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "0000001a-0000-4000-8000-000000000000"},
+    "routines": {"ad_gems": {"enabled": false}, "floating_gems": {"enabled": false}},
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "owned_by_run_not_reported": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "operation_owns_device",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and handles gems with its own battle controls.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": {
+    "battle": null,
+    "claims": null,
+    "evidence": null,
+    "foreign": false,
+    "gathers": null,
+    "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "0000001c-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "0000001c-0000-4000-8000-000000000000"},
+    "routines": null,
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "owned_by_run_stale": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "operation_owns_device",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Running automation owns the emulator and handles gems with its own battle controls.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": {
+    "battle_id": "0000001e-0000-4000-8000-000000000000",
+    "cadence_source": "current_battle",
+    "choice_revision": 1,
+    "command_id": null,
+    "generation": "g1",
+    "paths": [],
+    "request_key": "harvest-overlay-0000001e-0000-4000-8000-000000000000-g1-1",
+    "skipped": {"ad_gems": "unchanged", "floating_gems": "unchanged"},
+    "state": "not_needed",
+    "targets": {"ad_gems": true, "floating_gems": false}
+   },
+   "owner": {
+    "battle": {"control_revision": 0, "fresh": false, "generation": "g1", "id": "0000001e-0000-4000-8000-000000000000", "observation_age_sec": 600.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999400.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "evidence": null,
+    "foreign": false,
+    "gathers": null,
+    "gems": {"ad_gems": null, "basis": "stale", "floating_gems": null},
+    "harvest_managed": false,
+    "kind": "operation",
+    "operation_id": "0000001d-0000-4000-8000-000000000000",
+    "operation_kind": "run",
+    "pid": 1,
+    "recovery": {"action": "stop_operation", "expected_revision": 2, "operation_id": "0000001d-0000-4000-8000-000000000000"},
+    "routines": {"ad_gems": {"blocker": null, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}, "floating_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}},
+    "script": null,
+    "status": "running"
+   },
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "owned_by_driver",
+   "transfer": null,
+   "version": 1
+  },
+  "policy_invalid": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "policy_invalid",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Enable Ad Gems or timed orbit clicks.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": "gathering_disabled",
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": null,
+    "message": "Enable Ad Gems or timed orbit clicks.",
+    "policy": null,
+    "policy_revision": null,
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": false
+   },
+   "state": "blocked",
+   "transfer": null,
+   "version": 1
+  },
+  "reconciler_failing": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "launch_due",
+   "collection_guard": {
+    "blocks_launch": false,
+    "code": null,
+    "evidence": "none_recorded",
+    "evidence_revision": null,
+    "handoff_id": null,
+    "instance": "main",
+    "message": null,
+    "operation_id": null,
+    "recorded_status": null,
+    "scope": "collection",
+    "serial": "fake:1",
+    "setup_battle_id": null
+   },
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": {"at": 1799999997.0, "message": "adb server vanished", "type": "OSError"},
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The collector will start for the battle on screen.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "starting",
+   "transfer": null,
+   "version": 1
+  },
+  "reconciler_inactive": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "launch_due",
+   "collection_guard": {
+    "blocks_launch": false,
+    "code": null,
+    "evidence": "none_recorded",
+    "evidence_revision": null,
+    "handoff_id": null,
+    "instance": "main",
+    "message": null,
+    "operation_id": null,
+    "recorded_status": null,
+    "scope": "collection",
+    "serial": "fake:1",
+    "setup_battle_id": null
+   },
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "collector_at_start": {"adopted": false, "code": "untracked", "found_at": 1800000000.0, "operation_id": null, "pid": 4711, "reason": "not_tracked", "started_at": 1799999400.0},
+    "last_error": null,
+    "last_tick_at": null,
+    "reconciler": "inactive"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The collector will start for the battle on screen.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "starting",
+   "transfer": null,
+   "version": 1
+  },
+  "run_settings_refused": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "digits_missing",
+   "collection_guard": {
+    "blocks_launch": false,
+    "code": null,
+    "evidence": "none_recorded",
+    "evidence_revision": null,
+    "handoff_id": null,
+    "instance": "main",
+    "message": null,
+    "operation_id": null,
+    "recorded_status": null,
+    "scope": "collection",
+    "serial": "fake:1",
+    "setup_battle_id": null
+   },
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": {
+    "at": 1800000000.0,
+    "code": "digits_missing",
+    "kind": "refused",
+    "message": "Learn the wave digits before collecting gems."
+   },
+   "message": "Learn the wave digits before collecting gems.",
+   "next_attempt_at": 1800000010.0,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "blocked",
+   "transfer": null,
+   "version": 1
+  },
+  "setup_guard_block": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "setup_battle_unresolved",
+   "collection_guard": {
+    "blocks_launch": true,
+    "code": "setup_battle_unresolved",
+    "evidence": "setup_battle_recorded",
+    "evidence_revision": "0000000000000000000000000000000000000000000000000000000000000002",
+    "handoff_id": null,
+    "instance": "main",
+    "message": "The setup test battle from operation 0000001f was never verified back on Home (recorded: unknown; No fresh matching control for 'open intro sprint dialog'). Start and Collect are refused because they could adopt a battle still on screen. A later setup or calibration on this emulator that verifies Home lifts this.",
+    "operation_id": "0000001f-0000-4000-8000-000000000000",
+    "recorded_status": "unknown",
+    "scope": "collection",
+    "serial": "fake:1",
+    "setup_battle_id": "battle-1"
+   },
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The setup test battle from operation 0000001f was never verified back on Home (recorded: unknown; No fresh matching control for 'open intro sprint dialog'). Start and Collect are refused because they could adopt a battle still on screen. A later setup or calibration on this emulator that verifies Home lifts this.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "blocked",
+   "transfer": null,
+   "version": 1
+  },
+  "source_changed": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "launch_due",
+   "collection_guard": {
+    "blocks_launch": false,
+    "code": null,
+    "evidence": "none_recorded",
+    "evidence_revision": null,
+    "handoff_id": null,
+    "instance": "main",
+    "message": null,
+    "operation_id": null,
+    "recorded_status": null,
+    "scope": "collection",
+    "serial": "fake:1",
+    "setup_battle_id": null
+   },
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The collector will start for the battle on screen.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": true,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000003",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "starting",
+   "transfer": null,
+   "version": 1
+  },
+  "stale_collector": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "stale_observation",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The collector last reported 120 s ago; its state is unknown.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": {"control_revision": 0, "fresh": false, "generation": "g1", "id": "00000021-0000-4000-8000-000000000000", "observation_age_sec": 120.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999880.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null},
+    "desire_revision": 1,
+    "evidence": null,
+    "harvest_managed": true,
+    "id": "00000020-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": {"ad_gems": {"blocker": null, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}, "floating_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}},
+    "status": "running",
+    "worker_alive": true
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "unavailable",
+   "transfer": null,
+   "version": 1
+  },
+  "starting_collector": {
+   "attempts": 1,
+   "circuit_open": false,
+   "code": "collector_starting",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": {
+    "at": 1800000000.0,
+    "kind": "launched",
+    "operation_id": "00000022-0000-4000-8000-000000000000"
+   },
+   "message": "The collector was accepted and is starting.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": null,
+    "claims": null,
+    "desire_revision": 1,
+    "evidence": null,
+    "harvest_managed": true,
+    "id": "00000022-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": null,
+    "status": "accepted",
+    "worker_alive": null
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "starting",
+   "transfer": null,
+   "version": 1
+  },
+  "starting_due": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "launch_due",
+   "collection_guard": {
+    "blocks_launch": false,
+    "code": null,
+    "evidence": "none_recorded",
+    "evidence_revision": null,
+    "handoff_id": null,
+    "instance": "main",
+    "message": null,
+    "operation_id": null,
+    "recorded_status": null,
+    "scope": "collection",
+    "serial": "fake:1",
+    "setup_battle_id": null
+   },
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The collector will start for the battle on screen.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "starting",
+   "transfer": null,
+   "version": 1
+  },
+  "state_unreadable": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "harvest_state_unreadable",
+   "collection_guard": null,
+   "desired": {
+    "bound": null,
+    "changed_at": null,
+    "changed_by": null,
+    "choice": "unset",
+    "enabled": null,
+    "label": null,
+    "preset": null,
+    "reason": null,
+    "request_key": null,
+    "revision": 0
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Harvesting records could not be read (ValueError); nothing will be started.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": null,
+   "state": "unavailable",
+   "transfer": null,
+   "version": 1
+  },
+  "status_failed": {
+   "code": "status_failed",
+   "collection_guard": null,
+   "desired": null,
+   "host": {
+    "last_error": null,
+    "last_tick_at": null,
+    "reconciler": "inactive"
+   },
+   "message": "Harvesting status could not be read (RuntimeError).",
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": null,
+   "state": "unavailable",
+   "version": 1
+  },
+  "stopping": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "collector_stopping",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The collector is stopping; the battle is not ended.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": null,
+    "claims": null,
+    "desire_revision": 1,
+    "evidence": null,
+    "harvest_managed": true,
+    "id": "00000023-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 3,
+    "routines": null,
+    "status": "cancelling",
+    "worker_alive": true
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "stopping",
+   "transfer": null,
+   "version": 1
+  },
+  "taps_disabled": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "taps_disabled",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Game input is disabled for this emulator.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "blocked",
+   "transfer": null,
+   "version": 1
+  },
+  "transferring": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "run_transfer",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "A run is taking over the emulator; harvesting resumes after it exits.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "transferring",
+   "transfer": {
+    "reason": "run_start",
+    "until": 1800000020.0
+   },
+   "version": 1
+  },
+  "unset": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "never_enabled",
+   "collection_guard": null,
+   "desired": {
+    "bound": null,
+    "changed_at": null,
+    "changed_by": null,
+    "choice": "unset",
+    "enabled": null,
+    "label": null,
+    "preset": null,
+    "reason": null,
+    "request_key": null,
+    "revision": 0
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Harvesting has not been turned on for this emulator.",
+   "next_attempt_at": null,
+   "operation": null,
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": null,
+   "state": "off",
+   "transfer": null,
+   "version": 1
+  },
+  "waiting_for_battle": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "between_battles",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "collector_at_start": {"adopted": true, "code": "adopted", "found_at": 1800000000.0, "operation_id": "00000024-0000-4000-8000-000000000000", "pid": 1, "reason": "running", "started_at": 1},
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The collector is running and waits for the next battle.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": null,
+    "claims": null,
+    "desire_revision": 1,
+    "evidence": null,
+    "harvest_managed": true,
+    "id": "00000024-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": null,
+    "status": "running",
+    "worker_alive": true
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "waiting_for_battle",
+   "transfer": null,
+   "version": 1
+  },
+  "worker_not_running": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "worker_not_running",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "collector_at_start": {"adopted": false, "code": "dead", "found_at": 1800000000.0, "operation_id": "00000025-0000-4000-8000-000000000000", "pid": 1, "reason": "worker_not_running", "started_at": 1},
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The collector process is not running; the ledger will retire it.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": null,
+    "claims": null,
+    "desire_revision": 1,
+    "evidence": null,
+    "harvest_managed": true,
+    "id": "00000025-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": null,
+    "status": "running",
+    "worker_alive": false
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "unavailable",
+   "transfer": null,
+   "version": 1
+  },
+  "worker_unverified": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "worker_unverified",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "The collector process cannot be checked from here, so it is treated as still holding the emulator.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": null,
+    "claims": null,
+    "desire_revision": 1,
+    "evidence": null,
+    "harvest_managed": true,
+    "id": "00000026-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": null,
+    "status": "running",
+    "worker_alive": null
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "unavailable",
+   "transfer": null,
+   "version": 1
+  },
+  "working_collector_claims_failing": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "claims_failing",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Ad gem claims failing: 4 in a row.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "00000028-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": {"at": 1799999870.0, "code": "offer_moved"}, "failing": true, "failure_streak": 4, "finder_suspected": null, "windows_missed": 4},
+    "desire_revision": 1,
+    "evidence": {"ad_claim_confirmations": 2, "coverage": "sampled_driver_observations", "generation": "g1", "latest_confirmations": {"ad_gems": {"id": "claim-2", "observed_at": 1799999960.0}}, "observed_through_at": 1799999999.0, "orbit_balance_confirmations": 0, "orbit_recorded_increase": 0, "started_at": 1799999700.0},
+    "harvest_managed": true,
+    "id": "00000027-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": {"ad_gems": {"blocker": null, "counters": {"attempts": 8, "checks": 9, "confirmed": 2, "seen": 7, "skips": 0, "windows_missed": 4}, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}, "floating_gems": {"blocker": "disabled", "enabled": false, "last_outcome": null, "next_due_at": null, "server_time": 1799999999.0, "state": "off", "window_ends_at": null}},
+    "status": "running",
+    "worker_alive": true
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "collecting",
+   "transfer": null,
+   "version": 1
+  },
+  "working_collector_finder_suspected": {
+   "attempts": 0,
+   "circuit_open": false,
+   "code": "collecting",
+   "collection_guard": null,
+   "desired": {
+    "bound": {"account": null, "instance": "main", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001", "profile": "mine", "serial": "fake:1"},
+    "changed_at": 1800000000.0,
+    "changed_by": "person",
+    "choice": "on",
+    "enabled": true,
+    "label": "Farm",
+    "preset": "bp_farm",
+    "reason": "enabled_by_person",
+    "request_key": "req-000001",
+    "revision": 1
+   },
+   "failures": 0,
+   "host": {
+    "last_error": null,
+    "last_tick_at": 1799999999.0,
+    "reconciler": "active"
+   },
+   "identity": {
+    "account": null,
+    "instance": "main",
+    "profile": "mine",
+    "serial": "fake:1"
+   },
+   "input_revoked": false,
+   "last_outcome": null,
+   "message": "Collecting gems in the battle on screen.",
+   "next_attempt_at": null,
+   "operation": {
+    "battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "0000002a-0000-4000-8000-000000000000", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1799999999.0, "status": "active"},
+    "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": true, "windows_missed": 0},
+    "desire_revision": 1,
+    "evidence": {"ad_claim_confirmations": 2, "coverage": "sampled_driver_observations", "generation": "g1", "latest_confirmations": {"ad_gems": {"id": "claim-2", "observed_at": 1799999960.0}}, "observed_through_at": 1799999999.0, "orbit_balance_confirmations": 0, "orbit_recorded_increase": 0, "sensing": {"floating_gems": {"best_near_miss": 0.71, "frames": 240, "near_miss_frames": 9, "reasons": {"glyph_rejected": 9, "no_candidate": 231}, "recent": {"frames": 120, "near_miss_frames": 9, "recognized": 0, "window": 120}, "recognized": 0}}, "started_at": 1799999700.0},
+    "harvest_managed": true,
+    "id": "00000029-0000-4000-8000-000000000000",
+    "kind": "gems",
+    "revision": 2,
+    "routines": {"ad_gems": {"blocker": null, "counters": {"attempts": 8, "checks": 9, "confirmed": 2, "seen": 7, "skips": 0, "windows_missed": 0}, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}, "floating_gems": {"blocker": null, "enabled": true, "last_outcome": null, "next_due_at": 1800000020.0, "server_time": 1799999999.0, "state": "scheduled", "window_ends_at": null}},
+    "status": "running",
+    "worker_alive": true
+   },
+   "overlay": null,
+   "owner": null,
+   "server_time": 1800000000.0,
+   "source": {
+    "changed_since_enable": false,
+    "code": null,
+    "edit": {"blueprint": "farm", "page": "runs"},
+    "label": "Farm",
+    "message": null,
+    "policy": {"ad_gems": {"enabled": true, "interval_sec": 30, "window_sec": 15}, "floating_gems": {"enabled": false, "interval_sec": 20, "tap_interval_sec": 2, "window_sec": 10}},
+    "policy_revision": "0000000000000000000000000000000000000000000000000000000000000001",
+    "preset": "bp_farm",
+    "profile": "mine",
+    "valid": true
+   },
+   "state": "collecting",
+   "transfer": null,
+   "version": 1
+  }
+ },
+ "stop_operation": {
+  "cancel": {
+   "ended": {
+    "body": {"ok": true, "operation": {"error": {"code": "worker_lost", "message": "Worker exited without a confirmed outcome"}, "id": "00000042-0000-4000-8000-000000000000", "kind": "gems", "revision": 4, "status": "interrupted", "step": "stop_requested"}, "stop": {"by_this_request": {"family": null, "paused": false, "released": false, "requested": true, "signalled": []}, "holder": null, "reason": null, "state": "ended"}},
+    "status": 200
+   },
+   "ended_after_termination": {
+    "body": {"ok": true, "operation": {"error": {"code": "worker_lost", "message": "Worker exited without a confirmed outcome"}, "id": "00000043-0000-4000-8000-000000000000", "kind": "gems", "revision": 4, "status": "interrupted", "step": "stop_requested"}, "stop": {"by_this_request": {"family": "stopped", "paused": false, "released": false, "requested": true, "signalled": [4242]}, "holder": null, "reason": null, "state": "ended"}},
+    "status": 200
+   },
+   "released": {
+    "body": {"ok": true, "operation": {"error": {"code": "worker_released", "message": "Released by a person: the worker could not be verified and no process holds the device lease"}, "id": "0000003e-0000-4000-8000-000000000000", "kind": "gems", "revision": 4, "status": "interrupted", "step": "worker_released"}, "stop": {"by_this_request": {"family": null, "paused": false, "released": true, "requested": true, "signalled": []}, "holder": null, "reason": null, "state": "released"}},
+    "status": 200
+   },
+   "stopped": {
+    "body": {"ok": true, "operation": {"error": null, "id": "00000039-0000-4000-8000-000000000000", "kind": "gems", "revision": 4, "status": "cancelled", "step": "driver_stopped"}, "stop": {"by_this_request": {"family": "stopped", "paused": false, "released": false, "requested": true, "signalled": [4242]}, "holder": null, "reason": null, "state": "stopped"}},
+    "status": 200
+   },
+   "stopped_family": {
+    "body": {"ok": true, "operation": {"error": null, "id": "0000003a-0000-4000-8000-000000000000", "kind": "gems", "revision": 4, "status": "cancelled", "step": "driver_stopped"}, "stop": {"by_this_request": {"family": "stopped", "paused": false, "released": false, "requested": true, "signalled": [4243, 4242]}, "holder": null, "reason": null, "state": "stopped"}},
+    "status": 200
+   },
+   "stopping": {
+    "body": {"ok": true, "operation": {"error": null, "id": "0000003d-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": "stopping", "paused": false, "released": false, "requested": true, "signalled": [4242]}, "holder": null, "reason": null, "state": "stopping"}},
+    "status": 200
+   },
+   "unverified_lease_free": {
+    "body": {"ok": true, "operation": {"error": null, "id": "00000041-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": null, "paused": false, "released": false, "requested": true, "signalled": []}, "holder": null, "reason": "worker_not_verifiable_lease_free", "state": "unverified"}},
+    "status": 200
+   },
+   "unverified_lease_held": {
+    "body": {"ok": true, "operation": {"error": null, "id": "0000003f-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": null, "paused": false, "released": false, "requested": true, "signalled": []}, "holder": {"claims": null, "evidence": null, "foreign": true, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "process", "lease": {"delegated": false, "held": true, "holders": [{"pid": 4242, "role": "primary"}], "input_gate": "enforced"}, "operation_id": null, "operation_kind": null, "pid": null, "recovery": null, "routines": null, "script": null, "status": null}, "reason": "worker_not_verifiable_lease_held", "state": "unverified"}},
+    "status": 200
+   },
+   "unverified_lease_held_after_stop": {
+    "body": {"ok": true, "operation": {"error": null, "id": "0000003b-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": "stopped", "paused": false, "released": false, "requested": true, "signalled": [910001]}, "holder": {"claims": null, "evidence": null, "foreign": true, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "process", "lease": {"delegated": false, "held": true, "holders": [{"pid": 4242, "role": "primary"}], "input_gate": "enforced"}, "operation_id": null, "operation_kind": null, "pid": null, "recovery": null, "routines": null, "script": null, "status": null}, "reason": "lease_held_after_stop", "state": "unverified"}},
+    "status": 200
+   },
+   "unverified_lease_unreadable": {
+    "body": {"ok": true, "operation": {"error": null, "id": "00000040-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": null, "paused": false, "released": false, "requested": true, "signalled": []}, "holder": null, "reason": "worker_not_verifiable_lease_unreadable", "state": "unverified"}},
+    "status": 200
+   },
+   "unverified_lease_unreadable_after_stop": {
+    "body": {"ok": true, "operation": {"error": null, "id": "0000003c-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": "stopped", "paused": false, "released": false, "requested": true, "signalled": [910001]}, "holder": null, "reason": "lease_unreadable_after_stop", "state": "unverified"}},
+    "status": 200
+   }
+  },
+  "conflicts": {
+   "not_cancellable": {
+    "body": {"code": "not_cancellable", "error": "Synchronous profile persistence cannot be cancelled", "ok": false, "operation": {"error": null, "id": "00000045-0000-4000-8000-000000000000", "kind": "profile_write", "revision": 1, "status": "accepted", "step": "accepted"}},
+    "status": 409
+   },
+   "operation_changed": {
+    "body": {"code": "operation_changed", "error": "Operation changed; refresh its status before trying again", "ok": false, "operation": {"error": null, "id": "00000044-0000-4000-8000-000000000000", "kind": "gems", "revision": 2, "status": "running", "step": "accepted"}},
+    "status": 409
+   },
+   "operation_required": {
+    "body": {"code": "operation_required", "error": "operation_id and expected_revision are required", "ok": false, "operation": null},
+    "status": 409
+   },
+   "operation_unknown": {
+    "body": {"code": "operation_unknown", "error": "Unknown operation", "ok": false, "operation": null},
+    "status": 409
+   },
+   "stop_outcome_partial": {
+    "body": {"code": "stop_outcome_partial", "conflict": "Operation changed; refresh its status before trying again", "error": "The stop was only partly carried out (harvesting was paused) and then the operation changed: Operation changed; refresh its status before trying again. Read its current state before stopping again.", "ok": false, "operation": {"error": null, "id": "00000046-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "running", "step": "accepted"}, "stop": {"by_this_request": {"family": null, "paused": true, "released": false, "requested": false, "signalled": []}, "holder": null, "reason": null, "state": "active"}},
+    "status": 409
+   }
+  },
+  "kill": {
+   "created_missing": {
+    "body": {"code": "process_identity_unverified", "error": "pid 910001 could not be proven to be the runner you were shown, so nothing was stopped; refresh the list and try again", "ok": false},
+    "status": 409
+   },
+   "gone": {
+    "body": {"gone": true, "ok": true},
+    "status": 200
+   },
+   "invalid_request": {
+    "body": {"code": "invalid_request", "error": "pid must be the integer process id of a listed runner", "ok": false},
+    "status": 400
+   },
+   "not_a_runner": {
+    "body": {"code": "not_a_runner", "error": "not a runner pid", "ok": false},
+    "status": 400
+   },
+   "pid_passed_to_another_runner": {
+    "body": {"code": "process_identity_unverified", "error": "pid 910001 could not be proven to be the runner you were shown, so nothing was stopped; refresh the list and try again", "ok": false},
+    "status": 409
+   },
+   "stopped": {
+    "body": {"gone": true, "ok": true},
+    "status": 200
+   }
+  },
+  "processes": [
+   {
+    "cmdline": "python orchestrator.py",
+    "created": 1790000000.123456,
+    "pid": 910001,
+    "runner": "orchestrator"
+   },
+   {
+    "cmdline": "python orchestrator.py",
+    "created": null,
+    "pid": 910002,
+    "runner": "orchestrator"
+   }
+  ],
+  "repeat": {
+   "held_after_stop_then_the_survivor_leaves": {
+    "after_release": {"error": {"code": "worker_lost", "message": "Worker exited without a confirmed outcome"}, "status": "interrupted", "stop": {"reason": null, "state": "ended"}},
+    "first": {"body": {"ok": true, "operation": {"error": null, "id": "00000049-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": "stopped", "paused": false, "released": false, "requested": true, "signalled": [910001]}, "holder": {"claims": null, "evidence": null, "foreign": true, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "process", "lease": {"delegated": false, "held": true, "holders": [{"pid": 4242, "role": "primary"}], "input_gate": "enforced"}, "operation_id": null, "operation_kind": null, "pid": null, "recovery": null, "routines": null, "script": null, "status": null}, "reason": "lease_held_after_stop", "state": "unverified"}}, "status": 200},
+    "stale_stop": {"body": {"code": "operation_changed", "error": "Operation changed; refresh its status before trying again", "ok": false, "operation": {"error": {"code": "worker_lost", "message": "Worker exited without a confirmed outcome"}, "id": "00000049-0000-4000-8000-000000000000", "kind": "gems", "revision": 4, "status": "interrupted", "step": "stop_requested"}}, "status": 409},
+    "still_held": {"body": {"ok": true, "operation": {"error": null, "id": "00000049-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": null, "paused": false, "released": false, "requested": false, "signalled": []}, "holder": {"claims": null, "evidence": null, "foreign": true, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "process", "lease": {"delegated": false, "held": true, "holders": [{"pid": 4242, "role": "primary"}], "input_gate": "enforced"}, "operation_id": null, "operation_kind": null, "pid": null, "recovery": null, "routines": null, "script": null, "status": null}, "reason": "lease_held_after_stop", "state": "unverified"}}, "status": 200}
+   },
+   "stopping_then_stopped": {
+    "first": {"body": {"ok": true, "operation": {"error": null, "id": "00000047-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": "stopping", "paused": false, "released": false, "requested": true, "signalled": [4242]}, "holder": null, "reason": null, "state": "stopping"}}, "status": 200},
+    "second": {"body": {"ok": true, "operation": {"error": null, "id": "00000047-0000-4000-8000-000000000000", "kind": "gems", "revision": 4, "status": "cancelled", "step": "driver_stopped"}, "stop": {"by_this_request": {"family": "stopped", "paused": false, "released": false, "requested": false, "signalled": [4242]}, "holder": null, "reason": null, "state": "stopped"}}, "status": 200}
+   },
+   "unverified_then_released": {
+    "first": {"body": {"ok": true, "operation": {"error": null, "id": "00000048-0000-4000-8000-000000000000", "kind": "gems", "revision": 3, "status": "cancelling", "step": "stop_requested"}, "stop": {"by_this_request": {"family": null, "paused": false, "released": false, "requested": true, "signalled": []}, "holder": {"claims": null, "evidence": null, "foreign": true, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "process", "lease": {"delegated": false, "held": true, "holders": [{"pid": 4242, "role": "primary"}], "input_gate": "enforced"}, "operation_id": null, "operation_kind": null, "pid": null, "recovery": null, "routines": null, "script": null, "status": null}, "reason": "worker_not_verifiable_lease_held", "state": "unverified"}}, "status": 200},
+    "second": {"body": {"ok": true, "operation": {"error": {"code": "worker_released", "message": "Released by a person: the worker could not be verified and no process holds the device lease"}, "id": "00000048-0000-4000-8000-000000000000", "kind": "gems", "revision": 4, "status": "interrupted", "step": "worker_released"}, "stop": {"by_this_request": {"family": null, "paused": false, "released": true, "requested": false, "signalled": []}, "holder": null, "reason": null, "state": "released"}}, "status": 200}
+   }
+  }
+ },
+ "version": 1
+}

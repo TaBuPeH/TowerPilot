@@ -1,0 +1,406 @@
+{
+ "about": "Rows, schema and battle as the unmodified writer at HEAD 38e15ec9 stores them (captured by tools/capture_old_writer_r18h.py in a scratch tree). An old WRITER stands for data written before this package; the candidate must read, validate, settle and extend it.",
+ "battle": {
+  "applied_controls": {
+   "routines": {
+    "abilities": {"enabled": true},
+    "ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60},
+    "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60},
+    "repeat": {"enabled": true},
+    "rescue": {"enabled": true},
+    "rewards": {"enabled": true},
+    "shopping": {"enabled": false, "interval_sec": 90}
+   },
+   "shopping_plan": null
+  },
+  "applied_overrides": {},
+  "applied_revision": 0,
+  "boundary_evidence": null,
+  "capabilities": {
+   "actions": [],
+   "controls": []
+  },
+  "context": {
+   "account": "account",
+   "device_key": "device",
+   "instance": "main",
+   "serial": "fake"
+  },
+  "control_revision": 0,
+  "created_at": 1700000001.0,
+  "ended_at": 1700000009.0,
+  "envelope": {
+   "config": {
+    "active_profile": "mine"
+   },
+   "controls": {
+    "routines": {"abilities": {"enabled": true}, "ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60}, "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60}, "repeat": {"enabled": true}, "rescue": {"enabled": true}, "rewards": {"enabled": true}, "shopping": {"enabled": false, "interval_sec": 90}},
+    "shopping_plan": null
+   },
+   "preset": {
+    "gather": {"ad_gems": true, "gem_orbit": {"enabled": false}},
+    "shop_interval_sec": 90,
+    "shopping": []
+   },
+   "source": null,
+   "source_revision": null
+  },
+  "envelope_hash": "6da8f5a477f9175eb896e0ec7d546e305181e5af6eb080bf6d65ed0aad1d0112",
+  "finalization_fingerprint": "50752217bee983d6b34899972c45b4f9a2dcc5b9e46e4bb51ca0a12e79d31eb9",
+  "generation": "00000000-0000-0000-0000-000000000003",
+  "id": "00000000-0000-0000-0000-000000000005",
+  "observed_started_at": null,
+  "operation_id": "00000000-0000-0000-0000-000000000002",
+  "origin": "adopted",
+  "outcome": "unknown",
+  "overrides": {},
+  "prepared_at": 1700000001.0,
+  "previous_battle_id": null,
+  "reason": "driver_operation_ended",
+  "requested_controls": {
+   "routines": {
+    "abilities": {"enabled": true},
+    "ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60},
+    "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60},
+    "repeat": {"enabled": true},
+    "rescue": {"enabled": true},
+    "rewards": {"enabled": true},
+    "shopping": {"enabled": false, "interval_sec": 90}
+   },
+   "shopping_plan": null
+  },
+  "runtime": {
+   "setup": {
+    "continued_with_partial": false,
+    "detail": "adopted",
+    "loadout": null,
+    "modules": [],
+    "reason": "Setup has not been verified for this battle",
+    "state": "unknown"
+   }
+  },
+  "segments": [
+   {
+    "ended_at": 1700000009.0,
+    "generation": "00000000-0000-0000-0000-000000000003",
+    "operation_id": "00000000-0000-0000-0000-000000000002",
+    "started_at": 1700000001.0
+   }
+  ],
+  "start_certainty": "unknown",
+  "status": "interrupted",
+  "updated_at": 1700000010.0
+ },
+ "contract": {
+  "coverages": [
+   "full",
+   "since_adoption",
+   "unknown"
+  ],
+  "effects": [
+   "confirmed",
+   "unconfirmed",
+   "unknown",
+   "none"
+  ],
+  "index": [
+   "id",
+   "device",
+   "action",
+   "instance",
+   "account",
+   "operation_id",
+   "battle_id",
+   "generation",
+   "request_key",
+   "started_at",
+   "terminal"
+  ],
+  "outcome_keys": [
+   "result",
+   "reason",
+   "effect",
+   "attempts",
+   "confirmed",
+   "evidence"
+  ],
+  "record_keys": [
+   "schema_version",
+   "id",
+   "ledger_id",
+   "device",
+   "action",
+   "instance",
+   "trigger",
+   "occurrence_key",
+   "host",
+   "context",
+   "config_revision",
+   "policy_revision",
+   "request_key",
+   "command_id",
+   "state",
+   "scheduled_for",
+   "accepted_at",
+   "started_at",
+   "finished_at",
+   "duration_ms",
+   "duration_basis",
+   "outcome",
+   "aggregate",
+   "coverage",
+   "refs"
+  ],
+  "results": [
+   "succeeded",
+   "no_op",
+   "failed",
+   "refused",
+   "cancelled"
+  ],
+  "settled_keys": [
+   "settled_at",
+   "settled_reason"
+  ],
+  "states": [
+   "running",
+   "yielded",
+   "succeeded",
+   "no_op",
+   "failed",
+   "refused",
+   "cancelled",
+   "interrupted",
+   "unknown"
+  ],
+  "triggers": [
+   "automatic",
+   "manual",
+   "dependency",
+   "boundary"
+  ]
+ },
+ "ddl": {
+  "action_executions": "CREATE TABLE action_executions (\n                id TEXT PRIMARY KEY, device TEXT NOT NULL, action TEXT NOT NULL, instance TEXT NOT NULL, account TEXT,\n                operation_id TEXT, battle_id TEXT, generation TEXT, request_key TEXT, started_at REAL NOT NULL,\n                terminal INTEGER NOT NULL, body TEXT NOT NULL)",
+  "action_executions_by_account": "CREATE INDEX action_executions_by_account ON action_executions(device, account, started_at)",
+  "action_executions_by_battle": "CREATE INDEX action_executions_by_battle ON action_executions(battle_id)",
+  "action_executions_by_device": "CREATE INDEX action_executions_by_device ON action_executions(device, started_at)",
+  "action_executions_by_operation": "CREATE INDEX action_executions_by_operation ON action_executions(operation_id)",
+  "action_executions_by_state": "CREATE INDEX action_executions_by_state ON action_executions(terminal, started_at)",
+  "action_meta": "CREATE TABLE action_meta (\n                id INTEGER PRIMARY KEY CHECK (id = 1), schema_version INTEGER NOT NULL, ledger_id TEXT NOT NULL,\n                created_at REAL NOT NULL)",
+  "one_execution_per_request_key": "CREATE UNIQUE INDEX one_execution_per_request_key\n                ON action_executions(request_key) WHERE request_key IS NOT NULL",
+  "one_open_execution_per_instance": "CREATE UNIQUE INDEX one_open_execution_per_instance\n                ON action_executions(device, instance) WHERE terminal = 0"
+ },
+ "meta": {
+  "schema_version": 1
+ },
+ "request_key_row": "0000000000000000000000000000000c",
+ "rows": [
+  {
+   "account": "account",
+   "action": "ad_gems",
+   "battle_id": "00000000-0000-0000-0000-000000000005",
+   "body": {
+    "accepted_at": null,
+    "action": "ad_gems",
+    "aggregate": null,
+    "command_id": null,
+    "config_revision": null,
+    "context": {"account": "account", "device_key": "device", "instance_name": "main", "profile": "mine"},
+    "coverage": "since_adoption",
+    "device": "device",
+    "duration_basis": "monotonic",
+    "duration_ms": 12000.0,
+    "finished_at": 1700001012.0,
+    "host": {"battle_id": "00000000-0000-0000-0000-000000000005", "driver": "orchestrator", "generation": "00000000-0000-0000-0000-000000000003", "operation_id": "00000000-0000-0000-0000-000000000002", "parent_execution": null},
+    "id": "00000000000000000000000000000007",
+    "instance": "ad_gems",
+    "ledger_id": "00000000000000000000000000000006",
+    "occurrence_key": "window:1",
+    "outcome": {"attempts": 2, "confirmed": 1, "effect": "confirmed", "evidence": ["offer_disappeared"], "reason": "offer_disappeared", "result": "succeeded"},
+    "policy_revision": null,
+    "refs": {"window_id": "w1"},
+    "request_key": null,
+    "scheduled_for": null,
+    "schema_version": 1,
+    "started_at": 1700001000.0,
+    "state": "succeeded",
+    "trigger": "automatic"
+   },
+   "device": "device",
+   "generation": "00000000-0000-0000-0000-000000000003",
+   "id": "00000000000000000000000000000007",
+   "instance": "ad_gems",
+   "operation_id": "00000000-0000-0000-0000-000000000002",
+   "request_key": null,
+   "started_at": 1700001000.0,
+   "terminal": 1
+  },
+  {
+   "account": "account",
+   "action": "shopping",
+   "battle_id": "00000000-0000-0000-0000-000000000005",
+   "body": {
+    "accepted_at": null,
+    "action": "shopping",
+    "aggregate": null,
+    "command_id": null,
+    "config_revision": null,
+    "context": {"account": "account", "device_key": "device", "instance_name": "main", "profile": "mine"},
+    "coverage": "since_adoption",
+    "device": "device",
+    "duration_basis": "monotonic",
+    "duration_ms": 3000.0,
+    "finished_at": 1700001045.0,
+    "host": {"battle_id": "00000000-0000-0000-0000-000000000005", "driver": "orchestrator", "generation": "00000000-0000-0000-0000-000000000003", "operation_id": "00000000-0000-0000-0000-000000000002", "parent_execution": null},
+    "id": "00000000000000000000000000000008",
+    "instance": "shopping",
+    "ledger_id": "00000000000000000000000000000006",
+    "occurrence_key": null,
+    "outcome": {"attempts": 1, "confirmed": 0, "effect": "unknown", "evidence": [], "reason": "error", "result": "failed"},
+    "policy_revision": null,
+    "refs": {},
+    "request_key": null,
+    "scheduled_for": null,
+    "schema_version": 1,
+    "started_at": 1700001042.0,
+    "state": "failed",
+    "trigger": "automatic"
+   },
+   "device": "device",
+   "generation": "00000000-0000-0000-0000-000000000003",
+   "id": "00000000000000000000000000000008",
+   "instance": "shopping",
+   "operation_id": "00000000-0000-0000-0000-000000000002",
+   "request_key": null,
+   "started_at": 1700001042.0,
+   "terminal": 1
+  },
+  {
+   "account": "account",
+   "action": "shopping",
+   "battle_id": "00000000-0000-0000-0000-000000000005",
+   "body": {
+    "accepted_at": null,
+    "action": "shopping",
+    "aggregate": {"count": 3, "first_at": 1700001050.0, "last_at": 1700001060.0, "scope": "4f7cf75e06840a9647c3d5f293a1ca29e76c8c6aa8ce5519e59a5110156a0835"},
+    "command_id": null,
+    "config_revision": null,
+    "context": {"account": "account", "device_key": "device", "instance_name": "main", "profile": "mine"},
+    "coverage": "since_adoption",
+    "device": "device",
+    "duration_basis": "none",
+    "duration_ms": null,
+    "finished_at": 1700001050.0,
+    "host": {"battle_id": "00000000-0000-0000-0000-000000000005", "driver": "orchestrator", "generation": "00000000-0000-0000-0000-000000000003", "operation_id": "00000000-0000-0000-0000-000000000002", "parent_execution": null},
+    "id": "00000000000000000000000000000009",
+    "instance": "shopping",
+    "ledger_id": "00000000000000000000000000000006",
+    "occurrence_key": null,
+    "outcome": {"attempts": 0, "confirmed": 0, "effect": "none", "evidence": [], "reason": "device_owned", "result": "refused"},
+    "policy_revision": null,
+    "refs": {},
+    "request_key": null,
+    "scheduled_for": null,
+    "schema_version": 1,
+    "started_at": 1700001050.0,
+    "state": "refused",
+    "trigger": "automatic"
+   },
+   "device": "device",
+   "generation": "00000000-0000-0000-0000-000000000003",
+   "id": "00000000000000000000000000000009",
+   "instance": "shopping",
+   "operation_id": "00000000-0000-0000-0000-000000000002",
+   "request_key": null,
+   "started_at": 1700001050.0,
+   "terminal": 1
+  },
+  {
+   "account": "account",
+   "action": "shopping",
+   "battle_id": "00000000-0000-0000-0000-000000000005",
+   "body": {
+    "accepted_at": null,
+    "action": "shopping",
+    "aggregate": null,
+    "command_id": "old-cmd-1",
+    "config_revision": null,
+    "context": {"account": "account", "device_key": "device", "instance_name": "main", "profile": "mine"},
+    "coverage": "since_adoption",
+    "device": "device",
+    "duration_basis": "none",
+    "duration_ms": null,
+    "finished_at": 1700001065.0,
+    "host": {"battle_id": "00000000-0000-0000-0000-000000000005", "driver": "orchestrator", "generation": "00000000-0000-0000-0000-000000000003", "operation_id": "00000000-0000-0000-0000-000000000002", "parent_execution": null},
+    "id": "0000000000000000000000000000000c",
+    "instance": "shopping",
+    "ledger_id": "00000000000000000000000000000006",
+    "occurrence_key": null,
+    "outcome": {"attempts": 1, "confirmed": 0, "effect": "none", "evidence": [], "reason": "error", "result": "failed"},
+    "policy_revision": null,
+    "refs": {},
+    "request_key": "old-key-1",
+    "scheduled_for": null,
+    "schema_version": 1,
+    "started_at": 1700001065.0,
+    "state": "failed",
+    "trigger": "manual"
+   },
+   "device": "device",
+   "generation": "00000000-0000-0000-0000-000000000003",
+   "id": "0000000000000000000000000000000c",
+   "instance": "shopping",
+   "operation_id": "00000000-0000-0000-0000-000000000002",
+   "request_key": "old-key-1",
+   "started_at": 1700001065.0,
+   "terminal": 1
+  },
+  {
+   "account": "account",
+   "action": "ad_gems",
+   "battle_id": "00000000-0000-0000-0000-000000000005",
+   "body": {
+    "accepted_at": null,
+    "action": "ad_gems",
+    "aggregate": null,
+    "command_id": null,
+    "config_revision": null,
+    "context": {"account": "account", "device_key": "device", "instance_name": "main", "profile": "mine"},
+    "coverage": "since_adoption",
+    "device": "device",
+    "duration_basis": "none",
+    "duration_ms": null,
+    "finished_at": null,
+    "host": {"battle_id": "00000000-0000-0000-0000-000000000005", "driver": "orchestrator", "generation": "00000000-0000-0000-0000-000000000003", "operation_id": "00000000-0000-0000-0000-000000000002", "parent_execution": null},
+    "id": "0000000000000000000000000000000d",
+    "instance": "ad_gems",
+    "ledger_id": "00000000000000000000000000000006",
+    "occurrence_key": "window:2",
+    "outcome": {"attempts": 0, "confirmed": 0, "effect": "unknown", "evidence": [], "reason": "operation_ended", "result": "interrupted"},
+    "policy_revision": null,
+    "refs": {},
+    "request_key": null,
+    "scheduled_for": null,
+    "schema_version": 1,
+    "settled_at": 1700002000.0,
+    "settled_reason": "operation_ended",
+    "started_at": 1700001070.0,
+    "state": "interrupted",
+    "trigger": "automatic"
+   },
+   "device": "device",
+   "generation": "00000000-0000-0000-0000-000000000003",
+   "id": "0000000000000000000000000000000d",
+   "instance": "ad_gems",
+   "operation_id": "00000000-0000-0000-0000-000000000002",
+   "request_key": null,
+   "started_at": 1700001070.0,
+   "terminal": 1
+  }
+ ],
+ "schema_version": 1,
+ "settled": [
+  "0000000000000000000000000000000d"
+ ]
+}

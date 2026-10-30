@@ -26,7 +26,11 @@ def export(manifest, report):
     targets = {}
     skipped = 0
     layout = manifest["layout"]
-    for entry in report.get("entries", []):
+    entries = report.get("entries")
+    for entry in entries if isinstance(entries, list) else []:
+        if not isinstance(entry, dict):
+            skipped += 1
+            continue
         rel = entry.get("rel")
         screens = known.get(rel, set())
         if not entry.get("verified") or not screens or not entry.get("rect"):
@@ -38,7 +42,7 @@ def export(manifest, report):
         if screen is None and len(screens) == 1:
             screen = next(iter(screens))
         rect = entry["rect"]
-        if (screen not in screens or len(rect) != 4
+        if (screen not in screens or not isinstance(rect, list) or len(rect) != 4
                 or any(type(v) is not int for v in rect)):
             skipped += 1
             continue
@@ -89,19 +93,28 @@ def discovery_candidates(manifest, analysis, asset_names):
 
     Identity must occur in the extracted game's index. Never export OCR text.
     Unknown screen names become 'unclassified' until a developer names them.
+    The analyzer writes `screen` as {name, candidates}; a plain name is read as well. Anything that is not
+    the shape its producer writes is skipped, never trusted.
     """
-    if analysis.get('status') != 'done':
+    if not isinstance(analysis, dict) or analysis.get('status') != 'done':
         return []
     screen = analysis.get('screen')
-    if screen not in manifest.get('screens', {}) and screen not in manifest.get('hud', {}):
+    if isinstance(screen, dict):
+        screen = screen.get('name')
+    if not isinstance(screen, str) or (screen not in manifest.get('screens', {}) and screen not in manifest.get('hud', {})):
         screen = 'unclassified'
+    matches = analysis.get('matches')
     out = []
-    for hit in analysis.get('matches', []):
-        names = sorted(set(hit.get('names', [])) & set(asset_names))
-        rect = hit.get('rect', [])
-        if not names or hit.get('ambiguous') or hit.get('inliers', 0)<8 or len(rect)!=4:
+    for hit in matches if isinstance(matches, list) else []:
+        if not isinstance(hit, dict):
             continue
-        if any(type(v) is not int for v in rect):
+        listed = hit.get('names')
+        names = sorted({n for n in listed if isinstance(n, str)} & set(asset_names)) if isinstance(listed, list) else []
+        rect = hit.get('rect')
+        inliers = hit.get('inliers', 0)
+        if not names or hit.get('ambiguous') or not isinstance(inliers, (int, float)) or inliers < 8:
+            continue
+        if not isinstance(rect, list) or len(rect) != 4 or any(type(v) is not int for v in rect):
             continue
         x,y,w,h=rect
         if min(x,y)<0 or min(w,h)<=0 or x+w>manifest['layout']['width'] or y+h>manifest['layout']['height']:

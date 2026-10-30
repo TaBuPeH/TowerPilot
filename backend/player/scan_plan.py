@@ -10,7 +10,7 @@ STEPS = {
     "guild": ("4. Guild and Guardians", "Open Guild, Members and Guardian pages yourself. Capture the named tab, header, chip or empty/equipped marker. Skip unavailable chips; do not buy or equip one for the scan."),
     "events": ("5. Events and missions", "Open Events, Bots and missions yourself. Capture tabs and claim controls when naturally available. Do not spend currency to produce a claim."),
     "store": ("6. Store", "Open the store yourself and visit the named section. Capture headers, free-claim controls and owned labels. For storefont, crop one occurrence of the named digit from the actual store font. Do not buy anything."),
-    "battle": ("7. Observe a normal battle", "Full setup can do this for you: it starts a normal run, reads the wave digits, upgrade labels and Ultimate Weapon names, opens the Intro Sprint prompt and cancels it. Otherwise you start or continue a normal battle and the scan only watches. For digits, use the wave counter; for valuefont, use the value display. Capture each literal character separately at native size. Never touch a tournament run."),
+    "battle": ("7. Observe a normal battle", "Full setup starts its own normal run and reads the wave digits, upgrade labels and Ultimate Weapon names. If Intro Sprint is visible, it opens the prompt and ends the sprint; setup does not change cards to make it appear. Otherwise you start or continue a normal battle and the scan only watches. For digits, use the wave counter; for valuefont, use the value display. Capture each literal character separately at native size. Never touch a tournament run."),
     "results": ("8. Observe results and dialogs", "Full setup captures these by surrendering the run it started itself (exit dialog, GAME STATS, reward skip). Manual capture only watches: do not surrender someone else's run, trigger abilities, transfer levels or shatter modules to obtain a missing image."),
     "tournament": ("9. Observe tournament screens", "You control tournament entry and all confirmations. Capture the named entry, ticket, heat, leaderboard or result control only when it is naturally visible. Setup never buys a ticket, watches an entry ad, enters or ends a tournament."),
     "overlays": ("10. Observe overlays", "Wait for this overlay during normal use. Capture only the named close or return control. Setup must not click an unknown ad or overlay."),
@@ -49,11 +49,15 @@ def plan(root, cfg, requirements=()):
         report = json.loads((accounts.calibration_dir(root,cfg)/"calibrate_report.json").read_text(encoding="utf-8"))
     except (OSError,ValueError):
         report = {}
-    evidence = {e["rel"]:e for e in report.get("entries",[]) if e.get("rel")}
+    # a report that is valid JSON but not the object of entries the calibrator writes is no evidence, like a corrupt one
+    entries = report.get("entries") if isinstance(report, dict) else None
+    entries = [e for e in entries if isinstance(e, dict) and isinstance(e.get("rel"), str) and e["rel"]] if isinstance(entries, list) else []
+    evidence = {e["rel"]:e for e in entries}
     from player import learned
     learned_rows = learned.known({"state": str(accounts.calibration_dir(root,cfg)/"calibrate_state.json")})
     automatic = writable_targets()
-    required = {r for row in requirements for r in row.get("alternatives", [])}
+    required = {r for row in requirements if row.get("blocking", True)
+                for r in row.get("alternatives", [])}
     groups = {key: {"id":key, "title":v[0], "instructions":v[1], "mode":"You navigate; capture only", "targets":[]} for key,v in STEPS.items()}
     for item in targets():
         rel = item["rel"]
@@ -62,11 +66,13 @@ def plan(root, cfg, requirements=()):
         proof = evidence.get(rel,{})
         verified = bool(proof.get('verified')) and image is not None and proof.get("image_sha256") == hashlib.sha256(path.read_bytes()).hexdigest()
         status = "Verified on this emulator" if verified else "Captured; recognition not yet verified" if image is not None else "Missing"
+        if image is not None and proof.get('status') in ('stale', 'unverified_copy'):
+            status = "Needs attention: " + (proof.get('reason') or "Saved image recognition is unverified")
         groups[step_for(rel)]["targets"].append(dict(item, automatic=rel in automatic or rel in learned_rows, label=Path(rel).stem.replace("_", " "),
             required=rel in required, status=status, learned=learned_rows.get(rel)))
     from player.interface_manifest import coverage
     from player.manifest_driver import plan as mapping_plan
-    interface = coverage(lambda rel: accounts.template_path(root, cfg, rel), report.get("entries", []))
+    interface = coverage(lambda rel: accounts.template_path(root, cfg, rel), entries)
     return {"mapping":mapping_plan(), "interface":interface, "native_frame":[1080,2560], "bootstrap":{"steps":scan_steps(), "version":manifest()["version"], "screens":list(manifest()["screens"]), "targets":sorted(automatic)}, "steps":list(groups.values()),
         "captured":sum(t["status"] != "Missing" for g in groups.values() for t in g["targets"]),
         "total":sum(len(g["targets"]) for g in groups.values()),

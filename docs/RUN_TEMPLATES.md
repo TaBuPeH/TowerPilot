@@ -1,8 +1,28 @@
 # Shipped run templates
+> **Status:** Active
+> **Type:** User guide
+> **Updated:** 2026-10-22
 
 Farm, Tournament, Shard farming and Dissonance are available above the run list in Control. Choose a template, name it, choose your tier and equipment, then add it. Advanced settings are expanded. Adding a run does not start it or schedule it.
 
 The text-only library is `backend/player/run_templates.json`. `run_templates.py` copies a recipe into the existing profile blueprint schema, with independent policy names for each run. Existing runs, schedules, equipment and account observations are preserved. The starter remains read-only; create a personal profile through Setup first.
+
+## Why a run could not be added
+
+A page that adds a run sends the profile revision it read (`expected_revision`) and the emulator, account and profile it was composed for (`expected_context`). An add that carries either guard gets a stable `code` with every refusal that is known to have happened before anything was written, so the page can tell "refused, nothing changed" from "unknown, read the profile":
+
+| `code` | Status | Meaning |
+| --- | --- | --- |
+| `revision_conflict` | 409 | The profile changed since the page read it. The answer carries the current `revision`. |
+| `context_changed` | 409 | Another emulator, account or profile is in force. The answer carries `current_context`. |
+| `invalid_request` | 400 | The guard itself is malformed. |
+| `profile_unavailable` | 400 or 409 | No such profile, an unreadable or non-mapping file, a name that is not a profile name (400); the starter and a scan draft (409). |
+| `id_taken` | 400 | The run identifier, or a policy that identifier would create, exists already. |
+| `recipe_refused` | 400 | Not an identifier, an unknown template, or an unsupported or malformed choice. |
+| `validation_failed` | 400 | The profile validator refused the result; `problems` lists why. |
+| `write_failed_nothing_saved` | 400 | The write failed and the profile file is byte-identical to what it was before. |
+
+A failure after which the profile differs, or cannot be read back, carries no code: the add may have happened, and a read of the profile settles it. A request without a guard is answered as it always was, with no code.
 
 ## Legacy behaviour retained
 
@@ -27,11 +47,15 @@ No game artwork, personal preset names, learned coordinates or account snapshots
 
 ## Diamond collection
 
-Ad Gems and free Store gems are separate switches: `ad_gems` watches the six-gem CLAIM button on the battle HUD, while `free_store_gems` runs the Store visit. Store collection is off in the shipped recipes until selected. The HUD collector rechecks a fresh frame before tapping and records whether the offer disappears; it never opens the Store.
+Ad Gems and free Store gems are separate switches: `ad_gems` watches the six-gem CLAIM button on the battle HUD, while `free_store_gems` runs the Store visit. Store collection is off in the shipped recipes until selected. The HUD collector rechecks a fresh frame before tapping and confirms disappearance only while the battle remains visible. A dry run or a screen change is not a confirmed claim. It never opens the Store. A saved CLAIM image is optional: without one, the collector requires the CLAIM label and the six-gem amount on the same offer.
 
-Rotating diamonds use the existing `gem_orbit` timed-click collector. Shipped recipes disable floating-image matching and enable timed orbit clicks. Account geometry can override the reference point. MuMu was verified at native point (420, 685), every roughly two seconds: both the Ad Gems claim and rotating diamond disappeared and the gem balance rose from 1398 to 1406 in the live test. The point is derived from center (540,805), radius 170 and angle 135 degrees; local settings preserve it separately from shipped templates. No rotating-diamond PNG is required for this mode.
+Rotating diamonds use the existing `gem_orbit` timed-click collector. Shipped recipes disable floating-image matching and enable timed orbit clicks. Account geometry can override the reference point through `center`, `radius`, `angle_deg`, `interval_sec`, `taps`, `jitter_frac`, and `spread_deg` in the gathering policy. No rotating-diamond PNG is required. Before a tap set, the collector checks that the game is in front and the arc is moving rather than covered by a static panel. Each tap also checks a fresh battle frame, and a screen change stops the remaining taps. Ad-gem claims share the foreground-window check. A `gem_orbit_tap` event proves an attempted tap, not a collected reward; verify a balance increase when tuning the orbit for an account.
 
-Control also offers **Collect diamonds only**. This keeps the HUD Ad Gems watcher and the selected run's timed orbit clicks active without starting a battle or changing equipment. It waits while the battle HUD is absent and appears as **Diamond collector** in Runner; **Stop now** stops it. Starting another automation requires stopping this collector first.
+Overview's Live control shows whether Ad Gems and floating gems are enabled for the selected run. **Start** uses both settings during farming. **Collect diamonds only** uses the same collection sequence on an existing battle without starting a battle or changing equipment. It requires learned wave digits, waits while the battle HUD is absent or a recognized dialog is open, and appears as **Diamond collector** in Live control. **Stop now** stops the driver without touching the game. **Finish current run, then stop** exits after an observed battle reaches its results or Home screen. Starting another automation requires stopping this collector first.
+
+The orbit `center` is measured with the upgrade panel **open**. Closing that panel moves the tower down by half the HUD's layout shift; the collector follows that shift automatically and abandons a tap set if the layout changes while it is checking or tapping.
+
+Ad-gem offers wait for a random delay from the gathering policy's `gem_delay_sec` range (default 3–10 seconds). Waiting never blocks farming; the next claim attempt re-verifies the live battle and offer. The policy's `ad_gem_options` controls polling, confirmation/retry cooldowns and button inset through [Settings](SETTINGS.md). Ad-gem taps sample across the freshly verified button rectangle, preserving the configured inset after shared position jitter and press drift. A rectangle too small for that margin is skipped. Press timing still uses the shared `tap` settings; other controls retain their existing position jitter. These are timing characteristics, not evidence that automation avoids telemetry detection or account flags.
 
 ## Dissonance and perk bans
 

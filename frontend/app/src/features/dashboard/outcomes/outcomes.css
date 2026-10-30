@@ -1,0 +1,26 @@
+.tp-outcomes__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--tp-space-3, 0.75rem);
+}
+
+.tp-outcomes__list > li,
+.tp-outcomes .tp-notice__server {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.tp-outcomes .tp-server,
+.tp-outcomes .tp-notice__lead > span,
+.tp-outcomes .tp-notice__line > span,
+.tp-outcomes .tp-notice__server > span,
+.tp-outcomes .tp-notice__server p > span {
+  margin-inline-end: var(--tp-space-2, 0.5rem);
+}
+
+/* The lead's closing ", {age}:" sits right after the target, with no gap before its comma or colon. */
+.tp-outcomes .tp-notice__lead > span:nth-last-child(2) {
+  margin-inline-end: 0;
+}

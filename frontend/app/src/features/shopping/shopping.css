@@ -1,0 +1,103 @@
+/* F6-12: the shared shopping queue editor (saved run, live battle, library policy). */
+.tp-shop {
+  min-width: 0;
+  container-type: inline-size;
+  overflow-wrap: anywhere;
+}
+.tp-shop__rules > .tp-tile__body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--tp-space-3);
+}
+.tp-shop__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--tp-space-4);
+  margin-block: var(--tp-space-3);
+}
+.tp-shop__queue ol,
+.tp-shop__page ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tp-shop__picker > .tp-tile__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  align-items: start;
+  gap: var(--tp-space-3);
+}
+.tp-shop__picker > .tp-tile__body > .tp-shop__hint {
+  grid-column: 1 / -1;
+}
+.tp-shop__page-viewport {
+  max-height: 28rem;
+  overflow-y: auto;
+  padding: var(--tp-space-1);
+  scrollbar-gutter: stable;
+}
+.tp-shop__fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--tp-space-2);
+}
+.tp-shop__label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.tp-shop__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  min-width: 0;
+}
+.tp-shop__field input,
+.tp-shop__field select {
+  width: 100%;
+}
+.tp-shop__check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+  min-height: 24px;
+}
+.tp-shop__check input {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+.tp-shop__pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-3);
+}
+.tp-shop__exclude {
+  font-size: 0.9em;
+}
+.tp-shop__hint {
+  color: var(--tp-color-text-muted);
+  font-size: 0.9em;
+}
+.tp-shop__problem {
+  color: var(--tp-color-bad);
+}
+.tp-shop__guidance {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+@container (max-width: 900px) {
+  .tp-shop__fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@container (max-width: 560px) {
+  .tp-shop__rules > .tp-tile__body,
+  .tp-shop__fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,305 @@
+/* The Dashboard's layout (spec 2.1 to 2.3). Building blocks are styled in src/ui/ui.css. */
+
+.tp-dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--tp-space-3);
+  align-items: start;
+}
+.tp-dashboard-side {
+  min-width: 0;
+}
+/* Navigation has already taken its share of the viewport. Keep useful action width. */
+@container workspace (min-width: 1400px) {
+  .tp-dashboard-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 24%);
+  }
+}
+
+/* The operations column grows with its workspace; the preview may sit beside it. */
+.tp-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+
+/* Keep the two-column control arrangement when its own content width permits. */
+.tp-region[data-region='control'] {
+  container-type: inline-size;
+  min-width: 0;
+}
+.tp-control__slots {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--tp-space-2);
+  margin-bottom: 0;
+}
+@container (min-width: 740px) {
+  /* Automation and Game input stack in the first column; Gem harvesting spans both rows beside them. */
+  .tp-control__slots {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    grid-auto-flow: column;
+    grid-template-rows: auto auto;
+    align-items: stretch;
+  }
+  .tp-control__slots .tp-slot[data-slot='gem'] {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}
+
+@container workspace (min-width: 800px) {
+  .tp-dashboard > .tp-region {
+    padding-block: var(--tp-space-2);
+  }
+}
+/* Every width: each slot's label and revocation share its first line (spec 2.2), facts below. */
+.tp-control__slots .tp-slot {
+  grid-template-rows: none;
+  grid-row: auto;
+  align-content: start;
+  /* The label keeps its longest word (at most 40% wide); the action wraps beside it, never over it. */
+  grid-template-columns: fit-content(40%) minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    'label action'
+    'facts facts'
+    'meta meta';
+  row-gap: var(--tp-space-1);
+  padding: var(--tp-space-2) var(--tp-space-3);
+}
+/* Labels sit on the buttons' centre line, so all three slot headers align. */
+.tp-control__slots .tp-slot__label {
+  grid-area: label;
+  color: var(--tp-color-text-strong);
+  font-size: var(--tp-font-size-15);
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+  align-self: start;
+  display: flex;
+  align-items: center;
+  min-height: var(--tp-control-height);
+}
+.tp-control__slots .tp-slot__action {
+  grid-area: action;
+  justify-content: flex-end;
+}
+/* A disabled action's reason takes its own line under the controls, at the card's right edge. */
+.tp-control__slots .tp-slot__action > .tp-reason {
+  flex-basis: 100%;
+  text-align: end;
+}
+/* Stop ends the automation: the page's one solid red action; the other revocations stay outlined. */
+.tp-control__slots
+  .tp-slot[data-slot='automation']
+  .tp-button[data-tier='halt']:not([aria-disabled='true']) {
+  background: var(--tp-color-danger);
+  border-color: var(--tp-color-halt-border);
+  color: var(--tp-color-on-action);
+}
+/* Turn input off and Pause harvesting can be undone: neutral buttons whose red mark keeps them revocations. */
+.tp-control__slots
+  .tp-slot:not([data-slot='automation'])
+  .tp-button[data-tier='halt']:not([aria-disabled='true']) {
+  background: var(--tp-color-surface-strong);
+  border-color: var(--tp-color-border-active);
+  color: var(--tp-color-text-strong);
+}
+.tp-control__slots
+  .tp-slot:not([data-slot='automation'])
+  .tp-button[data-tier='halt']
+  .tp-button__glyph {
+  color: var(--tp-color-halt-border);
+}
+/* A Stop and its "ends automation" note end on the card's right edge. */
+.tp-control__slots .tp-slot__action .tp-automation-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-3);
+  text-align: end;
+}
+/* The note reads before its Stop; it is not focusable, so tab order is unchanged. */
+.tp-control__slots .tp-automation-note {
+  order: -1;
+  margin: 0;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+.tp-control__slots .tp-slot__facts {
+  grid-area: facts;
+  gap: var(--tp-space-1);
+}
+/* The footer: quiet secondary controls (Details, links) on one divided row at the slot's foot. */
+.tp-control__slots .tp-slot__meta {
+  grid-area: meta;
+  align-items: baseline;
+  align-self: end;
+  gap: var(--tp-space-1) var(--tp-space-4);
+  padding-block-start: var(--tp-space-1);
+  border-block-start: 1px solid var(--tp-color-border);
+  font-size: var(--tp-font-size-13);
+}
+.tp-control__slots .tp-slot__meta:empty {
+  display: none;
+}
+.tp-control__slots .tp-slot__meta > details[open],
+.tp-control__slots .tp-slot__meta .tp-automation-list {
+  flex-basis: 100%;
+}
+.tp-control__slots .tp-slot__meta a {
+  color: var(--tp-color-text-nav);
+}
+/* A fact's value with its Why: the words, the chip and the disclosure on one wrapping line. */
+.tp-control__value,
+.tp-gem-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  min-width: 0;
+  margin: 0;
+}
+.tp-control__value > details[open] {
+  flex-basis: 100%;
+}
+/* Parts of one value read as a list: a small dot between them (drawn, not a character). */
+.tp-gem-list > span:not(.tp-visually-hidden) + span::before {
+  content: '';
+  display: inline-block;
+  width: 3px;
+  height: 3px;
+  margin-inline-end: var(--tp-space-2);
+  border-radius: 50%;
+  background: var(--tp-color-text-muted);
+  vertical-align: middle;
+}
+/* A slot that failed to draw: its fallback takes a full row under the label (F4-01 at 390). */
+.tp-control__slots .tp-slot > .tp-fallback {
+  grid-column: 1 / -1;
+}
+
+/* A list of rows inside a region or slot (routines, outcome lines, needs). */
+.tp-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.tp-rows > li {
+  min-width: 0;
+}
+
+/* The outcome strip under the slots (C-9). */
+.tp-outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+
+/* A slot's Seen now line: chip, line, a second line. */
+.tp-seen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.4rem;
+  margin: 0;
+  min-width: 0;
+}
+.tp-seen__extra {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+p.tp-seen__extra[data-gem-finder-suspected] {
+  padding-inline-start: var(--tp-space-2);
+  border-inline-start: 3px solid var(--tp-color-warn);
+  color: var(--tp-color-text);
+}
+p.tp-seen__extra {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.4rem;
+  margin: 0;
+}
+
+/* The gem source line and the pickers. */
+.tp-source {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.3em;
+  margin: 0;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+.tp-picker {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--tp-font-size-13);
+}
+.tp-picker select {
+  max-width: 100%;
+}
+.tp-age {
+  font-variant-numeric: tabular-nums;
+}
+.tp-source {
+  flex-basis: 100%;
+}
+/* Beside no picker, the run's words take the line's own spacing. */
+.tp-source__run {
+  display: contents;
+}
+/* The run, then its routines, then whether it changed: one fact per line at every width. */
+.tp-source__routines {
+  flex-basis: 100%;
+}
+
+/* F-107: toasts, bottom right, never covering the Control slots' buttons on wide screens. */
+.tp-toasts {
+  position: fixed;
+  inset-inline-end: var(--tp-space-4);
+  bottom: var(--tp-space-4);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tp-toast {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-3);
+  padding: var(--tp-space-2) var(--tp-space-3);
+  border: 1px solid var(--tp-color-border-active);
+  border-radius: var(--tp-radius-control);
+  background: var(--tp-color-surface-raised);
+}
+
+/* Touch targets keep the same size across primary actions, links and details. */
+@media (max-width: 480px), (pointer: coarse) {
+  .tp-dashboard :is(button, select, summary, a[href]),
+  .tp-preview :is(button, select, summary, a[href]) {
+    min-height: var(--tp-control-height-touch);
+    min-width: var(--tp-control-height-touch);
+  }
+  .tp-dashboard summary,
+  .tp-preview summary {
+    line-height: var(--tp-control-height-touch);
+  }
+  .tp-dashboard a[href] {
+    align-content: center;
+    margin-block: 0;
+  }
+}

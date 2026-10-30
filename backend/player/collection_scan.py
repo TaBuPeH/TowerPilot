@@ -6,9 +6,18 @@ import numpy as np
 
 from player.bootstrap_layout import manifest
 from runtime.files import atomic_json
+from runtime import logger
 
 
 def scan(scanner, name):
+    with logger.attempt('setup.collection', screen=name) as attempt:
+        frame = _scan(scanner, name)
+        result = scanner.state['collections'][name]
+        attempt.finish('verified' if result['complete'] else 'incomplete', **result)
+        return frame
+
+
+def _scan(scanner, name):
     from device import act
     spec=manifest()['screens'][name]['scan_collection']
     x,y,w,h=spec['viewport']
@@ -31,15 +40,17 @@ def scan(scanner, name):
             frame=following
         raise RuntimeError(f'{name}: scrolling did not settle; no further input sent')
     def move(frame, direction):
-        scanner.check_stop()
-        other=observe()
-        if not same(frame,other):
-            raise RuntimeError(f'{name}: screen changed before scrolling')
-        top,bottom=y+int(h*.15),y+int(h*.85)
-        start,end=(top,bottom) if direction=='top' else (bottom,top)
-        act.swipe(x+w//2,start,x+w//2,end,650,reason=f'manifest scan: {name} {direction}')
-        scanner.pause(.7)
-        return settled()
+        with logger.attempt('setup.collection.scroll', screen=name, direction=direction) as attempt:
+            scanner.check_stop()
+            other=observe()
+            if not same(frame,other):
+                raise RuntimeError(f'{name}: screen changed before scrolling')
+            top,bottom=y+int(h*.15),y+int(h*.85)
+            start,end=(top,bottom) if direction=='top' else (bottom,top)
+            act.swipe(x+w//2,start,x+w//2,end,650,reason=f'manifest scan: {name} {direction}')
+            frame=settled()
+            attempt.finish('settled')
+            return frame
     def park_top(frame):
         unchanged=0
         for _ in range(spec['max_pages']):
@@ -53,15 +64,17 @@ def scan(scanner, name):
     frame=park_top(settled())
     unchanged=0
     for page in range(spec['max_pages']):
-        scanner.check_stop()
-        scanner.progress(f'{name.replace("_"," ")}: reading page {page+1}')
-        cv2.imwrite(str(folder/f'page_{page+1}.png'),frame)
-        lines=scanner.read(frame[y:y+h,x:x+w])
-        report['pages'].append(dict(page=page+1, lines=[{'x':px+x,'y':py+y,'text':t} for py,px,t in lines]))
-        atomic_json(folder/'observations.json',report)
-        following=move(frame,'bottom')
-        unchanged=unchanged+1 if same(frame,following) else 0
-        frame=following
+        with logger.attempt('setup.collection.page', screen=name, page=page+1) as page_attempt:
+            scanner.check_stop()
+            scanner.progress(f'{name.replace("_"," ")}: reading page {page+1}')
+            cv2.imwrite(str(folder/f'page_{page+1}.png'),frame)
+            lines=scanner.read(frame[y:y+h,x:x+w])
+            report['pages'].append(dict(page=page+1, lines=[{'x':px+x,'y':py+y,'text':t} for py,px,t in lines]))
+            atomic_json(folder/'observations.json',report)
+            following=move(frame,'bottom')
+            unchanged=unchanged+1 if same(frame,following) else 0
+            frame=following
+            page_attempt.finish('observed', complete=unchanged>=2)
         if unchanged>=2:
             report['complete']=True
             break

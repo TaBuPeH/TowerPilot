@@ -98,11 +98,15 @@ def best_match(folder, mapping, frame, definition):
             hits.append(dict(hit,asset_id=candidate['id'],asset_name=candidate['name'],asset_sha256=candidate['sha256']))
     if not hits:
         return None
-    return max(hits,key=lambda h:h.get('inliers',0))
+    # every locator reports 'inliers' (SIFT inliers; 0 for shape matches), so
+    # a keypoint match outranks a shape match of another candidate
+    return max(hits,key=lambda h:h['inliers'])
 
 
 def locate_outline(image, frame, search):
-    """Match a hollow icon's outer shape despite differing outline thickness."""
+    """Match a hollow icon's outer shape despite differing outline thickness.
+    A shape match has no keypoints: its hit reports inliers=0, as
+    locate_silhouette's does, with the IoU as outline_score."""
     x,y,w,h=search
     if image is None or image.ndim!=3 or image.shape[2]!=4 or min(x,y)<0 or x+w>frame.shape[1] or y+h>frame.shape[0]:
         return None
@@ -124,7 +128,7 @@ def locate_outline(image, frame, search):
         hits.append((score,[int(x+px),int(y+py),int(pw),int(ph)]))
     hits.sort(reverse=True)
     if hits and hits[0][0]>=.90 and (len(hits)==1 or hits[0][0]-hits[1][0]>=.10):
-        return {'rect':hits[0][1], 'outline_score':float(hits[0][0])}
+        return {'rect':hits[0][1], 'inliers':0, 'outline_score':float(hits[0][0])}
     return None
 
 

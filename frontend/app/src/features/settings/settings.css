@@ -1,0 +1,152 @@
+/* The shared settings-module editor (features/settings). */
+.tp-settings__list-row .tp-settings__input {
+  flex: 1 1 10rem;
+  width: 100%;
+  min-width: 0;
+}
+.tp-settings__field[data-field] {
+  margin-inline: 0;
+}
+/* The module's surface is its .tp-tile (src/ui/ui.css); this file only lays it out. */
+.tp-settings {
+  min-width: 0;
+  margin: var(--tp-space-3) 0 0;
+}
+
+/* A field group inside the module (a list field) is a plain group, not a framed box. */
+.tp-settings fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.tp-settings__read-only {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  margin: var(--tp-space-1) 0;
+}
+
+.tp-settings__bounds {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 0.4em;
+}
+
+.tp-settings__help,
+.tp-settings__bounds {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-14);
+}
+
+.tp-settings__fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--tp-space-2) var(--tp-space-3);
+  margin: var(--tp-space-2) 0;
+}
+
+.tp-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.tp-settings__label-row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Background for a module whose heading is drawn elsewhere: the icon alone, at the form's end. */
+.tp-settings__aside {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.tp-settings__label {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 0.4em;
+}
+
+.tp-settings__unit {
+  color: var(--tp-color-text-muted);
+}
+
+.tp-settings__parts {
+  gap: var(--tp-space-1) var(--tp-space-2);
+}
+
+.tp-settings__part {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-1);
+  min-width: 0;
+}
+
+.tp-settings__part-label {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-settings__input,
+.tp-settings__field select {
+  width: 7rem;
+}
+
+.tp-settings__field select {
+  width: auto;
+}
+
+.tp-settings__invalid {
+  color: var(--tp-color-bad);
+  font-size: var(--tp-font-size-14);
+}
+
+.tp-settings__check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+}
+
+.tp-settings__check input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--tp-color-busy);
+}
+
+.tp-settings__note {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 var(--tp-space-2);
+  color: var(--tp-color-busy);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-settings__actions {
+  margin: var(--tp-space-2) 0;
+}
+
+.tp-save-outcome__problems {
+  margin: var(--tp-space-1) 0;
+  padding-left: var(--tp-space-4);
+}
+
+@media (max-width: 700px) {
+  .tp-settings__fields {
+    grid-template-columns: 1fr;
+  }
+  .tp-settings__part {
+    flex: 1 1 100%;
+  }
+  .tp-settings__input {
+    flex: 1;
+    width: auto;
+  }
+}

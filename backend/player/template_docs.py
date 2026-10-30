@@ -90,7 +90,7 @@ DOCS = {
         "label": "END ROUND button",
         "what": "The END ROUND (or EXIT BATTLE on low tiers) control on the in-run side menu.",
         "where": "In-run side menu.",
-        "how": "Full setup captures it when it ends its own battle.",
+        "how": "Full setup captures it when the menu of the battle it ends shows END ROUND; on EXIT BATTLE it cannot. A coin run that collects menu rewards also learns it from an open menu.",
         "art": []},
     "home/surrender.png": {
         "label": "Surrender button",
@@ -108,7 +108,7 @@ DOCS = {
         "label": "END ROUND - Yes",
         "what": "The YES button on the END ROUND confirmation.",
         "where": "END ROUND dialog.",
-        "how": "Full setup captures it when it ends its own battle.",
+        "how": "Full setup captures it when ending its own battle brings up the END ROUND confirmation - the one END ROUND opens, or the second one that can follow an EXIT BATTLE Surrender. If setup's surrender showed none there was nothing to cut. Then end a run of your own from the side menu (END ROUND, or EXIT BATTLE and Surrender) and crop Yes when the END ROUND confirmation comes up.",
         "art": []},
     "home/exit_battle_dialog.png": {
         "label": "EXIT BATTLE dialog",

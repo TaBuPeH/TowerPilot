@@ -1,0 +1,16 @@
+/* Server text (dashboard-spec 6.3.1): shown as sent, never cut or hidden.
+   Messages and details keep their line breaks; long unbroken text wraps. */
+.tp-server__label {
+  margin-inline-end: var(--tp-space-1);
+}
+
+.tp-server[data-kind='message'] bdi,
+.tp-server[data-kind='detail'] bdi {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tp-server[data-kind='name'] bdi,
+.tp-server[data-kind='id'] bdi {
+  overflow-wrap: anywhere;
+}

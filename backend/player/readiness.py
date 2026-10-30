@@ -2,7 +2,7 @@
 from pathlib import Path
 import json
 
-from player import accounts
+from player import accounts, battle_end
 
 # Recognition guards every run needs: the menu headers and dialogs a runner
 # must tell apart from the battle beneath them, and the wave font that is the
@@ -22,20 +22,28 @@ CORE = [
 # crash mid-run. They are ADVISORY for every run (listed, not blocking) and
 # BLOCKING only for the run kind that drives that screen (tournament) - a
 # coin farm must not be greyed out by a tournament nobody has opened yet.
+IN_TOURNAMENT = "tourney/in_tournament.png"     # the trophy badge in front of the Tier readout (vision/screen.IN_TOURNAMENT_TEMPLATE; a test pins the two together)
 ADVISORY = [
     "home/end_round_dialog.png", "home/intro_sprint_dialog.png",
     "home/tourney_open_dialog.png", "home/welcome_back_dialog.png",
     "home/welcome_back_resume.png", "buttons/reward_skip.png",
     "screens/hdr_tournament.png", "tourney/tournament_stats.png",
     "tourney/buy_ticket_title.png", "tourney/heat_tabs.png",
-    "tourney/ticket_claim.png", "tourney/in_tournament.png",
+    "tourney/ticket_claim.png", IN_TOURNAMENT,
 ]
 TOURNAMENT_GUARDS = {
     "home/tourney_open_dialog.png", "screens/hdr_tournament.png",
     "tourney/tournament_stats.png", "tourney/buy_ticket_title.png",
-    "tourney/heat_tabs.png", "tourney/ticket_claim.png", "tourney/in_tournament.png",
+    "tourney/heat_tabs.png", "tourney/ticket_claim.png", IN_TOURNAMENT,
 }
 ADVISORY_REASON = "Recognition guard (optional: capture when the screen appears)"
+
+# Requirements of a takeover (`requirements(..., attached=True)`): a battle a person started is already on screen, so the run enters nothing, equips nothing and
+# restarts nothing, but it must never GUESS that the battle is not a tournament (a missing badge template reads as "not a tournament", vision/screen.tournament_state).
+TAKEOVER_TOURNAMENT_REASON = "Takeover refuses to guess whether this is a tournament"
+# Flow images only the Home side uses: BATTLE (screen.identify's Home landmark and shard.start_battle) and HOME on the GAME STATS panel (orchestrator.restart_from_home).
+# buttons/retry.png is NOT here: detect.death_screen needs it to see the death a takeover has to end on, and buttons/return_to_game.png is the reward flows' way back.
+HOME_ONLY_FLOW_TEMPLATES = ("home/battle_btn.png", "home/game_stats_home.png")
 
 
 def slug(name):
@@ -55,10 +63,14 @@ def wall_bar_roi(cfg):
             or (cfg.get("rois") or {}).get("wall_bar"))
 
 
-def requirements(cfg, body):
+def requirements(cfg, body, attached=False):
     """Groups of alternatives with reasons; only enabled features contribute.
     Each row carries `blocking`: False for the advisory recognition guards a
-    run can start without (see ADVISORY)."""
+    run can start without (see ADVISORY).
+
+    `attached=True` is a takeover of a battle already on screen: the Home-side rows (equipment, perk bans, the dissonant dialog, the surrender and END ROUND
+    images, the BATTLE and GAME STATS HOME buttons) are not asked for, and the tournament badge becomes BLOCKING with its own reason. Everything else is the
+    same rows, and `attached=False` is the output this function always had."""
     import flows
     groups = {}
 
@@ -74,11 +86,17 @@ def requirements(cfg, body):
     for rel in CORE:
         need(rel, "Screen recognition and safe recovery")
     for rel in ADVISORY:
+        if attached and rel == IN_TOURNAMENT:
+            continue            # promoted below: a takeover cannot treat the badge as optional
         if kind == "tournament" and rel in TOURNAMENT_GUARDS:
             need(rel, "Tournament screens")
         else:
             need(rel, ADVISORY_REASON, blocking=False)
+    if attached:
+        need(IN_TOURNAMENT, TAKEOVER_TOURNAMENT_REASON)
     for rel in flows.flow(kind).get("templates", []):
+        if attached and rel in HOME_ONLY_FLOW_TEMPLATES:
+            continue
         need(rel, flows.flow(kind)["label"])
     gather = body.get("gather") or {}
     gather = dict(gather)
@@ -124,7 +142,9 @@ def requirements(cfg, body):
         need(f"uw/{name}.png", "Ultimate weapon settings")
         need("uw/toggle_on.png", "Ultimate weapon settings")
         need("uw/toggle_off.png", "Ultimate weapon settings")
-    # Read compiled rules, not every policy in the library.
+    # Read compiled rules, not every policy in the library. The surrender action is found by player/battle_end.py (one walk, shared with the takeover policy).
+    surrenders = battle_end.surrender_rule_paths(body.get("rules") or [])
+
     def walk(value):
         if isinstance(value, dict):
             for k, v in value.items():
@@ -151,9 +171,46 @@ def requirements(cfg, body):
         # instance) and capture.roi raises without it. Full setup detects the
         # wall bar from the battle HUD and Apply writes the region.
         need(WALL_BAR_REQUIREMENT, "Wall bar region (Full setup detects it from the battle HUD)")
-    if body.get("max_wave") or kind in ("shard", "cycle_quest", "uw_grant_quest"):
-        for rel in ("home/surrender.png", "buttons/end_round.png", "home/end_round_yes.png"):
-            need(rel, "End a run started by this flow")
+    # a `surrender_retry` rule reaches shard.abandon_run (orchestrator._rule_surrender) like max_wave
+    # A takeover refuses every preset that reaches this (player/attach_policy.compatibility), so an attached run asks for none of these images.
+    if not attached and (body.get("max_wave") or surrenders or kind in battle_end.SURRENDER_KINDS):
+        need("home/surrender.png", "End a run started by this flow")
+        # shard.abandon_run taps the menu's exit control and a confirm only
+        # where a template matched (tourney.find: None for a missing file), but
+        # taps the side-menu toggle whenever detect.side_menu_open reads False
+        # - and that read is template-based too (test_learn_flow_gaps).
+        # buttons/end_round.png: setup cuts it only when the menu of the run it
+        # ends reads END ROUND, which an account whose top tier shows EXIT
+        # BATTLE never does (2026-10-12, Tier 16); a coin run that collects
+        # menu rewards also learns it from its open menu
+        # (flow_capture.capture_missing_end_round) - shard and quest runs
+        # never do. Listed, not blocking: without it abandon_run Aborts with
+        # an END ROUND menu open, and a later abandon_run reads that menu as
+        # shut and taps the toggle, which closes it, then Aborts again.
+        # home/end_round_yes.png: setup cuts it from the END ROUND confirm on
+        # either path - opened by END ROUND, or the second confirm that can
+        # follow an EXIT BATTLE Surrender - and cannot when no such confirm
+        # comes up; nothing else writes it, so then only a person's own crop
+        # does (template_docs says so, and setup reports the skip as
+        # needs_attention). BLOCKING: without it abandon_run Aborts with the confirm
+        # still up, and a later abandon_run over that dialog matches no confirm
+        # and no open menu and taps the toggle point onto the dialog (rule 7).
+        need("buttons/end_round.png", "Exit a run whose side menu shows END ROUND (abandon_run taps only a "
+             "matched template: without it abandon_run Aborts with the menu open, and the next abandon_run "
+             "taps the toggle that closes it)", blocking=False)
+        need("home/end_round_yes.png", "Confirm END ROUND - its own dialog or the one that can follow Surrender "
+             "(without it abandon_run Aborts with the confirm up, and the next abandon_run taps the side-menu "
+             "toggle onto that dialog)")
+    if not attached:
+        _home_entry_requirements(need, cfg, body)
+    return [{"alternatives": list(paths), "reasons": sorted(row["reasons"]),
+             "blocking": row["blocking"]}
+            for paths, row in sorted(groups.items())]
+
+
+def _home_entry_requirements(need, cfg, body):
+    """The images only a start from Home needs: the dissonant dialog, the perk bans and the equipment (loadout) a runner applies before BATTLE. A takeover
+    starts nothing and equips nothing (`requirements(..., attached=True)`), so it skips them. Rows are the ones `requirements` always listed."""
     if body.get("dissonant_tab"):
         # The dialog images are what the RUNNER needs to enter a dissonant
         # run by itself (a Start from Home, the restart after a death). A run
@@ -194,9 +251,6 @@ def requirements(cfg, body):
             for rel in ("modules/buy_module.png", "modules/v29_dialog_close.png", "modules/v29_equip_btn.png",
                         "modules/transfer_yes.png"):
                 need(rel, "Equip modules")
-    return [{"alternatives": list(paths), "reasons": sorted(row["reasons"]),
-             "blocking": row["blocking"]}
-            for paths, row in sorted(groups.items())]
 
 
 def _docs(alternatives):
@@ -215,10 +269,11 @@ def _docs(alternatives):
     return out
 
 
-def check(root, cfg, body):
+def check(root, cfg, body, *, attached=False):
     """`ready` when every BLOCKING row has a valid, non-stale image. `missing`
     lists the blocking gaps (what greys a run out); `advisory` the optional
-    recognition guards still to capture (shown, never blocking)."""
+    recognition guards still to capture (shown, never blocking).
+    `attached=True` asks for the rows of a takeover (`requirements`)."""
     import cv2
     if (accounts.calibration_dir(root, cfg) / "module_restore.json").exists():
         blocked = {"alternatives": [], "reasons": ["Restore the original modules: return to Home and resume calibration"],
@@ -235,7 +290,8 @@ def check(root, cfg, body):
     from player import learned
     learned_rows = learned.known({"state": str(accounts.calibration_dir(root, cfg) / "calibrate_state.json")})
     rows = []
-    for row in requirements(cfg, body):
+    # the unattached call keeps its two-argument shape: callers and tests replace `requirements` with a function of that shape
+    for row in (requirements(cfg, body, attached=True) if attached else requirements(cfg, body)):
         good = []
         for rel in row["alternatives"]:
             if rel == WALL_BAR_REQUIREMENT:
@@ -266,11 +322,41 @@ def check(root, cfg, body):
     if missing and all(r['alternatives'] == ['floaters/second_wind.png'] for r in missing):
         result.update(next_action='edit_run', action_label='Choose rescue timing',
                       message='This run waits for Second Wind. Choose rescue timing that does not wait for it, or capture its indicator during normal play. Another setup scan will not help.')
+    elif missing and all(r['alternatives'] == ['home/end_round_yes.png'] for r in missing):
+        # the Yes row's own card says how: setup cuts it only from a confirm it saw
+        result.update(next_action='crop_image', action_label='Crop the END ROUND Yes button',
+                      message=missing[0]['docs'][0]['how'])
     return result
 
 
-def require(root, cfg, body):
-    result = check(root, cfg, body)
+def check_plan(root, cfg, presets, week):
+    """Combo's readiness: `check()` of every compiled preset the compiled day
+    plan `week` ({weekday: [block, ...]}, playerprofile.compile_plan) names on
+    ANY weekday - combo hands off to each of them. `ready` only when all are.
+    A missing / advisory row is merged across runs by its alternatives; its
+    `runs` lists "<preset> (<block names>)" and each reason is prefixed with
+    that run, so the block that holds Combo back is named."""
+    blocks = {}
+    for day in week.values():
+        for b in day:
+            blocks.setdefault(b["preset"], set()).add(b.get("block") or b["id"])
+    merged = {}
+    for preset in sorted(blocks):
+        run = f"{preset} ({', '.join(sorted(blocks[preset]))})"
+        result = check(root, cfg, presets[preset])
+        for key in ("missing", "advisory"):
+            for row in result[key]:
+                out = merged.setdefault((key, tuple(row["alternatives"])), dict(row, reasons=[], runs=[]))
+                out["reasons"] += [f"{run}: {why}" for why in row["reasons"]]
+                out["runs"].append(run)
+    missing = [row for (key, _), row in merged.items() if key == "missing"]
+    return {"ready": not missing, "missing": missing,
+            "advisory": [row for (key, _), row in merged.items() if key == "advisory"],
+            "calibration_url": "/ui/index.html#calibrate"}
+
+
+def require(root, cfg, body, *, attached=False):
+    result = check(root, cfg, body, attached=True) if attached else check(root, cfg, body)
     if not result["ready"]:
         names = [" or ".join(r["alternatives"]) or "; ".join(r["reasons"]) for r in result["missing"]]
         raise RuntimeError("Calibration needed before this run: " + ", ".join(names)

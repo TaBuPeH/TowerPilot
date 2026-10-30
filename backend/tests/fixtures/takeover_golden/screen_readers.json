@@ -1,0 +1,85 @@
+{
+ "about": "vision.screen.in_tournament and identify over synthetic frames (T3-0)",
+ "rebased_on": {
+  "head": "38e15ec9f088da4cea78e3aeb47186c05c72ff3c",
+  "note": "scenarios unchanged; re-verified on this HEAD after the backend/dashboard.py move and the test reorganization",
+  "sources": {
+   "backend/vision/detect.py": "6387694CF094E0D886229426E5B9A0CE6BA356C476AEDB17347E0509295DAE25",
+   "backend/vision/screen.py": "FEDBEE47C256B8669E6B38903E81FF4876ACF7809ADBE268EF9F690F2A5F7673"
+  }
+ },
+ "recorded_on": {
+  "backend/vision/detect.py": "6387694CF094E0D886229426E5B9A0CE6BA356C476AEDB17347E0509295DAE25",
+  "backend/vision/screen.py": "FEDBEE47C256B8669E6B38903E81FF4876ACF7809ADBE268EF9F690F2A5F7673"
+ },
+ "scenarios": {
+  "identify_a_battle": {
+   "readable_wave": {
+    "evidence": {"buy_ticket": 0.0, "end_round": 0.0, "exit_battle": 0.0, "game_stats": 0.0, "hdr_battle": 0.0, "hdr_cards": 0.0, "hdr_guild": 0.0, "hdr_modules": 0.0, "hdr_tournament": 0.0, "intro_sprint_end": 0.0, "reward_listing": 0.0, "ticket_reward": 0.0, "tournament_heat": 0.0, "tournament_stats": 0.0, "tourney_open": 0.0, "wave": 4321, "welcome_back": 0.0},
+    "in_battle": true,
+    "name": "battle",
+    "score": 1.0,
+    "wave": 4321
+   },
+   "readable_wave_with_the_badge": {
+    "evidence": {"buy_ticket": 0.0, "end_round": 0.0, "exit_battle": 0.0, "game_stats": 0.0, "hdr_battle": 0.0, "hdr_cards": 0.0, "hdr_guild": 0.0, "hdr_modules": 0.0, "hdr_tournament": 0.0, "intro_sprint_end": 0.0, "reward_listing": 0.0, "ticket_reward": 0.0, "tournament_heat": 0.0, "tournament_stats": 0.0, "tourney_open": 0.0, "wave": 4321, "welcome_back": 0.0},
+    "in_battle": true,
+    "name": "battle",
+    "score": 1.0,
+    "wave": 4321
+   },
+   "unreadable_wave": {
+    "evidence": {"buy_ticket": 0.0, "end_round": 0.0, "exit_battle": 0.0, "game_stats": 0.0, "hdr_battle": 0.0, "hdr_cards": 0.0, "hdr_guild": 0.0, "hdr_modules": 0.0, "hdr_tournament": 0.0, "intro_sprint_end": 0.0, "reward_listing": 0.0, "ticket_reward": 0.0, "tournament_heat": 0.0, "tournament_stats": 0.0, "tourney_open": 0.0, "wave": null, "welcome_back": 0.0},
+    "in_battle": false,
+    "name": "unknown",
+    "score": 0.0,
+    "wave": null
+   }
+  },
+  "in_tournament_readers": {
+   "band": [
+    1590,
+    1740,
+    450,
+    750
+   ],
+   "missing": {
+    "center": [0, 0],
+    "in_tournament": false,
+    "score_below_threshold": true,
+    "score_is_one": false,
+    "score_zero": true
+   },
+   "present_and_matching": {
+    "center": [545, 1650],
+    "in_tournament": true,
+    "score_below_threshold": false,
+    "score_is_one": true,
+    "score_zero": false
+   },
+   "present_and_not_matching": {
+    "center": "not recorded: the best position of a poor match",
+    "in_tournament": false,
+    "score_below_threshold": true,
+    "score_is_one": false,
+    "score_zero": false
+   },
+   "present_matching_elsewhere_in_the_frame": {
+    "center": "not recorded: the best position of a poor match",
+    "in_tournament": false,
+    "score_below_threshold": true,
+    "score_is_one": false,
+    "score_zero": false
+   },
+   "threshold": 0.9,
+   "unreadable": {
+    "center": [0, 0],
+    "in_tournament": false,
+    "score_below_threshold": true,
+    "score_is_one": false,
+    "score_zero": true
+   }
+  }
+ },
+ "version": 1
+}

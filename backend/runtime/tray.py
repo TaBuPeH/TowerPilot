@@ -129,14 +129,15 @@ class Instance:
         needs no pid file to go stale."""
         out = []
         mine = self.proc.pid if self.proc is not None else None
-        for p in psutil.process_iter(["pid", "name", "cmdline"]):
-            cmd = [str(c) for c in (p.info.get("cmdline") or [])]
-            if len(cmd) < 4 or p.info["pid"] == mine:
+        from runtime.runners import process_rows
+        for p, info in process_rows(["pid", "name", "cmdline"]):
+            cmd = [str(c) for c in (info.get("cmdline") or [])]
+            if len(cmd) < 4 or info["pid"] == mine:
                 continue
             # STRICT token matching, never substring-on-the-whole-line: a
             # shell or editor whose command line merely mentions
             # "orchestrator.py --instance main" must never be terminated by us.
-            if not (p.info.get("name") or "").lower().startswith("python"):
+            if not (info.get("name") or "").lower().startswith("python"):
                 continue
             if Path(cmd[1]).name not in known_runners():
                 continue
@@ -148,20 +149,19 @@ class Instance:
         return out
 
     def kill_orphans(self) -> int:
+        """Stop every orchestrator found for this instance that this tray does not own. Each is stopped
+        through a kernel handle verified against the creation time the scan saw (runtime.process_handle),
+        so a pid that passed to another process since the scan is never signalled."""
+        from runtime import process_handle
         found = self.orphans()
         for p in found:
             try:
-                for kid in p.children(recursive=True):
-                    kid.terminate()
-                p.terminate()
-                p.wait(timeout=5)
-            except psutil.TimeoutExpired:
-                try:
-                    p.kill()
-                except psutil.Error:
-                    pass
+                created = p.create_time()
             except psutil.Error:
-                pass
+                continue   # gone since the scan
+            stop = process_handle.terminate_tree(p.pid, created, timeout=5.0)
+            if not stop.confirmed:
+                log(f"orphan {p.pid} of {self.key} not stopped ({stop.state}): {stop.errors}")
         return len(found)
 
     def start(self, preset: str):
@@ -195,21 +195,13 @@ class Instance:
                 time.sleep(1.0)
                 if not self._collecting_runlog() or not self.running:
                     break
-        try:
-            parent = psutil.Process(self.proc.pid)
-            kids = parent.children(recursive=True)
-            for p in kids:
-                try:
-                    p.terminate()
-                except psutil.Error:
-                    pass
-            parent.terminate()
-            try:
-                parent.wait(timeout=5)
-            except psutil.TimeoutExpired:
-                parent.kill()
-        except psutil.Error:
-            pass
+        from runtime import process_handle
+        # self.proc is the Popen this tray spawned and still holds, so its pid cannot be reissued while it
+        # is open: the process that has it is the orchestrator. It and its children go through kernel
+        # handles (runtime.process_handle); nothing is signalled by a bare pid.
+        stop = process_handle.terminate_owned(self.proc.pid, timeout=5.0)
+        if not stop.confirmed:
+            log(f"stop {self.key}: orchestrator {self.proc.pid} not confirmed stopped ({stop.state}): {stop.errors}")
         log(f"stop {self.key} (was preset={self.preset})")
         self.proc, self.preset = None, None
 

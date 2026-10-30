@@ -194,10 +194,29 @@ def identify(frame) -> Screen:
     return Screen("unknown", best_s, evidence=ev)
 
 
+# The trophy badge in front of the Tier readout: one template, one band, one threshold (OVERLAY_THRESH) for `in_tournament` and `tournament_state`.
+IN_TOURNAMENT_TEMPLATE = "tourney/in_tournament.png"
+IN_TOURNAMENT_REGION = ((1590, 1740), (450, 750))
+
+
 def in_tournament(frame) -> bool:
     """Trophy badge in front of the Tier readout - only a tournament run."""
-    s, _ = _match(frame, "tourney/in_tournament.png", ((1590, 1740), (450, 750)))
+    s, _ = _match(frame, IN_TOURNAMENT_TEMPLATE, IN_TOURNAMENT_REGION)
     return s >= OVERLAY_THRESH
+
+
+def tournament_state(frame) -> str:
+    """Whether the trophy badge is on screen, as evidence: "yes", "no" or "unknown".
+
+    `in_tournament` cannot answer "no" with evidence: `_match` scores a missing template 0, so a player who never captured the badge reads "not a tournament" on
+    a tournament screen. "unknown" is exactly that case - the template is missing or cannot be read (`detect.TemplateMissing`, which `detect._tpl` raises for a
+    file that is absent and for one that does not decode) - and "no" is returned only when the template loads and scores below the same threshold.
+    Takeover (`player/attach_policy.py`) refuses to act on "unknown"."""
+    try:
+        detect._tpl(IN_TOURNAMENT_TEMPLATE)
+    except detect.TemplateMissing:
+        return "unknown"
+    return "yes" if in_tournament(frame) else "no"
 
 
 def require(frame, *names: str) -> Screen:

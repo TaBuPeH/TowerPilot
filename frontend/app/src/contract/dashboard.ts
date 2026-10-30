@@ -1,0 +1,52 @@
+/**
+ * The Dashboard contract (spec 10.3, OD-2): strict schemas generated from
+ * backend/tests/fixtures/dashboard_contract_v1.json, one per fixture family,
+ * each the answer `{status, body}` of its route at raw response path `answer`
+ * (nested schemas are named by raw response paths, e.g.
+ * answer.body.battle.commands). Strict level only: the runtime `wire` level of
+ * spec 7.1 belongs to the api poller (plan task R8).
+ */
+export {
+  accountsAnswerSchema,
+  battleActionsAnswerSchema,
+  battleDetailAnswerSchema,
+  battlesActiveAnswerSchema,
+  battlesHistoryAnswerSchema,
+  calibrateStatusAnswerSchema,
+  configAnswerSchema,
+  controlAnswerSchema,
+  controlUnknownOutcomeAnswerSchema,
+  diagnosticsClientAnswerSchema,
+  handoffAnswerSchema,
+  readinessAnswerSchema,
+  reconnectAnswerSchema,
+  runControlsAnswerSchema,
+  runsAnswerSchema,
+  scheduleStatusAnswerSchema,
+  statusAnswerSchema,
+  wizardEmulatorsAnswerSchema,
+  wizardStateAnswerSchema,
+  wizardToolsAnswerSchema,
+  writeUnknownOutcomeAnswerSchema,
+  type AccountsAnswer,
+  type BattleActionsAnswer,
+  type BattleDetailAnswer,
+  type BattlesActiveAnswer,
+  type BattlesHistoryAnswer,
+  type CalibrateStatusAnswer,
+  type ConfigAnswer,
+  type ControlAnswer,
+  type ControlUnknownOutcomeAnswer,
+  type DiagnosticsClientAnswer,
+  type HandoffAnswer,
+  type ReadinessAnswer,
+  type ReconnectAnswer,
+  type RunControlsAnswer,
+  type RunsAnswer,
+  type ScheduleStatusAnswer,
+  type StatusAnswer,
+  type WizardEmulatorsAnswer,
+  type WizardStateAnswer,
+  type WizardToolsAnswer,
+  type WriteUnknownOutcomeAnswer,
+} from './generated/dashboard_contract_v1.a1adee85.ts';

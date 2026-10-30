@@ -1,0 +1,135 @@
+.tp-region[data-region='needsYou'] {
+  container-type: inline-size;
+}
+
+/*
+ * The issues share one grid: headline, action column, Details. Every item's
+ * actions sit in the same column at the column's width, so they line up.
+ */
+.tp-needs {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  column-gap: var(--tp-space-3);
+}
+
+.tp-needs[hidden] {
+  display: none;
+}
+
+.tp-need__count {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.4rem;
+  justify-content: center;
+  padding: 0 0.4rem;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-color-surface-active);
+  color: var(--tp-color-text-strong);
+  font-size: var(--tp-font-size-12);
+  font-weight: 700;
+}
+
+.tp-need {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  row-gap: var(--tp-space-1);
+  min-width: 0;
+  padding-block: var(--tp-space-1);
+}
+.tp-need + .tp-need {
+  border-block-start: 1px solid var(--tp-color-border);
+}
+
+.tp-need__line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+
+/* The resolving actions: stacked, each as wide as the column. */
+.tp-need__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--tp-space-1);
+}
+.tp-need__actions:empty {
+  display: none;
+}
+.tp-need__actions > .tp-button {
+  justify-content: center;
+}
+
+/* The step that resolves the issue: shaped like a secondary button, still a link (it opens a page). */
+.tp-need__actions > a.tp-need__fix {
+  text-decoration: none;
+}
+.tp-need__actions > a.tp-need__fix:hover {
+  border-color: var(--tp-color-text-nav);
+}
+
+/* Details sits in the last column; open, it takes the item's full width below the headline. */
+.tp-need > .tp-disclosure {
+  grid-column: 3;
+}
+.tp-need > .tp-disclosure[open] {
+  grid-column: 1 / -1;
+}
+.tp-need .tp-disclosure__body p,
+.tp-need .tp-disclosure__body ul {
+  margin: 0 0 var(--tp-space-1);
+}
+
+/* The guards' impact, said once above the issues. */
+.tp-need__impact {
+  margin-block-end: var(--tp-space-1);
+}
+.tp-need > .tp-need__impact {
+  grid-column: 1 / -1;
+}
+
+/* Narrow: the headline on its own line, actions and Details under it. */
+@container (max-width: 560px) {
+  .tp-needs {
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+  .tp-need__line {
+    grid-column: 1 / -1;
+  }
+  .tp-need__actions {
+    grid-column: 1;
+    align-items: flex-start;
+  }
+  .tp-need > .tp-disclosure {
+    grid-column: 2;
+  }
+}
+
+.tp-need__empty {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-3);
+  margin: 0;
+  color: var(--tp-color-text-muted);
+}
+.tp-need__empty p {
+  margin: 0;
+}
+.tp-need__empty > details[open],
+.tp-need__unavailable {
+  flex-basis: 100%;
+}
+.tp-need__unavailable {
+  margin: 0;
+}
+.tp-need__unavailable:empty {
+  display: none;
+}

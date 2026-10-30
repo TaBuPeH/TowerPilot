@@ -80,10 +80,49 @@ def _state_load(p) -> dict:
 
 def _state_save(p, st) -> None:
     from runtime.files import atomic_json
+    from runtime.operations import publish_progress
+    publish_progress(st)
     atomic_json(p["state"], st)
 
 
+def _record_activity(p, st, phase, message) -> None:
+    """Save the latest basic-scan observation without changing phase outcome."""
+    now = time.time()
+    st['activity'] = {'kind': 'calibrate_progress', 'phase': phase, 'message': message,
+                      't': now, 'operation_id': os.environ.get('TOWER_OPERATION_ID')}
+    st['phases'][phase].update(message=message, updated_at=now)
+    _state_save(p, st)
+
+
+def record_final_screen(p, st, name: str, *, verified: bool, error=None) -> dict:
+    """Persist and read back the final observation for this exact operation."""
+    from runtime import logger
+    from runtime.operations import environment_operation
+    _, operation_id = environment_operation()
+    result = dict(name=name, verified=bool(verified), observed_at=time.time(),
+                  operation_id=operation_id)
+    if error is not None:
+        result['error'] = str(error)
+    st['final_screen'] = result
+    _state_save(p, st)
+    with open(p['state'], encoding='utf-8') as stream:
+        if json.load(stream).get('final_screen') != result:
+            raise RuntimeError('Final screen observation could not be read back')
+    logger.event('setup_final_screen', **result)
+    return result
+
+
 def _stop_requested(p) -> bool:
+    from runtime.operations import environment_operation
+    ledger, operation_id = environment_operation()
+    if ledger:
+        if ledger.get(operation_id)['status'] == 'cancelling':
+            return True
+        try:
+            with open(p['stop'], encoding='utf-8') as marker:
+                return marker.read().strip() == operation_id
+        except FileNotFoundError:
+            return False
     return os.path.exists(p["stop"])
 
 
@@ -144,14 +183,16 @@ def write_template(rel: str, crop, overwrite: bool = False, *, bootstrap: bool =
     return "written"
 
 
-def record_manual_cut(p: dict, rel: str, crop, frame, rect, *, source="dashboard_cropper", screen=None) -> dict:
+def record_manual_cut(p: dict, rel: str, crop, frame, rect, *, source="dashboard_cropper", screen=None, template=None) -> dict:
     """The dashboard cropper's provenance: WHERE a hand-cut template came
     from (native rect, frame size, self/next-best scores) as a report entry
     and a `calibrate_cut` event, like every cut setup makes - so a later
     look can tell what was cropped and from which screen (the person's own
     four crops of 2026-09-08 left no trace anywhere). Verification uses the
     same bar as setup; the file was already written by the cropper, this
-    never writes or removes an image."""
+    never writes or removes an image. `template` is the file the caller wrote:
+    a long-running dashboard must not look it up through the settings singleton,
+    which still names the account it was imported under."""
     import hashlib
     from runtime import logger
     st = _state_load(p)
@@ -171,7 +212,7 @@ def record_manual_cut(p: dict, rel: str, crop, frame, rect, *, source="dashboard
         from player import learned
         learned.record(p, rel, rect, screen, source, frame_size=(int(frame.shape[1]), int(frame.shape[0])))
     try:
-        entry["image_sha256"] = hashlib.sha256(template_path(rel).read_bytes()).hexdigest()
+        entry["image_sha256"] = hashlib.sha256((_Path(template) if template else template_path(rel)).read_bytes()).hexdigest()
     except OSError:
         pass
     st["entries"] = entries + [entry]
@@ -242,6 +283,12 @@ def parse_rarity(text: str | None) -> str | None:
     return None
 
 
+def _below_epic(rarity: str | None) -> bool:
+    """Does a rarity read ('rare', 'rare+', 'common') rank below Epic in RARITIES?
+    False for None and for Epic and above."""
+    return bool(rarity) and rarity.rstrip("+") in RARITIES[RARITIES.index("epic") + 1:]
+
+
 # ----------------------------------------------------------- the harvest
 def match_module_crop(crop, old):
     """Compare the same tile at native scale, allowing small grid offsets.
@@ -269,9 +316,10 @@ def match_module_crop(crop, old):
 
 
 class Calibration:
-    def __init__(self, p, overwrite: bool, *, bootstrap: bool = False):
+    def __init__(self, p, overwrite: bool, *, bootstrap: bool = False, progress=None):
         self.p, self.overwrite = p, overwrite
         self.bootstrap = bootstrap
+        self._progress = progress
         self.entries: list[dict] = []
         self.player: dict = {}
 
@@ -337,10 +385,17 @@ class Calibration:
             self.save_report()
         return entry
 
+    def progress(self, phase, message) -> None:
+        from runtime import logger
+        logger.event('calibrate_' + phase + '_progress', message=message)
+        if self._progress is not None:
+            self._progress(phase, message)
+
     def save_report(self) -> None:
         from player.calibration_report import describe_report
         from runtime.files import atomic_json
         atomic_json(self.p["report"], describe_report({"entries": self.entries, "player": self.player,
+                    "operation_id": os.environ.get('TOWER_OPERATION_ID'),
                     "written_at": datetime.datetime.now().isoformat(timespec="seconds")}))
 
 
@@ -378,8 +433,11 @@ def harvest_row(cal: Calibration, frame, band, prefix: str, phase: str,
         if s in seen_names:
             raise RuntimeError(f"Preset labels collide after normalization: {name!r}. Give them distinct names in the game and retry.")
         seen_names.add(s)
+        # Pills in one row are look-alike siblings (default "Preset 1".."Preset 5"
+        # differ by one digit): identity is the row position plus the OCR name,
+        # so they are cut with the sibling allowance, not global uniqueness.
         entry = cal.cut(phase, f"{prefix}{s}.png", crop, frame, name,
-                        {"state": p["state"], "ocr": text, "rect": list(trect)})
+                        {"state": p["state"], "ocr": text, "rect": list(trect)}, unique=False)
         if entry["verified"]:
             out.append((name, s, p["state"]))
         else:
@@ -440,25 +498,105 @@ def _inspect(cx: int, cy: int, icon=None):
     return name, rarity
 
 
+COPY_MATCH = 0.95       # match_module_crop score from which two tile crops are one module (cut() verifies at 0.95 too)
+BORDER_HUE_TOL = 10     # circular hue gap (OpenCV 0-179) within which two tile frames are one rarity colour
+PLUS_MARKER_SIDE = (8, 14)  # bounding-box side, px, of one pale marker on a '+' frame (measured 8-13)
+PLUS_MARKER_MIN_PX = 40     # its area, px (measured 58-75; pale pink art on plain tiles: thin lines, specks, big blobs)
+PLUS_MARKERS = 3            # markers from which a tile reads as the '+' variant (measured 3 or 4 on every '+' tile, 0 on plain)
+
+
+def _ring_hue(frame, cx, cy):
+    """Median hue of the lit pixels of the diamond ring around the tile centred
+    at (cx, cy) - the ring shatter.tile_is_blue samples, where the frame glow
+    carries the rarity colour - or None when the ring leaves the frame or fewer
+    than shatter.BLUE_MIN_PX of its pixels are lit (no colour to trust)."""
+    import numpy as np
+    from interactions.shatter import BLUE_MIN_PX, RING_INNER, RING_OUTER
+    if cy - RING_OUTER < 0 or cx - RING_OUTER < 0 or cy + RING_OUTER > frame.shape[0] or cx + RING_OUTER > frame.shape[1]:
+        return None
+    hsv = cv2.cvtColor(frame[cy - RING_OUTER:cy + RING_OUTER, cx - RING_OUTER:cx + RING_OUTER], cv2.COLOR_BGR2HSV)
+    yy, xx = np.mgrid[-RING_OUTER:RING_OUTER, -RING_OUTER:RING_OUTER]
+    d = np.abs(yy) + np.abs(xx)
+    lit = (d > RING_INNER) & (d < RING_OUTER) & (hsv[..., 1] > 60) & (hsv[..., 2] > 90)
+    return float(np.median(hsv[..., 0][lit])) if int(lit.sum()) >= BLUE_MIN_PX else None
+
+
+def _same_border(a, b) -> bool:
+    """Are two ring hues one rarity colour? Hue wraps at 180; an unreadable
+    ring (None) is never the same as anything."""
+    if a is None or b is None:
+        return False
+    gap = abs(a - b)
+    return min(gap, 180 - gap) <= BORDER_HUE_TOL
+
+
+def _tile_plus(frame, cx, cy):
+    """Does the tile centred at (cx, cy) carry the '+' of its rarity? A '+'
+    variant (Epic+, Legendary+, ...) shows 3 or 4 small pale-pink markers on
+    its frame, in the same ring colour as the plain one: at the four tips of a
+    diamond frame (partly outside the 150 px crop), inside the crop on the
+    circular and triangular frames. Counts the compact pale-pink blobs (hue 150-179 or
+    0-8, saturation 25-80, value >= 200, PLUS_MARKER_SIDE box, PLUS_MARKER_MIN_PX
+    area) in the shatter.RING_OUTER box: True from PLUS_MARKERS of them, False
+    for none, None for one or two (neither a plain nor a '+' frame: nothing to
+    trust) or when the box leaves the frame."""
+    import numpy as np
+    from interactions.shatter import RING_OUTER
+    if cy - RING_OUTER < 0 or cx - RING_OUTER < 0 or cy + RING_OUTER > frame.shape[0] or cx + RING_OUTER > frame.shape[1]:
+        return None
+    hsv = cv2.cvtColor(frame[cy - RING_OUTER:cy + RING_OUTER, cx - RING_OUTER:cx + RING_OUTER], cv2.COLOR_BGR2HSV)
+    h, s, v = hsv[..., 0], hsv[..., 1], hsv[..., 2]
+    pale = (((h >= 150) | (h <= 8)) & (s >= 25) & (s <= 80) & (v >= 200)).astype(np.uint8)
+    n, _, stats, _ = cv2.connectedComponentsWithStats(pale, connectivity=8)
+    lo, hi = PLUS_MARKER_SIDE
+    markers = sum(1 for i in range(1, n) if stats[i, cv2.CC_STAT_AREA] >= PLUS_MARKER_MIN_PX
+                  and lo <= stats[i, cv2.CC_STAT_WIDTH] <= hi and lo <= stats[i, cv2.CC_STAT_HEIGHT] <= hi)
+    return True if markers >= PLUS_MARKERS else False if markers == 0 else None
+
+
 def _walk_grid(cal: Calibration, progress=lambda message: None):
-    """Every inventory tile: tap, read, cut `modules/<slug>.png` for the
-    first copy of each module. inventory.sweep's paging, with the tile rows
-    read off each frame (the lattice shifts when "New" badges show)."""
+    """Walk the whole inventory and return (slugs, copies), the modules at
+    Epic and above. Cuts missing `modules/<slug>.png` from the first tile
+    opened for each slug; an existing image is checked against identified
+    copies until its appearance is found. Records a `copies` row for each tile opened and read at Epic
+    or above (a name it cannot read raises at the end) or recognised as another
+    copy of one.
+    inventory.sweep's paging, with the tile rows read off each
+    frame (the lattice shifts when "New" badges show).
+    A tile framed in rare-blue (shatter.tile_is_blue, read off the grid frame)
+    is only counted: it is never tapped, identified, recorded or cut. Any tile
+    that is not positively rare-blue is opened, unless it is another copy of a
+    module already read: the same plus state as that module's rarity (_tile_plus:
+    Epic and Epic+ share the ring colour, so neither it nor, where the markers
+    lie outside the crop, the crop score tells them apart) AND either a near-identical crop
+    (inventory._same_icon, mean absdiff < 6) or match_module_crop (shift
+    tolerant) at COPY_MATCH with the same ring colour as the rarity that module
+    was read at. A near miss, an unreadable plus state or a ring with no
+    readable colour opens the tile. An opened tile whose panel reads below Epic
+    (Rare, Rare+ or Common: a frame tile_is_blue missed) is counted like the blue
+    ones: the tap is spent and nothing is recorded or cut. It is not remembered,
+    so each tile like it is opened again (a misread Epic tile then costs only
+    itself). The count is kept in
+    cal.player["modules_below_epic"]. The pages after the first use the settled
+    frame next_page() ended on (inventory.take_page_frame); when the glide had
+    not ended there is none, and the walk settles that page itself."""
     from device import capture
     from interactions import inventory
+    from interactions.shatter import tile_is_blue
     from runtime import logger
     if not inventory._close_panel():
         raise RuntimeError("a modal is open and will not close - not walking the grid")
     inventory.park_top()
-    seen: list[tuple] = []                      # (icon, slug or None, rarity)
+    seen: list[tuple] = []                      # (icon, slug or None, rarity); slug None: an unreadable name
     # Resume verified inventory identities from this account's report. Require
     # the exact saved file and its rarity; visually different copies still open.
+    # A Rare or Common entry (from a report written before they were skipped) is not resumed.
     import hashlib
     for entry in cal.entries:
         rel = entry.get('rel','')
         if (entry.get('phase') != 'modules' or not entry.get('verified') or
             not rel.startswith('modules/') or '/' in rel[len('modules/'):] or
-            not entry.get('image_sha256') or not entry.get('rarity')):
+            not entry.get('image_sha256') or not entry.get('rarity') or _below_epic(entry['rarity'])):
             continue
         path = template_path(rel)
         if path.exists() and hashlib.sha256(path.read_bytes()).hexdigest() == entry['image_sha256']:
@@ -467,13 +605,22 @@ def _walk_grid(cal: Calibration, progress=lambda message: None):
                 seen.append((image,rel[len('modules/'):-4],entry['rarity']))
     placed: list[tuple[int, int]] = []          # (absolute y, col) of tiles already counted
     slugs, copies = [], []
+    verified_slugs = set()
     offset = 0                                  # measured scroll so far, px
     unreadable = 0
+    below_epic = opened = opened_below_epic = 0     # tiles counted below Epic / tiles tapped / of those tapped, read below Epic
+    # Ring hue of the first tile opened at each rarity this run (Epic and above).
+    # A saved crop (a resumed entry) holds no frame
+    # colour, so its colour is that of the rarity it was saved at; until a tile of
+    # that rarity with a readable ring has been opened, a shifted copy of it
+    # matches nothing and is opened.
+    hue_of: dict[str, float] = {}
+    held = None                                 # the settled frame next_page() ended on (None: its glide had not ended, so settle)
     for page in range(inventory.MAX_PAGES):
         if _stop_requested(cal.p):
             raise Stopped(f"modules grid page {page}")
         progress(f"Modules: reading inventory page {page+1}")
-        grid = inventory.settle()
+        grid = held if held is not None else inventory.settle()
         _evidence(cal.p, grid, f"modules_grid_{page}")
         rows = pills.grid_rows(grid)          # whole rows only; none = nothing to read
         tiles = [(r, cy, c, cx, inventory._tile_icon(grid, cx, cy))
@@ -488,30 +635,64 @@ def _walk_grid(cal: Calibration, progress=lambda message: None):
             if any(abs(ay - py) < 80 and c == pc for py, pc in placed):
                 continue                        # the overlap rows: counted on the page before
             placed.append((ay, c))
-            known = next(((s, rar) for ic, s, rar in seen if inventory._same_icon(icon, ic)), None)
+            if tile_is_blue(grid, cx, cy):
+                below_epic += 1                 # rare-blue frame: counted, never tapped or cut
+                continue
+            hue = _ring_hue(grid, cx, cy)
+            plus = _tile_plus(grid, cx, cy)
+            known = next(((s, rar) for ic, s, rar in seen
+                          if ic.shape == icon.shape and plus == bool(rar and rar.endswith("+"))
+                          and (inventory._same_icon(icon, ic)
+                               or (_same_border(hue, hue_of.get(rar)) and match_module_crop(icon, ic)[0] >= COPY_MATCH))), None)
             if known is not None:
-                # the same tile again = another copy of a module already read
-                # (same icon, same rarity frame) - counted without a tap
+                # another copy of a module already read, in the same plus state
+                # (an unreadable one, None, equals neither state):
+                # a near-identical crop (_same_icon tolerates mean absdiff < 6),
+                # or the same art, shift tolerant, in the same rarity colour -
+                # counted without a tap
                 if known[0]:
                     if known[0] not in slugs:
                         slugs.append(known[0])
                     copies.append({"slug": known[0], "rarity": known[1], "page": page,
                                    "row": r, "col": c})
+                    if known[0] not in verified_slugs:
+                        entry = cal.cut("modules", f"modules/{known[0]}.png", icon, grid, known[0],
+                                        {"rarity": known[1], "page": page, "row": r, "col": c})
+                        page_cuts.append(entry)
+                        if entry.get("verified"):
+                            verified_slugs.add(known[0])
                 continue
             progress(f"Modules: identifying tile {len(placed)} on page {page+1}")
             name, rarity = _inspect(cx, cy, icon)
+            new += 1
+            if _below_epic(rarity):
+                # a tile_is_blue miss (it fails safe by tapping) whose panel reads below Epic is
+                # counted with the blue ones, nothing recorded, nothing cut. It is not put on
+                # `seen`: one misread of an Epic tile's rarity must cost that tile only, never
+                # its copies, so each copy of it is opened and read for itself
+                below_epic += 1
+                opened_below_epic += 1
+                continue
             s = module_slug(name)
             seen.append((icon, s, rarity))
-            new += 1
+            if rarity and hue is not None:
+                hue_of.setdefault(rarity, hue)  # what this rarity's frame looks like on this screen
             if s is None:
                 logger.event("calibrate_module_unknown", where="grid", page=page,
                              row=r, col=c, ocr=name)
                 unreadable += 1
                 continue
             copies.append({"slug": s, "rarity": rarity, "page": page, "row": r, "col": c})
+            # One identity may have several rarity appearances. Keep checking
+            # its identified copies until the saved image matches one; a
+            # later different-rarity copy cannot invalidate that fresh proof.
+            if s not in verified_slugs:
+                entry = cal.cut("modules", f"modules/{s}.png", icon, grid, name,
+                                {"rarity": rarity, "page": page, "row": r, "col": c})
+                page_cuts.append(entry)
+                if entry.get("verified"):
+                    verified_slugs.add(s)
             if s not in slugs:
-                page_cuts.append(cal.cut("modules", f"modules/{s}.png", icon, grid, name,
-                                         {"rarity": rarity, "page": page, "row": r, "col": c}))
                 slugs.append(s)
         for entry in page_cuts:
             # copies of the cut module on the same page: its next-best score
@@ -520,7 +701,10 @@ def _walk_grid(cal: Calibration, progress=lambda message: None):
                        if cp["page"] == page and cp["slug"] == entry["rel"][8:-4])
             if same > 1:
                 entry["copies_on_page"] = same
+        opened += new
+        progress(f"Modules: counted {below_epic} below Epic ({below_epic - opened_below_epic} not opened)")
         moved = inventory.next_page()
+        held = inventory.take_page_frame()
         logger.event("calibrate_grid_page", page=page, new=new, total=len(copies),
                      tiles=len(placed), moved=moved, offset=offset)
         if moved is None:
@@ -530,8 +714,10 @@ def _walk_grid(cal: Calibration, progress=lambda message: None):
         offset += moved
     else:
         raise RuntimeError("Inventory walk reached its page limit before proving the end. Previous inventory is kept.")
+    logger.event("calibrate_modules_below_epic", count=below_epic, opened=opened, opened_below_epic=opened_below_epic)
     if unreadable:
         raise RuntimeError(f"{unreadable} module tiles could not be read. Previous inventory is kept; retry Modules.")
+    cal.player["modules_below_epic"] = below_epic       # this walk's count (replaced, not added to)
     return slugs, copies
 
 
@@ -549,12 +735,11 @@ def phase_cards(cal: Calibration) -> dict:
     if current:
         cal.player["cards_current"] = current[0]
     from player.card_inventory import scan
-    from runtime import logger
     def check_stop():
         if _stop_requested(cal.p):
             raise Stopped()
     inventory = scan(cal, check_stop=check_stop,
-                     progress=lambda message: logger.event("calibrate_cards_progress", message=message))
+                     progress=lambda message: cal.progress('cards', message))
     tourney.return_to_game("cards")
     return {"card_presets": cal.player["card_presets"], "names": [n for n, _s, _st in tabs], "inventory":inventory}
 
@@ -609,7 +794,7 @@ def phase_workshop(cal: Calibration) -> dict:
 def phase_modules(cal: Calibration) -> dict:
     from interactions import tourney
     tourney.open_nav("modules", "modules/buy_module.png", "modules screen")
-    result = read_module_contents(cal)
+    result = read_module_contents(cal, progress=lambda message: cal.progress('modules', message))
     tourney.return_to_game("modules")
     return result
 
@@ -628,9 +813,10 @@ def read_module_contents(cal: Calibration, progress=lambda message: None) -> dic
     cal.player.setdefault("category_presets", {})["modules"] = [n for n, _s, _st in rows]
     equipped = []
     unreadable = 0
-    for slot in pills.header_slots(frame):
+    for index, slot in enumerate(pills.header_slots(frame), 1):
         if not slot["occupied"]:
             continue
+        progress(f'Modules: identifying equipped slot {index}')
         cx, cy = slot["centre"]
         half = slot["half"]
         icon = frame[cy - half:cy + half, cx - half:cx + half].copy()
@@ -695,6 +881,25 @@ def _merge_draft(player: dict) -> str:
     return sp["draft"]
 
 
+def _prepare_display():
+    from device import layout
+    from runtime.operations import environment_operation
+    ledger, operation_id = environment_operation()
+    if ledger:
+        # A tracked operation cannot silently change its rendering identity
+        # or rewrite the machine configuration selected after acceptance.
+        from dataclasses import asdict
+        display = layout.discover()
+        expected = ledger.get(operation_id)['context'].get('rendering')
+        if expected is None:
+            layout.require_native(display.width, display.height, display.dpi)
+        elif expected != asdict(display):
+            raise ValueError('Rendering changed after acceptance; configure the display in Setup before preparing again')
+        layout.activate(display)
+    else:
+        layout.prepare_scan()
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--instance", default="main")
@@ -702,6 +907,7 @@ def main() -> None:
     ap.add_argument("--phases", default="c,g,m,u,b,w",
                     help=f"comma list of {PHASE_KEYS}")
     ap.add_argument("--bootstrap", action="store_true", help="Capture Home and safe menus without existing templates")
+    ap.add_argument("--routes", help="With --bootstrap: comma-separated manifest routes forming a Home-to-Home sequence")
     ap.add_argument("--observe", action="store_true", help="No taps: search the screen as it is for every artwork-bound target still missing")
     ap.add_argument("--observe-watch", type=float, default=0.0, metavar="SECONDS",
                     help="with --observe: keep looking for this long (no taps), for controls that are only up for moments")
@@ -717,7 +923,21 @@ def main() -> None:
     ap.add_argument("--fresh", action="store_true",
                     help="ignore previous state, redo all phases")
     a = ap.parse_args()
+    routes = None
+    if a.routes is not None:
+        if not a.bootstrap or a.flows or a.battle_only or a.observe:
+            ap.error('--routes requires --bootstrap and cannot be combined with --flows, --battle-only or --observe')
+        from player.bootstrap import validate_route_selection
+        routes = [key.strip() for key in a.routes.split(',')]
+        try:
+            validate_route_selection(routes)
+        except ValueError as exc:
+            ap.error(str(exc))
+    from runtime.operations import restore_worker_context
+    restore_worker_context(settings)
     settings.bind_device(a.instance)
+    from runtime.device_lease import ensure_current
+    ensure_current()
     settings.CONFIG["preset"] = "normal_run"
     if a.allow_navigation:
         settings.instance()["allow_taps"] = True
@@ -725,7 +945,7 @@ def main() -> None:
     from player import scan
     from device import layout
     try:
-        layout.prepare_scan()
+        _prepare_display()
     except Exception as exc:
         p = _paths()
         st = _state_load(p)
@@ -744,7 +964,7 @@ def main() -> None:
         if os.path.exists(p["stop"]):
             os.remove(p["stop"])
         from player import bootstrap
-        bootstrap.run(p, a.overwrite, flows=a.flows, battle_only=a.battle_only)
+        bootstrap.run(p, a.overwrite, flows=a.flows, battle_only=a.battle_only, routes=routes)
         return
     from player.scan_plan import missing_navigation
     missing = missing_navigation(settings.ROOT, settings.CONFIG, a.phases.split(","), include_wave=False)
@@ -758,6 +978,9 @@ def main() -> None:
         # so a re-run refreshes them instead of forgetting the other phases
         selected_names = {PHASES[key.strip()][0] for key in a.phases.split(",") if key.strip() in PHASES}
         st["phases"] = {k:v for k,v in st.get("phases", {}).items() if k not in selected_names}
+    st.pop('final_screen', None)
+    st.pop('setup_battle', None)
+    st.pop('activity', None)
     st["preflight"] = {"status": "running"}
     _state_save(p, st)
     try:
@@ -780,7 +1003,7 @@ def main() -> None:
     if "e" in wanted and st.get("phases", {}).get("modules", {}).get("status") != "done" and "m" not in wanted and not module_roundtrip.pending(p):
         raise SystemExit("Complete phase 1 Modules before scanning equipped modules")
     wanted = [key for key in wanted if key != "e"] + (["e"] if "e" in wanted else [])
-    cal = Calibration(p, a.overwrite)
+    cal = Calibration(p, a.overwrite, progress=lambda phase, message: _record_activity(p, st, phase, message))
     cal.entries = list(st.get("entries") or [])
     cal.player = dict(st.get("player") or {})
     if module_roundtrip.pending(p):
@@ -798,11 +1021,12 @@ def main() -> None:
             continue
         if _stop_requested(p):
             logger.event("calibrate", stage="stopped", before=name)
+            record_final_screen(p, st, 'unknown', verified=False, error='Stopped before phase')
             break
         phase_started = time.time()
         st["phases"][name] = {"status": "running", "started_at": phase_started,
                               "started": datetime.datetime.now().isoformat()}
-        _state_save(p, st)
+        cal.progress(name, 'Starting ' + name.replace('_', ' '))
         stopped = False
         previous_player = json.loads(json.dumps(cal.player))
         try:
@@ -811,41 +1035,46 @@ def main() -> None:
         except SystemExit:
             raise
         except Stopped as e:
-            from interactions import tourney
             stopped = True
             cal.player = previous_player
             st["phases"][name] = {"status": "stopped", "at": str(e)}
             logger.event("calibrate", stage="stopped", phase=name, at=str(e))
-            try:
-                tourney.ensure_home()
-            except Exception:                   # noqa: BLE001
-                pass
         except module_roundtrip.RestoreRequired as e:
             st["phases"][name] = {"status": "error", "error": str(e)}
-            _state_save(p, st)
+            cal.progress(name, str(e))
             cal.save_report()
             raise  # never continue with another phase while a module is removed
         except Exception as e:                  # noqa: BLE001 - phase isolation
-            from interactions import tourney
+            stopped = True
             cal.player = previous_player
             st["phases"][name] = {"status": "error", "error": str(e)[:300]}
             logger.event("calibrate", stage="phase_error", phase=name,
                          error=str(e)[:300])
-            try:
-                tourney.ensure_home()
-            except Exception:                   # noqa: BLE001
-                pass
         st["phases"][name].update(started_at=phase_started, finished_at=time.time())
         st["player"] = cal.player
         st["entries"] = cal.entries
-        _state_save(p, st)
+        cal.progress(name, name.replace('_', ' ').capitalize() + ': ' + st['phases'][name]['status']
+                     + (': ' + (st['phases'][name].get('error') or st['phases'][name].get('at'))
+                        if st['phases'][name].get('error') or st['phases'][name].get('at') else ''))
         cal.save_report()
         try:
             _merge_draft(cal.player)
         except Exception as e:                  # noqa: BLE001 - the cuts are on disk
             logger.event("calibrate_draft_failed", error=str(e)[:200])
         if stopped:
+            record_final_screen(p, st, 'unknown', verified=False,
+                                error=st['phases'][name].get('error') or st['phases'][name].get('at'))
             break
+    if not _stop_requested(p) and all(st['phases'].get(PHASES[key][0], {}).get('status') == 'done' for key in wanted):
+        try:
+            final = capture.grab()
+            home = screen_matches(final, textocr.read_lines(final, 1, raise_on_error=True), 'home')
+        except Exception as exc:
+            record_final_screen(p, st, 'unknown', verified=False, error=exc)
+            raise
+        record_final_screen(p, st, 'home' if home else 'unknown', verified=home)
+        if not home:
+            raise RuntimeError('Calibration did not verify its final Home screen; no further input sent')
     summary = {k: v.get("status") for k, v in st["phases"].items()}
     logger.event("calibrate", stage="done", phases=summary,
                  written=sum(1 for e in cal.entries if e["status"] == "written"),

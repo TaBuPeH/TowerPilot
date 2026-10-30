@@ -29,6 +29,20 @@ def manifest(display=None):
 # Preserve callers that explicitly refresh the reference after editing it.
 manifest.cache_clear = reference_manifest.cache_clear
 
+def route_capture_targets():
+    """Current generated route images, including explicitly migrated controls."""
+    m = manifest()
+    return {f'route_{i}': route.get('capture_rel', f"mapping/v{m['version']}/route_{i}.png")
+            for i, route in enumerate(m['routes'])}
+
+
+def retired_route_captures():
+    """Old generated images remain on disk but no longer prove an active route."""
+    version = manifest()['version']
+    return {f'mapping/v{version}/{key}.png' for key, rel in route_capture_targets().items()
+            if rel != f'mapping/v{version}/{key}.png'}
+
+
 def writable_targets():
     m = manifest()
     names = {t["rel"] for s in m["screens"].values() for t in s["targets"]}
@@ -36,7 +50,7 @@ def writable_targets():
     names.update(t["rel"] for t in m.get("dynamic_targets", []))
     names.update(m.get("asset_bindings", {}))
     names.update(t["rel"] for s in m.get("hud", {}).values() if isinstance(s, dict) for t in s.get("targets", []))
-    names.update(f"mapping/v{m['version']}/route_{i}.png" for i in range(len(m['routes'])))
+    names.update(route_capture_targets().values())
     return names
 
 

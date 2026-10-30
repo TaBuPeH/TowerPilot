@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "towerpilot-workflows"
+version = "0.1.0"
+description = "Pure local workflow lifecycle contracts for Tower Pilot"
+requires-python = ">=3.12"
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+include = ["towerpilot_workflows*"]

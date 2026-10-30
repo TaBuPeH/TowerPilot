@@ -133,10 +133,9 @@ def at_top(frame=None) -> bool:
     return not any(a <= GRID_GAP_Y < b for a, b in pills.grid_row_spans(frame))
 
 
-def settle(max_s: float = SETTLE_S, quiet: float = 0.5):
-    """Wait until the grid stops moving (two grabs alike) and return that
-    frame. The scroll glides for 2-4 s after a drag (measured 2026-09-06);
-    tiles read off a gliding grid land on the wrong row."""
+def settle_status(max_s: float = SETTLE_S, quiet: float = 0.5):
+    """settle() plus whether the grid really stopped: (frame, True) when two
+    grabs were alike, (the last frame, False) when max_s ran out first."""
     top, bottom = GRID_BAND
     prev = capture.grab()
     t0 = time.monotonic()
@@ -144,10 +143,17 @@ def settle(max_s: float = SETTLE_S, quiet: float = 0.5):
         time.sleep(0.3)
         cur = capture.grab()
         if float(cv2.absdiff(prev[top:bottom], cur[top:bottom]).mean()) < quiet:
-            return cur
+            return cur, True
         prev = cur
     logger.event("inventory_unsettled", after_s=max_s)
-    return prev
+    return prev, False
+
+
+def settle(max_s: float = SETTLE_S, quiet: float = 0.5):
+    """Wait until the grid stops moving (two grabs alike) and return that
+    frame. The scroll glides for 2-4 s after a drag (measured 2026-09-06);
+    tiles read off a gliding grid land on the wrong row."""
+    return settle_status(max_s, quiet)[0]
 
 
 def park_top(tries: int = 5) -> None:
@@ -184,15 +190,35 @@ def scroll_delta(prev, cur):
     return found[-1]
 
 
+_page_frame = None              # the settled frame the last next_page() ended on
+
+
+def take_page_frame():
+    """The settled frame the last next_page() ended on, handed out ONCE (the
+    next call returns None). None as well when that glide had not ended after
+    SETTLE_S: a grid still moving is never a page frame, so the caller settles
+    for itself. Call it right after next_page(), before anything touches the
+    screen."""
+    global _page_frame
+    frame, _page_frame = _page_frame, None
+    return frame
+
+
 def next_page():
     """Drag one page on (PAGE_DRAG), wait for the glide to end and return
     the MEASURED scroll in px: 0 = the end of the list, None = overlap lost.
     A page of already-seen icons is not the end - five identical tiles in a
-    row are normal here - which is why the movement is what decides."""
+    row are normal here - which is why the movement is what decides. The
+    settled frame it measured against stays available through
+    take_page_frame()."""
+    global _page_frame
+    _page_frame = None
     prev = settle()
     y0, y1, ms = PAGE_DRAG
     act.swipe(SWIPE_X, y0, SWIPE_X, y1, ms, reason="inventory page")
-    return scroll_delta(prev, settle())
+    cur, settled = settle_status()
+    _page_frame = cur if settled else None
+    return scroll_delta(prev, cur)
 
 
 def sweep(out_dir: str) -> list:

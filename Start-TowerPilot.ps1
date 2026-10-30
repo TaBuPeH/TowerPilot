@@ -16,10 +16,16 @@ if (-not (Test-Path -LiteralPath $stamp) -or (Get-Content -LiteralPath $stamp -R
     Set-Content -LiteralPath $stamp -Value $hash
 }
 $port = if ($env:TOWER_PILOT_PORT) { $env:TOWER_PILOT_PORT } else { '8620' }
-# Windowless from here: pythonw has no console, and the launcher puts Tower
-# Pilot in the notification area instead (tools/portable_launcher.py). This
-# window is only needed for the environment setup above.
-$pythonw = Join-Path $PSScriptRoot '.venv\Scripts\pythonw.exe'
-if (-not (Test-Path -LiteralPath $pythonw)) { $pythonw = $python }
-Write-Host "Starting Tower Pilot. Its icon appears in the notification area; the dashboard is http://127.0.0.1:$port/ui/index.html#setup."
-Start-Process -FilePath $pythonw -ArgumentList (Join-Path $PSScriptRoot 'tools\portable_launcher.py') -WorkingDirectory $PSScriptRoot
+# Create no console at all. WindowStyle Hidden can still register a visible
+# Windows Terminal tab, and a venv's pythonw redirector may run python.exe.
+$launcher = Join-Path $PSScriptRoot 'tools\portable_launcher.py'
+Write-Host "Starting Tower Pilot. Its icon appears in the notification area; the dashboard is http://127.0.0.1:$port/ui/app/#emulators."
+$start = New-Object System.Diagnostics.ProcessStartInfo
+$start.FileName = $python
+$start.Arguments = '-u "' + $launcher + '"'
+$start.WorkingDirectory = $PSScriptRoot
+$start.UseShellExecute = $false
+$start.CreateNoWindow = $true
+$start.EnvironmentVariables['TOWER_PILOT_WINDOWLESS'] = '1'
+$process = [System.Diagnostics.Process]::Start($start)
+$process.Dispose()

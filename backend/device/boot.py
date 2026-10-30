@@ -42,6 +42,8 @@ def main() -> int:
     ap.add_argument("--instance", required=True)
     a = ap.parse_args()
     import settings
+    from runtime.device_lease import prepare_instance
+    prepare_instance(a.instance)
     settings.bind_device(a.instance)
     from runtime import logger
     from settings import instance
@@ -59,8 +61,13 @@ def main() -> int:
         return 1
 
     def adb_up() -> bool:
+        # recover() connects a missing device and, once a serial has read
+        # 'offline' for adbclient._OFFLINE_STALE_S in this process, drops the
+        # stale transport (disconnect, then connect); a younger 'offline'
+        # gets only the connect, which answers "already connected" for it.
+        # No start_server: ensure_server above is boot's one daemon start.
         try:
-            return adbclient.reconnect(serial) and adbclient.alive(serial)
+            return adbclient.recover(serial) == "device" and adbclient.alive(serial)
         except Exception:               # noqa: BLE001 - port refuses mid-boot
             return False
 

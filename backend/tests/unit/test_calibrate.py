@@ -1,0 +1,634 @@
+"""The calibrator: structural pill detection, the cut policy, the naming, and
+the dashboard wiring - everything but the emulator, which is faked."""
+
+import paths as test_paths
+import importlib.util
+import json
+from pathlib import Path
+
+import cv2
+import numpy as np
+import pytest
+
+
+def test_rarity_ocr_star_is_plus_only_for_upgradeable_labels():
+    from player.calibrate import parse_rarity
+    assert parse_rarity('EPIC*') == 'epic+'
+    assert parse_rarity('Rare *') == 'rare+'
+    assert parse_rarity('ANCESTRAL ***') == 'ancestral'
+
+BACKEND = test_paths.BACKEND
+REPO = BACKEND.parent
+
+
+def _pill_frame(labels, y=400, x0=20, w=190, h=75, gap=22, active=0):
+    """A synthetic tab row in the game's grammar: dark fill, cyan outline,
+    the active one green, white label text."""
+    frame = np.full((2560, 1080, 3), (30, 18, 40), np.uint8)
+    rects = []
+    for i, label in enumerate(labels):
+        x = x0 + i * (w + gap)
+        colour = (0, 255, 128) if i == active else (255, 230, 0)   # BGR green / cyan
+        cv2.rectangle(frame, (x, y), (x + w, y + h), colour, 4)
+        cv2.rectangle(frame, (x + 4, y + 4), (x + w - 4, y + h - 4), (8, 4, 16), -1)
+        cv2.putText(frame, label, (x + 22, y + h - 24), cv2.FONT_HERSHEY_SIMPLEX,
+                    0.9, (255, 255, 255), 2, cv2.LINE_AA)
+        rects.append((x, y, w, h))
+    return frame, rects
+
+
+@pytest.fixture()
+def dash(tmp_path):
+    path = test_paths.DASHBOARD
+    spec = importlib.util.spec_from_file_location("tp_dashboard_cal", str(path))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    config = tmp_path / "dashboard_config.yaml"
+    config.write_text((BACKEND / "config.example.yaml").read_text(encoding="utf-8"), encoding="utf-8")
+    mod.CONFIG_PATH = str(config)
+    return mod
+
+
+# ---------------------------------------------------------------- pills
+def test_pills_finds_every_tab_with_its_state_in_reading_order():
+    from vision import pills
+    frame, rects = _pill_frame(["Alpha", "Beta", "Gamma", "Delta"], active=2)
+    found = pills.pills(frame, 330, 560)
+    assert [p["state"] for p in found] == ["cyan", "cyan", "green", "cyan"]
+    for p, (x, y, w, h) in zip(found, rects):
+        px, py, pw, ph = p["rect"]
+        assert x < px < x + 12 and y < py < y + 12 and abs(pw - w) < 16 and abs(ph - h) < 16
+    assert pills.pills(frame, 600, 900) == []          # nothing below the row
+    assert len(pills.rows_of(found)) == 1 and len(pills.rows_of(found)[0]) == 4
+
+
+def test_text_crop_is_the_label_and_matches_the_other_state():
+    from vision import pills
+    frame, rects = _pill_frame(["Farm", "Tourney"], active=0)
+    other, _ = _pill_frame(["Farm", "Tourney"], active=1)   # states swapped
+    found = pills.pills(frame, 330, 560)
+    for p in found:
+        crop, trect = pills.text_crop(frame, p["rect"])
+        assert crop is not None and crop.shape[0] < 60 and crop.shape[1] < 150
+        best, centre, second = pills.match(other, crop)
+        assert best > 0.95 and second < 0.8
+        assert abs(centre[0] - (trect[0] + trect[2] // 2)) < 6
+
+
+def test_header_slots_report_occupancy_by_ring():
+    from vision import pills
+    frame = np.full((2560, 1080, 3), (30, 18, 40), np.uint8)
+    cx, cy = pills.HEADER_LARGE[0]
+    cv2.circle(frame, (cx, cy), pills.HEADER_RADIUS["large"], (0, 255, 128), 8)
+    slots = pills.header_slots(frame)
+    assert len(slots) == 8
+    occupied = [s for s in slots if s["occupied"]]
+    assert [s["centre"] for s in occupied] == [(cx, cy)]
+    assert all(s["kind"] in ("large", "small") and s["half"] > 30 for s in slots)
+
+
+def test_grid_rows_reads_tile_rows_off_the_frame():
+    from vision import pills
+    frame = np.zeros((2560, 1080, 3), np.uint8)
+    for cy in (1192, 1400, 1601):
+        for cx in (126, 329, 533, 736, 939):
+            cv2.circle(frame, (cx, cy), 70, (0, 255, 128), 6)
+    assert pills.grid_rows(frame) == [1192, 1400, 1601]
+
+
+# ------------------------------------------------------------ calibrate
+def test_only_account_specific_names_can_be_written(tmp_path, monkeypatch):
+    from player import calibrate
+    monkeypatch.setattr(calibrate.settings, "ROOT", tmp_path)
+    crop = np.full((20, 40, 3), 200, np.uint8)
+    assert calibrate.is_account_rel("cards/preset_farm_deck.png")
+    assert calibrate.is_account_rel("presets/gp_farm_build.png")
+    assert calibrate.is_account_rel("presets/workshop_devo.png")
+    assert calibrate.is_account_rel("modules/equipped/space_displacer.png")
+    assert calibrate.is_account_rel("modules/space_displacer.png")
+    # the four root card detectors are the account's own art, cut from the
+    # inventory - written like every other card, never shipped
+    assert calibrate.is_account_rel("cards/cash.png")
+    assert calibrate.is_account_rel("cards/ultimate_crit.png")
+    for generic in ("modules/buy_module.png", "buttons/nuke.png", "cards/coins.png",
+                    "presets/picker_icon.png", "screens/hdr_cards.png", "modules/nope.png",
+                    "../x.png"):
+        assert not calibrate.is_account_rel(generic), generic
+        assert calibrate.write_template(generic, crop) == "refused"
+    assert calibrate.write_template("cards/preset_farm_deck.png", crop) == "written"
+    assert (tmp_path / "templates" / "cards" / "preset_farm_deck.png").exists()
+    assert calibrate.write_template("cards/preset_farm_deck.png", crop) == "exists"
+    assert calibrate.write_template("cards/preset_farm_deck.png", crop, overwrite=True) == "written"
+
+
+def test_module_names_and_rarities_survive_ocr_slips():
+    from player import calibrate
+    assert calibrate.resolve_module("Amplifying Strike") == "amplifying_strike"
+    assert calibrate.resolve_module("Amplifyng Strke") == "amplifying_strike"
+    assert calibrate.resolve_module("MVN") == "multiverse_nexus"
+    assert calibrate.resolve_module("Tower Damage") is None
+    assert calibrate.resolve_module("") is None
+    assert calibrate.parse_rarity("ANCESTRAL") == "ancestral"
+    assert calibrate.parse_rarity("-?NC?STRAL") == "ancestral"
+    assert calibrate.parse_rarity("Mythic+") == "mythic+"
+    assert calibrate.parse_rarity("Amplifying Strike") is None
+
+
+def test_harvest_row_cuts_names_and_records_states(tmp_path, monkeypatch):
+    from player import calibrate
+    from vision import textocr
+    monkeypatch.setattr(calibrate.settings, "ROOT", tmp_path)
+    frame, _ = _pill_frame(["Farm Deck", "Tourney P1"], active=1)
+    readings = iter(["Farm Deck", "Tourney P1"])
+    monkeypatch.setattr(textocr, "read_text", lambda crop: next(readings))
+    events = []
+    import runtime.logger as lg
+    monkeypatch.setattr(lg, "event", lambda kind, **kw: events.append(kind))
+    p = {"state": str(tmp_path / "s.json"), "stop": str(tmp_path / "stop"),
+         "report": str(tmp_path / "r.json"), "evidence": str(tmp_path / "ev")}
+    cal = calibrate.Calibration(p, overwrite=False)
+    out = calibrate.harvest_row(cal, frame, (330, 560), "cards/preset_", "cards")
+    assert out == [("Farm Deck", "farm_deck", "cyan"), ("Tourney P1", "tourney_p1", "green")]
+    assert (tmp_path / "templates" / "cards" / "preset_farm_deck.png").exists()
+    assert (tmp_path / "templates" / "cards" / "preset_tourney_p1.png").exists()
+    assert [e["status"] for e in cal.entries] == ["written", "written"]
+    assert all(e["self"] > 0.95 for e in cal.entries)
+    cal.save_report()
+    rep = json.loads((tmp_path / "r.json").read_text(encoding="utf-8"))
+    assert [e["rel"] for e in rep["entries"]] == ["cards/preset_farm_deck.png",
+                                                  "cards/preset_tourney_p1.png"]
+    assert events.count("calibrate_cut") == 2
+
+
+def test_harvest_row_verifies_look_alike_default_preset_names(tmp_path, monkeypatch):
+    # A new account's tabs are "Preset 1".."Preset N": same pill, same font,
+    # one digit apart, so each crop also scores high on its siblings.
+    from player import calibrate
+    from vision import pills, textocr
+    monkeypatch.setattr(calibrate.settings, "ROOT", tmp_path)
+    labels = ["Preset 1", "Preset 2", "Preset 3"]
+    frame, _ = _pill_frame(labels, w=200, gap=14, active=0)
+    crops = [pills.text_crop(frame, p["rect"])[0] for p in pills.pills(frame, 330, 560)]
+    assert all(pills.match(frame, c)[2] >= 0.85 for c in crops)   # genuinely ambiguous
+    readings = iter(labels)
+    monkeypatch.setattr(textocr, "read_text", lambda crop: next(readings))
+    import runtime.logger as lg
+    monkeypatch.setattr(lg, "event", lambda kind, **kw: None)
+    p = {"state": "", "stop": str(tmp_path / "stop"), "report": "", "evidence": str(tmp_path)}
+    cal = calibrate.Calibration(p, overwrite=False)
+    out = calibrate.harvest_row(cal, frame, (330, 560), "cards/preset_", "cards")
+    assert out == [("Preset 1", "preset_1", "green"), ("Preset 2", "preset_2", "cyan"),
+                   ("Preset 3", "preset_3", "cyan")]
+    files = [tmp_path / "templates" / "cards" / f"preset_preset_{i}.png" for i in (1, 2, 3)]
+    assert all(f.exists() for f in files)
+    assert len({f.read_bytes() for f in files}) == 3
+    assert all(e["verified"] and e["self"] >= 0.99 for e in cal.entries)
+
+
+def test_unreadable_label_does_not_invent_a_preset(tmp_path, monkeypatch):
+    from player import calibrate
+    from vision import textocr
+    monkeypatch.setattr(calibrate.settings, "ROOT", tmp_path)
+    frame, _ = _pill_frame(["Farm"], active=0)
+    monkeypatch.setattr(textocr, "read_text", lambda crop: "")
+    import runtime.logger as lg
+    monkeypatch.setattr(lg, "event", lambda kind, **kw: None)
+    monkeypatch.setattr(lg, "shot", lambda *a, **kw: str(tmp_path / "synthetic.png"))
+    p = {"state": "", "stop": str(tmp_path / "stop"), "report": "", "evidence": str(tmp_path)}
+    cal = calibrate.Calibration(p, overwrite=False)
+    with pytest.raises(RuntimeError, match="could not be verified"):
+        calibrate.harvest_row(cal, frame, (330, 560), "presets/bots_", "bots")
+    assert not (tmp_path / "templates" / "presets" / "bots_tab1.png").exists()
+
+
+def test_catalogue_learns_module_names_the_shipped_table_lacks(tmp_path, monkeypatch):
+    from player import catalogue
+    monkeypatch.setattr(catalogue, "LOCAL", tmp_path / "catalogue_local.yaml")
+    catalogue._local_cache.update(mtime=None, data={})
+    assert catalogue.learn("Shrink Ray") == "shrink_ray"          # shipped: nothing written
+    assert not (tmp_path / "catalogue_local.yaml").exists()
+    assert catalogue.learn("Sentry Protocol") == "sentry_protocol"
+    assert (tmp_path / "catalogue_local.yaml").exists()
+    assert catalogue.resolve("sentry protocol") == "sentry_protocol"
+    assert catalogue.resolve("Sentry Protocol") == "sentry_protocol"
+    assert catalogue.display("sentry_protocol") == "Sentry Protocol"
+    assert "sentry_protocol" in catalogue.all_modules() and "sentry_protocol" not in catalogue.MODULES
+    assert catalogue.learn("Sentry Protocol") == "sentry_protocol"   # idempotent
+    text = (tmp_path / "catalogue_local.yaml").read_text(encoding="utf-8")
+    assert text.count("sentry_protocol") == 1
+    with pytest.raises(KeyError):
+        catalogue.resolve("no such module")
+
+
+def test_calibrator_learns_plausible_names_and_refuses_effect_lines(tmp_path, monkeypatch):
+    from player import calibrate, catalogue
+    monkeypatch.setattr(catalogue, "LOCAL", tmp_path / "catalogue_local.yaml")
+    catalogue._local_cache.update(mtime=None, data={})
+    import runtime.logger as lg
+    monkeypatch.setattr(lg, "event", lambda kind, **kw: None)
+    assert calibrate.module_slug("Amplifying Strike") == "amplifying_strike"
+    assert calibrate.module_slug("Swiftstrike Blitzer") == "swiftstrike_blitzer"
+    assert calibrate.is_account_rel("modules/swiftstrike_blitzer.png")
+    # an OCR slip of a LEARNED name resolves to it instead of being learned twice
+    assert calibrate.module_slug("Swiftstrlke Blitzer") == "swiftstrike_blitzer"
+    assert "swiftstrlke_blitzer" not in catalogue.all_modules()
+    for garbage in ("x14.48 Tower Damage", "ANCESTRAL", "Lv. 184 /260", "", None, "ab"):
+        assert calibrate.module_slug(garbage) is None, garbage
+
+
+def test_ocr_fixes_the_l_for_one_slip():
+    from vision import textocr
+    assert textocr.fix_l1("Tourney Pl") == "Tourney P1"
+    assert textocr.fix_l1("Tourney PI") == "Tourney P1"
+    assert textocr.fix_l1("Full Upgraded") == "Full Upgraded"
+    assert textocr.fix_l1("Disco") == "Disco"
+
+
+def test_required_list_explains_an_equipped_modules_missing_tile(dash, tmp_path, monkeypatch):
+    monkeypatch.setattr(dash, "ROOT", str(tmp_path))
+    (tmp_path / "templates" / "modules" / "equipped").mkdir(parents=True)
+    (tmp_path / "templates" / "modules" / "equipped" / "dimension_core.png").write_bytes(b"png")
+    cfg = {"loadouts": {"t": {"modules": [["dimension_core", "assist"]]}}}
+    prof = {"player": {"modules_equipped": ["dimension_core"]}}
+    rows = {r["rel"]: r for r in dash._required_templates(cfg, prof)}
+    assert rows["modules/dimension_core.png"]["have"] is False
+    assert "equipped right now" in rows["modules/dimension_core.png"]["note"]
+    assert rows["modules/equipped/dimension_core.png"]["have"] is True
+    assert "note" not in rows["modules/equipped/dimension_core.png"]
+
+
+def test_fresh_redoes_phases_but_keeps_the_report(tmp_path):
+    from player import calibrate
+    p = {"state": str(tmp_path / "calibrate_state.json")}
+    calibrate._state_save(p, {"phases": {"cards": {"status": "done"}},
+                              "entries": [{"rel": "cards/preset_a.png"}],
+                              "player": {"card_presets": ["a"]}})
+    st = calibrate._state_load(p)
+    st["phases"] = {}                          # what --fresh does in main()
+    assert st["entries"] == [{"rel": "cards/preset_a.png"}]
+    assert st["player"] == {"card_presets": ["a"]}
+
+
+# ---------------------------------------------------------- dashboard
+def test_calibrate_endpoints_guard_taps_and_report_state(dash, tmp_path, monkeypatch):
+    monkeypatch.setattr(dash, "_procs", lambda: [])
+    monkeypatch.setattr(dash, "_procs_cached", lambda: [])
+    monkeypatch.setattr(dash, "ROOT", str(tmp_path))
+    cfg = {"active_instance": "main", "instances": {"main": {"allow_taps": False}}}
+    monkeypatch.setattr(dash, "load_config", lambda: cfg)
+    with dash.app.test_client() as c:
+        r = c.post("/api/calibrate/start", json={})
+        assert r.status_code == 409 and "allow_taps" in r.get_json()["error"]
+        st = c.get("/api/calibrate/status").get_json()
+        assert st["running"] is False and st["taps_allowed"] is False
+        (tmp_path / "logs" / "main").mkdir(parents=True)
+        (tmp_path / "logs" / "main" / "calibrate_report.json").write_text(
+            json.dumps({"entries": [{"rel": "cards/preset_x.png", "status": "written"}]}),
+            encoding="utf-8")
+        st = c.get("/api/calibrate/status").get_json()
+        assert st["report"]["entries"][0]["rel"] == "cards/preset_x.png"
+        assert c.post("/api/calibrate/stop", json={}).status_code == 409
+        assert not (tmp_path / "logs" / "main" / "calibrate_stop").exists()
+    monkeypatch.setattr(dash, "_procs", lambda: [{"runner": "orchestrator", "pid": 1}])
+    cfg["instances"]["main"]["allow_taps"] = True
+    with dash.app.test_client() as c:
+        r = c.post("/api/calibrate/start", json={})
+        assert r.status_code == 409 and "runners alive" in r.get_json()["error"]
+
+
+def test_calibrator_counts_as_a_runner_for_the_process_guards():
+    src = (test_paths.DASHBOARD).read_text(encoding="utf-8")
+    assert "runners.other_runners(" in src
+    from runtime.runners import RUNNER_SCRIPTS
+    assert "calibrate.py" in RUNNER_SCRIPTS
+    for guard in ("scan.py", "bootstrap.py"):
+        assert "runners.other_runners()" in (BACKEND / "player" / guard).read_text(encoding="utf-8"), guard
+
+
+def test_navigation_landmarks_are_generic_not_account_templates():
+    src = (BACKEND / "interactions" / "presets.py").read_text(encoding="utf-8")
+    for account in ("presets/guardians_farm.png", "presets/bots_farm.png",
+                    "presets/workshop_full_upgraded.png", "presets/workshop_devo.png"):
+        assert account not in src, account
+    assert "guardian/tab_guardian.png" in src and "TAB_BANDS" in src
+
+
+# ------------------------------------------------------ grid walk parking
+def test_grid_row_spans_and_at_top_tell_a_scrolled_grid_apart():
+    from interactions import inventory
+    from vision import pills
+    frame = np.zeros((2560, 1080, 3), np.uint8)
+    cv2.rectangle(frame, (0, 1000), (1080, 1079), (200, 80, 120), -1)     # the lit tab bar
+    for cy in (1198, 1400):
+        for cx in (126, 329, 533, 736, 939):
+            cv2.circle(frame, (cx, cy), 70, (0, 255, 128), 6)
+    spans = pills.grid_row_spans(frame)
+    assert spans[0] == (1000, 1080) and len(spans) == 3
+    assert inventory.at_top(frame)                                         # a gap under the bar
+    assert pills.grid_rows(frame) == [1198, 1400]
+    behind_bar = frame.copy()
+    for cx in (126, 329, 533, 736, 939):
+        cv2.circle(behind_bar, (cx, 2244), 70, (0, 255, 128), 6)          # half under "All Types"
+    assert pills.grid_rows(behind_bar) == [1198, 1400]                     # not a row to read
+    scrolled = np.zeros((2560, 1080, 3), np.uint8)
+    cv2.rectangle(scrolled, (0, 1000), (1080, 1079), (200, 80, 120), -1)
+    for cx in (126, 329, 533, 736, 939):                                     # a cut-off row touching it
+        cv2.circle(scrolled, (cx, 1120), 70, (0, 255, 128), 6)
+    assert not inventory.at_top(scrolled)
+
+
+def test_fling_touches_tiles_not_the_tab_bar(monkeypatch):
+    from interactions import inventory
+    swipes = []
+    monkeypatch.setattr(inventory.act, "swipe",
+                        lambda x0, y0, x1, y1, ms, reason="": swipes.append((y0, y1)))
+    monkeypatch.setattr(inventory.time, "sleep", lambda s: None)
+    inventory._fling(*inventory.GRID_BAND)
+    inventory._fling(*inventory.GRID_BAND[::-1])
+    lo, hi = inventory.GRID_TOUCH
+    assert swipes == [(lo, hi), (hi, lo)]
+    assert lo > 1080                    # below the Inventory / Merge tab bar
+
+
+def test_park_top_flings_until_the_gap_shows_and_refuses_otherwise(monkeypatch):
+    from interactions import inventory
+    seen = iter([False, False, True])
+    flings = []
+    monkeypatch.setattr(inventory, "settle", lambda *a, **k: None)
+    monkeypatch.setattr(inventory, "at_top", lambda frame=None: next(seen))
+    monkeypatch.setattr(inventory, "_fling", lambda y0, y1, ms=180: flings.append((y0, y1)))
+    inventory.park_top()
+    assert len(flings) == 2 and all(y0 < y1 for y0, y1 in flings)         # drags downward = scrolls up
+    monkeypatch.setattr(inventory, "at_top", lambda frame=None: False)
+    with pytest.raises(RuntimeError):
+        inventory.park_top(tries=2)
+
+
+def test_walk_grid_stop_flag_raises_stopped_instead_of_finishing(tmp_path, monkeypatch):
+    from interactions import inventory
+    from player import calibrate
+    monkeypatch.setattr(inventory, "_close_panel", lambda tries=4: True)
+    monkeypatch.setattr(inventory, "park_top", lambda tries=5: None)
+    import device.capture as cap
+    monkeypatch.setattr(cap, "grab", lambda *a, **k: np.zeros((2560, 1080, 3), np.uint8))
+    p = {"state": "", "stop": str(tmp_path / "stop"), "report": "", "evidence": str(tmp_path)}
+    (tmp_path / "stop").write_text("")
+    cal = calibrate.Calibration(p, overwrite=False)
+    with pytest.raises(calibrate.Stopped):
+        calibrate._walk_grid(cal)
+
+
+def _tile_frame(shift=0, seed=1):
+    """Rows of five saturated random tiles (distinct rows), scrolled up by
+    `shift` px: what a settled grid frame looks like to the projection."""
+    rng = np.random.default_rng(seed)
+    canvas = np.zeros((2560 + 2000, 1080, 3), np.uint8)
+    for row in range(14):
+        cy = 1198 + row * 203
+        for cx in (126, 329, 533, 736, 939):
+            tile = rng.integers(0, 256, (150, 150, 3), dtype=np.uint8)
+            tile[..., 0] = 255                       # blue-saturated: lit to the projection
+            tile[..., 1] //= 3
+            canvas[cy - 75:cy + 75, cx - 75:cx + 75] = tile
+    frame = canvas[shift:shift + 2560].copy()
+    frame[2260:] = 0
+    return frame
+
+
+def test_scroll_delta_measures_the_move_and_refuses_to_guess():
+    from interactions import inventory
+    prev = _tile_frame(0)
+    assert inventory.scroll_delta(prev, prev) == 0                         # did not move: the end
+    assert inventory.scroll_delta(prev, _tile_frame(794)) == 794           # the measured page step
+    assert inventory.scroll_delta(prev, _tile_frame(1900)) is None         # past a page: no overlap
+    assert inventory.scroll_delta(prev, _tile_frame(0, seed=7)) is None    # another grid entirely
+
+
+@pytest.mark.parametrize("resume_verified", [False, True])
+def test_walk_grid_counts_each_physical_tile_once_across_overlapping_pages(tmp_path, monkeypatch, resume_verified):
+    """Pages overlap by two rows (the drag is measured, not assumed); a tile
+    seen on both pages is one tile, its icon's copies are counted where they
+    stand, and the walk stops when the grid stops moving."""
+    from interactions import inventory
+    from player import calibrate
+    monkeypatch.setattr(inventory, "_close_panel", lambda tries=4: True)
+    monkeypatch.setattr(inventory, "park_top", lambda tries=5: None)
+    pages = [_tile_frame(0), _tile_frame(794), _tile_frame(794)]
+    moves = iter([794, 0])
+    frames = iter(pages)
+    monkeypatch.setattr(inventory, "settle", lambda *a, **k: next(frames))
+    monkeypatch.setattr(inventory, "next_page", lambda: next(moves))
+    monkeypatch.setattr(inventory, "take_page_frame", lambda: None)   # no hand-off from another test's real next_page()
+    names = {}
+    def inspect(cx, cy, icon):
+        assert icon.shape[:2] == (150, 150)
+        return f"Module {names.setdefault((cx, cy), len(names) + 1)}", "epic"
+    monkeypatch.setattr(calibrate, "_inspect", inspect)
+    monkeypatch.setattr(calibrate, "module_slug", lambda name: name.lower().replace(" ", "_"))
+    cut = []
+
+    def fake_cut(self, phase, rel, crop, frame, name, extra=None):
+        cut.append({"rel": rel, **(extra or {})})
+        return cut[-1]
+    monkeypatch.setattr(calibrate.Calibration, "cut", fake_cut)
+    import runtime.logger as lg
+    events = []
+    monkeypatch.setattr(lg, "event", lambda kind, **kw: events.append((kind, kw)))
+    p = {"state": "", "stop": str(tmp_path / "stop"), "report": "", "evidence": str(tmp_path)}
+    cal = calibrate.Calibration(p, overwrite=False)
+    if resume_verified:
+        import hashlib
+        first_frame = _tile_frame(0)
+        first_y = calibrate.pills.grid_rows(first_frame)[0]
+        first_icon = inventory._tile_icon(first_frame, inventory.COL_X[0], first_y)
+        saved = tmp_path / 'saved.png'
+        cv2.imwrite(str(saved), first_icon)
+        monkeypatch.setattr(calibrate, 'template_path', lambda rel: saved)
+        cal.entries = [{'phase':'modules','verified':True,'rel':'modules/resumed.png',
+                        'rarity':'epic','image_sha256':hashlib.sha256(saved.read_bytes()).hexdigest()}]
+    slugs, copies = calibrate._walk_grid(cal)
+    # page 0 shows rows 0-4 whole (row 5 is behind the filter bar: 25 tiles);
+    # page 1 (794 px on) shows rows 4-8 whole - row 4 repeats, rows 5-8 are new
+    assert len(copies) == 45 and len(slugs) == 45 and len(cut) == 45
+    assert "copies_on_page" not in cut[0]                     # every tile its own module here
+    pages_logged = [kw for k, kw in events if k == "calibrate_grid_page"]
+    assert [pg["tiles"] for pg in pages_logged] == [25, 45]
+    assert [pg["moved"] for pg in pages_logged] == [794, 0]
+
+
+def test_walk_grid_test_ignores_a_stale_page_frame_left_by_another_test(tmp_path, monkeypatch):
+    """inventory._page_frame is module state a real next_page() leaves behind:
+    preset to a frame of another grid, the walk test above must not read it as page 1."""
+    from interactions import inventory
+    monkeypatch.setattr(inventory, "_page_frame", _tile_frame(0, seed=7), raising=False)
+    test_walk_grid_counts_each_physical_tile_once_across_overlapping_pages(tmp_path, monkeypatch, False)
+
+
+@pytest.mark.parametrize('matching_copy', [True, False])
+def test_inventory_checks_later_rarity_copies_without_replacing_saved_image(tmp_path, monkeypatch, matching_copy):
+    from interactions import inventory, shatter
+    from player import calibrate
+    import numpy as np
+    rng = np.random.default_rng(187)
+    icons = [rng.integers(0, 256, (40, 40, 3), dtype=np.uint8) for _ in range(4)]
+    saved = tmp_path / 'amplifying_strike.png'
+    assert cv2.imwrite(str(saved), icons[1] if matching_copy else icons[3])
+    saved_bytes = saved.read_bytes()
+    frame = np.zeros((100, 300, 3), dtype=np.uint8)
+    for cx, icon in zip((50, 150, 250), icons):
+        frame[30:70, cx-20:cx+20] = icon
+    monkeypatch.setattr(calibrate, 'template_path', lambda rel: saved)
+    monkeypatch.setattr(inventory, 'park_top', lambda *a, **k: None)
+    monkeypatch.setattr(inventory, '_close_panel', lambda *a, **k: True)
+    monkeypatch.setattr(inventory, 'settle', lambda: frame.copy())
+    monkeypatch.setattr(inventory, 'next_page', lambda: 0)
+    monkeypatch.setattr(inventory, 'take_page_frame', lambda: None)
+    monkeypatch.setattr(inventory, 'COL_X', [50, 150, 250])
+    monkeypatch.setattr(inventory, 'TILE', 40)
+    monkeypatch.setattr(calibrate.pills, 'grid_rows', lambda frame: [50])
+    monkeypatch.setattr(shatter, 'tile_is_blue', lambda *a: False)
+    monkeypatch.setattr(calibrate, '_tile_plus', lambda *a: False)
+    monkeypatch.setattr(calibrate, '_ring_hue', lambda *a: None)
+    monkeypatch.setattr(calibrate, '_inspect', lambda x, y, icon:
+                        ('Amplifying Strike', 'epic' if x == 150 else 'legendary'))
+    cal = calibrate.Calibration({'state': '', 'stop': str(tmp_path/'stop'),
+                                 'report': '', 'evidence': str(tmp_path/'evidence')}, False)
+    slugs, copies = calibrate._walk_grid(cal)
+    assert slugs == ['amplifying_strike'] and len(copies) == 3
+    assert len(cal.entries) == 1
+    entry = cal.entries[0]
+    assert entry['verified'] is matching_copy
+    assert entry['status'] == ('exists' if matching_copy else 'stale')
+    if matching_copy:
+        assert entry['col'] == 1 and entry['rarity'] == 'epic'
+        assert entry['self'] >= .99
+    assert saved.read_bytes() == saved_bytes
+
+
+def test_existing_template_reports_the_fresh_cuts_score(tmp_path, monkeypatch):
+    """An `exists` entry scores the file on disk (what the runs use) and
+    carries the fresh cut's score beside it, so the report can say that
+    Overwrite would fix a template cut from the wrong copy."""
+    from player import calibrate
+    from vision import pills
+    monkeypatch.setattr(calibrate.settings, "ROOT", tmp_path)
+    import runtime.logger as lg
+    monkeypatch.setattr(lg, "event", lambda kind, **kw: None)
+    frame, rects = _pill_frame(["Farm Deck"], active=0)
+    p = {"state": "", "stop": str(tmp_path / "stop"), "report": "", "evidence": str(tmp_path)}
+    cal = calibrate.Calibration(p, overwrite=False)
+    crop, _ = pills.text_crop(frame, rects[0])
+    first = cal.cut("cards", "cards/preset_farm_deck.png", crop, frame, "Farm Deck")
+    assert first["status"] == "written" and "fresh" not in first
+    other, orects = _pill_frame(["Tourney"], active=0)          # a different label, same file name
+    ocrop, _ = pills.text_crop(other, orects[0])
+    again = cal.cut("cards", "cards/preset_farm_deck.png", ocrop, other, "Tourney")
+    assert again["status"] == "stale" and again["fresh"] > 0.95 and again["self"] < again["fresh"]
+    cal.overwrite = True
+    assert cal.cut("cards", "cards/preset_farm_deck.png", ocrop, other, "Tourney")["status"] == "written"
+
+def test_calibration_status_uses_live_process_and_restores_selected_features(dash, tmp_path, monkeypatch):
+    monkeypatch.setattr(dash, "ROOT", str(tmp_path))
+    monkeypatch.setattr(dash, "load_config", lambda: {"active_instance": "main"})
+    monkeypatch.setattr(dash, "_procs_cached", lambda: [])
+    monkeypatch.setattr(dash, "_procs", lambda: [{"runner": "calibrate", "pid": 123,
+        "cmdline": "pythonw calibrate.py --instance main --phases c,m,g,u,b,w --fresh --allow-navigation"}])
+    event = {"kind": "calibrate_grid_page", "page": 2, "tiles": 60, "t": 123.0}
+    monkeypatch.setattr(dash, "_newest_events", lambda *a, **kw: [event])
+    with dash.app.test_client() as c:
+        status = c.get("/api/calibrate/status").get_json()
+    assert status["running"] is True  # stale cache must not declare completion
+    assert status["selection"] == {"mode":"basic", "phases": ["c", "m", "g", "u", "b", "w"], "taps": True, "overwrite": False}
+    assert status["activity"] == event
+    monkeypatch.setattr(dash, "_procs", lambda: [{"runner": "calibrate", "pid": 123,
+        "cmdline": "pythonw calibrate.py --instance main --phases c --observe --observe-watch 120"}])
+    with dash.app.test_client() as c:
+        status = c.get("/api/calibrate/status").get_json()
+    assert status["selection"]["mode"] == "observe"
+    assert status["selection"]["taps"] is False
+    monkeypatch.setattr(dash, "_procs", lambda: [])
+    with dash.app.test_client() as c:
+        status = c.get("/api/calibrate/status").get_json()
+    assert status["running"] is False
+    assert status["selection"] is None
+    assert status["activity"] is None
+
+
+def test_calibration_publishes_cuts_before_phase_completes(tmp_path, monkeypatch):
+    from player import calibrate
+    from vision import pills
+    monkeypatch.setattr(calibrate.settings, "ROOT", tmp_path)
+    import runtime.logger as lg
+    monkeypatch.setattr(lg, "event", lambda *a, **kw: None)
+    frame, rects = _pill_frame(["Example"], active=0)
+    report = tmp_path / "report.json"
+    cal = calibrate.Calibration({"report": str(report)}, overwrite=False)
+    crop, _ = pills.text_crop(frame, rects[0])
+    entry = cal.cut("cards", "cards/preset_example.png", crop, frame, "Example")
+    assert json.loads(report.read_text())["entries"] == [entry]
+
+@pytest.mark.parametrize("grid_rarity,header_rarity,equipped,verified,expected", [
+    ("epic", "ancestral", True, True, "unverified_copy"),
+    ("ancestral", "ancestral", True, True, "stale"),
+    ("epic", "ancestral", False, True, "stale"),
+    ("epic", "ancestral", True, False, "stale"),
+])
+def test_module_report_distinguishes_equipped_and_inventory_copies(grid_rarity, header_rarity, equipped, verified, expected):
+    from player.calibration_report import describe_report
+    report = {"player": {"modules_equipped": ["example"] if equipped else []}, "entries": [
+        {"rel": "modules/example.png", "status": "stale", "verified": False, "rarity": grid_rarity},
+        {"rel": "modules/equipped/example.png", "status": "exists" if verified else "stale", "verified": verified, "rarity": header_rarity},
+    ]}
+    result = describe_report(report)
+    assert result["entries"][0]["status"] == expected
+    assert result["entries"][0]["verified"] is False
+    assert result["entries"][1] == report["entries"][1]
+    assert report["entries"][0]["status"] == "stale"  # disk evidence is preserved
+
+def test_different_copy_on_same_frame_cannot_verify_module_template(tmp_path, monkeypatch):
+    import numpy as np
+    import cv2
+    from player import calibrate
+    monkeypatch.setattr(calibrate.settings, 'ROOT', tmp_path)
+    import runtime.logger as lg
+    monkeypatch.setattr(lg, 'event', lambda *a, **kw: None)
+    rng=np.random.default_rng(20)
+    first=rng.integers(0,256,(40,40,3),dtype=np.uint8)
+    second=rng.integers(0,256,(40,40,3),dtype=np.uint8)
+    frame=np.zeros((100,100,3),dtype=np.uint8)
+    frame[:40,:40]=first
+    frame[50:90,50:90]=second
+    calibrate.write_template('modules/amplifying_strike.png',first,False)
+    cal=calibrate.Calibration({'report':''},False)
+    entry=cal.cut('modules','modules/amplifying_strike.png',second,frame,'Example')
+    assert entry['status']=='stale' and not entry['verified']
+
+
+def test_module_crop_allows_native_grid_offset_but_keeps_rarity_border():
+    import numpy as np
+    from player.calibrate import match_module_crop
+    rng = np.random.default_rng(37)
+    source = rng.integers(0, 256, (180, 180, 3), dtype=np.uint8)
+    old = source[:150, :150].copy()
+    shifted = source[:150, 20:170].copy()
+    assert match_module_crop(shifted, old)[0] >= .99
+    # A changed rarity border cannot pass just because the interior matches.
+    different = old.copy()
+    different[:25] = 0
+    different[-25:] = 0
+    different[:, :25] = 0
+    different[:, -25:] = 0
+    assert match_module_crop(different, old)[0] < .95
+    unrelated = rng.integers(0, 256, old.shape, dtype=np.uint8)
+    assert match_module_crop(unrelated, old)[0] < .95
+    # Too little shared evidence is not sufficient for verification.
+    distant = source[25:175, 25:175].copy()
+    assert match_module_crop(distant, old)[0] < .95
+
+
+@pytest.fixture(autouse=True)
+def unbound_calibration_config(monkeypatch):
+    import settings
+    import yaml
+    cfg = yaml.safe_load((BACKEND / "config.example.yaml").read_text(encoding="utf-8"))
+    monkeypatch.setattr(settings, "CONFIG", cfg)

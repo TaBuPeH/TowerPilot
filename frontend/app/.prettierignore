@@ -1,0 +1,17 @@
+package-lock.json
+node_modules/
+test-results/
+playwright-report/
+coverage/
+# Generated and formatted by scripts/generate-contract.mjs, whose --check compares them byte for byte.
+src/contract/generated/
+# Markdown follows the repository's own format (.claude/skills/markdown-format), which
+# puts the metadata blockquote directly under the H1; Prettier would separate them.
+*.md
+# A2-7 reviewed output dumps are compared byte for byte by the dump test.
+tests/unit/store/__dumps__/
+# Recorded samples are written by backend/tests/support/fixture_json.py, one case member per line;
+# Prettier would expand them again (252k lines for the abilities sample).
+tests/fixtures/abilities-samples.json
+tests/fixtures/equipment-samples.json
+tests/fixtures/schedule-race-samples.json

@@ -1,0 +1,180 @@
+.tp-advanced {
+  display: grid;
+  gap: var(--tp-space-4, 1rem);
+  min-width: 0;
+}
+.tp-advanced * {
+  min-width: 0;
+}
+.tp-advanced p,
+.tp-advanced li,
+.tp-advanced summary {
+  overflow-wrap: anywhere;
+}
+.tp-advanced p {
+  margin: 0;
+}
+.tp-advanced details {
+  margin-block: var(--tp-space-1);
+}
+.tp-advanced summary {
+  cursor: pointer;
+  min-height: 24px;
+  padding-block: 0.35rem;
+}
+.tp-advanced__hint {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+.tp-advanced__records-viewport {
+  max-height: min(34rem, 70vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: var(--tp-space-2);
+  border-block-start: 1px solid var(--tp-color-border);
+}
+.tp-advanced__records > li {
+  padding-block: var(--tp-space-2);
+  border-block-end: 1px solid var(--tp-color-border);
+}
+.tp-advanced__records p {
+  margin-block: var(--tp-space-1);
+}
+.tp-advanced__records .tp-facts[data-layout='cells'] {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+.tp-advanced__mapping {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.tp-advanced__mapping :is(th, td) {
+  padding: var(--tp-space-2);
+  border-block-end: 1px solid var(--tp-color-border);
+  text-align: start;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.tp-advanced__mapping th {
+  position: sticky;
+  top: calc(-1 * var(--tp-space-2));
+  background: var(--tp-color-surface-raised);
+  color: var(--tp-color-text-muted);
+  font-weight: 500;
+}
+.tp-advanced__mapping :is(th, td):last-child {
+  width: 30%;
+}
+.tp-advanced__field {
+  display: grid;
+  gap: 0.35rem;
+  margin-block: 0;
+}
+.tp-advanced__coordinates {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+.tp-advanced__snapshot,
+.tp-advanced__crop-frame {
+  position: relative;
+  width: min(100%, 340px);
+  margin-block: 0.75rem;
+}
+.tp-advanced__crop-frame {
+  touch-action: none;
+  cursor: crosshair;
+}
+.tp-advanced__snapshot img,
+.tp-advanced__crop-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.tp-advanced svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.tp-advanced svg rect {
+  fill: none;
+  stroke: var(--tp-color-warn);
+  stroke-width: 4;
+  vector-effect: non-scaling-stroke;
+}
+.tp-advanced__library {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+.tp-advanced__library img {
+  display: block;
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  margin-block: 0.5rem;
+}
+.tp-advanced__mapping-label {
+  display: none;
+}
+@media (max-width: 500px) {
+  .tp-advanced__coordinates {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .tp-advanced__mapping,
+  .tp-advanced__mapping tbody,
+  .tp-advanced__mapping tr,
+  .tp-advanced__mapping td {
+    display: block;
+  }
+  .tp-advanced__mapping thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .tp-advanced__mapping tr {
+    padding-block: var(--tp-space-2);
+    border-block-end: 1px solid var(--tp-color-border);
+  }
+  .tp-advanced__mapping td,
+  .tp-advanced__mapping td:last-child {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: var(--tp-space-2);
+    width: auto;
+    border: 0;
+    padding: var(--tp-space-1) 0;
+  }
+  .tp-advanced__mapping-label {
+    display: block;
+    color: var(--tp-color-text-muted);
+  }
+}
+
+.tp-advanced__frame-scroll {
+  max-width: 100%;
+  max-height: 80vh;
+  overflow: auto;
+}
+.tp-advanced__crop-frame[data-full-size='true'] {
+  width: max-content;
+}
+.tp-advanced__crop-frame[data-full-size='true'] img {
+  width: auto;
+  max-width: none;
+}
+
+.tp-advanced p > .tp-server,
+.tp-advanced p > .tp-advanced__value {
+  margin-inline-start: 0.35em;
+}
+.tp-advanced [role='status'] > .tp-server {
+  display: block;
+}

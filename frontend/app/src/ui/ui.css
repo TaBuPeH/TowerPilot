@@ -1,0 +1,723 @@
+/*
+ * The design system's building blocks (spec 3.1 to 3.5). Components use these
+ * classes; features add layout only.
+ */
+
+/* Chip (3.1): word, shape and colour; Unknown is violet and dashed, never Off-grey. */
+.tp-chip {
+  --tp-chip-tone: var(--tp-color-quiet);
+  display: inline-flex;
+  flex: none;
+  inline-size: fit-content;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--tp-chip-tone);
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-color-surface-inner);
+  color: var(--tp-chip-tone);
+  font-size: var(--tp-font-size-12);
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+.tp-chip__shape {
+  width: 0.7rem;
+  height: 0.7rem;
+  flex: none;
+}
+.tp-chip__age {
+  color: var(--tp-color-text-muted);
+  font-weight: 400;
+}
+.tp-chip[data-state='running'] {
+  --tp-chip-tone: var(--tp-color-ok);
+}
+.tp-chip[data-state='waiting'],
+.tp-chip[data-state='stopping'] {
+  --tp-chip-tone: var(--tp-color-warn);
+}
+.tp-chip[data-state='paused'],
+.tp-chip[data-state='idle'] {
+  --tp-chip-tone: var(--tp-color-text-nav);
+}
+.tp-chip[data-state='unknown'] {
+  --tp-chip-tone: var(--tp-color-unknown);
+  border-style: dashed;
+}
+.tp-chip[data-state='blocked'] {
+  --tp-chip-tone: var(--tp-color-blocked);
+}
+.tp-chip[data-state='failed'] {
+  --tp-chip-tone: var(--tp-color-bad);
+}
+
+/* Pill (3.2): square, neutral, no dot. Desired never looks like observed. */
+.tp-pill {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  padding: 0.05rem 0.45rem;
+  border: 1px solid var(--tp-color-border-active);
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-color-surface-strong);
+  font-size: var(--tp-font-size-12);
+  white-space: nowrap;
+}
+.tp-pill__prefix,
+.tp-pill__age {
+  color: var(--tp-color-text-muted);
+}
+.tp-pill__value {
+  color: var(--tp-color-text-strong);
+  font-weight: 600;
+}
+
+/*
+ * Shared geometry for commands, link-buttons and editable fields. Min-height
+ * permits long labels and larger text to grow instead of being clipped.
+ */
+.tp-button,
+.tp-field-control {
+  min-width: 0;
+  max-width: 100%;
+  min-height: var(--tp-control-height);
+  margin: 0;
+  padding-block: var(--tp-control-padding-block);
+  border: 1px solid var(--tp-color-border-active);
+  border-radius: var(--tp-radius-control);
+  font-family: var(--tp-font-sans);
+  font-size: var(--tp-control-font-size);
+  line-height: var(--tp-control-line-height);
+}
+
+.tp-field-control {
+  padding-inline: 0.6rem;
+  background: var(--tp-color-surface-strong);
+  color: var(--tp-color-text);
+}
+
+.tp-field-control[aria-invalid='true'] {
+  border-color: var(--tp-color-bad);
+  box-shadow: inset 0 0 0 1px var(--tp-color-bad);
+}
+.tp-field-control::placeholder {
+  color: var(--tp-color-text-muted);
+  opacity: 1;
+}
+
+.tp-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+
+.tp-control-row > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* A command's explanation follows the whole row, so fields align with its buttons. */
+.tp-control-row > .tp-actions {
+  display: contents;
+}
+.tp-control-row > .tp-actions > .tp-actions__reason,
+.tp-control-row > .tp-actions > .tp-actions__outcome {
+  flex-basis: 100%;
+}
+
+.tp-check-field {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+  min-height: var(--tp-control-height);
+  min-width: var(--tp-control-height);
+}
+.tp-check-field input {
+  width: 1.1rem;
+  height: 1.1rem;
+  margin: 0;
+  flex: none;
+}
+
+/* Buttons: primary (Start playing only), secondary, halt (every revocation), quiet. */
+.tp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding-inline: 0.8rem;
+  border-color: transparent;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-decoration: none;
+}
+
+.tp-button[aria-busy='true'] {
+  cursor: progress;
+}
+.tp-button[data-tier='primary'] {
+  background: var(--tp-color-primary);
+  color: var(--tp-color-on-action);
+}
+.tp-button:not([data-tier]),
+.tp-button[data-tier='secondary'] {
+  background: var(--tp-color-surface-strong);
+  border-color: var(--tp-color-border-active);
+  color: var(--tp-color-text-strong);
+}
+.tp-button[aria-pressed='true'] {
+  border-color: var(--tp-color-focus);
+  box-shadow: inset 0 0 0 1px var(--tp-color-focus);
+}
+.tp-button[data-tier='halt'] {
+  background: var(--tp-color-halt-fill);
+  border-color: var(--tp-color-halt-border);
+  color: var(--tp-color-halt-text);
+}
+.tp-button[data-tier='quiet'] {
+  background: transparent;
+  border-color: var(--tp-color-border);
+  color: var(--tp-color-text-nav);
+  font-weight: 500;
+}
+.tp-button__glyph {
+  width: 0.6rem;
+  height: 0.6rem;
+  flex: none;
+}
+
+/* A disabled control's visible reason (3.3, 8.6). */
+.tp-reason {
+  display: block;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+.tp-reason p {
+  margin: 0;
+}
+
+/* Catalogue lines keep their short text visible, with optional background in HelpTip. */
+.tp-copy-line p {
+  margin: 0;
+}
+/* Native diagnostic disclosures still used for reported server evidence. */
+.tp-copy-line__why {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+.tp-copy-line__why > summary {
+  cursor: pointer;
+  width: max-content;
+  color: var(--tp-color-text-nav);
+  font-weight: 400;
+}
+.tp-copy-line__why > p {
+  margin: var(--tp-space-1) 0 0;
+  max-width: 60ch;
+}
+
+/* Disclosure (3.5): Details, Show all, queues. */
+.tp-disclosure > summary {
+  cursor: pointer;
+  color: var(--tp-color-text-nav);
+  font-size: var(--tp-font-size-13);
+  font-weight: 400;
+}
+/* A disclosure's count: the same small badge as a region's count. */
+.tp-disclosure__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  margin-inline-start: 0.4rem;
+  padding: 0 0.4rem;
+  border-radius: var(--tp-radius-pill);
+  background: var(--tp-color-surface-active);
+  color: var(--tp-color-text-strong);
+  font-size: var(--tp-font-size-12);
+  font-weight: 700;
+}
+.tp-disclosure__preview {
+  margin-inline-start: 0.5rem;
+  color: var(--tp-color-text-muted);
+}
+.tp-disclosure__body {
+  margin-top: var(--tp-space-1);
+  font-size: var(--tp-font-size-13);
+}
+
+/* Region (3.5): a card with its h2; count and header end on the title's line. */
+.tp-region {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-2) var(--tp-space-3);
+  padding: var(--tp-space-3) var(--tp-space-4);
+  border: 1px solid var(--tp-color-border);
+  border-radius: var(--tp-radius-card);
+  background: var(--tp-color-surface);
+  min-width: 0;
+}
+.tp-region__title {
+  margin: 0;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-12);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tp-region__title:focus {
+  outline: none;
+}
+.tp-region__title:focus-visible {
+  outline: 2px solid var(--tp-color-focus);
+}
+.tp-region__count {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-12);
+  font-weight: 700;
+}
+.tp-region__end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-2);
+  margin-inline-start: auto;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+.tp-region__body {
+  flex-basis: 100%;
+  min-width: 0;
+}
+.tp-region__inline {
+  display: flex;
+  flex: 1 1 18rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-3);
+  min-width: 0;
+}
+.tp-region__inline > details[open] {
+  flex-basis: 100%;
+}
+
+/*
+ * One surface grammar (council-tiles synthesis): a Region is the only outlined
+ * surface; a tile is a borderless fill with a smaller radius; a tile inside a
+ * tile collapses to a divider, so nesting never draws a box in a box. Features
+ * take their surfaces from here (tests/unit/copy/surfaces.test.ts).
+ */
+:root {
+  --tp-page-gap: var(--tp-space-3);
+}
+/* A page's column of regions, one gap apart. */
+.tp-page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-page-gap);
+  min-width: 0;
+}
+.tp-tile {
+  min-width: 0;
+  padding: var(--tp-space-3);
+  border: 0;
+  border-radius: var(--tp-radius-control);
+  background: var(--tp-color-surface-raised);
+}
+/* A fieldset tile: no native frame, and its legend sits inside the fill, not on an edge. */
+fieldset.tp-tile {
+  min-inline-size: 0;
+  margin-inline: 0;
+}
+fieldset.tp-tile > legend {
+  float: left;
+  margin-block-end: var(--tp-space-2);
+  padding: 0;
+}
+/* A fieldset tile's header end sits on the legend's line. */
+fieldset.tp-tile > .tp-tile__end {
+  float: right;
+  margin-block-end: var(--tp-space-2);
+}
+fieldset.tp-tile > legend + :not(.tp-tile__end),
+fieldset.tp-tile > .tp-tile__end + * {
+  clear: both;
+}
+.tp-tile__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  margin-block-end: var(--tp-space-2);
+}
+.tp-tile__title {
+  margin: 0;
+  color: var(--tp-color-text-strong);
+  font-size: var(--tp-font-size-13);
+  font-weight: 700;
+}
+.tp-tile__title:focus {
+  outline: none;
+}
+.tp-tile__title:focus-visible {
+  outline: 2px solid var(--tp-color-focus);
+}
+.tp-tile__end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-2);
+  margin-inline-start: auto;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+.tp-tile > .tp-copy-line {
+  margin-block-end: var(--tp-space-2);
+}
+.tp-tile__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+/* Before the collapse rule, so a compact tile inside a tile still collapses. */
+.tp-tile[data-density='compact'] {
+  padding: var(--tp-space-2);
+}
+.tp-tile[data-density='compact'] > .tp-tile__body {
+  gap: var(--tp-space-1);
+}
+/* Tiles side by side, as many columns as fit. */
+.tp-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--tp-space-3);
+  min-width: 0;
+}
+.tp-tiles[data-min='narrow'] {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+.tp-tiles[data-min='wide'] {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+}
+/* A tile in a tile is a divided group of its parent's fill. */
+.tp-tile .tp-tile {
+  padding: var(--tp-space-2) 0 0;
+  border-block-start: 1px solid var(--tp-color-border);
+  border-radius: 0;
+  background: none;
+}
+/* Attention is the one tile that may draw an edge: it carries meaning, not framing. */
+.tp-tile[data-tone='attention'] {
+  box-shadow: inset 3px 0 0 var(--tp-color-warn);
+  padding-inline-start: calc(var(--tp-space-3) + 3px);
+}
+
+/* Facts: labelled values (dl > div > dt + dd), the label column shared by every row. */
+.tp-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--tp-space-1) var(--tp-space-3);
+  min-width: 0;
+  margin: 0;
+}
+.tp-facts__item {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  min-width: 0;
+}
+.tp-facts dt {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+.tp-facts dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--tp-color-text-strong);
+  overflow-wrap: anywhere;
+}
+.tp-facts[data-layout='cells'] {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+  gap: var(--tp-space-2) var(--tp-space-3);
+}
+.tp-facts[data-layout='cells'] > .tp-facts__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  grid-column: auto;
+}
+.tp-facts[data-layout='cells'] dt {
+  font-size: var(--tp-font-size-12);
+}
+.tp-facts[data-layout='inline'] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-3);
+}
+.tp-facts[data-layout='inline'] > .tp-facts__item {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  max-width: 100%;
+}
+@media (max-width: 480px) {
+  .tp-facts[data-layout='rows'] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tp-facts[data-layout='rows'] > .tp-facts__item {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* ActionRow: buttons, then their visible reasons, then the outcome. */
+.tp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  min-width: 0;
+}
+.tp-actions__buttons,
+.tp-actions__reason {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  min-width: 0;
+}
+.tp-actions__buttons {
+  align-items: end;
+}
+.tp-reason > .tp-copy-line__why {
+  display: inline-block;
+  margin-inline-start: var(--tp-space-2);
+}
+
+/* CopyLine intro and note: the short line and its help icon on one muted line. */
+.tp-copy-line[data-variant] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--tp-space-2);
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+.tp-copy-line[data-variant='intro'] > p {
+  max-width: 72ch;
+}
+.tp-copy-line[data-variant='note'] {
+  font-size: var(--tp-font-size-12);
+}
+
+/* ShownList: a bounded list with the rest behind one Disclosure. */
+.tp-shown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tp-shown-list > .tp-disclosure {
+  margin-block-start: var(--tp-space-2);
+}
+/* Slot (2.2): label, facts, action, meta on rows shared by the three slots; a tile's fill. */
+.tp-slot {
+  display: grid;
+  grid-template-rows: subgrid;
+  grid-row: span 4;
+  row-gap: 0.375rem;
+  min-width: 0;
+  padding: var(--tp-space-2) var(--tp-space-3);
+  /* A slot is a tile of its Region (surface grammar): a borderless fill, never a box in a box. */
+  border: 0;
+  border-radius: var(--tp-radius-control);
+  background: var(--tp-color-surface-raised);
+}
+.tp-slot > * {
+  min-width: 0;
+}
+.tp-slot__label {
+  margin: 0;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-12);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tp-slot__facts,
+.tp-slot__action,
+.tp-slot__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+.tp-slot__facts {
+  flex-direction: column;
+}
+.tp-slot__action {
+  align-items: center;
+}
+
+/* Notice and outcome line (3.3, 3.4): chip, line, Why, actions. */
+.tp-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--tp-space-2) var(--tp-space-3);
+  min-width: 0;
+}
+.tp-notice__text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.tp-notice__lead {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.tp-notice__server {
+  flex-basis: 100%;
+}
+.tp-notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2);
+}
+
+/* Dialog (3.5, 8.7). */
+.tp-dialog {
+  max-width: min(32rem, calc(100vw - 2rem));
+  padding: var(--tp-space-4);
+  border: 1px solid var(--tp-color-border-active);
+  border-radius: var(--tp-radius-card);
+  background: var(--tp-color-surface-raised);
+  color: var(--tp-color-text);
+}
+.tp-dialog::backdrop {
+  background: rgb(0 0 0 / 55%);
+}
+.tp-dialog__title {
+  margin: 0 0 var(--tp-space-2);
+  font-size: var(--tp-font-size-15);
+}
+.tp-dialog__body p {
+  margin: 0 0 var(--tp-space-2);
+}
+.tp-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-2);
+  margin-top: var(--tp-space-3);
+}
+
+.tp-seen__state {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+}
+
+/* A Stop with its target and, when disabled, its reason. */
+.tp-stop {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tp-stop__target {
+  display: inline-flex;
+  gap: 0.3em;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+/* A part that failed to draw, with its revocations (S-091). */
+.tp-fallback {
+  min-width: 0;
+}
+.tp-fallback__automation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2);
+  flex-basis: 100%;
+  padding-block: var(--tp-space-2);
+  border-block: 1px solid var(--tp-color-border);
+}
+.tp-fallback__automation p {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--tp-color-text-muted);
+}
+.tp-fallback__automation .tp-stop {
+  justify-content: space-between;
+  width: 100%;
+}
+.tp-fallback__automation .tp-stop__target {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Every control tier has the same touch target, including quiet links and fields. */
+@media (max-width: 600px), (pointer: coarse) {
+  .tp-button,
+  .tp-field-control,
+  .tp-main details > summary,
+  .tp-main label:has(input:is([type='checkbox'], [type='radio'])),
+  .tp-main a[href] {
+    min-width: var(--tp-control-height-touch);
+    min-height: var(--tp-control-height-touch);
+  }
+  .tp-main a[href] {
+    display: inline-flex;
+    align-items: center;
+    margin-block: 0;
+  }
+}
+.tp-dialog__name {
+  margin-inline-start: 0.3em;
+}
+
+/* Spec 8.4: every disclosure summary is a target of at least 24 px. */
+.tp-copy-line__why > summary,
+.tp-disclosure > summary {
+  min-height: 24px;
+  min-width: 24px;
+  line-height: 24px;
+}
+
+/*
+ * A disabled button never keeps its tier's fill (a blocked Start must not look
+ * like the page's main action): no fill, a faint solid edge, dimmed text. Dashed
+ * edges belong to Unknown alone. Placed last so it wins over every tier rule;
+ * its reason is a visible line.
+ */
+.tp-button[aria-disabled='true'],
+.tp-button:disabled {
+  border-color: color-mix(in srgb, var(--tp-color-border-active) 55%, transparent);
+  border-style: solid;
+  background: transparent;
+  color: var(--tp-color-text-muted);
+  cursor: not-allowed;
+}

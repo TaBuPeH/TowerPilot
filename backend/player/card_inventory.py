@@ -8,6 +8,7 @@ from player.bootstrap_layout import manifest
 from player.bootstrap import screen_matches
 from player.asset_library import atomic_json
 from player import card_names
+from runtime import logger
 
 # A physical card is identified by its column and its absolute position in the
 # list (measured scroll so far + its y in the viewport), never by its OCR'd
@@ -114,6 +115,15 @@ def scroll_points(frame, direction, spec):
 
 
 def scan(cal, *, grab=None, swipe=None, read=None, read_label=None, pause=time.sleep, check_stop=lambda:None, progress=lambda message:None, prove=None):
+    with logger.attempt('setup.cards', screen='cards') as attempt:
+        result = _scan(cal, grab=grab, swipe=swipe, read=read, read_label=read_label,
+                       pause=pause, check_stop=check_stop, progress=progress, prove=prove)
+        attempt.finish('verified', cards=len(result['cards']), pages=result['pages'],
+                       complete=result['complete'])
+        return result
+
+
+def _scan(cal, *, grab=None, swipe=None, read=None, read_label=None, pause=time.sleep, check_stop=lambda:None, progress=lambda message:None, prove=None):
     from device import capture, act
     from vision import textocr
     read_label=read_label or read or (lambda f:textocr.read_lines(f,2))
@@ -141,22 +151,26 @@ def scan(cal, *, grab=None, swipe=None, read=None, read_label=None, pause=time.s
     def grid(frame):
         return frame[y0:y0+h0,x0:x0+w0]
     def move(frame, direction):
-        check_stop()
-        follow=observe()
-        if similarity(grid(frame),grid(follow))<.98:
-            raise RuntimeError('Card inventory changed before scrolling; retry when stable')
-        swipe(*scroll_points(frame,direction,spec),ms=900,reason='card calibration: preserve a complete inventory row')
-        pause(.8)
-        previous=observe()
-        stable_frames=0
-        for _ in range(15):
-            pause(.3)
-            current=observe()
-            stable_frames=stable_frames+1 if similarity(grid(previous),grid(current))>.995 else 0
-            if stable_frames>=2:
-                return current
-            previous=current
-        raise RuntimeError('Card inventory is still moving after scrolling; scan stopped')
+        with logger.attempt('setup.cards.scroll', screen='cards', direction=direction) as attempt:
+            check_stop()
+            follow=observe()
+            if similarity(grid(frame),grid(follow))<.98:
+                raise RuntimeError('Card inventory changed before scrolling; retry when stable')
+            swipe(*scroll_points(frame,direction,spec),ms=900,reason='card calibration: preserve a complete inventory row')
+            # Start observing immediately after the synchronous drag. Two
+            # independent quiet comparisons still prove the animation ended.
+            previous=observe()
+            stable_frames=0
+            for poll in range(15):
+                check_stop()
+                pause(.3)
+                current=observe()
+                stable_frames=stable_frames+1 if similarity(grid(previous),grid(current))>.995 else 0
+                if stable_frames>=2:
+                    attempt.finish('settled', comparisons=poll+1)
+                    return current
+                previous=current
+            raise RuntimeError('Card inventory is still moving after scrolling; scan stopped')
     progress('Cards: finding the top of the inventory')
     # The caller confirmed the cards screen just before this, but a single
     # scale-1 read of the medium INVENTORY anchor flakes on a frame grabbed
@@ -179,65 +193,67 @@ def scan(cal, *, grab=None, swipe=None, read=None, read_label=None, pause=time.s
     else: raise RuntimeError('Could not verify the top of the card inventory')
     stable=0
     for page in range(spec['max_pages']):
-        progress(f'Cards: reading page {page+1}; {len(cards)} cards identified')
-        cv2.imwrite(str(evidence/f'page_{page+1}.png'),frame)
-        rects=tile_rects(frame)
-        if not rects:
-            raise RuntimeError('No complete card rows could be verified; inventory remains incomplete')
-        follow=observe()
-        for x,y,w,h in rects:
-            check_stop()
-            ay=offset+y                         # absolute position in the list
-            seen=next((e for ay0,x0,e in placed if abs(ay-ay0)<POSITION_TOLERANCE and x==x0),None)
-            if seen is not None:
-                # Same physical card, seen again higher up the page: OR in its
-                # state, where the check/border can sit clear of the viewport
-                # clip that hid it on the row it first entered on.
-                seen['active']=seen['active'] or is_active(frame,x,y,w,h)
-                seen['mastery']=seen['mastery'] or has_mastery(frame,x,y,w,h)
-                continue
-            tile=frame[y:y+h,x:x+w]
-            if similarity(tile,follow[y:y+h,x:x+w])<.98:
-                raise RuntimeError('Card tile moved while reading its label')
-            label=tile[5:50,5:w-5]
-            lines=read_label(label)
-            name=' '.join(str(t).strip() for _,_,t in lines).strip()
-            # Read the same label independently; do not assign an OCR guess.
-            confirmation=' '.join(str(t).strip() for _,_,t in read_label(follow[y+5:y+50,x+5:x+w-5])).strip()
-            if name!=confirmation or not re.fullmatch(r'[A-Za-z][A-Za-z -]{2,39}',name):
-                if not already(unread,ay,x): unread.append((ay,x))
-                continue                        # keep this position open; a later page may read it cleanly
-            unread=[u for u in unread if not (abs(ay-u[0])<POSITION_TOLERANCE and x==u[1])]
-            # Repair a confident OCR slip to the game's own spelling; keep the
-            # raw reading when the match is not close and unambiguous.
-            display=card_names.resolve(name) or name
-            key=re.sub(r'[^a-z0-9]+','_',display.lower()).strip('_')
-            icon=tile[58:225,12:w-12].copy()
-            # A card is a ROOT detector (cards/<key>.png) when it is one the
-            # runtime looks up directly - the four allowlisted in
-            # calibrate.is_account_rel (death_ray, extra_orb, cash,
-            # ultimate_crit) or any card carrying an asset binding. Every other
-            # card is the account's inventory catalogue.
-            from player.calibrate import is_account_rel
-            known=f'cards/{key}.png'
-            rel=known if (is_account_rel(known) or known in manifest()['asset_bindings']) else f'cards/catalogue/{key}.png'
-            cut_entry=cal.cut('cards',rel,icon,grid(frame),display,{'source':'inventory_label','page':page+1,'rect':[x+12,y+58,w-24,167]})
-            entry={'name':display,'ocr':name,'rel':rel,'verified':cut_entry['verified'],
-                   'active':is_active(frame,x,y,w,h),'mastery':has_mastery(frame,x,y,w,h),
-                   'page':page+1,'column':spec['columns'].index(x),'abs_y':round(ay)}
-            cards[(round(ay),x)]=entry
-            placed.append((ay,x,entry))
-            cal.player['cards_observed']=list(cards.values())
-            cal.save_report()
-        cal.player['cards_active']=[c['name'] for c in cards.values() if c['active']]
-        cal.player['cards_mastered']=[c['name'] for c in cards.values() if c['mastery']]
-        progress(f'Cards: page {page+1} read; {len(cards)} cards identified; scrolling down')
-        after=move(frame,'swipe_down')
-        offset+=page_shift(frame,after)          # accumulate the verified scroll so positions stay absolute
-        stable=stable+1 if similarity(grid(frame),grid(after))>.995 else 0
-        frame=after
-        atomic_json(directory/'card_manifest.json',{'complete':False,'cards':list(cards.values()),'pages':page+1,
-                    'unreadable_tiles':len(unread),'active':sum(1 for c in cards.values() if c['active'])})
+        with logger.attempt('setup.cards.page', screen='cards', page=page+1) as page_attempt:
+            progress(f'Cards: reading page {page+1}; {len(cards)} cards identified')
+            cv2.imwrite(str(evidence/f'page_{page+1}.png'),frame)
+            rects=tile_rects(frame)
+            if not rects:
+                raise RuntimeError('No complete card rows could be verified; inventory remains incomplete')
+            follow=observe()
+            for x,y,w,h in rects:
+                check_stop()
+                ay=offset+y                         # absolute position in the list
+                seen=next((e for ay0,x0,e in placed if abs(ay-ay0)<POSITION_TOLERANCE and x==x0),None)
+                if seen is not None:
+                    # Same physical card, seen again higher up the page: OR in its
+                    # state, where the check/border can sit clear of the viewport
+                    # clip that hid it on the row it first entered on.
+                    seen['active']=seen['active'] or is_active(frame,x,y,w,h)
+                    seen['mastery']=seen['mastery'] or has_mastery(frame,x,y,w,h)
+                    continue
+                tile=frame[y:y+h,x:x+w]
+                if similarity(tile,follow[y:y+h,x:x+w])<.98:
+                    raise RuntimeError('Card tile moved while reading its label')
+                label=tile[5:50,5:w-5]
+                lines=read_label(label)
+                name=' '.join(str(t).strip() for _,_,t in lines).strip()
+                # Read the same label independently; do not assign an OCR guess.
+                confirmation=' '.join(str(t).strip() for _,_,t in read_label(follow[y+5:y+50,x+5:x+w-5])).strip()
+                if name!=confirmation or not re.fullmatch(r'[A-Za-z][A-Za-z -]{2,39}',name):
+                    if not already(unread,ay,x): unread.append((ay,x))
+                    continue                        # keep this position open; a later page may read it cleanly
+                unread=[u for u in unread if not (abs(ay-u[0])<POSITION_TOLERANCE and x==u[1])]
+                # Repair a confident OCR slip to the game's own spelling; keep the
+                # raw reading when the match is not close and unambiguous.
+                display=card_names.resolve(name) or name
+                key=re.sub(r'[^a-z0-9]+','_',display.lower()).strip('_')
+                icon=tile[58:225,12:w-12].copy()
+                # A card is a ROOT detector (cards/<key>.png) when it is one the
+                # runtime looks up directly - the four allowlisted in
+                # calibrate.is_account_rel (death_ray, extra_orb, cash,
+                # ultimate_crit) or any card carrying an asset binding. Every other
+                # card is the account's inventory catalogue.
+                from player.calibrate import is_account_rel
+                known=f'cards/{key}.png'
+                rel=known if (is_account_rel(known) or known in manifest()['asset_bindings']) else f'cards/catalogue/{key}.png'
+                cut_entry=cal.cut('cards',rel,icon,grid(frame),display,{'source':'inventory_label','page':page+1,'rect':[x+12,y+58,w-24,167]})
+                entry={'name':display,'ocr':name,'rel':rel,'verified':cut_entry['verified'],
+                       'active':is_active(frame,x,y,w,h),'mastery':has_mastery(frame,x,y,w,h),
+                       'page':page+1,'column':spec['columns'].index(x),'abs_y':round(ay)}
+                cards[(round(ay),x)]=entry
+                placed.append((ay,x,entry))
+                cal.player['cards_observed']=list(cards.values())
+                cal.save_report()
+            cal.player['cards_active']=[c['name'] for c in cards.values() if c['active']]
+            cal.player['cards_mastered']=[c['name'] for c in cards.values() if c['mastery']]
+            progress(f'Cards: page {page+1} read; {len(cards)} cards identified; scrolling down')
+            after=move(frame,'swipe_down')
+            offset+=page_shift(frame,after)          # accumulate the verified scroll so positions stay absolute
+            stable=stable+1 if similarity(grid(frame),grid(after))>.995 else 0
+            frame=after
+            atomic_json(directory/'card_manifest.json',{'complete':False,'cards':list(cards.values()),'pages':page+1,
+                        'unreadable_tiles':len(unread),'active':sum(1 for c in cards.values() if c['active'])})
+            page_attempt.finish('observed', cards=len(cards), unreadable_tiles=len(unread))
         if stable>=2: break
     else: raise RuntimeError('Card scan reached its page limit before verifying the bottom')
     cal.player['cards_active']=[c['name'] for c in cards.values() if c['active']]

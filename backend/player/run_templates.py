@@ -9,6 +9,11 @@ from pathlib import Path
 import re
 
 
+class RunIdTaken(ValueError):
+    """The run identifier - or a policy that identifier would create - exists already. A ValueError like every other refusal of instantiate
+    (callers that do not care keep catching ValueError); a caller that tells a person what to change can tell this one apart."""
+
+
 def catalogue():
     return json.loads(Path(__file__).with_suffix('.json').read_text(encoding='utf-8'))
 
@@ -31,7 +36,7 @@ def instantiate(profile, template_id, name, options=None):
     if not isinstance(name,str) or not re.fullmatch(r'[a-z][a-z0-9_]{0,63}',name):
         raise ValueError('Run identifier must start with a letter and contain only lowercase letters, numbers and underscores.')
     if name in profile.get('blueprints',{}):
-        raise ValueError('That run already exists. Choose a different identifier.')
+        raise RunIdTaken('That run already exists. Choose a different identifier.')
     template=next((t for t in catalogue()['templates'] if t['id']==template_id),None)
     if template is None:
         raise ValueError('Unknown run template.')
@@ -77,7 +82,7 @@ def instantiate(profile, template_id, name, options=None):
         if not old:continue
         new=name+'__'+old
         target=result.setdefault('policies',{}).setdefault(section,{})
-        if new in target:raise ValueError('A policy for that run identifier already exists.')
+        if new in target:raise RunIdTaken('A policy for that run identifier already exists.')
         target[new]=deepcopy(template['policies'][section][old])
         if group=='shopping':bp['shopping']=new
         else:refs[group]=new

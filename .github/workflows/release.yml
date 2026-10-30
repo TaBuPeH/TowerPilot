@@ -31,16 +31,56 @@ jobs:
           git checkout --detach $tag
           if ($LASTEXITCODE -ne 0) { throw 'Cannot check out release tag' }
           "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
-      - name: Install build and test dependencies
-        run: python -m pip install -r requirements-portable.lock pytest
-      - name: Check source release boundary
-        run: python -m pytest backend/tests/test_release_clean.py backend/tests/test_release_bootstrap.py
-      - name: Check dashboard
-        run: node --test frontend/tests/*.test.cjs
-      - name: Build both distributions
+      # Two steps: pip refuses a bare requirement beside the hash-locked file.
+      - name: Install build dependencies
+        run: python -m pip install -r requirements-portable.lock
+      - name: Install test dependencies
+        run: python -m pip install pytest==9.1.1
+      - name: Select backend release tests by layout
+        shell: pwsh
         run: |
-          python tools/build_release.py
-          python tools/build_portable.py
+          foreach ($file in @('test_release_clean.py', 'test_release_bootstrap.py', 'test_release_app_build.py', 'test_ui_app_serving.py')) {
+            $moved = "backend/tests/unit/$file"
+            $selected = if (Test-Path $moved) { $moved } else { "backend/tests/$file" }
+            $key = $file.Replace('.py', '').ToUpperInvariant()
+            "$key=$selected" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
+      - name: Check source release boundary
+        run: python -m pytest $env:TEST_RELEASE_CLEAN $env:TEST_RELEASE_BOOTSTRAP
+      # The dashboard app (frontend/app, ADR-001), built before the ZIPs. One
+      # step per command so any failure stops the release. The steps run when
+      # the checked-out release has the app; a tag from before it has none,
+      # and from it on tools/build_release.py refuses a release without the build.
+      - name: Check dashboard app release boundary
+        if: hashFiles('frontend/app/package-lock.json') != ''
+        run: python -m pytest $env:TEST_RELEASE_APP_BUILD $env:TEST_UI_APP_SERVING
+      - name: Install dashboard app dependencies
+        if: hashFiles('frontend/app/package-lock.json') != ''
+        working-directory: frontend/app
+        run: npm ci
+      - name: Typecheck dashboard app
+        if: hashFiles('frontend/app/package-lock.json') != ''
+        working-directory: frontend/app
+        run: npm run typecheck
+      - name: Lint dashboard app
+        if: hashFiles('frontend/app/package-lock.json') != ''
+        working-directory: frontend/app
+        run: npm run lint
+      - name: Test dashboard app
+        if: hashFiles('frontend/app/package-lock.json') != ''
+        working-directory: frontend/app
+        run: npm test
+      - name: Build dashboard app
+        if: hashFiles('frontend/app/package-lock.json') != ''
+        working-directory: frontend/app
+        run: npm run build
+      - name: Build source distribution
+        run: python tools/build_release.py
+      - name: Build portable distribution
+        run: python tools/build_portable.py
+      - name: Check release archives
+        if: hashFiles('frontend/app/package-lock.json') != ''
+        run: python tools/check_release_zips.py
       - name: Publish prerelease
         shell: pwsh
         env:

@@ -13,8 +13,6 @@ Normal Run policy:
     watch the wall overheal; if it declines despite x10 regen -> Nuke;
     still declining dm_confirm_sec later -> Demon Mode.
 """
-import datetime
-from scheduling import daystate
 from scheduling import global_rewards
 import json
 import math
@@ -37,75 +35,56 @@ from interactions import shopper
 from interactions import missions
 from vision import screen
 from interactions import store
+from towerpilot_workflows import action_contract
+from towerpilot_workflows.action_contract import shopping_interval
 from scheduling import runflag
 from runtime import runlog
+from runtime import attach_worker
+from interactions.tourney import Abort
+
+_battle_session = None
+_action_session = None      # the ActionSession of the tracked battle driver; None outside a ledger operation
+_rewards_history = None     # the FlowHistory of its reward flows (runtime/flow_history.py); None records nothing
+_attach = None             # runtime.attach_worker.Attach of an explicit takeover of the battle on screen; None for every ordinary run
+_chore_session = False      # the operation-scoped ActionSession the between-run chores record into: False = not looked for yet, None = no ledger operation
 
 
 def preset() -> dict:
     """Active preset; supports single-level inheritance via 'base'."""
-    p = CONFIG["presets"][CONFIG["preset"]]
-    if "base" not in p:
-        return p
-    base = CONFIG["presets"][p["base"]]
-    merged = {}
-    for k, v in base.items():
-        if isinstance(v, dict):
-            merged[k] = {**v, **p.get(k, {})}
-        else:
-            merged[k] = p.get(k, v)
-    for k, v in p.items():
-        if k not in merged and k != "base":
-            merged[k] = v
-    return merged
+    if _battle_session is not None:
+        return _battle_session.effective_preset()
+    from player.run_controls import effective_preset
+    return effective_preset(CONFIG)
 
 
-# P0 (2026-08-18): daily_state IO delegates to daystate.py (single writer,
-# absolute path, atomic saves).
-#
-# v29 (2026-08-27): the store's Ad Gem is no longer a once-daily claim - it
-# can be collected up to 60 times per day (6 gems each, 360/day), and the
-# game resets that cap at 00:00 UTC. So the once-a-day 4-5 AM scheme became
-# a UTC-keyed counter: the collection visits keep going all day, paced by
-# the caller's jittered retry clock, and stop dead at the cap.
-AD_GEMS_DAILY_CAP = 60          # game constant, not a preference
+def automation_enabled(routine: str) -> bool:
+    """Installed driver gates; disabling automation never toggles a game weapon."""
+    if _battle_session is not None:
+        return _battle_session.gates.get(routine, True)
+    return preset().get('automation', {}).get(routine, True)
 
 
-def free_gems_due() -> bool:
-    """May another Ad-Gem claim be attempted right now? (v29: 60/UTC-day.)"""
-    count = daystate.get_utc_today("ad_gems_claimed_utc")
-    if count >= AD_GEMS_DAILY_CAP:
-        if not daystate.flag_today("ad_gems_cap_logged"):
-            daystate.mark_today("ad_gems_cap_logged")
-            logger.event("ad_gems_cap_reached", count=count,
-                         cap=AD_GEMS_DAILY_CAP)
-        return False
-    return True
+# Daily state IO is scheduling/daystate.py (single writer, absolute path, atomic locked saves). When a reward clock or the daily store is due is the schedule
+# policy of its catalog definition (towerpilot_workflows/action_contract.py), reached through scheduling/global_rewards.py; this module keeps only the state a
+# policy reads (item 7, A3a). The v29 Ad-Gem cap helpers (a 60-per-UTC-day counter the free-gems claim never reached) are gone: nothing called them.
 
 
-# quest_scan_due()/quest_scan_mark_done() removed: superseded by chores.py,
-# which owns every between-run chore and one daily-state scheme for all of them.
-
-
-def free_gems_mark_claimed():
-    count = daystate.bump_utc_today("ad_gems_claimed_utc")
-    logger.event("ad_gems_claimed", count=count, cap=AD_GEMS_DAILY_CAP)
-    # legacy daily flag kept for the dashboard's daily-state display
-    daystate.set_raw("free_gems_claimed", datetime.date.today().isoformat())
-
-
-def store_gems_due():
-    return global_rewards.store_due()
-
-
-def store_gems_mark_claimed():
-    global_rewards.store_claimed()
+def store_gems_mark_claimed(rs=None):
+    """The daily free-gems claim was confirmed: close this account's UTC day, and tell the flow's history what it proved."""
+    global_rewards.store_settle()
     logger.event("store_gems_claimed", schedule='01:00 UTC +/-10 minutes')
+    history = getattr(rs, 'rewards_history', None)
+    if history is not None:
+        history.proved('cooldown_shown')
 
 
 def run_tier() -> int | None:
     """The tier this run is on, from the compiled preset (the blueprint's
     `tier`, the one shard.set_tier dialled in before BATTLE). None for a
-    legacy preset that names no tier."""
+    legacy preset that names no tier. An attached battle's tier is the one the
+    person declared (None = unknown), never the preset's."""
+    if _attach is not None:
+        return _attach.tier
     try:
         t = preset().get("tier")
     except Exception:                       # noqa: BLE001 - no preset bound
@@ -120,10 +99,13 @@ def marks():
     proactive Nuke in both loops, the Chain Lightning choreography and the
     danger-window shots - reads this one list."""
     from scheduling import fleets
-    return fleets.marks(run_tier(), CONFIG)
+    if _attach is not None and _attach.tier is None:
+        return []        # an unknown tier has no timetable: nothing may fire on a fleet wave
+    cfg = _battle_session.config if _battle_session is not None else CONFIG
+    return fleets.marks(run_tier(), cfg)
 
 
-def fleet_gate(rs, frame, mark: int, wave: int) -> str | None:
+def fleet_gate(rs, frame, mark: int, wave: int, after: int = 0) -> str | None:
     """Why the fleet Nuke may fire for `mark` on this frame, or None = hold.
 
     A fleet is ONE big outlined pentagon of a random type (saboteur red,
@@ -135,25 +117,36 @@ def fleet_gate(rs, frame, mark: int, wave: int) -> str | None:
     2026-10-18): the Nuke refreshes in ~300 waves and fleets come every 750,
     holding it saves nothing. Blue or not only labels the event.
 
-    The gate still refuses to fire before a fleet is on screen, so the
-    schedule alone never burns the Nuke (a wrong tier row, a mark the run
-    skipped past). Once sighted the decision sticks for the mark, so a
-    pentagon that scrolls off between frames still gets its Nuke.
-    `fleet.sighting.enabled: false` restores the plain schedule. The caller
-    has already applied nuke_on_fleet.after_waves / window_waves."""
-    cfg = (CONFIG.get("fleet") or {}).get("sighting") or {}
+    SCANNED FROM THE MARK ITSELF, with the schedule as the floor (user,
+    2026-10-20): the callers used to consult this only from mark+after_waves
+    (3), and the 4495 fleet killed the tower at 4497 before the first look,
+    at 4499 two seconds after a sighting-and-Nuke at +4, and at 4506 with
+    no sighting at all in 4498-4506 (no frame kept, so no post-mortem). Now
+    a sighting fires from mark+0, an unsighted mark fires on schedule at
+    mark+`after` anyway (the Nuke is free), and the first look at every mark
+    keeps a frame (`fleet_watch`) so a miss can be diagnosed.
+    Once sighted the decision sticks for the mark, so a pentagon that
+    scrolls off between frames still gets its Nuke. `fleet.sighting.enabled:
+    false` restores the plain schedule. The caller has already applied
+    nuke_on_fleet.window_waves."""
+    run_cfg = _battle_session.config if _battle_session is not None else CONFIG
+    cfg = (run_cfg.get("fleet") or {}).get("sighting") or {}
     if not cfg.get("enabled", True):
-        return "schedule"
+        return "schedule" if wave >= mark + int(after) else None
     seen = rs.fleet_seen.setdefault(mark, {"types": {}, "blue": False})
+    if not seen.get("watched"):
+        seen["watched"] = True
+        logger.event("fleet_watch", mark=mark, wave=wave,
+                     shot=logger.shot(frame, f"fleet_watch_w{wave}"))
     try:
         from player.bootstrap_layout import manifest
         x, y, w, h = manifest()["side_menu"]["column"]
         counts = fleet_scan.scan(
-            frame, exclude=(x, y, x + w, y + h),
+            frame, field=run_cfg["rois"]["field"], exclude=(x, y, x + w, y + h),
             min_area=float(cfg.get("min_area", fleet_scan.MIN_AREA)))
     except Exception as e:                  # noqa: BLE001 - vision must not kill the loop
         logger.event("fleet_scan_error", mark=mark, error=repr(e))
-        return None
+        counts = {}                       # an earlier sighting still holds
     for t, n in counts.items():
         if n and n > seen["types"].get(t, 0):
             seen["types"][t] = n
@@ -165,6 +158,8 @@ def fleet_gate(rs, frame, mark: int, wave: int) -> str | None:
         return "blue_fleet"
     if seen["types"]:
         return "fleet_" + max(seen["types"], key=seen["types"].get)
+    if wave >= mark + int(after):
+        return "schedule_unsighted"
     return None
 
 
@@ -189,6 +184,28 @@ def fleet_fire_skipped(rs, frame, mark: int, wave: int, why: str) -> None:
 # ride out a glyph obscured by combat, short enough that the wall watch opens
 # well inside the window that follows.
 SW_CLOSE_FRAMES = 3
+
+
+class AttachReplaced(Abort):
+    """A frame a helper captured for itself shows a wave far below the battle the person confirmed: nothing may be sent until the main loop has judged it."""
+
+
+def _attach_replaced(rs, wave) -> bool:
+    """A takeover's one identity test for a fresh battle frame: the readable wave is more than the margin below the highest wave of the confirmed battle.
+    False for an ordinary run, which owns every battle it meets."""
+    if _attach is None or wave is None or rs.wave_hwm is None:
+        return False
+    return wave < rs.wave_hwm - attach_worker.WAVE_MARGIN
+
+
+def _attach_identity_guard(rs):
+    """The guard seam of the gem collectors (flows/shard.GemWatch): their verification and confirmation captures are not the main loop's frame, so a battle
+    that replaced the confirmed one between the two must hold their input, not just the main loop's."""
+    def guard(frame, surface):
+        if surface == "battle" and _attach_replaced(rs, wave_reader.read_wave(frame)):
+            raise AttachReplaced("wave below the confirmed battle")
+        return frame
+    return guard
 
 
 class RunState:
@@ -229,12 +246,9 @@ class RunState:
         self.cl_offsets: dict[int, tuple[int, int]] = {}  # mark -> (on_before, off_after)
         self.cl_always_above: int | None = None   # rolled per run from a range
         self.cl_blocked_logged = False   # edge-log for "toggle wanted but gated"
-        from interactions.ad_gems import AdGemCollector
-        self.ad_gems = AdGemCollector(preset().get("gather", {}).get("ad_gems", True))
         from flows import shard
-        # Detection-free orbiting-gem harvest, inert unless gather.gem_orbit is
-        # enabled; rides along on the gem block below (see flows/shard.py).
-        self.gem_orbit = shard.GemOrbitTapper(**shard.gem_orbit_opts())
+        self.gems = shard.GemWatch(preset().get("gather", {}), session=_action_session,
+                                   guard=None if _attach is None else _attach_identity_guard(self))
         self.last_shop = 0.0
         self.sprint_prev: bool | None = None
         self.no_wave = 0              # consecutive frames without a wave read
@@ -288,6 +302,22 @@ class RunState:
         self.in_run_tries: dict = {}          # id -> attempts (same ledger
                                               # shape as rule_cards_tries)
         self.shop = shopper.Shopper(preset())
+        if _action_session is not None:
+            self.shop.recorder = _action_session.recorder('shopping')
+        self.rewards_history = _rewards_history
+        self.uw_attempts = []   # UW toggles of the current pass awaiting their history row (`uw_toggle` buffers, `uw_flush_history` writes)
+        self.action_session = _action_session   # the history of the main-loop upkeep (compiled rules, global Demon Mode, UW retry); None records nothing
+        if _rewards_history is not None:
+            self.mission.on_end = lambda how: reward_flow_ended(self, how)
+        from player.run_controls import resolve
+        live = resolve(preset(), CONFIG)['routines']
+        self.shopping_enabled = live['shopping']['enabled']
+        self.rewards_enabled = live['rewards']['enabled']
+        self.repeat_enabled = live['repeat']['enabled']
+        if _attach is not None:
+            # A takeover never repeats into another battle, and its reward flows follow the control the envelope froze (off unless a person turned them on).
+            self.repeat_enabled = False
+            self.rewards_enabled = bool(_battle_session is not None and _battle_session.gates.get('rewards', False))
 
 
 FORCE_PRESENT = 0.85    # template score required to tap without a ready check
@@ -303,7 +333,7 @@ RESCUE_YES_PT = (730, 1450)
 
 
 def fire_button(frame, name: str, reason: str,
-                require_ready: bool = True) -> bool:
+                require_ready: bool = True, routine: str = 'abilities') -> bool:
     """Tap an ability and CONFIRM it actually fired.
 
     Returns True only on a confirmed fire, because callers retire a fleet
@@ -326,6 +356,8 @@ def fire_button(frame, name: str, reason: str,
     Confirmation still runs - an unconfirmed rescue simply gets retried under
     the caller's refire floor instead of being silently skipped.
     """
+    if not automation_enabled(routine):
+        return False
     st = detect.button_state(frame, name)
     if not (st.present and st.center):
         return False
@@ -431,6 +463,15 @@ def _in_ability_row(pt: tuple[int, int], margin: int = 25) -> bool:
             and y - margin <= pt[1] <= y + h + margin)
 
 
+def chore_history():
+    """The history session of the between-run chores (operation-scoped: a chore runs on Home, between battles). None outside a ledger operation: they record nothing."""
+    global _chore_session
+    if _chore_session is False:
+        from runtime.action_session import ActionSession
+        _chore_session = ActionSession.for_operation('orchestrator')
+    return _chore_session
+
+
 def restart_from_home(frame, tier: int | None) -> bool:
     """Death -> HOME -> set the tier -> BATTLE, instead of tapping RETRY.
 
@@ -478,7 +519,7 @@ def restart_from_home(frame, tier: int | None) -> bool:
         # chore. chores.run_due() takes at most ONE per gap so a restart never
         # becomes a ten-minute menu expedition, and it never raises.
         from scheduling import chores
-        if chores.run_due() and not tourney.on_home(capture.grab()):
+        if chores.run_due(session=chore_history()) and not tourney.on_home(capture.grab()):
             after = capture.grab()
             if tourney.live_run(after):
                 # Someone started a run while the chores had the menus.
@@ -1027,6 +1068,19 @@ def _rule_cooldown(rule: dict, a_p: dict) -> float:
     return RULE_REFIRE_SEC
 
 
+def record_upkeep(rs, action: str, instance: str, ok: bool, **refs) -> None:
+    """The history row of one CONTACT of a main-loop upkeep action (compiled rule, global Demon Mode, UW toggle), written by the caller AFTER the input returned and after
+    its own state was updated - never before a tap. A host with no ledger operation (`rs.action_session` None, or a stand-in without it) records nothing; the session
+    contains its own failures. What counts as contact, and what `ok` means, is each caller's own rule (`upkeep_outcome` names the row)."""
+    session = getattr(rs, "action_session", None)
+    if session is None:
+        return
+    try:
+        session.record(action, instance, refs=refs or None, **action_contract.upkeep_outcome(action, ok))
+    except Exception as e:   # the history is never worth the live loop: the row is lost and the loss is logged
+        logger.event("upkeep_history_failed", action=action, error=repr(e), level="debug")
+
+
 def _rule_suppressed(rs: "RunState", i: int, rid: str, why: str, now: float,
                      **extra) -> None:
     """A fire that did NOT happen, at debug level and RATE LIMITED.
@@ -1088,6 +1142,8 @@ def _rule_toggle_uw(rs: "RunState", p: dict) -> tuple[bool, bool]:
     Returns (touched_screen, succeeded) - and touched is unconditionally True,
     because uw_toggle taps the tab strip before it can discover anything.
     """
+    if not automation_enabled('abilities'):
+        return False, False
     weapon = p.get("weapon", p.get("uw"))
     want = p.get("on")
     if want is None:
@@ -1123,7 +1179,28 @@ def _tournament_locked(frame) -> str | None:
         return "legacy tournament preset"
     if screen.in_tournament(frame):
         return "trophy badge on screen"
+    if _attach is not None:
+        return "battle not started by this run"      # a takeover continues a battle; it never ends one
     return None
+
+
+def _after_surrender(rs: "RunState", reason: str, wave: int | None) -> bool:
+    """Persist the observed result before an existing surrender flow retries."""
+    if _battle_session is None:
+        return True
+    _battle_session.finish(reason, outcome='surrendered', evidence={'last_observed_wave': wave})
+    if not rs.repeat_enabled:
+        return False
+    try:
+        from runtime.battle_source import reload_battle_source
+        next_preset, next_config = reload_battle_source()
+    except Exception as exc:
+        logger.event('repeat_reload_failed', error=str(exc))
+        return False
+    CONFIG.clear()
+    CONFIG.update(next_config)
+    _battle_session.prepare_next(next_preset, next_config)
+    return True
 
 
 def max_wave_reached(rs: "RunState", frame, wave: int | None) -> bool:
@@ -1156,7 +1233,12 @@ def max_wave_reached(rs: "RunState", frame, wave: int | None) -> bool:
     from flows import shard
     rs.bot_left_battle = True       # the exit menus are OURS to clean up
     try:
-        shard.abandon_run()
+        def before_restart():
+            return _after_surrender(rs, 'max_wave_surrender', wave)
+        if _battle_session is None:
+            shard.abandon_run()
+        else:
+            shard.abandon_run(before_restart=before_restart)
         logger.event("max_wave", wave=wave, limit=limit, result="surrendered")
         return True
     except Exception as e:                              # noqa: BLE001
@@ -1273,7 +1355,11 @@ def _rule_surrender(rs: "RunState", frame, i: int, rid: str) -> tuple[bool, bool
     from flows import shard
     rs.bot_left_battle = True
     try:
-        shard.abandon_run()
+        if _battle_session is None:
+            shard.abandon_run()
+        else:
+            shard.abandon_run(before_restart=lambda: _after_surrender(rs, 'rule_surrender', rs.tracker.last))
+            rs.rule_boundary_completed = True
         return True, True
     except Exception as e:                              # noqa: BLE001
         logger.event("rule_surrender_failed", index=i, id=rid,
@@ -1302,10 +1388,14 @@ def _rule_act(rs: "RunState", frame, i: int, rid: str, name: str,
     screen.
     """
     if name == "fire":
+        if not automation_enabled('abilities'):
+            return False, False
         return True, bool(fire_button(frame, _rule_button(p), rid,
                                       require_ready=bool(
                                           p.get("require_ready", False))))
     if name == "burst":
+        if not automation_enabled('rescue'):
+            return False, False
         # A TIER B BURST IS NOT THE TIER A BURST, and must not pretend to be.
         # _fast_wall_watch's burst is three instant taps off ONE frame at ~3Hz
         # because it is racing a sub-second wall drain; that is the only thing
@@ -1357,7 +1447,7 @@ def _rule_act(rs: "RunState", frame, i: int, rid: str, name: str,
                 return True, False
             ok = bool(fire_button(f2, _rule_button(p), f"{rid}_{attempt + 1}",
                                   require_ready=bool(p.get("require_ready",
-                                                           False))))
+                                                           False)), routine='rescue'))
             if ok:
                 break
         if ok and _rule_button(p) == "demon_mode":
@@ -1430,6 +1520,7 @@ def _run_rules(rs: "RunState", frame, wave: int | None, phase: str) -> bool:
     if not rules:
         return False
     now = time.monotonic()
+    schedule = action_contract.catalog().get("compiled_rule").schedule   # the per-rule refire floor (Cooldown); the floor itself is the rule's own
     cache: dict = {}            # one bar read per pass, shared by every rule
     touched = False             # the one-CONTACT-per-tick budget
     for i, rule in enumerate(rules):
@@ -1468,7 +1559,7 @@ def _run_rules(rs: "RunState", frame, wave: int | None, phase: str) -> bool:
             logger.event("rule_unsupported", index=i, id=rid, when=when,
                          do=do, phase=phase, why=why)
             continue
-        if now < rs.rule_next.get(k, 0.0):
+        if schedule.evaluate(now, {"next_at": rs.rule_next.get(k, 0.0)})[0].kind != "due":
             _rule_suppressed(rs, k, rid, "cooldown", now,
                              wait=round(rs.rule_next[k] - now, 1))
             continue                    # per-rule refire guard
@@ -1486,7 +1577,7 @@ def _run_rules(rs: "RunState", frame, wave: int | None, phase: str) -> bool:
                              trigger=snap)
             continue
         contact, ok = _rule_act(rs, frame, k, rid, a_name, a_p)
-        rs.rule_next[k] = now + _rule_cooldown(rule, a_p)
+        rs.rule_next[k] = schedule.after(now, _rule_cooldown(rule, a_p))
         if ok and t_name == "fleet_mark" and "mark" in snap:
             _rule_mem(rs, "rule_marks").setdefault(k, set()).add(snap["mark"])
             if a_name in ("fire", "burst") and _rule_button(a_p) == "nuke":
@@ -1500,6 +1591,7 @@ def _run_rules(rs: "RunState", frame, wave: int | None, phase: str) -> bool:
             rs.rules_fired.add(k)
         if contact:
             touched = True              # the budget is spent on CONTACT
+            record_upkeep(rs, "compiled_rule", f"compiled_rule@{rid}", ok, rule_id=rid)
     return touched
 
 
@@ -1535,6 +1627,8 @@ def _fast_wall_watch(rs: "RunState", ab: dict) -> str:
     minute this loop exists to win; a fat wall merely slows sampling down.
     The 30-min ceiling is a runaway stop, not a design parameter.
     """
+    if not automation_enabled('rescue'):
+        return 'disabled'
     thresh = ab["dm_below"]
     # HOISTED ONCE, READ NEVER AGAIN (SCHEMA.md, Tier A): the per-sample body
     # of this loop is the one place in the autopilot where a dict lookup is
@@ -1623,8 +1717,16 @@ def _fast_wall_watch(rs: "RunState", ab: dict) -> str:
                     return "off"
             else:
                 no_wave = 0
-                rs.tracker.update(w)    # a stale tracker here logged a
-                                        # 5495-fleet death as "wave 5420"
+                confirmed = rs.tracker.update(w)    # a stale tracker here logged a
+                                                    # 5495-fleet death as "wave 5420"
+                if _attach is not None and confirmed is not None:
+                    rs.wave_hwm = confirmed if rs.wave_hwm is None else max(confirmed, rs.wave_hwm)    # the boundary baseline follows what this loop saw
+                if _battle_session is not None:
+                    if rs.wave_hwm is not None and w < rs.wave_hwm - attach_worker.WAVE_MARGIN:
+                        return 'boundary_pending'
+                    _battle_session.checkpoint(rs, battle_visible=screen.identify(frame).name == 'battle')
+                    if not automation_enabled('rescue'):
+                        return 'disabled'
                 # FLEET MARKS DON'T PAUSE FOR THE WATCH (2026-08-18): the
                 # x495 fleet lands inside the post-SW watch on T14, the
                 # main-loop nuke schedule is starved while this loop owns
@@ -1646,8 +1748,8 @@ def _fast_wall_watch(rs: "RunState", ab: dict) -> str:
                         if wv > m + window:
                             rs.nuked_marks.add(m)
                             continue
-                        if wv >= m + after and now_m >= rs.fleet_try_at:
-                            why = fleet_gate(rs, frame, m, wv)
+                        if wv >= m and now_m >= rs.fleet_try_at:
+                            why = fleet_gate(rs, frame, m, wv, after)
                             if why is None:
                                 break
                             rs.fleet_try_at = now_m + throttle
@@ -1684,8 +1786,11 @@ def _fast_wall_watch(rs: "RunState", ab: dict) -> str:
             collapsed = prev is not None and prev > collapse_from
             danger = danger or collapsed
         if danger:
-            if wave_reader.read_wave(frame) is None:
+            w_now = wave_reader.read_wave(frame)
+            if w_now is None:
                 return "off"            # death dialog reads dark too: NO taps
+            if _attach_replaced(rs, w_now):
+                return "boundary_pending"       # a battle the person did not confirm: no burst on it
             # THE BURST (user, 2026-08-15 final ruling): "the first click
             # done on the Intro Sprint and cancelling it must immediately
             # after that do the click to do Demon mode - no more checks."
@@ -1848,7 +1953,7 @@ def _fast_wall_watch(rs: "RunState", ab: dict) -> str:
     return "timeout"
 
 
-DM_ALWAYS_RETRY_SEC = 15.0      # between attempts: a confirmed fire costs ~1s
+DM_ALWAYS_RETRY_SEC = action_contract.DEMON_MODE_ALWAYS.schedule.floor_sec   # the catalog's Cooldown; between attempts: a confirmed fire costs ~1s
                                 # and Demon Mode cools down for minutes, so a
                                 # 15 s grain loses nothing and never lets a
                                 # bright-field false "ready" stall the loop
@@ -1867,30 +1972,71 @@ def demon_mode_always(rs: "RunState", frame, wave_now, now) -> bool:
     the sprint indicator is up; fire_button confirms the cooldown dim and
     require_ready stays on, so a cooling button is never tapped blind.
     Returns True on a confirmed fire."""
-    if not wave_now or now < rs.dm_always_try_at:
+    schedule = action_contract.catalog().get("demon_mode_always").schedule
+    if not wave_now or schedule.evaluate(now, {"next_at": rs.dm_always_try_at})[0].kind != "due":
         return False
     try:
         if not global_rewards.enabled(preset(), "demon_mode_always"):
             return False
     except Exception:                       # noqa: BLE001 - no preset bound
         return False
-    rs.dm_always_try_at = now + DM_ALWAYS_RETRY_SEC
+    rs.dm_always_try_at = schedule.after(now)
     if not rs.sprint_ended and detect.intro_sprint_active(frame):
         return False
     if not fire_button(frame, "demon_mode", "demon_mode_always", require_ready=True):
         return False
     rs.dm_always_count += 1
     logger.event("demon_mode_always", wave=wave_now, count=rs.dm_always_count)
+    record_upkeep(rs, "demon_mode_always", "demon_mode_always", True)   # a CONFIRMED fire only: fire_button does not say whether an unconfirmed attempt tapped
     return True
 
 
-def watch_frame(rs: "RunState", frame) -> str | None:
+def uw_retry_schedule():
+    """The one retry ladder of every Ultimate Weapon toggle (Backoff 10, 2, 120 s): the catalog's, shared by the three call sites of main()."""
+    return action_contract.catalog().get("uw_toggle").schedule
+
+
+def uw_retry_due(rs: "RunState", now: float) -> bool:
+    """May the UW tab be visited now? The host holds ONE deadline (`rs.uw_next_try`); a success resets `rs.uw_fails` and leaves it."""
+    return uw_retry_schedule().evaluate(now, {"failures": 0, "refusal_at": rs.uw_next_try})[0].kind == "due"
+
+
+def uw_backoff(rs: "RunState", success: bool) -> None:
+    """The result of a UW toggle: a success clears the failure count; a failure counts and moves the shared deadline (10, 20, 40, 80, 120, 120 ... s)."""
+    if success:
+        rs.uw_fails = 0
+        return
+    rs.uw_fails += 1
+    rs.uw_next_try = uw_retry_schedule().retry_at(time.monotonic(), rs.uw_fails)
+
+
+def uw_toggle(rs: "RunState", weapon: str, want_on, site: str) -> bool:
+    """`shopper.uw_toggle` for one of the three call sites ('cl_normalize', 'uw_wanted', 'cl_toggle'). The history row is BUFFERED here and written once at the end
+    of the pass (`uw_flush_history`), after every decision and deadline of the pass: the cadence never waits for the ledger. Nothing is buffered without a session."""
+    ok = shopper.uw_toggle(weapon, want_on)
+    if getattr(rs, "action_session", None) is not None:
+        pending = getattr(rs, "uw_attempts", None)
+        if pending is None:
+            pending = rs.uw_attempts = []
+        pending.append((weapon, site, bool(ok)))
+    return ok
+
+
+def uw_flush_history(rs: "RunState") -> None:
+    """Write the buffered UW toggle rows (one per toggle, one shared instance)."""
+    pending, rs.uw_attempts = getattr(rs, "uw_attempts", None), []
+    for weapon, site, ok in pending or ():
+        record_upkeep(rs, "uw_toggle", "uw_toggle", ok, weapon=weapon, site=site)
+
+
+def watch_frame(rs: "RunState", frame, observation=None) -> str | None:
     """Constant monitoring, run on EVERY captured frame.
 
     Returns a status the main loop acts on:
       'dead'   - death screen showing (only the RETRY click is allowed)
       'menu'   - tower NOT on screen (some other menu): NO clicking at all,
                  any active sweep must be aborted immediately
+      'refresh' - collection observed a newer screen; discard this tick's frame
       None     - in battle, all systems go
     The battle-presence signal is the wave counter: no readable wave number
     on 2 consecutive frames means we are not looking at a run."""
@@ -1906,8 +2052,11 @@ def watch_frame(rs: "RunState", frame) -> str | None:
         return "menu"                # hands off until it is confirmed
     rs.dead_frames = 0
 
-    raw = wave_reader.read_wave(frame)
-    rs.tracker.update(raw)
+    if observation is None:
+        raw = wave_reader.read_wave(frame)
+        rs.tracker.update(raw)
+    else:
+        raw = observation['raw_wave']
     rs.no_wave = 0 if raw is not None else rs.no_wave + 1
     if rs.no_wave >= 2:
         return "menu"                # tower not on screen -> hands off
@@ -2007,7 +2156,7 @@ def watch_frame(rs: "RunState", frame) -> str | None:
         # value is spent by the first Second Wind anyway (wave 1060+), and
         # end_intro_sprint verifies every step, so a run with no sprint left
         # simply logs "indicator not found" and changes nothing.
-        if _ab.get("end_sprint_after_sw") and not rs.sprint_ended:
+        if _ab.get("end_sprint_after_sw") and not rs.sprint_ended and automation_enabled('rescue'):
             if end_intro_sprint(rs, "post_second_wind"):
                 rs.sprint_ended = True
 
@@ -2042,8 +2191,8 @@ def watch_frame(rs: "RunState", frame) -> str | None:
                 # the mark silently so it can never fire late
                 rs.nuked_marks.add(m)
                 continue
-            if wave_now >= m + after and now >= rs.fleet_try_at:
-                why = fleet_gate(rs, frame, m, wave_now)
+            if wave_now >= m and now >= rs.fleet_try_at:
+                why = fleet_gate(rs, frame, m, wave_now, after)
                 if why is None:
                     break
                 # THROTTLED: a confirmed fire costs ~1.1s (tap + settle +
@@ -2085,7 +2234,7 @@ def watch_frame(rs: "RunState", frame) -> str | None:
     # screen the wall ROI reads 0.073 and on the death screen 0.000, both under
     # every rescue threshold. One unreadable frame is not enough for the
     # no_wave>=2 'menu' bail above, so the rescue needs its own gate.
-    if rescue_bar is not None and watching and raw is not None:
+    if rescue_bar is not None and watching and raw is not None and automation_enabled('rescue'):
         # WALL PRESETS READ COLOR, NOT BRIGHTNESS (user, 2026-08-15): the
         # overheal is the PURPLE run from the bar's left edge, and "under
         # 20%" means the column at 20% of the width has turned teal. The
@@ -2127,6 +2276,8 @@ def watch_frame(rs: "RunState", frame) -> str | None:
             # samples ONLY the wall, ~3x per second, firing the combo inline.
             if can_fire("demon_mode", rs.dm_fired):
                 _fast_wall_watch(rs, ab)
+                if _attach is not None:
+                    return "refresh"        # the watch held this pass for seconds or minutes (a death dialog, a replaced battle, a new proc): the frame in hand is history
         else:
             fill = detect.hp_fill(frame)
             nuke_below = ab.get("nuke_below")
@@ -2139,21 +2290,21 @@ def watch_frame(rs: "RunState", frame) -> str | None:
                                                   f"rescue_w{rs.tracker.last}"))
                     rs.last_fire["demon_mode"] = now
                     if fire_button(frame, "demon_mode", f"rescue_{fill:.3f}",
-                                   require_ready=burst_ready):
+                                   require_ready=burst_ready, routine='rescue'):
                         rs.dm_fired = True
                         rs.last_fire["demon_mode"] = now
             if nuke_below is not None and fill < nuke_below:
                 if can_fire("nuke", rs.nuke_fired_at) and \
                         fire_button(frame, "nuke", f"rescue_{fill:.3f}",
-                                    require_ready=hp_nuke_ready):
+                                    require_ready=hp_nuke_ready, routine='rescue'):
                     rs.nuke_fired_at = now
                     rs.last_fire["nuke"] = now
     # not watching: abilities are HELD (never fired pre-SW)
 
     # ---- orbiting-gem BLIND HARVEST (opt-in): tap the 135deg arc on a cadence,
     # detection-free. Self-gated (enabled + a readable wave), inert by default.
-    rs.ad_gems.poll(frame)
-    rs.gem_orbit.poll(frame)
+    if rs.gems.poll(frame) is not frame:
+        return "refresh"
 
     return False
 
@@ -2246,19 +2397,27 @@ def _prepare_coin_start():
     as a scheduled handoff. A battle already on screen is adopted untouched.
     """
     body = preset()
-    if body.get("kind") != "coin":
+    if body.get("kind") != "coin" or _attach is not None:
         return
     from vision import screen
     if screen.identify(capture.grab()).name != "home":
         return
     from interactions import loadout, tourney
     from flows import shard
+    setup = None
     try:
         if body.get("loadout"):
-            loadout.apply(body["loadout"])
+            result = loadout.apply(body["loadout"])
+            setup = result['setup']
+            if _battle_session is not None:
+                _battle_session.set_setup(setup)
         shard.set_tier(body["tier"])
         shard.enter_run(body)
+        if setup is not None and setup.get('state') == 'degraded' and _battle_session is not None:
+            _battle_session.set_setup(dict(setup, continued_with_partial=True))
     except (tourney.Abort, act.TapRefused) as e:
+        if _battle_session is not None:
+            _battle_session.set_setup(loadout.setup_failure(body.get('loadout'), e))
         # Entry refused (a dissonant dialog image still missing, a control
         # not found): HOLD on Home and say so - the observe loop adopts
         # whatever run a person starts. Never a blind second attempt.
@@ -2270,17 +2429,279 @@ def _prepare_coin_start():
                  dissonant=body.get("dissonant_tab"))
 
 
+def recover_reward_menu(rs, frame, now):
+    """Observe every menu frame; recover only our current, enabled reward flow."""
+    rs.mission.observe(frame)
+    if (not rs.mission.recovery_owned or not rs.rewards_enabled
+            or now - rs.off_battle_since <= 45 or now - rs.recover_try <= 10):
+        return False
+    rs.recover_try = now
+    if not rs.mission.recover(frame):
+        return False
+    logger.event('stuck_recover', action='owned_reward_exit')
+    return True
+
+
+def advance_shopping(rs, frame, wave, sprint: bool, now: float, interval: float) -> None:
+    """One shopping action per monitoring pass; all terminal paths back off.
+
+    A confirmed bounded window may request another window on the next pass.
+    Its inactive interval lets mission and ability checks run before shopping.
+    """
+    if rs.mission.active:
+        return
+    if not rs.shop.active:
+        if rs.shop.finished or not rs.shop.due(now, rs.last_shop, interval):
+            return
+        rs.shop.start()
+    rs.shop.step(frame, wave=wave, after_intro_sprint=not sprint)
+    if not rs.shop.active:
+        rs.last_shop = time.monotonic()
+        if rs.shop.finished and not rs.shop_done_logged:
+            logger.event('shopping_complete', wave=wave, maxed=sorted(rs.shop.maxed))
+            rs.shop_done_logged = True
+
+
+VISIT_ACTIONS = {'quests': 'quest_visit', 'guild': 'guild_visit'}   # the side-menu badge -> the catalog action a visit to it is
+
+
+def visit_schedule(badge):
+    """The Cooldown of a visit to the side-menu `badge` (a sampled delay after it is seen; a repeat soon after a visit waits longer)."""
+    return action_contract.catalog().get(VISIT_ACTIONS[badge]).schedule
+
+
+def store_follow_up_schedule():
+    """The guild-store follow-up is an event (a guild claim landed), never a time: EventOnly."""
+    return action_contract.catalog().get('guild_store').schedule
+
+
+def open_reward_row(rs, action, **fields):
+    """The reward flow just started: open its history row (nothing when this run records none, or no flow started)."""
+    history = getattr(rs, 'rewards_history', None)
+    if history is not None and rs.mission.active:
+        history.opened(action, **fields)
+
+
+def reward_checked_row(rs, action):
+    """A badge check that started no flow: one aggregated no-op row."""
+    history = getattr(rs, 'rewards_history', None)
+    if history is not None:
+        history.checked(action)
+
+
+def reward_flow_ended(rs, how):
+    """`Mission.on_end`: the flow ended; close its history row. A guild flow that claimed something has proved a game effect."""
+    history = getattr(rs, 'rewards_history', None)
+    if history is None:
+        return
+    if how == 'completed' and history.action in ('guild_visit', 'guild_progress') and missions.last_guild_claims > 0:
+        history.proved('milestones_claimed', missions.last_guild_claims)
+    history.ended(how)
+
+
+def advance_rewards(rs, frame, now, wave, _global) -> bool:
+    """The side-menu reward upkeep of one monitoring pass (moved out of main() unchanged: item 7 batch A3a).
+
+    Returns True when the pass is spent (main() `continue`s: a flow started, so the frame is stale), False to fall through to the
+    rest of the loop."""
+    rs.menu_closed_frames = 0
+    rs.menu_open_frames += 1
+    if rs.menu_open_frames >= 2 and not rs.shop.active:
+        from interactions import event_rewards
+        reward_stepped = False
+        for key, detector, flow in (
+                ('daily_missions', missions.quests_badge, missions.quest_flow),
+                ('guild_progress', missions.guild_badge, missions.guild_flow),
+                ('event_missions', missions.events_badge, event_rewards.event_flow)):
+            if _global.get(key) is not True or global_rewards.decide(key).kind != 'due':
+                continue
+            present = bool(detector(frame))
+            global_rewards.settle(key)
+            logger.event('global_reward_check', behavior=key, badge=present, next_in=global_rewards.check_interval(key))
+            if present:
+                rs.mission.start(flow)
+                open_reward_row(rs, key)
+                rs.mission.step(frame)
+                reward_stepped = True
+                break
+            reward_checked_row(rs, key)
+        if reward_stepped:
+            return True
+    if rs.menu_open_frames < 2:
+        # menu may still be sliding in (EXIT BATTLE renders
+        # early) - let it settle before any flow taps tiles
+        badge = None
+    else:
+        # gather gates. ONE visit claims the 8h quests and
+        # their rewards together, so the quest flow runs while
+        # EITHER is wanted; both absent = legacy True.
+        _g = preset().get("gather", {})
+        _want_q = (_g.get("quests_8h", True)
+                   or _g.get("quest_rewards", True))
+        _want_q = _want_q and 'daily_missions' not in _global
+        badge = ("quests"
+                 if _want_q and missions.quests_badge(frame) else
+                 "guild"
+                 if _g.get("guild", True) and 'guild_progress' not in _global
+                 and missions.guild_badge(frame) else None)
+    if badge is None:
+        rs.quest_due = None
+    elif rs.quest_due is None or rs.quest_due[0] != badge:
+        # human-like: wander over within the next 1-10 minutes.
+        # If we JUST visited and the badge persists (nothing was
+        # claimable), back off instead of ping-ponging.
+        schedule = visit_schedule(badge)
+        lo, hi = CONFIG["missions"]["visit_delay_sec"]
+        due = schedule.after(now, random.uniform(*schedule.delay_range(now, rs.last_visit.get(badge), (lo, hi))))
+        rs.quest_due = (badge, due)
+        logger.event("quest_seen", kind_of=badge, wave=wave,
+                     due_in=round(due - now))
+    elif visit_schedule(badge).evaluate(now, {'next_at': rs.quest_due[1]})[0].kind == 'due' and not rs.shop.active:
+        rs.mission.start(missions.quest_flow
+                         if badge == "quests"
+                         else missions.guild_flow)
+        open_reward_row(rs, VISIT_ACTIONS[badge])
+        rs.mission.step(frame)
+        rs.last_visit[badge] = now
+        rs.quest_due = None
+        if badge == "guild":
+            rs.await_guild_result = True
+        return True  # flow completion also invalidates this frame
+    # ---- guild store: ONLY after a guild claim landed (the
+    # balance can't change otherwise - no point checking)
+    if not rs.mission.active and not rs.shop.active \
+            and rs.menu_open_frames >= 2 \
+            and store_follow_up_schedule().evaluate(now, {'pending': rs.pending_store})[0].kind == 'due':
+        rs.pending_store = store_follow_up_schedule().consumed({'pending': rs.pending_store})['pending']
+        rs.mission.start(store.store_flow)
+        open_reward_row(rs, 'guild_store', trigger='dependency', parent='guild_visit')
+        rs.mission.step(frame)
+        return True
+    # ---- once per UTC day, 01:00 +/-10 minutes; catch up when online
+    if not rs.mission.active and not rs.shop.active \
+            and rs.menu_open_frames >= 2 \
+            and _global.get('free_store_gems', _g.get('free_store_gems', False)):
+        store_day = global_rewards.store_decide(time.time(), retry_at=rs.free_gems_try_at, retry_now=now)
+        if store_day.kind == 'due':
+            # Failed/unavailable claims can retry after five minutes;
+            # a confirmed cooldown closes this account's UTC day.
+            rs.free_gems_try_at = global_rewards.store_attempt(now)
+            rs.mission.start(lambda: missions.free_gems_flow(
+                on_success=lambda: store_gems_mark_claimed(rs)))
+            open_reward_row(rs, 'free_store_gems', occurrence_key=store_day.occurrence_key)
+            rs.mission.step(frame)
+            return True
+    return False
+
+
+def step_reward_mission(rs, frame) -> bool:
+    """Advance the running reward flow by one action (moved out of main() unchanged: item 7 batch A3a).
+
+    Returns True when a flow was running (the pass is spent: nothing else acts mid-flow), False otherwise.
+    """
+    if rs.mission.active:
+        rs.mission.step(frame)
+        if not rs.mission.active and rs.await_guild_result:
+            rs.await_guild_result = False
+            # only a flow that actually CLAIMED something changes the
+            # balance - only then is a store visit worth anything
+            follow_up = store_follow_up_schedule()
+            rs.pending_store = (follow_up.raised({}) if (missions.last_guild_claims > 0
+                                                         and preset().get("gather", {}).get("guild_store", False))
+                                else follow_up.consumed({}))['pending']
+        time.sleep(random.uniform(0.15, 0.55))   # 0.5-1s step spacing
+        return True                  # nothing else acts mid-flow
+    return False
+
+
+def _attach_from_environment(readiness):
+    """The takeover this worker was launched for, or None. Refuses (AttachRefused) before any capture when the accepted operation cannot be trusted."""
+    import os
+    from runtime.operations import environment_operation
+    operations, operation_id = environment_operation()
+    if operations is None:
+        return None
+    attach = attach_worker.from_operation(operations.get(operation_id), preset(), CONFIG,
+                                          delegated=bool(os.environ.get('TOWER_BATTLE_ID')))
+    if attach is not None:
+        try:
+            readiness.require(settings.ROOT, CONFIG, preset(), attached=True)
+        except RuntimeError as exc:
+            raise attach_worker.AttachRefused('attach_not_ready', str(exc)) from None
+    return attach
+
+
+def _input_revoked() -> bool:
+    from runtime import device_lease
+    return device_lease.revocation(device_lease.ensure_current().key) is not None
+
+
+def _attach_entry(attach, frame):
+    """The entry gate: one frame proves the battle is on screen and is no tournament, before the first input and before any ledger record."""
+    wave = attach_worker.entry_gate(attach, frame, identify=lambda f: screen.identify(f).name, read_wave=wave_reader.read_wave,
+                                    tournament_state=screen.tournament_state, input_revoked=_input_revoked)
+    logger.event('attach_entry', wave=wave, tier=attach.tier, tier_provenance=attach.block['tier']['provenance'],
+                 stripped=attach.block['stripped'], policy_revision=attach.block['policy_revision'],
+                 predecessor=attach.predecessor)
+    return wave
+
+
+def _refuse_attach(exc):
+    """Record a coded refusal on the operation. Nothing was sent to the game and no battle record was written."""
+    from runtime.operations import environment_operation
+    logger.event('attach_refused', code=exc.code, detail=exc.detail)
+    operations, operation_id = environment_operation()
+    if operations is not None:
+        attach_worker.refuse(operations, operation_id, exc)
+
+
 def main():
+    global _battle_session, _action_session, _rewards_history, _chore_session, _attach
+    _attach = None
+    _battle_session = None
+    _action_session = None
+    _rewards_history = None
+    _chore_session = False
+    from runtime.device_lease import ensure_current
+    ensure_current()
+    # Before the first frame and any adoption: an unresolved setup battle is
+    # never adopted, whoever started this process. Read-only, no device I/O.
+    from control.battles import require_runner_entry
+    require_runner_entry(settings.ROOT, CONFIG, event=logger.event)
     from player import readiness
-    readiness.require(settings.ROOT, CONFIG, preset())
+    from runtime.battle_session import BattleSession
+    try:
+        _attach = _attach_from_environment(readiness)
+        initial = capture.grab()
+        entry_wave = _attach_entry(_attach, initial) if _attach is not None else None
+        _battle_session = BattleSession.from_environment(preset(), CONFIG,
+            origin='adopted' if wave_reader.read_wave(initial) is not None else 'started', **({} if _attach is None else {'attach': _attach}))
+        if _attach is not None:
+            # The wave only the entry gate observed, kept with the record so the dashboard never has to infer it.
+            _battle_session.store.update_status(_battle_session.battle['id'], _battle_session.generation,
+                                                {'attach_entry': attach_worker.entry_record(entry_wave)})
+    except attach_worker.AttachRefused as exc:
+        _refuse_attach(exc)
+        return
+    if _battle_session is not None:
+        from runtime.action_session import ActionSession
+        from runtime.flow_history import FlowHistory
+        _action_session = ActionSession.for_battle(_battle_session, 'orchestrator')
+        _rewards_history = FlowHistory(_action_session)
+    if _attach is None:
+        readiness.require(settings.ROOT, CONFIG, preset())
     rs = RunState()
+    if _attach is not None and entry_wave is not None:
+        # The wave the entry gate itself read is the battle the person confirmed: the first loop frame is judged against it, so a different
+        # battle that replaced it between the gate and that frame is a boundary, not a fresh start. An unreadable gate wave cannot get here.
+        rs.tracker.last = rs.wave_hwm = entry_wave
     period = 1.0 / CONFIG["loop"]["fps"]
     logger.event("start", instance=CONFIG["active_instance"],
                  preset=CONFIG["preset"], dry_run=CONFIG["loop"]["dry_run"])
     # Which fleet timetable this run keys off - per tier, so a reader can
     # tell a T14 (2495 + 1000k) run from a T18 (95 + 100k) one in the log.
     from scheduling import fleets
-    _sched = fleets.schedule(run_tier(), CONFIG)
+    _sched = None if (_attach is not None and run_tier() is None) else fleets.schedule(run_tier(), CONFIG)
     logger.event("fleet_schedule", tier=run_tier(),
                  **({k: _sched[k] for k in ("first_wave", "interval", "fleets_per_spawn",
                                             "bonus_first_wave", "bonus_interval", "source")}
@@ -2331,7 +2752,10 @@ def main():
                          wave=wave_reader.read_wave(f0))
         else:
             try:
-                tourney.setup()
+                if _battle_session is None:
+                    tourney.setup()
+                else:
+                    tourney.setup(on_setup=_battle_session.set_setup)
             except (tourney.Abort, act.TapRefused) as e:
                 logger.event("tourney_setup_failed", error=str(e))
                 print(f"tournament setup aborted: {e}")
@@ -2350,15 +2774,62 @@ def main():
             bench["cap"].append(time.monotonic() - t0)
             now = time.monotonic()
 
+            # Identity classification precedes every action-producing monitor.
+            # Probationary backwards reads hold input until tracker confirmation.
+            raw_wave = wave_reader.read_wave(frame)
+            wave = rs.tracker.update(raw_wave)
+            if raw_wave is not None and rs.wave_hwm is not None and raw_wave < rs.wave_hwm - attach_worker.WAVE_MARGIN:
+                if wave is None or wave >= rs.wave_hwm - attach_worker.WAVE_MARGIN:
+                    continue
+                logger.event('run_boundary', reason='wave_went_backwards', prev=rs.wave_hwm, wave=wave)
+                if _battle_session is not None:
+                    old_id = _battle_session.battle['id']
+                    _battle_session.finish('wave_went_backwards', evidence={'previous_wave': rs.wave_hwm, 'observed_wave': wave})
+                    if _attach is not None:
+                        # A different battle is on screen: it was not confirmed, so nothing acts on it. A later takeover is a new explicit request.
+                        logger.event('attach_boundary', reason='wave_went_backwards', previous_wave=rs.wave_hwm, wave=wave)
+                        return
+                    _battle_session.prepare_next(origin='partial_adoption', previous_battle_id=old_id)
+                rs = RunState()
+                continue
+            if wave is not None:
+                rs.wave_hwm = wave if rs.wave_hwm is None else max(wave, rs.wave_hwm)
+            if _battle_session is not None:
+                _battle_session.observe(rs, raw_wave)
+                _battle_session.checkpoint(rs, battle_visible=raw_wave is not None and screen.identify(frame).name == 'battle')
+
             # ---- constant monitoring on every frame: death / battle-presence
             # / SW / rescue / gems. Shopping only ever advances AFTER this.
-            status = watch_frame(rs, frame)
+            status = watch_frame(rs, frame, observation={'raw_wave': raw_wave})
+            if status == "refresh":
+                continue        # no rules/shopping/navigation on the old frame
             if status == "dead":
+                if _battle_session is not None:
+                    if _battle_session.battle['status'] == 'prepared':
+                        # This driver never observed entry. The results dialog
+                        # may be the preceding driver's already-recorded result.
+                        _battle_session.finish('results_without_observed_entry', status='interrupted')
+                        return
+                    _battle_session.finish('observed_results', evidence={'last_observed_wave': rs.tracker.last,
+                        'outcome_certainty': 'results_dialog_does_not_distinguish_death_from_manual_surrender'})
                 logger.event("death", wave=rs.tracker.last,
                              shot=logger.shot(frame, f"death_w{rs.tracker.last}"))
+                if _attach is not None:
+                    # The battle this takeover continued is over. Stats collection, death rules, the run flag and the restart all send input to a
+                    # screen nobody asked this run to operate; the stop_after_run flag stays for the scheduler.
+                    logger.event('attach_boundary', reason='observed_results', wave=rs.tracker.last)
+                    return
                 # ---- per-run stats+perks log (blocking is fine: tower dead)
                 if detect._match(frame, "icons/game_stats.png", 0.75)[0]:
-                    runlog.collect(CONFIG["active_instance"])
+                    artifact = (runlog.collect(CONFIG['active_instance'], battle=_battle_session.battle)
+                                if _battle_session is not None else runlog.collect(CONFIG['active_instance']))
+                    if _battle_session is not None:
+                        capture_status = {'status': 'failed', 'artifact': None, 'verified': False}
+                        if artifact is not None:
+                            capture_status = json.loads((artifact/'capture.json').read_text(encoding='utf-8'))
+                            capture_status['artifact'] = str(artifact)
+                        _battle_session.store.update_status(_battle_session.battle['id'], _battle_session.generation,
+                            {'stats_capture': capture_status})
                     frame = capture.grab()
                 # ---- Tier B DEATH-PHASE rules (latency: death_handler).
                 # Here and nowhere else: the observe loop has already handed
@@ -2377,6 +2848,19 @@ def main():
                     logger.event("stop_after_run", wave=rs.tracker.last,
                                  reason=why)
                     return
+                if not rs.repeat_enabled:
+                    logger.event('stop_after_run', reason='live_repeat_disabled')
+                    return
+                if _battle_session is not None:
+                    try:
+                        from runtime.battle_source import reload_battle_source
+                        next_preset, next_config = reload_battle_source()
+                    except Exception as exc:
+                        logger.event('repeat_reload_failed', error=str(exc))
+                        return
+                    CONFIG.clear()
+                    CONFIG.update(next_config)
+                    _battle_session.prepare_next(next_preset, next_config)
                 if not (preset().get("restart_via_home")
                         and restart_from_home(frame,
                                               preset().get("tier"))):
@@ -2407,9 +2891,8 @@ def main():
                 continue
             if status == "menu":
                 if rs.mission.active:
-                    rs.bot_left_battle = True
-                    # deliberate reward-collection navigation owns the screen;
-                    # pace flow actions 0.5-1s apart (human-like)
+                    # The flow validates its own expected screen/transition;
+                    # generator activity alone grants no menu ownership.
                     rs.mission.step(frame)
                     time.sleep(random.uniform(0.15, 0.55))
                     continue
@@ -2440,6 +2923,12 @@ def main():
                             rs.menu_logged = False   # re-identify on the next frame
                             continue
                 if sc.name == "tournament_stats":
+                    if _battle_session is not None:
+                        _battle_session.finish('observed_tournament_results', evidence={'last_observed_wave': rs.tracker.last})
+                    if _attach is not None:
+                        # A takeover never presses OK on a results dialog it did not open: the record is finished and the operation ends with no input.
+                        logger.event('attach_boundary', reason='observed_tournament_results', wave=rs.tracker.last)
+                        return
                     # THE TOURNAMENT'S DEATH SCREEN. A tournament run does not
                     # end on GAME STATS/RETRY - it ends on this dialog, which
                     # the death detector does not know, so the first handled
@@ -2468,50 +2957,17 @@ def main():
                                  shot=logger.shot(frame, f"off_battle_{sc.name}"))
                     rs.menu_logged = True
                     rs.off_battle_since = now
-                # ---- STUCK RECOVERY, and the rule it has to obey: when the
-                # tower is not on screen, the autopilot clicks NOTHING. The
-                # single exception is a mess THIS PROCESS made - a reward flow
-                # that ended with a listing still up parks the game on that
-                # popup forever while the run ticks away untended.
-                #
-                # So recovery is gated on rs.bot_left_battle: it only fires
-                # when a flow of ours navigated off the battle screen. If the
-                # HUMAN opened a menu, the flag is false and nothing is
-                # touched. Without that gate this fired while the user was on
-                # the CARDS screen and switched their active card preset.
-                # ...and only on the two screens a stranded flow can leave
-                # us on. On anything else - CARDS, MODULES, GUILD, a screen we
-                # cannot even name - it does nothing at all.
-                if (rs.bot_left_battle
-                        and sc.name in screen.RECOVERABLE
-                        and now - rs.off_battle_since > 45
-                        and now - rs.recover_try > 10):
-                    rs.recover_try = now
-                    pt = missions.find_skip(frame)
-                    # act.tap RAISES TapRefused when adb fails, and these two
-                    # calls were the only unguarded ones in the loop: a single
-                    # `adb input` returning exit 1 (it does, transiently) took
-                    # the whole autopilot down mid-run. A failed recovery tap
-                    # is the least important event in the system - log it and
-                    # carry on.
-                    try:
-                        if pt:
-                            act.tap(*pt, reason="recover_skip", instant=True)
-                            logger.event("stuck_recover", action="skip",
-                                         screen=sc.name, x=pt[0], y=pt[1])
-                        else:
-                            act.tap(*missions.RETURN_STRIP,
-                                    reason="recover_return", instant=True)
-                            logger.event("stuck_recover", action="return_strip",
-                                         screen=sc.name,
-                                         shot=logger.shot(frame, "stuck_recover"))
-                    except act.TapRefused as e:
-                        logger.event("stuck_recover", action="refused",
-                                     screen=sc.name, error=str(e))
+                # Only a reward flow's unrevoked expected transition can
+                # authorize recovery. The old sticky bot_left_battle flag
+                # neither identifies this screen nor proves its ownership.
+                # Recovery validates a fresh dismiss/return target and is
+                # disabled once Rewards OFF has been acknowledged.
+                recover_reward_menu(rs, frame, now)
                 time.sleep(period)
                 continue
             rs.menu_logged = False
             rs.bot_left_battle = False   # tower on screen: slate clean
+            rs.mission.observe(frame)
             wave = rs.tracker.last
             if wave is None:
                 time.sleep(period)
@@ -2528,24 +2984,22 @@ def main():
             # only after `confirm` consistent frames, so a confirmed drop IS
             # a new run: renew exactly what the death handler renews. The
             # 100-wave margin leaves small tracker resync corrections alone.
-            if rs.wave_hwm is not None and wave < rs.wave_hwm - 100:
-                logger.event("run_boundary", reason="wave_went_backwards",
-                             prev=rs.wave_hwm, wave=wave,
-                             shot=logger.shot(frame, f"run_boundary_w{wave}"))
-                rs = RunState()
-                time.sleep(period)
-                continue        # next pass reads the new run from scratch
-            rs.wave_hwm = wave if rs.wave_hwm is None else max(rs.wave_hwm,
-                                                               wave)
 
             # ---- Tier B profile rules, once per pass, AFTER watch_frame has
             # run the compiled (Tier A) ability logic for this frame.
             eval_rules(rs, frame, wave)
+            if getattr(rs, 'rule_boundary_completed', False):
+                if _battle_session.battle['status'] not in ('prepared', 'active'):
+                    return
+                rs = RunState()
+                continue
 
             # ---- P6 compiled knobs. All three are absent from every legacy
             # preset, so this whole block is three dict misses on the farm.
             apply_cancel_sprint(rs)
             if max_wave_reached(rs, frame, wave):
+                if _battle_session is not None and _battle_session.battle['status'] not in ('prepared', 'active'):
+                    return
                 # THE RUN IS OVER AND THE NEXT ONE HAS ALREADY STARTED.
                 # shard.abandon_run does not stop at the stats dialog - it
                 # taps RETRY itself and returns - so this is a run BOUNDARY,
@@ -2566,16 +3020,8 @@ def main():
                 continue        # the cards screen moved: judge a fresh frame
 
             # ---- side menu upkeep + reward collection (least-priority flows)
-            if rs.mission.active:
-                rs.mission.step(frame)
-                if not rs.mission.active and rs.await_guild_result:
-                    rs.await_guild_result = False
-                    # only a flow that actually CLAIMED something changes the
-                    # balance - only then is a store visit worth anything
-                    rs.pending_store = (missions.last_guild_claims > 0
-                                        and preset().get("gather", {}).get("guild_store", False))
-                time.sleep(random.uniform(0.15, 0.55))   # 0.5-1s step spacing
-                continue                     # nothing else acts mid-flow
+            if step_reward_mission(rs, frame):
+                continue
             # hands_off gathering (2026-09-05): when the blueprint wants
             # nothing that lives in the side menu, the menu is never opened -
             # on a human's run that tap is theirs to make, not ours.
@@ -2585,6 +3031,7 @@ def main():
                              ("quests_8h", "quest_rewards", "guild", "free_store_gems"))
             _want_menu = _want_menu or any(_global.get(k) is True
                                            for k in global_rewards.REWARD_KEYS)
+            _want_menu = _want_menu and rs.rewards_enabled
             _menu_open = detect.side_menu_open(frame)
             if not _menu_open and _want_menu and now - rs.end_round_learn_at > 10:
                 # "menu open" is proven by the exit button image; on a tier
@@ -2627,99 +3074,17 @@ def main():
                         logger.event("tap_refused", button="side_menu",
                                      error=str(e))
                     rs.menu_open_try = now
-            else:
-                rs.menu_closed_frames = 0
-                rs.menu_open_frames += 1
-                if rs.menu_open_frames >= 2 and not rs.shop.active:
-                    from interactions import event_rewards
-                    for key, detector, flow in (
-                            ('daily_missions', missions.quests_badge, missions.quest_flow),
-                            ('guild_progress', missions.guild_badge, missions.guild_flow),
-                            ('event_missions', missions.events_badge, event_rewards.event_flow)):
-                        if _global.get(key) is not True or not global_rewards.check_due(key):
-                            continue
-                        present = bool(detector(frame))
-                        global_rewards.checked(key)
-                        logger.event('global_reward_check', behavior=key, badge=present, next_in=300)
-                        if present:
-                            rs.mission.start(flow)
-                            rs.mission.step(frame)
-                            break
-                    if rs.mission.active:
-                        continue
-                if rs.menu_open_frames < 2:
-                    # menu may still be sliding in (EXIT BATTLE renders
-                    # early) - let it settle before any flow taps tiles
-                    badge = None
-                else:
-                    # gather gates. ONE visit claims the 8h quests and
-                    # their rewards together, so the quest flow runs while
-                    # EITHER is wanted; both absent = legacy True.
-                    _g = preset().get("gather", {})
-                    _want_q = (_g.get("quests_8h", True)
-                               or _g.get("quest_rewards", True))
-                    _want_q = _want_q and 'daily_missions' not in _global
-                    badge = ("quests"
-                             if _want_q and missions.quests_badge(frame) else
-                             "guild"
-                             if _g.get("guild", True) and 'guild_progress' not in _global
-                             and missions.guild_badge(frame) else None)
-                if badge is None:
-                    rs.quest_due = None
-                elif rs.quest_due is None or rs.quest_due[0] != badge:
-                    # human-like: wander over within the next 1-10 minutes.
-                    # If we JUST visited and the badge persists (nothing was
-                    # claimable), back off instead of ping-ponging.
-                    recent = now - rs.last_visit.get(badge, -1e9) < 1200
-                    lo, hi = CONFIG["missions"]["visit_delay_sec"]
-                    due = now + (random.uniform(1500, 2400) if recent
-                                 else random.uniform(lo, hi))
-                    rs.quest_due = (badge, due)
-                    logger.event("quest_seen", kind_of=badge, wave=wave,
-                                 due_in=round(due - now))
-                elif now >= rs.quest_due[1] and not rs.shop.active:
-                    rs.mission.start(missions.quest_flow
-                                     if badge == "quests"
-                                     else missions.guild_flow)
-                    rs.mission.step(frame)
-                    rs.last_visit[badge] = now
-                    rs.quest_due = None
-                    if badge == "guild":
-                        rs.await_guild_result = True
-                # ---- guild store: ONLY after a guild claim landed (the
-                # balance can't change otherwise - no point checking)
-                if not rs.mission.active and not rs.shop.active \
-                        and rs.menu_open_frames >= 2 and rs.pending_store:
-                    rs.pending_store = False
-                    rs.mission.start(store.store_flow)
-                    rs.mission.step(frame)
-                # ---- once per UTC day, 01:00 +/-10 minutes; catch up when online
-                if not rs.mission.active and not rs.shop.active \
-                        and rs.menu_open_frames >= 2 \
-                        and _global.get('free_store_gems', _g.get('free_store_gems', False)) \
-                        and store_gems_due() \
-                        and now >= rs.free_gems_try_at:
-                    # Failed/unavailable claims can retry after five minutes;
-                    # a confirmed cooldown closes this account's UTC day.
-                    rs.free_gems_try_at = now + 300
-                    rs.mission.start(lambda: missions.free_gems_flow(
-                        on_success=store_gems_mark_claimed))
-                    rs.mission.step(frame)
-
+                    continue  # the menu moved; observe it before any other action
+            elif rs.rewards_enabled:
+                if advance_rewards(rs, frame, now, wave, _global):
+                    continue
             # ---- CL normalization: first thing each run, force the preset's
             # baseline state (OFF for high-tier farm, ON for low_tier_farm) -
             # the previous run may have died in the other state
             # (deferred while a sweep is mid-pass - both drive the tab strip)
             cl_cfg = preset()["chain_lightning"]
             cl_base = bool(cl_cfg.get("always_on"))
-            uw_ok = time.monotonic() >= rs.uw_next_try
-
-            def _uw_backoff(success: bool):
-                if success:
-                    rs.uw_fails = 0
-                    return
-                rs.uw_fails += 1
-                rs.uw_next_try = time.monotonic() + min(120, 10 * 2 ** (rs.uw_fails - 1))
+            uw_ok = uw_retry_due(rs, time.monotonic()) and automation_enabled('abilities')
 
             # Normalize to the state we actually WANT right now, not the
             # preset baseline: restarting above the latch wave used to force
@@ -2738,11 +3103,11 @@ def main():
                     rs.cl_on = want_cl
                     logger.event("cl_disabled", wave=wave)
             elif not rs.cl_normalized and not rs.shop.active and uw_ok:
-                if shopper.uw_toggle("chain_lightning", want_cl):
+                if uw_toggle(rs, "chain_lightning", want_cl, "cl_normalize"):
                     rs.cl_normalized = True
                     rs.cl_on = want_cl
                     logger.event("cl_normalized", wave=wave, state=want_cl)
-                    _uw_backoff(True)
+                    uw_backoff(rs, True)
                 elif rs.uw_fails >= 3:
                     # verification keeps failing - accept the tapped state and
                     # move on rather than dragging the UW panel all run
@@ -2753,7 +3118,7 @@ def main():
                 else:
                     logger.event("cl_normalize_fail", wave=wave,
                                  want=want_cl, fails=rs.uw_fails + 1)
-                    _uw_backoff(False)
+                    uw_backoff(rs, False)
 
             # ---- preset uw_wanted: enforce the full toggle set once per run,
             # after CL settles. Quest presets (ILM/SM) flip toggles and the
@@ -2765,18 +3130,18 @@ def main():
                 for w, want in wanted.items():
                     if w in rs.uw_done:
                         continue
-                    if shopper.uw_toggle(w, bool(want)):
+                    if uw_toggle(rs, w, bool(want), "uw_wanted"):
                         rs.uw_done.add(w)
-                        _uw_backoff(True)
+                        uw_backoff(rs, True)
                     elif rs.uw_fails >= 3:
                         rs.uw_done.add(w)   # same give-up rule as CL: never
                         logger.event("uw_normalize_giveup", weapon=w,
                                      assumed=bool(want))   # drag the panel all run
-                        _uw_backoff(True)
+                        uw_backoff(rs, True)
                     else:
                         logger.event("uw_normalize_fail", weapon=w, wave=wave,
                                      fails=rs.uw_fails + 1)
-                        _uw_backoff(False)
+                        uw_backoff(rs, False)
                         break               # retry after the backoff window
                 if all(w in rs.uw_done for w in wanted):
                     rs.uw_normalized = True
@@ -2791,17 +3156,18 @@ def main():
                         rs.cl_blocked_logged = True
                         logger.event("cl_deferred", wave=wave, want=want_cl,
                                      shopping=rs.shop.active, uw_ok=uw_ok)
-                elif shopper.uw_toggle("chain_lightning", want_cl):
+                elif uw_toggle(rs, "chain_lightning", want_cl, "cl_toggle"):
                     rs.cl_on = want_cl
                     rs.cl_blocked_logged = False
                     logger.event("cl", on=want_cl, wave=wave)
-                    _uw_backoff(True)
+                    uw_backoff(rs, True)
                 else:
                     logger.event("cl_toggle_fail", wave=wave, want=want_cl,
                                  fails=rs.uw_fails + 1)
-                    _uw_backoff(False)   # retried after the backoff window
+                    uw_backoff(rs, False)   # retried after the backoff window
             elif want_cl == rs.cl_on:
                 rs.cl_blocked_logged = False
+            uw_flush_history(rs)
 
             # ---- shopping: sprint LOCKS abilities, not the panel. The sprint
             # spans ~1800 waves - shop aggressively while it's active (waves
@@ -2810,28 +3176,26 @@ def main():
             if sprint != rs.sprint_prev and rs.sprint_prev is not None:
                 logger.event("sprint", active=sprint, wave=wave)
             rs.sprint_prev = sprint
-            interval = 20 if sprint else preset()["shop_interval_sec"]
-            if rs.shop.active:
-                rs.shop.step(frame)         # ONE small action per frame
-                if not rs.shop.active:
-                    rs.last_shop = time.monotonic()   # sweep just finished
-                    if rs.shop.finished and not rs.shop_done_logged:
-                        logger.event("shopping_complete", wave=wave,
-                                     maxed=sorted(rs.shop.maxed))
-                        rs.shop_done_logged = True
-            elif now - rs.last_shop > interval and not rs.shop.finished:
-                rs.shop.start()
-                rs.shop.step(frame)
+            interval = shopping_interval(preset(), tracked=_battle_session is not None, sprint=sprint)
+            if not rs.shopping_enabled and not (_battle_session is not None and _battle_session.manual_shopping):
+                rs.shop.abort()
+                continue
+            advance_shopping(rs, frame, wave, sprint, now, interval)
 
             # ---- science: burst shots in fleet danger windows
             f = CONFIG["fleet"]
             if any(m <= wave <= m + f["post_window"] for m in marks()):
                 logger.shot(frame, f"danger_w{wave}")
 
+        except AttachReplaced as e:
+            uw_flush_history(rs)
+            logger.event("attach_input_held", reason=str(e))    # the next frame is judged by the boundary checks above
         except capture.CaptureError as e:
+            uw_flush_history(rs)   # a toggle that returned before the failure still happened: write its row, never drop it with the pass
             logger.event("capture_error", error=str(e))
             time.sleep(2)
         except Exception:
+            uw_flush_history(rs)
             logger.event("crash", trace=traceback.format_exc())
             time.sleep(5)
 
@@ -2867,6 +3231,8 @@ def _cli():
 
 if __name__ == "__main__":
     _args = _cli()
+    from runtime.device_lease import prepare_instance
+    prepare_instance(_args.instance)
     # bind BEFORE anything reads CONFIG-derived state (logger names its file
     # after the instance, capture resolves the display, act reads allow_taps)
     settings.select_instance(_args.instance or CONFIG["active_instance"],

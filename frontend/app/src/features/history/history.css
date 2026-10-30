@@ -1,0 +1,170 @@
+.tp-history {
+  display: grid;
+  gap: var(--tp-space-4);
+  min-width: 0;
+}
+.tp-history__toolbar label {
+  display: grid;
+  gap: var(--tp-space-1);
+}
+.tp-history__toolbar nav > span {
+  align-self: center;
+}
+.tp-history__note {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-small);
+}
+.tp-history__notice {
+  color: var(--tp-color-warn);
+  border-inline-start: 2px solid var(--tp-color-warn);
+  padding-inline-start: var(--tp-space-3);
+}
+.tp-history__table-scroll {
+  min-width: 0;
+  max-block-size: 65dvh;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--tp-color-text-muted) transparent;
+  /* Scroll shadows: a fade shows at an edge only while there is more list past it. */
+  background:
+    linear-gradient(var(--tp-color-surface, Canvas) 30%, transparent) top / 100% 1.5rem no-repeat
+      local,
+    linear-gradient(transparent, var(--tp-color-surface, Canvas) 70%) bottom / 100% 1.5rem no-repeat
+      local,
+    linear-gradient(to bottom, var(--tp-color-border), transparent) top / 100% 0.75rem no-repeat
+      scroll,
+    linear-gradient(to top, var(--tp-color-border), transparent) bottom / 100% 0.75rem no-repeat
+      scroll;
+}
+.tp-history__table-scroll[data-scrolls='true'] {
+  border-block-end: 2px solid var(--tp-color-border);
+}
+.tp-history__records {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tp-history__records > li {
+  min-width: 0;
+  padding-block: var(--tp-space-3);
+  border-block-end: 1px solid var(--tp-color-border);
+}
+.tp-history__records > li:first-child {
+  padding-block-start: 0;
+}
+.tp-history .tp-history__record {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+  justify-items: start;
+  gap: var(--tp-space-1);
+  text-align: start;
+  margin-block-end: var(--tp-space-2);
+}
+.tp-history__record-start {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  font-weight: 400;
+}
+.tp-history__records .tp-facts {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7rem), 1fr));
+}
+/* The record ID is shown whole: it wraps anywhere rather than being clipped. */
+.tp-history__record-id {
+  grid-column: 1 / -1;
+  min-width: 0;
+  font-family: var(--tp-font-mono);
+  overflow-wrap: anywhere;
+}
+.tp-history__record-name {
+  font-weight: 600;
+}
+.tp-history__evidence {
+  display: grid;
+  gap: var(--tp-space-4);
+}
+.tp-history__evidence,
+.tp-history__activity li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tp-history pre {
+  max-width: 100%;
+  max-height: 26rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: var(--tp-font-size-small) / 1.5 var(--tp-font-mono);
+}
+.tp-history pre .tp-server {
+  display: inline;
+}
+.tp-history__activity {
+  padding-inline-start: var(--tp-space-4);
+}
+/* Executions retain older-page navigation, with divider rows instead of cards. */
+.tp-history__executions {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--tp-space-3);
+}
+.tp-history__execution {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding-block: var(--tp-space-3);
+  border-block-start: 1px solid var(--tp-color-border);
+}
+.tp-history__execution-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--tp-space-2);
+  margin-block-end: var(--tp-space-2);
+}
+.tp-history__code {
+  font-family: var(--tp-font-mono);
+}
+.tp-history__block,
+.tp-history__activity time {
+  display: block;
+}
+.tp-history .tp-server {
+  min-width: 0;
+  max-width: 100%;
+}
+.tp-history .tp-server bdi {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Until a record is selected the list has the page; the detail pane appears beside it only when it has content. */
+@media (min-width: 1100px) {
+  .tp-history[data-detail='open'] {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+    align-items: start;
+  }
+}
+/* Full-width list: the name block and the five comparison facts sit in the same columns on every row. */
+@media (min-width: 760px) {
+  .tp-history[data-detail='none'] .tp-history__records > li {
+    display: grid;
+    grid-template-columns: minmax(14rem, 1.1fr) minmax(0, 2.4fr);
+    column-gap: var(--tp-space-4);
+    align-items: start;
+  }
+  .tp-history[data-detail='none'] .tp-history__records .tp-history__record {
+    margin-block-end: 0;
+  }
+  .tp-history[data-detail='none'] .tp-history__records .tp-reason {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .tp-history[data-detail='none'] .tp-history__records .tp-facts {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}

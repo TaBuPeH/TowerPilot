@@ -1,1 +1,1 @@
-"""runtime layer - see BEHAVIORS.md and the root README for the map."""
+"""runtime layer - see docs/BEHAVIORS.md and the root README for the map."""

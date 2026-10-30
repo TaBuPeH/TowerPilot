@@ -1,1 +1,1 @@
-"""scheduling layer - see BEHAVIORS.md and the root README for the map."""
+"""scheduling layer - see docs/BEHAVIORS.md and the root README for the map."""

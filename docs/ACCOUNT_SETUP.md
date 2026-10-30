@@ -1,4 +1,7 @@
 # Account setup and calibration
+> **Status:** Active
+> **Type:** Setup guide
+> **Updated:** 2026-10-20
 
 For installation, recommended resolution and measured scan times, follow the
 [README setup guide](../README.md#quick-start). Allow **20–30 minutes** initially;
@@ -18,11 +21,12 @@ the recent MuMu rescan took about 17 minutes and the BlueStacks full scan about
    and DPI scaling are not supported.
 4. End all existing battles and open Home. Going Home alone may leave a battle
    active. Do not scan over a tournament.
-5. Click **Continue to map my game → Remap this game**, read the dialog and
-   choose **Continue preparation**. Keep the dashboard open and the emulator
+5. Open **Recognition → Learn screens** and read the confirmation. Keep the dashboard open and the emulator
    untouched. Setup extracts installed artwork and follows the manifest; manual
    crops and a separate legacy account scan are not normally required.
-6. Discoveries are saved automatically without replacing run settings. Setup may
+6. Capture results and profile application are separate outcomes. Review the
+   saved discoveries and their apply status; applying them preserves run settings
+   and does not complete missing image verification. Setup may
    start bounded normal test battles, ends only those battles, and restores the
    original tier. Optional effects such as Second Wind never require an
    indefinite wait. A failed full Remap can still repeat inventory work;
@@ -36,6 +40,8 @@ the recent MuMu rescan took about 17 minutes and the BlueStacks full scan about
 Repeat counts, rescue rules, weapon timing, shopping policies and scheduling
 are in expanded Advanced sections. A tournament's entry spending limit remains
 visible. Manual image cropping remains available under Advanced repair.
+
+---
 
 ## Storage and compatibility
 
@@ -61,6 +67,8 @@ including buttons, digits and headers, is obtained from the running game on this
 installation. Start with the [Scan plan](SCAN_PLAN.md). The JSON catalogues contain
 only image names and reference sizes, never game pixels.
 
+---
+
 ## Calibration quality and remaining work
 
 Automatic preset cuts require texture, a strong self-match and separation from
@@ -78,6 +86,35 @@ plan and live-frame cropper work with no templates. Captured images still need
 recognition checks; there is no claim of automatic, template-free navigation.
 Rare states require human-driven observation. Other emulator/account combinations
 still need live validation.
+
+---
+
+## Targeted routes and retained results
+
+For a menu control that needs another observation, a bounded route capture can
+skip card and module inventory work. The selection must be a contiguous sequence
+of declared routes beginning and ending at Home. Invalid selections are rejected
+before device input; the capture still requires fresh final Home proof.
+
+From the `backend` directory, this example checks the Missions open/close route:
+
+```powershell
+..\.venv\Scripts\python.exe player/calibrate.py --instance main --bootstrap --routes route_17,route_18 --allow-navigation
+```
+
+Do not combine `--routes` with `--flows`, `--battle-only`, or `--observe`.
+Existing images are kept unless replacement is explicitly selected. A verified
+route capture establishes only its selected controls, not full setup completion.
+
+Dashboard workers retain completed state and report bytes beneath the calibration
+folder's `operations/<operation-id>/` directory. Status and apply requests use
+those operation references and verify their hashes. An older result whose exact
+bytes are unavailable cannot be substituted with the latest scan. A successful
+apply receipt confirms persisted discoveries; capture failures and incomplete
+controls remain visible separately. Screen-analysis results also bind the saved
+screenshot to the analysis operation.
+
+---
 
 ## Two-stage module calibration
 

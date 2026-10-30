@@ -1,0 +1,434 @@
+{
+ "about": "POST /api/control action start on the dashboard, with and without a collector (T3-0)",
+ "rebased_on": {
+  "head": "38e15ec9f088da4cea78e3aeb47186c05c72ff3c",
+  "note": "scenarios unchanged; re-verified on this HEAD after the backend/dashboard.py move and the test reorganization",
+  "sources": {
+   "backend/control/battles.py": "A5A68B064D22A912FDFF86C285EF56E1AAE280219B9190C2118A8C7D20D80617",
+   "backend/control/harvest.py": "4EFF8B156949FD44C65CCE2D0F178DFB207DCAA3A7590A53B4F8D2FECC575BBA",
+   "backend/control/operations.py": "640CE5B7B262EDF94EE26436C6A3545BF63BECB9CFCB183062BC872DD1A85759",
+   "backend/dashboard.py": "6BEEBC09C54FE66A150A8427E87D0F093CBAEFA7B289D4C67EFF57826B2FDD8D"
+  }
+ },
+ "recorded_on": {
+  "backend/control/battles.py": "A5A68B064D22A912FDFF86C285EF56E1AAE280219B9190C2118A8C7D20D80617",
+  "backend/control/harvest.py": "4EFF8B156949FD44C65CCE2D0F178DFB207DCAA3A7590A53B4F8D2FECC575BBA",
+  "backend/control/operations.py": "640CE5B7B262EDF94EE26436C6A3545BF63BECB9CFCB183062BC872DD1A85759",
+  "frontend/dashboard.py": "D26FABAA3198892995640C6716778B463274B05D93AE762A27277581E917AB25"
+ },
+ "scenarios": {
+  "automatic_harvest_fields_refused": {
+   "journal": [],
+   "results": {
+    "desire_revision": {"code": "invalid_request", "error": "Automatic harvesting fields are reserved for the lifecycle host", "keys": ["code", "error", "ok"], "ok": false, "status": 400},
+    "harvest": {"code": "invalid_request", "error": "Automatic harvesting fields are reserved for the lifecycle host", "keys": ["code", "error", "ok"], "ok": false, "status": 400}
+   },
+   "spawned": 0
+  },
+  "changed_payload_same_key": {
+   "as_gems": {
+    "error": "Idempotency key already belongs to another command or target",
+    "keys": ["error", "ok"],
+    "ok": false,
+    "status": 409
+   },
+   "changed": {
+    "error": "Idempotency key already belongs to another command or target",
+    "keys": ["error", "ok"],
+    "ok": false,
+    "status": 409
+   },
+   "first": {
+    "keys": ["ok", "operation", "operation_id"],
+    "ok": true,
+    "operation": {"kind": "run", "request": ["action", "preset"], "status": "accepted"},
+    "operation_id": "op-1",
+    "status": 200
+   },
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover none",
+    "call readiness.check",
+    "call _launch_operation",
+    "call retry",
+    "return retry none",
+    "call verify_expected",
+    "call refuse_if_blocked",
+    "call Popen -m runtime.operation_worker <ROOT>/orchestrator.py --instance main --preset bp_farm",
+    "return _launch_operation run accepted",
+    "--- same key, changed body",
+    "call retry",
+    "raise retry IdempotencyKeyReused",
+    "--- same key, as another action",
+    "call retry",
+    "raise retry IdempotencyKeyReused"
+   ],
+   "spawned_after": 0
+  },
+  "collector_still_stopping": {
+   "active_kinds": [
+    "gems"
+   ],
+   "harvest": {
+    "choice": "on",
+    "revision": 1,
+    "state": "stopping",
+    "transfer": {"reason": "run_start", "until": 1800000020.0}
+   },
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover 1 standalone collector(s)",
+    "call readiness.check",
+    "call _transfer_from_collector",
+    "call refuse_if_blocked",
+    "call verify_expected",
+    "call begin_transfer",
+    "call stop_collectors",
+    "return stop_collectors stopped=0 stopping=1",
+    "call wait_for_release",
+    "return wait_for_release released=False",
+    "raise _transfer_from_collector DeviceOwned"
+   ],
+   "reply": {
+    "code": "collector_stopping",
+    "error": "The diamond collector is still stopping. Wait for it to release the emulator, then start the run again.",
+    "keys": ["code", "error", "ok", "owner", "recovery", "retry", "stop", "waited_sec"],
+    "ok": false,
+    "owner": {"foreign": false, "kind": "operation", "runner": null},
+    "retry": "after_confirmed_stop",
+    "status": 409
+   },
+   "spawned": 1
+  },
+  "foreign_process_blocks": {
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "raise _collector_takeover DeviceOwned"
+   ],
+   "reply": {
+    "code": "device_owned",
+    "error": "Automation is already running. Finish or stop it before starting another run.",
+    "keys": ["code", "error", "ok", "owner", "recovery", "retry"],
+    "ok": false,
+    "owner": {"foreign": true, "kind": "process", "runner": null},
+    "retry": "after_confirmed_stop",
+    "status": 409
+   },
+   "spawned": 0,
+   "terminated": 0
+  },
+  "identical_retry": {
+   "first": {
+    "keys": ["ok", "operation", "operation_id"],
+    "ok": true,
+    "operation": {"kind": "run", "request": ["action", "preset"], "status": "accepted"},
+    "operation_id": "op-1",
+    "status": 200
+   },
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover none",
+    "call readiness.check",
+    "call _launch_operation",
+    "call retry",
+    "return retry none",
+    "call verify_expected",
+    "call refuse_if_blocked",
+    "call Popen -m runtime.operation_worker <ROOT>/orchestrator.py --instance main --preset bp_farm",
+    "return _launch_operation run accepted",
+    "--- identical retry",
+    "call retry",
+    "return retry hit",
+    "--- identical retry after the run ended",
+    "call retry",
+    "return retry hit"
+   ],
+   "same_operation": true,
+   "second": {
+    "keys": ["ok", "operation", "operation_id"],
+    "ok": true,
+    "operation": {"kind": "run", "request": ["action", "preset"], "status": "accepted"},
+    "operation_id": "op-1",
+    "status": 200
+   },
+   "spawned_by_retries": 0,
+   "third": {
+    "keys": ["ok", "operation", "operation_id"],
+    "ok": true,
+    "operation": {"kind": "run", "request": ["action", "preset"], "status": "interrupted"},
+    "operation_id": "op-1",
+    "status": 200
+   }
+  },
+  "launch_failure_ends_the_transfer": {
+   "collector_status": "cancelled",
+   "harvest": {
+    "choice": "on",
+    "revision": 1,
+    "state": "backing_off",
+    "transfer": null
+   },
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover 1 standalone collector(s)",
+    "call readiness.check",
+    "call _transfer_from_collector",
+    "call refuse_if_blocked",
+    "call verify_expected",
+    "call begin_transfer",
+    "call stop_collectors",
+    "return stop_collectors stopped=1 stopping=0",
+    "call wait_for_release",
+    "return wait_for_release released=True",
+    "return _transfer_from_collector stopped=1 stopping=0",
+    "call _launch_operation",
+    "call retry",
+    "return retry none",
+    "call verify_expected",
+    "call refuse_if_blocked",
+    "call Popen (fails)",
+    "raise _launch_operation OSError",
+    "call end_transfer"
+   ],
+   "operations": [
+    {"kind": "gems", "op": "op-1", "status": "cancelled"},
+    {"kind": "run", "op": "op-2", "status": "failed"}
+   ],
+   "status": 500
+  },
+  "readiness_failure_leaves_the_collector": {
+   "collector_status": "running",
+   "harvest": {
+    "choice": "on",
+    "revision": 1,
+    "state": "collecting",
+    "transfer": null
+   },
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover 1 standalone collector(s)",
+    "call readiness.check"
+   ],
+   "reply": {
+    "error": "Calibration is needed for this run (not ready: farm). Open Calibrate to see the missing steps.",
+    "keys": ["error", "missing", "ok", "ready"],
+    "ok": false,
+    "status": 409
+   },
+   "terminated": 0
+  },
+  "run_scope_guard_blocks_before_stop": {
+   "collector_status": "running",
+   "harvest": {
+    "choice": "on",
+    "revision": 1,
+    "state": "collecting",
+    "transfer": null
+   },
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover 1 standalone collector(s)",
+    "call readiness.check",
+    "call _transfer_from_collector",
+    "call refuse_if_blocked",
+    "raise refuse_if_blocked SetupBattleUnresolved",
+    "raise _transfer_from_collector SetupBattleUnresolved"
+   ],
+   "reply": {
+    "code": "setup_evidence_unreadable",
+    "keys": ["code", "error", "ok", "setup_battle_guard"],
+    "ok": false,
+    "status": 409
+   },
+   "terminated": 0
+  },
+  "stale_context_leaves_the_collector": {
+   "collector_status": "running",
+   "harvest": {
+    "choice": "on",
+    "revision": 1,
+    "state": "collecting",
+    "transfer": null
+   },
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover 1 standalone collector(s)",
+    "call readiness.check",
+    "call _transfer_from_collector",
+    "call refuse_if_blocked",
+    "call verify_expected",
+    "raise verify_expected OperationRefused",
+    "raise _transfer_from_collector OperationRefused"
+   ],
+   "reply": {
+    "error": "Selected account, device or profile changed before acceptance",
+    "keys": ["error", "ok"],
+    "ok": false,
+    "status": 409
+   },
+   "terminated": 0
+  },
+  "start_with_a_collector": {
+   "active_kinds": [
+    "run"
+   ],
+   "battle_status": "active",
+   "collector_status": "cancelled",
+   "envelope": {
+    "config_preset": "bp_farm",
+    "context_identity": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "selected_run": "bp_farm", "serial": "fake:1"},
+    "control_keys": ["routines", "shopping_plan"],
+    "control_routines": {"abilities": {"enabled": true}, "ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60}, "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60}, "repeat": {"enabled": true}, "rescue": {"enabled": true}, "rewards": {"enabled": true}, "shopping": {"enabled": false, "interval_sec": 90}},
+    "controls_are_resolved": true,
+    "frozen_config_has_snapshot_keys": [],
+    "keys": ["config", "controls", "preset", "preset_key", "profile", "source", "source_revision"],
+    "preset_is_effective_preset": true,
+    "preset_key": "bp_farm",
+    "preset_keys": ["_source", "abilities", "cancel_sprint", "chain_lightning", "dissonant_tab", "gather", "gem_delay_sec", "kind", "label", "loadout", "max_wave", "perk_bans", "restart_via_home", "rules", "runner", "runner_args", "shop_interval_sec", "shopping", "tier", "uw_wanted"],
+    "profile_kind": "dict",
+    "selected": "bp_farm",
+    "source": {"blueprint": "farm", "profile": "mine"},
+    "source_revision_present": true,
+    "stored_kind": "run",
+    "stored_request": {"action": "start", "preset": "bp_farm"},
+    "stored_request_keys": ["action", "battle_envelope", "preset"]
+   },
+   "harvest": {
+    "choice": "on",
+    "revision": 1,
+    "state": "owned_by_driver",
+    "transfer": null
+   },
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover 1 standalone collector(s)",
+    "call readiness.check",
+    "call _transfer_from_collector",
+    "call refuse_if_blocked",
+    "call verify_expected",
+    "call begin_transfer",
+    "call stop_collectors",
+    "return stop_collectors stopped=1 stopping=0",
+    "call wait_for_release",
+    "return wait_for_release released=True",
+    "return _transfer_from_collector stopped=1 stopping=0",
+    "call _launch_operation",
+    "call retry",
+    "return retry none",
+    "call verify_expected",
+    "call refuse_if_blocked",
+    "call Popen -m runtime.operation_worker <ROOT>/orchestrator.py --instance main --preset bp_farm",
+    "return _launch_operation run accepted",
+    "call end_transfer"
+   ],
+   "reply": {
+    "keys": ["ok", "operation", "operation_id", "transfer"],
+    "ok": true,
+    "operation": {"kind": "run", "request": ["action", "preset"], "status": "accepted"},
+    "operation_id": "op-2",
+    "status": 200,
+    "transfer": {"stopped": 1, "stopping": 0}
+   },
+   "spawned": 2,
+   "terminated": 1,
+   "transfer": {
+    "stopped": ["op-1"],
+    "stopping": []
+   },
+   "transfer_keys": [
+    "stopped",
+    "stopping",
+    "waited_sec"
+   ]
+  },
+  "start_without_a_collector": {
+   "envelope": {
+    "config_preset": "bp_farm",
+    "context_identity": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "selected_run": "bp_farm", "serial": "fake:1"},
+    "control_keys": ["routines", "shopping_plan"],
+    "control_routines": {"abilities": {"enabled": true}, "ad_gems": {"enabled": true, "interval_sec": 720, "window_sec": 60}, "floating_gems": {"enabled": false, "interval_sec": 960, "tap_interval_sec": 5, "window_sec": 60}, "repeat": {"enabled": true}, "rescue": {"enabled": true}, "rewards": {"enabled": true}, "shopping": {"enabled": false, "interval_sec": 90}},
+    "controls_are_resolved": true,
+    "frozen_config_has_snapshot_keys": [],
+    "keys": ["config", "controls", "preset", "preset_key", "profile", "source", "source_revision"],
+    "preset_is_effective_preset": true,
+    "preset_key": "bp_farm",
+    "preset_keys": ["_source", "abilities", "cancel_sprint", "chain_lightning", "dissonant_tab", "gather", "gem_delay_sec", "kind", "label", "loadout", "max_wave", "perk_bans", "restart_via_home", "rules", "runner", "runner_args", "shop_interval_sec", "shopping", "tier", "uw_wanted"],
+    "profile_kind": "dict",
+    "selected": "bp_farm",
+    "source": {"blueprint": "farm", "profile": "mine"},
+    "source_revision_present": true,
+    "stored_kind": "run",
+    "stored_request": {"action": "start", "preset": "bp_farm"},
+    "stored_request_keys": ["action", "battle_envelope", "preset"]
+   },
+   "harvest": {
+    "choice": "unset",
+    "revision": 0,
+    "state": "owned_by_driver",
+    "transfer": null
+   },
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover none",
+    "call readiness.check",
+    "call _launch_operation",
+    "call retry",
+    "return retry none",
+    "call verify_expected",
+    "call refuse_if_blocked",
+    "call Popen -m runtime.operation_worker <ROOT>/orchestrator.py --instance main --preset bp_farm",
+    "return _launch_operation run accepted"
+   ],
+   "reply": {
+    "keys": ["ok", "operation", "operation_id"],
+    "ok": true,
+    "operation": {"kind": "run", "request": ["action", "preset"], "status": "accepted"},
+    "operation_id": "op-1",
+    "status": 200
+   },
+   "spawned": 1
+  },
+  "unknown_preset_and_action": {
+   "journal": [
+    "call retry",
+    "return retry none",
+    "call _collector_takeover",
+    "return _collector_takeover none"
+   ],
+   "spawned": 0,
+   "unknown_action": {
+    "error": "unknown action",
+    "keys": ["error", "ok"],
+    "ok": false,
+    "status": 400
+   },
+   "unknown_preset": {
+    "error": "unknown preset",
+    "keys": ["error", "ok"],
+    "ok": false,
+    "status": 400
+   }
+  }
+ },
+ "version": 1
+}

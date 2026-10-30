@@ -8,6 +8,10 @@ kills. The farm is short Tier 1 cycles:
     loadout inner_land_mines_quest -> Tier 1 -> all 6 UWs OFF ->
     wait for the first SUMMON to pass -> surrender -> RETRY -> repeat
 
+Setup requires clean Home. Only cycles this process starts and continuously
+observes may be surrendered; a restarted process refuses existing battles,
+menus and stats rather than inheriting authority.
+
 The exit clock is REAL-LIFE SECONDS from the first readable wave (user):
 at x5 game speed the first Summon guardian arrives ~70s in and lasts 32s,
 and the mine kills it feeds are the whole point of the cycle - so the run
@@ -96,9 +100,8 @@ def _bind_preset(instance: str, name: str | None) -> None:
     """Bind the process preset, REFUSING a blueprint of the wrong kind.
 
     No --preset binds the legacy preset, as before; a `bp_` preset of another
-    kind is refused before the first capture, because this script surrenders
-    a run every cycle and pointed at a tournament blueprint it would surrender
-    a tournament.
+    kind is refused before the first capture. Selecting a blueprint never
+    grants authority over a run; the process must start its own quest cycle.
     """
     from settings import CONFIG
     if name is None:
@@ -115,33 +118,33 @@ def _bind_preset(instance: str, name: str | None) -> None:
                          f"(nothing was captured or tapped)")
 
 
-def ensure_uws_off() -> list[str]:
+def ensure_uws_off(*, guard=None) -> list[str]:
     """All six UWs OFF, verified. Returns the ones that could not be set."""
     from runtime import logger
     from interactions import shopper
     fails = []
     for uw in UWS:
-        if not shopper.uw_toggle(uw, want_on=False):
+        if not shopper.uw_toggle(uw, want_on=False,
+                                 **({"guard": guard} if guard is not None else {})):
             fails.append(uw)
     if fails:
         logger.event("ilm_uw_fail", weapons=fails)
     return fails
 
 
-def one_cycle(n: int, last: bool) -> None:
+def one_cycle(n: int, last: bool, run) -> None:
     from runtime import logger
     from flows import shard
-    from interactions import tourney
     from device import capture
     logger.event("ilm_cycle", n=n, stage="begin")
-    frame, w = shard.wait_for_wave(1)
+    shard.wait_for_wave(1, guard=run.guard, recover_home=False)
     t0 = time.monotonic()               # run clock starts at first wave
-    shard.ensure_max_speed()
+    shard.ensure_max_speed(guard=run.guard)
     # UW toggles PERSIST across runs, so only the first cycle pays the
     # panel sweep (user, 2026-08-16: "it was enough to just retry") - and
     # the sweep's scrolling could outlast the whole 22s window anyway.
     if n == 1:
-        ensure_uws_off()
+        ensure_uws_off(guard=run.guard)
     # REAL seconds, not waves: waves fly at x5 on Tier 1 but the Summon
     # guardian runs on the wall clock, which is what the user's 70s+32s
     # numbers are measured in.
@@ -154,15 +157,17 @@ def one_cycle(n: int, last: bool) -> None:
     # wait and let shard.GemWatch claim - same rules as every other loop.
     # The ~350ms grab paces the loop; overshooting the deadline by one grab
     # is fine (25s is the user's MINIMUM, "22.4s proved too soon").
-    gems = shard.GemWatch()
+    from runtime.action_session import ActionSession
+    gems = shard.GemWatch(guard=run.guard, session=ActionSession.for_operation('quest_ilm'))
     while cycle_sec - (time.monotonic() - t0) > 0:
-        gems.poll(capture.grab())
+        frame = run.check(capture.grab())
+        run.observe(gems.poll(frame))
     logger.event("ilm_cycle", n=n, stage="summon passed",
                  elapsed=round(time.monotonic() - t0, 1))
     if last:
-        shard.abandon_run(to_home=True)  # surrender -> HOME, no stats banked
+        run.abandon(to_home=True)       # surrender -> HOME, no stats banked
     else:
-        shard.abandon_run()             # surrender -> RETRY, next run starts
+        run.abandon()                   # surrender -> RETRY, next run starts
     logger.event("ilm_cycle", n=n, stage="done")
 
 
@@ -183,6 +188,8 @@ def _cli(argv=None):
 
 def main() -> None:
     a = _cli()
+    from runtime.device_lease import prepare_instance
+    prepare_instance(a.instance)
     _bind_preset(a.instance, a.preset)
     from player import readiness
     readiness.require(settings.ROOT, settings.CONFIG, _preset())
@@ -197,40 +204,23 @@ def main() -> None:
     from interactions import loadout
     from runtime import logger
     from flows import shard
-    from interactions import tourney
     logger.event("ilm_quest", stage="begin", cycles=cycles)
-    # NEVER bounce a running battle through Home (user, 2026-08-16: "bad
-    # exit - you have exited to home, not used the retry path"). A live run
-    # is surrendered STRAIGHT into RETRY, which both ends it and starts the
-    # next one on the same tier; the full Home -> loadout -> tier -> BATTLE
-    # setup only runs when nothing is going at all.
-    from device import capture
-    from vision import detect
-    from vision import wave_reader
-    from device import act
-    frame = capture.grab()
-    dead, retry = detect.death_screen(frame)
-    if dead and retry and wave_reader.read_wave(frame) is None:
-        # stranded on the stats dialog (a crashed or interrupted batch):
-        # RETRY is the whole recovery
-        logger.event("ilm_quest", stage="adopt stats dialog via retry")
-        act.tap(*retry, reason="RETRY", instant=True)
-    elif wave_reader.read_wave(frame) is not None:
-        logger.event("ilm_quest", stage="adopt running battle via retry")
-        shard.abandon_run()
-    else:
-        tourney.ensure_home()
-        loadout.apply(lo_name)          # blueprint's loadout and tier, else
-        shard.set_tier(tier)            # the legacy ILM quest pair
-        shard.start_battle()
+    from flows._quest_run import QuestRun
+    run = QuestRun()
+    run.home()                         # foreign runs/menus/aftermath are untouched
+    loadout.apply(lo_name)
+    run.home()
+    shard.set_tier(tier)
+    run.start()
     for n in range(1, cycles + 1):
-        one_cycle(n, last=(n == cycles))
+        one_cycle(n, last=(n == cycles), run=run)
     # v29: the quest's Space Displacer equip permanently displaced the farm
     # health module into the (auto-saving) Farm preset - put it back before
     # handing the account on. Declarative (`modules_restore` in the
     # loadout), so a restarted process still knows what to restore.
     restore = loadout.spec(lo_name).get("modules_restore")
     if restore:
+        run.home()
         logger.event("ilm_quest", stage="restore modules",
                      plan=[list(m) for m in restore])
         loadout.apply_modules([tuple(m) for m in restore])

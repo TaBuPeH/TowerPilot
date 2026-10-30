@@ -1,0 +1,243 @@
+{
+ "scenarios": {
+  "attached_battle": {
+   "battle_after_stop_is_interrupted_and_the_game_battle_is_untouched": {
+    "request": null,
+    "response": {"battle": {"attach": {"mode": "current_battle", "observed_wave": null, "observed_wave_source": null, "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "predecessor_battle_id": "<id-4>", "stripped": ["tier"], "tier": {"provenance": "unknown", "value": null}}, "blueprint": "farm", "end_reason": "driver_observation_lost", "id": "<id-1>", "label": "Farm", "lineage": {"predecessors": [{"id": "<id-4>", "origin": "adopted", "reason": "driver_operation_ended", "status": "interrupted"}], "truncated": false}, "origin": "partial_adoption", "previous_battle_id": "<id-4>", "reason": "driver_observation_lost", "start_certainty": "partial_observation", "status": "interrupted", "wave": null, "wave_provenance": "unknown"}},
+    "status": 200
+   },
+   "live_control_recorded_but_unreadable_is_a_500_outcome_unknown": {
+    "request": {"battle_id": "<id-1>", "changes": {"routines.ad_gems.enabled": false}, "expected_revision": 0, "generation": "g2", "idempotency_key": "attached-control-1"},
+    "response": {"code": "command_outcome_unknown", "command_id": "<id-2>", "error": "The command was recorded, but its result could not be read back. Refresh the battle before sending it again.", "ok": false, "outcome": "unknown"},
+    "status": 500
+   },
+   "operation_after_stop": {
+    "request": null,
+    "response": {"operation": {"cancellable": false, "context": {"account": null, "adb_host": "127.0.0.1", "adb_port": 50000, "artifact_dir": "<root>/logs/main", "config_revision": "<sha256>", "device_key": "<sha256>", "instance": "main", "profile": "mine", "profile_path": "<root>/profiles/mine.yaml", "profile_revision": "<sha256>", "rendering": null, "selected_run": "bp_farm", "serial": "fake:1"}, "created_at": 1800000000.0, "error": null, "id": "<id-3>", "idempotency_key": "takeover-key-3", "kind": "run", "progress": {}, "recovery_action": null, "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": "<id-4>", "generation": "g1", "observed_wave": 4200}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "preset": "bp_farm"}, "result_refs": {}, "revision": 5, "status": "cancelled", "step": "driver_stopped", "updated_at": 1800000000.0, "worker": {"creation_time": 1800000000.0, "pid": 4242}}},
+    "status": 200
+   },
+   "retrying_the_takeover_after_stop_replays_the_receipt": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": "<id-4>", "generation": "g1", "observed_wave": 4200}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "takeover-key-3", "preset": "bp_farm"},
+    "response": {"ok": true, "operation_id": "<id-3>", "status": "cancelled"},
+    "status": 200
+   },
+   "second_control_while_the_first_is_pending_is_an_uncoded_409": {
+    "request": {"battle_id": "<id-1>", "changes": {"routines.ad_gems.enabled": true}, "expected_revision": 1, "generation": "g2", "idempotency_key": "attached-control-2"},
+    "response": {"error": "Previous control revision is still pending", "ok": false},
+    "status": 409
+   },
+   "stop_automation": {
+    "request": {"expected_revision": 3},
+    "response": {"ok": true, "operation": {"cancellable": false, "context": {"account": null, "adb_host": "127.0.0.1", "adb_port": 50000, "artifact_dir": "<root>/logs/main", "config_revision": "<sha256>", "device_key": "<sha256>", "instance": "main", "profile": "mine", "profile_path": "<root>/profiles/mine.yaml", "profile_revision": "<sha256>", "rendering": null, "selected_run": "bp_farm", "serial": "fake:1"}, "created_at": 1800000000.0, "error": null, "id": "<id-3>", "idempotency_key": "takeover-key-3", "kind": "run", "progress": {}, "recovery_action": null, "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": "<id-4>", "generation": "g1", "observed_wave": 4200}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "preset": "bp_farm"}, "result_refs": {}, "revision": 5, "status": "cancelled", "step": "driver_stopped", "updated_at": 1800000000.0, "worker": {"creation_time": 1800000000.0, "pid": 4242}}, "stop": {"by_this_request": {"family": "stopped", "paused": true, "released": false, "requested": true, "signalled": [1]}, "holder": null, "reason": null, "state": "stopped"}},
+    "status": 200
+   },
+   "the_same_request_reads_the_recorded_command_back_accepted": {
+    "request": {"battle_id": "<id-1>", "changes": {"routines.ad_gems.enabled": false}, "expected_revision": 0, "generation": "g2", "idempotency_key": "attached-control-1"},
+    "response": {"command": {"id": "<id-2>", "kind": "controls", "state": "requested"}, "ok": true},
+    "status": 200
+   }
+  },
+  "launch_collector": {
+   "accepted_collector_transferred": {
+    "envelope": {"attach": {"mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "predecessor": {"battle_id": "<id-1>", "generation": "g1", "operation_id": "<id-3>"}, "stripped": ["tier"], "tier": {"provenance": "unknown", "value": null}}, "config_preset_is_key": true, "preset_equals_frozen_run": true, "preset_key": "bp_farm", "repeat_enabled": false, "rewards_enabled": false},
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": "<id-1>", "generation": "g1", "observed_wave": 4200}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "takeover-key-2", "preset": "bp_farm"},
+    "response": {"ok": true, "operation": {"cancellable": true, "context": {"account": null, "adb_host": "127.0.0.1", "adb_port": 50000, "artifact_dir": "<root>/logs/main", "config_revision": "<sha256>", "device_key": "<sha256>", "instance": "main", "profile": "mine", "profile_path": "<root>/profiles/mine.yaml", "profile_revision": "<sha256>", "rendering": null, "selected_run": "bp_farm", "serial": "fake:1"}, "created_at": 1800000000.0, "error": null, "id": "<id-2>", "idempotency_key": "takeover-key-2", "kind": "run", "progress": {}, "recovery_action": null, "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": "<id-1>", "generation": "g1", "observed_wave": 4200}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "preset": "bp_farm"}, "result_refs": {}, "revision": 2, "status": "accepted", "step": "accepted", "updated_at": 1800000000.0, "worker": {"creation_time": 1800000000.0, "pid": 4242}}, "operation_id": "<id-2>", "transfer": {"stopped": ["<id-3>"], "stopping": [], "waited_sec": 0.0}},
+    "status": 200
+   },
+   "battle_after_taking_over_the_collectors_battle": {
+    "request": null,
+    "response": {"battle": {"attach": {"mode": "current_battle", "observed_wave": null, "observed_wave_source": null, "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "predecessor_battle_id": "<id-1>", "stripped": ["tier"], "tier": {"provenance": "unknown", "value": null}}, "blueprint": "farm", "id": "<id-4>", "label": "Farm", "lineage": {"predecessors": [{"id": "<id-1>", "origin": "adopted", "reason": "driver_operation_ended", "status": "interrupted"}], "truncated": false}, "origin": "partial_adoption", "previous_battle_id": "<id-1>", "start_certainty": "unknown", "status": "prepared", "wave": null, "wave_provenance": "unknown"}},
+    "status": 200
+   },
+   "battle_with_the_later_wave_but_no_entry_observation": {
+    "request": null,
+    "response": {"battle": {"attach": {"mode": "current_battle", "observed_wave": null, "observed_wave_source": null, "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "predecessor_battle_id": "<id-1>", "stripped": ["tier"], "tier": {"provenance": "unknown", "value": null}}, "blueprint": "farm", "id": "<id-4>", "label": "Farm", "lineage": {"predecessors": [{"id": "<id-1>", "origin": "adopted", "reason": "driver_operation_ended", "status": "interrupted"}], "truncated": false}, "origin": "partial_adoption", "previous_battle_id": "<id-1>", "start_certainty": "unknown", "status": "prepared", "wave": 4390, "wave_provenance": "unknown"}},
+    "status": 200
+   }
+  },
+  "launch_free": {
+   "accepted_nothing_owns_the_emulator": {
+    "envelope": {"attach": {"mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "predecessor": null, "stripped": ["tier"], "tier": {"provenance": "declared", "value": 15}}, "config_preset_is_key": true, "preset_equals_frozen_run": true, "preset_key": "bp_farm", "repeat_enabled": false, "rewards_enabled": false},
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "declared", "value": 15}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "takeover-key-1", "preset": "bp_farm"},
+    "response": {"ok": true, "operation": {"cancellable": true, "context": {"account": null, "adb_host": "127.0.0.1", "adb_port": 50000, "artifact_dir": "<root>/logs/main", "config_revision": "<sha256>", "device_key": "<sha256>", "instance": "main", "profile": "mine", "profile_path": "<root>/profiles/mine.yaml", "profile_revision": "<sha256>", "rendering": null, "selected_run": "bp_farm", "serial": "fake:1"}, "created_at": 1800000000.0, "error": null, "id": "<id-1>", "idempotency_key": "takeover-key-1", "kind": "run", "progress": {}, "recovery_action": null, "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "declared", "value": 15}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "preset": "bp_farm"}, "result_refs": {}, "revision": 2, "status": "accepted", "step": "accepted", "updated_at": 1800000000.0, "worker": {"creation_time": 1800000000.0, "pid": 4242}}, "operation_id": "<id-1>"},
+    "status": 200
+   },
+   "failed_after_accept_read_back_by_the_same_request": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "declared", "value": 15}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "takeover-key-1", "preset": "bp_farm"},
+    "response": {"ok": true, "operation": {"cancellable": false, "context": {"account": null, "adb_host": "127.0.0.1", "adb_port": 50000, "artifact_dir": "<root>/logs/main", "config_revision": "<sha256>", "device_key": "<sha256>", "instance": "main", "profile": "mine", "profile_path": "<root>/profiles/mine.yaml", "profile_revision": "<sha256>", "rendering": null, "selected_run": "bp_farm", "serial": "fake:1"}, "created_at": 1800000000.0, "error": {"code": "attach_no_battle", "message": "No battle is on screen; nothing was sent to the game"}, "id": "<id-1>", "idempotency_key": "takeover-key-1", "kind": "run", "progress": {}, "recovery_action": null, "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "declared", "value": 15}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "preset": "bp_farm"}, "result_refs": {}, "revision": 4, "status": "failed", "step": "accepted", "updated_at": 1800000000.0, "worker": {"creation_time": 1800000000.0, "pid": 4242}}, "operation_id": "<id-1>"},
+    "status": 200
+   },
+   "failed_after_accept_read_by_id": {
+    "request": null,
+    "response": {"operation": {"cancellable": false, "context": {"account": null, "adb_host": "127.0.0.1", "adb_port": 50000, "artifact_dir": "<root>/logs/main", "config_revision": "<sha256>", "device_key": "<sha256>", "instance": "main", "profile": "mine", "profile_path": "<root>/profiles/mine.yaml", "profile_revision": "<sha256>", "rendering": null, "selected_run": "bp_farm", "serial": "fake:1"}, "created_at": 1800000000.0, "error": {"code": "attach_no_battle", "message": "No battle is on screen; nothing was sent to the game"}, "id": "<id-1>", "idempotency_key": "takeover-key-1", "kind": "run", "progress": {}, "recovery_action": null, "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "declared", "value": 15}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "preset": "bp_farm"}, "result_refs": {}, "revision": 4, "status": "failed", "step": "accepted", "updated_at": 1800000000.0, "worker": {"creation_time": 1800000000.0, "pid": 4242}}},
+    "status": 200
+   },
+   "identical_retry_replays_the_receipt": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "declared", "value": 15}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "takeover-key-1", "preset": "bp_farm"},
+    "response": {"ok": true, "operation": {"cancellable": true, "context": {"account": null, "adb_host": "127.0.0.1", "adb_port": 50000, "artifact_dir": "<root>/logs/main", "config_revision": "<sha256>", "device_key": "<sha256>", "instance": "main", "profile": "mine", "profile_path": "<root>/profiles/mine.yaml", "profile_revision": "<sha256>", "rendering": null, "selected_run": "bp_farm", "serial": "fake:1"}, "created_at": 1800000000.0, "error": null, "id": "<id-1>", "idempotency_key": "takeover-key-1", "kind": "run", "progress": {}, "recovery_action": null, "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "declared", "value": 15}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "preset": "bp_farm"}, "result_refs": {}, "revision": 2, "status": "accepted", "step": "accepted", "updated_at": 1800000000.0, "worker": {"creation_time": 1800000000.0, "pid": 4242}}, "operation_id": "<id-1>"},
+    "status": 200
+   },
+   "same_key_changed_request_is_uncoded_409": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "takeover-key-1", "preset": "bp_farm"},
+    "response": {"error": "Idempotency key already belongs to another command or target", "ok": false},
+    "status": 409
+   }
+  },
+  "preview_blocked": {
+   "run_list_with_an_incompatible_run": {
+    "request": null,
+    "response": {"context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "ok": true, "preset": null, "runs": [{"label": "Farm", "preset": "bp_farm", "reasons": [{"code": "ends_battle", "detail": "the run ends at wave 500", "field": "max_wave"}], "verdict": "incompatible"}], "schema_version": 1},
+    "status": 200
+   },
+   "run_preview_another_runner_owns_the_emulator": {
+    "request": null,
+    "response": {"blockers": ["owner_other"], "context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "current_battle": {"battle_id": null, "generation": null, "observed_wave": null, "operation_id": null, "source": "none", "status": null, "wave_source": "none"}, "device": {"owners": [{"foreign": true, "harvest_managed": false, "kind": "process", "operation_id": null, "operation_kind": null, "status": null}], "state": "owner_other"}, "ok": true, "plan": {"applied": ["abilities", "chain_lightning", "gather", "gem_delay_sec", "shop_interval_sec"], "forced_off": ["routines.repeat.enabled", "routines.rewards.enabled"], "mode": "current_battle", "needs_tier": [{"code": "danger_window_shots", "detail": "screenshots are taken in the fleet danger windows", "field": null}], "stripped": ["tier"]}, "preset": "bp_farm", "readiness": {"advisory": [], "missing": [], "ready": true}, "run": {"kind": "coin", "label": "Farm", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "preset": "bp_farm", "reasons": [], "verdict": "compatible"}, "schema_version": 1, "setup_guard": {"blocks_launch": false, "code": null, "message": null}},
+    "status": 200
+   },
+   "run_preview_calibration_needed": {
+    "request": null,
+    "response": {"blockers": ["calibration_needed"], "context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "current_battle": {"battle_id": null, "generation": null, "observed_wave": null, "operation_id": null, "source": "none", "status": null, "wave_source": "none"}, "device": {"owners": [], "state": "free"}, "ok": true, "plan": {"applied": ["abilities", "chain_lightning", "gather", "gem_delay_sec", "shop_interval_sec"], "forced_off": ["routines.repeat.enabled", "routines.rewards.enabled"], "mode": "current_battle", "needs_tier": [{"code": "danger_window_shots", "detail": "screenshots are taken in the fleet danger windows", "field": null}], "stripped": ["tier"]}, "preset": "bp_farm", "readiness": {"advisory": [], "missing": [{"alternatives": ["home/example_dialog.png"], "blocking": true, "reasons": ["needed"]}], "ready": false}, "run": {"kind": "coin", "label": "Farm", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "preset": "bp_farm", "reasons": [], "verdict": "compatible"}, "schema_version": 1, "setup_guard": {"blocks_launch": false, "code": null, "message": null}},
+    "status": 200
+   },
+   "run_preview_incompatible": {
+    "request": null,
+    "response": {"blockers": ["not_compatible"], "context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "current_battle": {"battle_id": null, "generation": null, "observed_wave": null, "operation_id": null, "source": "none", "status": null, "wave_source": "none"}, "device": {"owners": [], "state": "free"}, "ok": true, "plan": null, "preset": "bp_farm", "readiness": null, "run": {"kind": "coin", "label": "Farm", "policy_revision": "8f859bd2b0a203b85a12783834bc37e3408c5e6d128fe38ed4f8b7a4fcb93269", "preset": "bp_farm", "reasons": [{"code": "ends_battle", "detail": "the run ends at wave 500", "field": "max_wave"}], "verdict": "incompatible"}, "schema_version": 1, "setup_guard": {"blocks_launch": false, "code": null, "message": null}},
+    "status": 200
+   },
+   "run_preview_tournament_recognition_missing": {
+    "request": null,
+    "response": {"blockers": ["tournament_recognition_missing"], "context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "current_battle": {"battle_id": null, "generation": null, "observed_wave": null, "operation_id": null, "source": "none", "status": null, "wave_source": "none"}, "device": {"owners": [], "state": "free"}, "ok": true, "plan": {"applied": ["abilities", "chain_lightning", "gather", "gem_delay_sec", "shop_interval_sec"], "forced_off": ["routines.repeat.enabled", "routines.rewards.enabled"], "mode": "current_battle", "needs_tier": [{"code": "danger_window_shots", "detail": "screenshots are taken in the fleet danger windows", "field": null}], "stripped": ["tier"]}, "preset": "bp_farm", "readiness": {"advisory": [], "missing": [{"alternatives": ["tourney/in_tournament.png"], "blocking": true, "reasons": ["needed"]}], "ready": false}, "run": {"kind": "coin", "label": "Farm", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "preset": "bp_farm", "reasons": [], "verdict": "compatible"}, "schema_version": 1, "setup_guard": {"blocks_launch": false, "code": null, "message": null}},
+    "status": 200
+   },
+   "run_preview_unknown_run": {
+    "request": null,
+    "response": {"code": "invalid_request", "error": "unknown_preset [preset]", "field": "preset", "ok": false, "reason": "unknown_preset"},
+    "status": 400
+   }
+  },
+  "preview_collector": {
+   "run_preview_collector_owns_the_emulator": {
+    "request": null,
+    "response": {"blockers": [], "context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "current_battle": {"battle_id": "<id-1>", "generation": "g1", "observed_wave": 4200, "operation_id": "<id-2>", "source": "collector_record", "status": "active", "wave_source": "collector_record"}, "device": {"owners": [{"foreign": false, "harvest_managed": true, "kind": "operation", "operation_id": "<id-2>", "operation_kind": "gems", "status": "running"}], "state": "collector"}, "ok": true, "plan": {"applied": ["abilities", "chain_lightning", "gather", "gem_delay_sec", "shop_interval_sec"], "forced_off": ["routines.repeat.enabled", "routines.rewards.enabled"], "mode": "current_battle", "needs_tier": [{"code": "danger_window_shots", "detail": "screenshots are taken in the fleet danger windows", "field": null}], "stripped": ["tier"]}, "preset": "bp_farm", "readiness": {"advisory": [], "missing": [], "ready": true}, "run": {"kind": "coin", "label": "Farm", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "preset": "bp_farm", "reasons": [], "verdict": "compatible"}, "schema_version": 1, "setup_guard": {"blocks_launch": false, "code": null, "message": null}},
+    "status": 200
+   }
+  },
+  "preview_free": {
+   "run_list": {
+    "request": null,
+    "response": {"context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "ok": true, "preset": null, "runs": [{"label": "Farm", "preset": "bp_farm", "reasons": [], "verdict": "compatible"}], "schema_version": 1},
+    "status": 200
+   },
+   "run_preview_nothing_owns_the_emulator": {
+    "request": null,
+    "response": {"blockers": [], "context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "current_battle": {"battle_id": null, "generation": null, "observed_wave": null, "operation_id": null, "source": "none", "status": null, "wave_source": "none"}, "device": {"owners": [], "state": "free"}, "ok": true, "plan": {"applied": ["abilities", "chain_lightning", "gather", "gem_delay_sec", "shop_interval_sec"], "forced_off": ["routines.repeat.enabled", "routines.rewards.enabled"], "mode": "current_battle", "needs_tier": [{"code": "danger_window_shots", "detail": "screenshots are taken in the fleet danger windows", "field": null}], "stripped": ["tier"]}, "preset": "bp_farm", "readiness": {"advisory": [], "missing": [], "ready": true}, "run": {"kind": "coin", "label": "Farm", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "preset": "bp_farm", "reasons": [], "verdict": "compatible"}, "schema_version": 1, "setup_guard": {"blocks_launch": false, "code": null, "message": null}},
+    "status": 200
+   }
+  },
+  "real_worker": {
+   "battle_read_after_the_real_worker_entered": {
+    "request": null,
+    "response": {"battle": {"attach": {"mode": "current_battle", "observed_wave": 4388, "observed_wave_source": "entry_gate", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "predecessor_battle_id": "<id-2>", "stripped": ["tier"], "tier": {"provenance": "unknown", "value": null}}, "blueprint": "farm", "id": "<id-1>", "label": "Farm", "lineage": {"predecessors": [{"id": "<id-2>", "origin": "adopted", "reason": "driver_operation_ended", "status": "interrupted"}], "truncated": false}, "origin": "partial_adoption", "previous_battle_id": "<id-2>", "start_certainty": "partial_observation", "status": "active", "wave": 4390, "wave_provenance": "unknown"}, "runtime_attach_entry": {"observed_wave": 4388, "source": "entry_gate"}},
+    "status": 200
+   },
+   "collector_record_after_the_real_worker_entered": {
+    "request": null,
+    "response": {"battle": {"end_reason": "driver_operation_ended", "reason": "driver_operation_ended", "status": "interrupted"}},
+    "status": 200
+   }
+  },
+  "real_worker_refused": {
+   "no_battle_after_the_real_worker_refused": {
+    "request": null,
+    "response": {"battle": null},
+    "status": 200
+   },
+   "operation_after_the_real_worker_refused": {
+    "request": null,
+    "response": {"operation": {"error": {"code": "attach_no_battle", "message": "the battle is not on screen or its wave cannot be read"}, "status": "failed"}},
+    "status": 200
+   },
+   "same_request_reads_the_failed_operation_back": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "real-worker-2", "preset": "bp_farm"},
+    "response": {"error": {"code": "attach_no_battle", "message": "the battle is not on screen or its wave cannot be read"}, "ok": true, "operation_id": "<id-1>", "status": "failed"},
+    "status": 200
+   }
+  },
+  "refusals": {
+   "action_lock": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000008", "preset": "bp_farm"},
+    "response": {"code": "action_lock", "error": "Another action is in progress; wait for its result", "ok": false},
+    "status": 409
+   },
+   "calibration_needed": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000008", "preset": "bp_farm"},
+    "response": {"advisory": [], "code": "calibration_needed", "error": "Calibration is needed for this run. Open Calibrate to see the missing steps.", "missing": [{"alternatives": ["home/example_dialog.png"], "blocking": true, "reasons": ["needed"]}], "ok": false},
+    "status": 409
+   },
+   "context_changed": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": "someone-else", "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000006", "preset": "bp_farm"},
+    "response": {"code": "context_changed", "current_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "error": "The emulator, account or profile changed since this page was read; review the new context before taking over", "ok": false},
+    "status": 409
+   },
+   "device_owned_by_another_runner": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000008", "preset": "bp_farm"},
+    "response": {"code": "device_owned", "error": "Automation is already running. Finish or stop it before taking over the battle.", "ok": false, "owner": {"claims": null, "evidence": null, "foreign": true, "gathers": null, "gems": {"ad_gems": null, "basis": "not_reported", "floating_gems": null}, "harvest_managed": false, "kind": "process", "operation_id": null, "operation_kind": null, "pid": 4242, "recovery": null, "routines": null, "script": "orchestrator", "status": null}, "recovery": null, "retry": "after_confirmed_stop"},
+    "status": 409
+   },
+   "invalid_attestation": {
+    "request": {"action": "takeover", "attach": {"attestation": "yes", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000003", "preset": "bp_farm"},
+    "response": {"code": "invalid_request", "error": "bad_value [attach.attestation] not the takeover attestation", "field": "attach.attestation", "ok": false, "reason": "bad_value"},
+    "status": 400
+   },
+   "invalid_missing_attach": {
+    "request": {"action": "takeover", "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000004", "preset": "bp_farm"},
+    "response": {"code": "invalid_request", "error": "missing_field [attach]", "field": "attach", "ok": false, "reason": "missing_field"},
+    "status": 400
+   },
+   "invalid_reserved_field": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "harvest": true, "idempotency_key": "take-000001", "preset": "bp_farm"},
+    "response": {"code": "invalid_request", "error": "reserved_field [harvest] written by the server only", "field": "harvest", "ok": false, "reason": "reserved_field"},
+    "status": 400
+   },
+   "invalid_unknown_field": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000002", "preset": "bp_farm", "surprise": 1},
+    "response": {"code": "invalid_request", "error": "unknown_field [surprise]", "field": "surprise", "ok": false, "reason": "unknown_field"},
+    "status": 400
+   },
+   "invalid_unknown_run": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000007", "preset": "bp_missing"},
+    "response": {"code": "invalid_request", "error": "unknown_preset [preset]", "field": "preset", "ok": false, "reason": "unknown_preset"},
+    "status": 400
+   },
+   "policy_changed": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "0000000000000000000000000000000000000000000000000000000000000000", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000005", "preset": "bp_farm"},
+    "response": {"code": "policy_changed", "current_policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "error": "The run changed since the preview; read it again before taking over", "ok": false},
+    "status": 409
+   },
+   "takeover_not_compatible": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000008", "preset": "bp_farm"},
+    "response": {"code": "takeover_not_compatible", "error": "This run cannot be taken over: ends_battle (max_wave)", "ok": false, "reasons": [{"code": "ends_battle", "detail": "the run ends at wave 500", "field": "max_wave"}]},
+    "status": 409
+   },
+   "tournament_recognition_missing": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000008", "preset": "bp_farm"},
+    "response": {"advisory": [], "code": "tournament_recognition_missing", "error": "Takeover refuses to guess whether this is a tournament: capture the trophy badge in Recognition first", "missing": [{"alternatives": ["tourney/in_tournament.png"], "blocking": true, "reasons": ["needed"]}], "ok": false},
+    "status": 409
+   }
+  },
+  "refusals_collector": {
+   "attach_battle_changed": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": null, "generation": null, "observed_wave": null}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000001", "preset": "bp_farm"},
+    "response": {"code": "attach_battle_changed", "current_battle": {"battle_id": "<id-1>", "generation": "g1", "observed_wave": 4200, "operation_id": "<id-2>", "source": "collector_record", "status": "active", "wave_source": "collector_record"}, "error": "The battle on the collector changed since you confirmed it; read it again before taking over", "ok": false},
+    "status": 409
+   },
+   "collector_stopping": {
+    "request": {"action": "takeover", "attach": {"attestation": "current_battle_takeover", "expected_battle": {"battle_id": "<id-1>", "generation": "g1", "observed_wave": 4200}, "mode": "current_battle", "policy_revision": "5e55f85597292d3321c3a0724f017818bc14c369ea3e2e58cc3fa2a586aa5f30", "tier": {"provenance": "unknown", "value": null}}, "expected_context": {"account": null, "instance": "main", "profile": "mine", "rendering": null, "serial": "fake:1"}, "idempotency_key": "take-000002", "preset": "bp_farm"},
+    "response": {"code": "collector_stopping", "error": "The diamond collector is still stopping. Wait for it to release the emulator, then start the run again.", "ok": false, "owner": {"battle": {"control_revision": 0, "fresh": true, "generation": "g1", "id": "<id-1>", "observation_age_sec": 1.0, "observation_status": "observing", "origin": "adopted", "publication_valid": true, "published_at": 1800000000.0, "status": "active"}, "claims": {"cause": null, "failing": false, "failure_streak": 0, "finder_suspected": null, "windows_missed": null}, "evidence": null, "foreign": false, "gathers": true, "gems": {"ad_gems": true, "basis": "published_routines", "floating_gems": false}, "harvest_managed": true, "kind": "operation", "operation_id": "<id-2>", "operation_kind": "gems", "pid": 4242, "recovery": {"action": "pause_harvesting", "expected_revision": 1, "operation_id": "<id-2>"}, "routines": {"ad_gems": {"enabled": true}, "floating_gems": {"enabled": false}}, "script": null, "status": "running"}, "recovery": {"action": "pause_harvesting", "expected_revision": 1, "operation_id": "<id-2>"}, "retry": "after_confirmed_stop", "stop": {"errors": [], "requested": true, "stopped": [], "stopping": ["<id-2>"]}, "waited_sec": 0.0},
+    "status": 409
+   }
+  }
+ },
+ "schema": "takeover_contract_v1",
+ "version": 1
+}

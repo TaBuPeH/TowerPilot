@@ -33,6 +33,7 @@ from device import act
 from device import capture
 from vision import detect
 from runtime import logger
+from vision import pills
 from vision import screen
 from vision import wave_reader
 from settings import CONFIG
@@ -126,24 +127,91 @@ def find_any(frame, rels, thresh: float = FIND_THRESH):
     return None, None
 
 
-def find(frame, rel: str, thresh: float = FIND_THRESH):
-    """Best match for a template, or None. Returns (centre, score)."""
+# The player's pill rows: one template per pill label, <prefix><slug>.png,
+# cut as pills.text_crop by player/calibrate.harvest_row. Labels in a row are
+# look-alikes: the default names "Preset 1".."Preset 5" differ by one digit
+# (a label's whole-template score on a sibling: 0.891-0.969, the calibrator's
+# next-best on a live account, 2026-10-12; FIND_THRESH is 0.90) and one name
+# can start another ("Farm" inside "Farm 2" scores ~1.0). So a tab whose own
+# pill is gone (renamed, stale cut) would read as a sibling, with or without a
+# template of its own - _own_label decides from the pixels alone.
+PILL_ROWS = ("cards/preset_", "presets/gp_", "presets/modules_",
+             "presets/guardians_", "presets/workshop_", "presets/bots_")
+# How far a pill's label pixels may reach past the hit box and still be that
+# label whole: a hand cut from the dashboard cropper's "tight box" can clip the
+# anti-aliased edge, and the same label's white box shifts 1 px between
+# screens. One more glyph reaches much further: on the live labels
+# (2026-10-12) the narrowest glyph is 10 px and glyphs sit >= 2 px apart.
+LABEL_FRINGE = 3
+
+
+def _own_label(frame, rel: str, tpl, loc, thresh: float) -> bool:
+    """For a pill-row template matched with its top-left at `loc`: True only
+    when the hit is that label whole and everywhere. Whole: the hit centre lies
+    in a pill (pills.pills, the calibrator's detector) and every label pixel of
+    that pill (pills.text_crop without margin) lies inside the hit box grown by
+    LABEL_FRINGE px a side, so "Farm" inside "Farm 2" fails. Everywhere: each
+    of round(2 * width / height) equal column strips of the template (half its height wide, about one
+    glyph) scores `thresh` at the hit alignment, so the one glyph a sibling
+    differs by fails its strip where the whole-template score averages it
+    away (live cuts 2026-10-12: a label on its own text from another screen
+    0.973 or more, on a one-digit sibling 0.846 or less). Any other
+    template: True."""
+    if not rel.startswith(PILL_ROWS):
+        return True
+    h, w = tpl.shape[:2]
+    x, y = loc
+    cx, cy = x + w // 2, y + h // 2
+    pill = next((p["rect"] for p in pills.pills(frame, max(0, cy - 160), cy + 160)
+                 if p["rect"][0] <= cx < p["rect"][0] + p["rect"][2]
+                 and p["rect"][1] <= cy < p["rect"][1] + p["rect"][3]), None)
+    if pill is None:
+        return False
+    _, text = pills.text_crop(frame, pill, margin=0)
+    f = LABEL_FRINGE
+    if text is None or not (x - f <= text[0] and y - f <= text[1]
+                            and text[0] + text[2] <= x + w + f and text[1] + text[3] <= y + h + f):
+        return False
+    n = max(1, round(2 * w / h))
+    for i in range(n):
+        xa, xb = i * w // n, (i + 1) * w // n
+        strip = cv2.matchTemplate(frame[y:y + h, x + xa:x + xb], tpl[:, xa:xb], cv2.TM_CCOEFF_NORMED)
+        if float(strip[0, 0]) < thresh:
+            return False
+    return True
+
+
+def find(frame, rel: str, thresh: float = FIND_THRESH, own: bool = True):
+    """Best match for a template, or None. Returns (centre, score). A pill-row
+    template takes its best spot that _own_label accepts: a look-alike's spot
+    is blanked and the next-best tried, so an absent own pill reads as absent
+    and a present one is found even where a sibling outscores it. own=False
+    skips _own_label and takes the best spot whatever label it is: for a
+    guard that asks whether a tab row is on screen, not which tab."""
     try:
         tpl = detect._tpl(rel)
     except detect.TemplateMissing:
         return None
     res = cv2.matchTemplate(frame, tpl, cv2.TM_CCOEFF_NORMED)
-    _, score, _, loc = cv2.minMaxLoc(res)
-    if score < thresh:
-        return None
     h, w = tpl.shape[:2]
-    return (loc[0] + w // 2, loc[1] + h // 2), float(score)
+    while True:
+        _, score, _, loc = cv2.minMaxLoc(res)
+        if score < thresh:
+            return None
+        if not own or _own_label(frame, rel, tpl, loc, thresh):
+            return (loc[0] + w // 2, loc[1] + h // 2), float(score)
+        cv2.rectangle(res, (loc[0] - w // 2, loc[1] - h // 2),
+                      (loc[0] + w // 2, loc[1] + h // 2), -1.0, -1)
 
 
 def find_robust(frame, rel: str, thresh: float = FIND_THRESH):
     """find() that survives a transient overlay across part of the tile
     (see detect._match_robust). For inventory tiles - chips, cards, module
-    icons - read under floating bonus text / sparkles. Same return shape."""
+    icons - read under floating bonus text / sparkles. Same return shape.
+    A pill-row label is plain find(): the partial-cell credit drops the
+    worst cell, which is the one glyph a look-alike differs by."""
+    if rel.startswith(PILL_ROWS):
+        return find(frame, rel, thresh)
     hit, score, loc = detect._match_robust(frame, rel, thresh)
     if not hit:
         return None
@@ -506,10 +574,11 @@ def guardian_swap(chips=CHIPS_IN):
     # the legacy geometry below tapped the edge of a live slot and unequipped
     # a farm chip before the stuck-guard fired. Presets auto-save, so a
     # single stray tap here is a permanent build edit: refuse BEFORE the
-    # first tap whenever the tab row is visible.
+    # first tap whenever the tab row is visible - own=False, so a tab renamed
+    # since the cut ("Farm 2") or cut tight still counts as that row.
     frame = capture.grab()
-    if (find(frame, "presets/guardians_farm.png", 0.85)
-            or find(frame, "presets/guardians_tourney.png", 0.85)):
+    if (find(frame, "presets/guardians_farm.png", 0.85, own=False)
+            or find(frame, "presets/guardians_tourney.png", 0.85, own=False)):
         logger.shot(frame, "guardian_v29_tabs")
         raise Abort("v29 guardian screen (Farm/Tourney preset tabs) - the "
                     "legacy chip swap would mutate the active preset; "
@@ -889,64 +958,82 @@ def verify_slot(name: str, slot: str, frame=None):
     ruling: verify the slot after EVERY equip, because modules displace each
     other - so inference is never the last word, the header is.
     """
+    from interactions import module_evidence
+    frame = frame if frame is not None else capture.grab()
+    try:
+        module_evidence.require_screen(frame)
+    except Abort:
+        return None
+    if module_evidence.ui_version(frame) == 'v29':
+        return module_evidence.verify_v29(name, frame)
     cat = MODULE_CATEGORY.get(name)
     if cat is None:
         return None
     try:
-        tpl = detect._tpl(f"modules/{name}.png")
+        equipped = detect._tpl(f'modules/equipped/{name}.png')
     except detect.TemplateMissing:
-        return None
-    frame = frame if frame is not None else capture.grab()
-    cx, cy, half = HEADER_SLOTS[(cat, slot)]
-    crop = frame[max(0, cy - half):cy + half, max(0, cx - half):cx + half]
-    if crop.size == 0:
+        equipped = None
+    if equipped is not None:
+        if float(cv2.cvtColor(equipped, cv2.COLOR_BGR2GRAY).std()) < 10:
+            return None
+        hits = []
+        for key, (x, y, half) in HEADER_SLOTS.items():
+            crop = frame[max(0, y-half):y+half, max(0, x-half):x+half]
+            if equipped.shape[0] > crop.shape[0] or equipped.shape[1] > crop.shape[1]:
+                continue
+            if float(cv2.matchTemplate(crop, equipped, cv2.TM_CCOEFF_NORMED).max()) >= .88:
+                hits.append(key)
+        if len(hits) > 1:
+            return None
+        return hits == [(cat, slot)]
+    try:
+        tpl = detect._tpl(f'modules/{name}.png')
+    except detect.TemplateMissing:
         return None
     h, w = tpl.shape[:2]
     t = tpl[int(h * 0.25):int(h * 0.65), int(w * 0.25):int(w * 0.75)]
-    best = 0.0
-    for s in np.arange(0.45, 1.15, 0.05):
-        tt = cv2.resize(t, None, fx=float(s), fy=float(s))
-        if tt.shape[0] >= crop.shape[0] or tt.shape[1] >= crop.shape[1]:
-            continue
-        best = max(best, float(cv2.matchTemplate(crop, tt,
-                                                 cv2.TM_CCOEFF_NORMED).max()))
-    return best >= SLOT_VERIFY_THRESH
+    if t.size == 0 or float(cv2.cvtColor(t, cv2.COLOR_BGR2GRAY).std()) < 10:
+        return None
+    hits = []
+    for key, (cx, cy, half) in HEADER_SLOTS.items():
+        crop = frame[max(0, cy-half):cy+half, max(0, cx-half):cx+half]
+        best = 0.0
+        for scale in np.arange(.45, 1.15, .05):
+            scaled = cv2.resize(t, None, fx=float(scale), fy=float(scale))
+            if scaled.shape[0] > crop.shape[0] or scaled.shape[1] > crop.shape[1]:
+                continue
+            best = max(best, float(cv2.matchTemplate(crop, scaled, cv2.TM_CCOEFF_NORMED).max()))
+        if best >= SLOT_VERIFY_THRESH:
+            hits.append(key)
+    if len(hits) > 1:
+        return None
+    return hits == [(cat, slot)]
 
 
 def _equip_module(name: str, slot: str, present: set | None = None) -> str:
     """One module: tile -> Equip -> Primary/Assist -> Transfer Level: Yes.
 
-    Returns 'equipped', or 'already' when the module is not in the inventory -
-    which is what an already-equipped module looks like, since equipping moves
-    it out of the grid. That makes the whole routine safe to re-run.
-
-    `present` is an optional result of _scan_grid: when given, a module absent
-    from it is known to be equipped already and the grid walk is skipped
-    entirely. But ABSENT-FROM-GRID IS ONLY EVER A HINT: every 'already' and
-    every 'equipped' is confirmed against the header slot (verify_slot), and
-    a failed confirmation falls through to a fresh grid walk rather than
-    being believed - a displaced module lands back in the grid, and a scan
-    from before the displacement knows nothing about it.
+    Returns 'equipped' or 'already', both requiring positive slot evidence.
+    The legacy `present` hint is accepted for call compatibility but never
+    substitutes for equipment proof. Legacy mutation additionally requires a
+    positively recognized legacy detail control; missing v29 tabs prove nothing.
     """
-    rel = f"modules/{name}.png"
-    if present is not None and rel not in present:
-        if verify_slot(name, slot) is not False:
-            logger.event("tourney_modules", module=name, result="already",
-                         via="scan")
-            return "already"
-        logger.event("tourney_modules", module=name, via="scan",
-                     result="stale - not in its slot, walking the grid")
-    frame, pt = _find_in_grid(rel, 1100, 2200)
+    from interactions import module_evidence
+    if name not in MODULE_CATEGORY:
+        raise Abort(f'module {name} category is unknown; no equipment change authorized')
+    frame = capture.grab()
+    module_evidence.require_screen(frame)
+    if verify_slot(name, slot, frame) is True:
+        logger.event('tourney_modules', module=name, result='already', via='header')
+        return 'already'
+    frame, pt = module_evidence.find_inventory(name)
     if pt is None:
-        if verify_slot(name, slot) is False:
-            logger.shot(capture.grab(), f"tourney_slot_{name}_missing")
-            raise Abort(f"{name} is neither in the grid nor in the "
-                        f"{MODULE_CATEGORY.get(name)} {slot} slot")
-        logger.event("tourney_modules", module=name, result="already")
-        return "already"
+        raise Abort(f'{name} is neither positively equipped nor found in inventory')
+    module_evidence.require_screen(frame)
     tap_at(pt, f"open module {name}")
 
     frame, equip = require("modules/equip_btn.png", f"{name} Equip button")
+    module_evidence.require_legacy_dialog(frame)
     tap_at(equip, f"equip {name}")
 
     rel = f"modules/{slot}_btn.png"
@@ -962,16 +1049,13 @@ def _equip_module(name: str, slot: str, present: set | None = None) -> str:
 
     time.sleep(0.8)
     frame = capture.grab()
-    if find(frame, f"modules/{name}.png", STRICT):
-        logger.shot(frame, f"tourney_module_{name}_still_listed")
-        raise Abort(f"{name} is still in the inventory - equip did not take")
     ok = verify_slot(name, slot, frame)
-    if ok is False:
+    if ok is not True:
         logger.shot(frame, f"tourney_slot_{name}_wrong")
         raise Abort(f"{name} was equipped but is not showing in the "
                     f"{MODULE_CATEGORY.get(name)} {slot} slot")
     logger.event("tourney_modules", module=name, slot=slot, result="equipped",
-                 slot_verified=(True if ok else "no-template"))
+                  slot_verified=True)
     return "equipped"
 
 
@@ -1077,6 +1161,21 @@ def _handle_buy_ticket(frame, gem_max: int = 0):
     return False
 
 
+def _wait_for_battle_entry(frame):
+    """Observe entry after one BATTLE dispatch; never retry or navigate."""
+    for attempt in range(20):
+        name = screen.identify(frame).name
+        if (name == 'battle' or wave_reader.read_wave(frame) is not None
+                or in_tournament(frame)):
+            return frame
+        if attempt < 19:
+            time.sleep(.5)
+            frame = capture.grab()
+    logger.event('tourney_battle_unconfirmed', screen=name)
+    logger.shot(frame, 'tourney_entry_unconfirmed')
+    raise Abort(f'tournament battle entry was not observed; last screen {name!r}')
+
+
 def start_battle():
     frame = open_tournament()
     pt, which = find_any(frame, BATTLE_BUTTONS)
@@ -1106,11 +1205,12 @@ def start_battle():
         # a tournament run (user: "you NEVER cancel a tournament run EVER").
         time.sleep(2.0)
         frame = capture.grab()
-        if in_tournament(frame) or wave_reader.read_wave(frame) is not None:
+        sc = screen.identify(frame)
+        if (in_tournament(frame) or wave_reader.read_wave(frame) is not None
+                or sc.name == 'battle'):
             logger.event("tourney_battle", started="via ticket purchase")
             logger.shot(frame, "tourney_started")
             return frame
-        sc = screen.identify(frame)
         if sc.name != "tournament":
             logger.shot(frame, "tourney_post_ticket_unknown")
             raise Abort(f"after buying the ticket: unrecognized screen "
@@ -1124,6 +1224,7 @@ def start_battle():
         time.sleep(2.5)
         frame = capture.grab()
 
+    frame = _wait_for_battle_entry(frame)
     logger.shot(frame, "tourney_started")
     return frame
 
@@ -1139,7 +1240,7 @@ def in_tournament(frame) -> bool:
     return find(frame, "tourney/in_tournament.png") is not None
 
 
-def setup(read_only: bool = False, loadout_name: str | None = None) -> bool:
+def setup(read_only: bool = False, loadout_name: str | None = None, *, on_setup=None) -> bool:
     """Run the whole pre-battle routine. Returns True when the battle started.
 
     THE EQUIPPING IS loadout.py's (P6). This used to carry its own guardian /
@@ -1200,7 +1301,7 @@ def setup(read_only: bool = False, loadout_name: str | None = None) -> bool:
         # open_nav, so nothing carries between them; the order that IS
         # load-bearing (modules displacing each other) is inside the plan and
         # apply_modules preserves it exactly.
-        loadout.apply(name)
+        applied = loadout.apply(name)
         # ...and then the deck tweaks the loadout does not own. NOT under a
         # global preset: the game re-applies the saved deck at battle entry,
         # which would silently wipe any tweak made here - fold the tweak into
@@ -1224,8 +1325,19 @@ def setup(read_only: bool = False, loadout_name: str | None = None) -> bool:
             raise Abort("refusing to enter the tournament: the equipped "
                         "loadout does not match "
                         f"{name!r} - {'; '.join(problems)}")
+        if on_setup is not None:
+            report = applied.get('setup') if isinstance(applied, dict) else None
+            if report is None:
+                report = loadout.unknown_setup(
+                    name, detail='manual_equipment', reason='setup_report_missing')
+            on_setup(report)
         start_battle()
+        if on_setup is not None and report.get('state') == 'degraded':
+            on_setup(dict(report, continued_with_partial=True))
     except (Abort, act.TapRefused) as e:
+        if on_setup is not None:
+            from interactions import loadout
+            on_setup(loadout.setup_failure(name, e))
         logger.event("tourney_setup", stage="abort", error=str(e))
         raise
     logger.event("tourney_setup", stage="done", loadout=name)

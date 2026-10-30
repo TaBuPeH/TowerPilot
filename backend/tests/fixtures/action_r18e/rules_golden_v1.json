@@ -1,0 +1,5742 @@
+{
+ "captured_on": {
+  "backend/orchestrator.py": "56347B88F206A9A25D917AAEF06B92C5C13F1CC0ED7B690262581F8DD5FD57EC"
+ },
+ "traces": {
+  "a_pass_without_contact_spends_nothing": [
+   {
+    "acts": [["a#0", "fire", false, false], ["b#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}], ["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "b#0", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["b#0"],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0, "b#0": 5.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 4.0, "why": "cooldown"}]],
+    "fired": ["b#0"],
+    "now": 1.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0, "b#0": 5.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0", "b#0"],
+    "now": 6.0,
+    "retired": [],
+    "rule_next": {"a#0": 11.0, "b#0": 5.0},
+    "touched": true,
+    "wave": 5
+   }
+  ],
+  "another_phase_is_skipped_in_silence": [
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 1.0,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": 5
+   }
+  ],
+  "default_floor_is_five_seconds": [
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 0.5, "why": "cooldown"}]],
+    "fired": ["a#0"],
+    "now": 4.5,
+    "retired": [],
+    "rule_next": {"a#0": 5.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 5.0,
+    "retired": [],
+    "rule_next": {"a#0": 10.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 5.5,
+    "retired": [],
+    "rule_next": {"a#0": 10.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 10.0,
+    "retired": [],
+    "rule_next": {"a#0": 15.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 10.25,
+    "retired": [],
+    "rule_next": {"a#0": 15.0},
+    "touched": false,
+    "wave": 5
+   }
+  ],
+  "failed_contact_retries_after_the_floor": [
+   {
+    "acts": [["a#0", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": [],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"a#0": 4.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": [],
+    "now": 3.0,
+    "retired": [],
+    "rule_next": {"a#0": 4.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": [],
+    "now": 4.0,
+    "retired": [],
+    "rule_next": {"a#0": 8.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 7.5,
+    "retired": [],
+    "rule_next": {"a#0": 8.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 8.0,
+    "retired": [],
+    "rule_next": {"a#0": 12.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 12.0,
+    "retired": [],
+    "rule_next": {"a#0": 12.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 20.0,
+    "retired": [],
+    "rule_next": {"a#0": 12.0},
+    "touched": false,
+    "wave": 5
+   }
+  ],
+  "fuzz_1": [
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 2.5,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 3.5,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 3.75,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#0", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["f#0"],
+    "now": 8.75,
+    "retired": [],
+    "rule_next": {"f#0": 15.25},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 6.2, "why": "cooldown"}]],
+    "fired": ["f#0"],
+    "now": 9.0,
+    "retired": [],
+    "rule_next": {"f#0": 15.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 14.0,
+    "retired": [],
+    "rule_next": {"f#0": 15.25},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#0", "fire", false, true], ["rule1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}], ["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 9, "wave": 10}, "wave": 10, "when": {"wave_at_least": 9}}]],
+    "fired": ["1", "f#0"],
+    "now": 16.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 22.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 16.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 22.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 16.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 22.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 18.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 22.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 19.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 22.5},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 19.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 22.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 20.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 22.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 21.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 22.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 23.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 29.75},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 28.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 29.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 28.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 29.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 33.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 29.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 34.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 40.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 35.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 40.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 0.5, "why": "cooldown"}]],
+    "fired": ["1", "f#0"],
+    "now": 40.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 40.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#0", "fire", false, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 42.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 48.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#0", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 49.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 55.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 49.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 55.5},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 50.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 55.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 52.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 55.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 54.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 55.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 61.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 55.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 63.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 55.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 68.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 55.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 70.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 77.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 6.0, "why": "cooldown"}]],
+    "fired": ["1", "f#0"],
+    "now": 71.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 77.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 73.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 77.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 80.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 87.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 85.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 87.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 85.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 87.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 90.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 97.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 91.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 97.25},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 93.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 97.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 94.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 97.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 99.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 97.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 101.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 97.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 102.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 109.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 109.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 116.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 4.0, "why": "cooldown"}]],
+    "fired": ["1", "f#0"],
+    "now": 112.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 116.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 114.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 116.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 114.5,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 116.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 117.0,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 116.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 117.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 116.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 119.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 126.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 120.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 126.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 122.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 126.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 129.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 136.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 130.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 136.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 131.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 136.25},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 134.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 136.25},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 139.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 136.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["1", "f#0"],
+    "now": 141.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 147.75},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 4.0, "why": "cooldown"}]],
+    "fired": ["1", "f#0"],
+    "now": 143.75,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 147.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["1", "f#0"],
+    "now": 146.25,
+    "retired": [],
+    "rule_next": {"1": 21.0, "f#0": 147.75},
+    "touched": false,
+    "wave": 6
+   }
+  ],
+  "fuzz_2": [
+   {
+    "acts": [["f#0", "fire", false, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": [],
+    "now": 5.0,
+    "retired": [],
+    "rule_next": {"f#0": 7.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#0", "fire", false, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": [],
+    "now": 12.0,
+    "retired": [],
+    "rule_next": {"f#0": 14.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": [],
+    "now": 19.0,
+    "retired": [],
+    "rule_next": {"f#0": 21.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": [],
+    "now": 20.0,
+    "retired": [],
+    "rule_next": {"f#0": 21.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 22.0,
+    "retired": [],
+    "rule_next": {"f#0": 24.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 23.0,
+    "retired": [],
+    "rule_next": {"f#0": 24.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 30.0,
+    "retired": [],
+    "rule_next": {"f#0": 24.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#0", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 31.0,
+    "retired": [],
+    "rule_next": {"f#0": 33.0},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 32.0,
+    "retired": [],
+    "rule_next": {"f#0": 33.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#0", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 34.0,
+    "retired": [],
+    "rule_next": {"f#0": 36.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 34.5,
+    "retired": [],
+    "rule_next": {"f#0": 36.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 35.0,
+    "retired": [],
+    "rule_next": {"f#0": 36.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 35.5,
+    "retired": [],
+    "rule_next": {"f#0": 36.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 36.0,
+    "retired": [],
+    "rule_next": {"f#0": 38.0},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 36.5,
+    "retired": [],
+    "rule_next": {"f#0": 38.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 39.0,
+    "retired": [],
+    "rule_next": {"f#0": 41.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 40.0,
+    "retired": [],
+    "rule_next": {"f#0": 41.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 45.0,
+    "retired": [],
+    "rule_next": {"f#0": 47.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 45.5,
+    "retired": [],
+    "rule_next": {"f#0": 47.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 52.5,
+    "retired": [],
+    "rule_next": {"f#0": 54.5},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 57.5,
+    "retired": [],
+    "rule_next": {"f#0": 59.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 64.5,
+    "retired": [],
+    "rule_next": {"f#0": 66.5},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 71.5,
+    "retired": [],
+    "rule_next": {"f#0": 73.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["f#0"],
+    "now": 72.5,
+    "retired": [],
+    "rule_next": {"f#0": 73.5},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 79.5,
+    "retired": [],
+    "rule_next": {"f#0": 81.5},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 80.0,
+    "retired": [],
+    "rule_next": {"f#0": 81.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 85.0,
+    "retired": [],
+    "rule_next": {"f#0": 87.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 87.0,
+    "retired": [],
+    "rule_next": {"f#0": 89.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 89.5,
+    "retired": [],
+    "rule_next": {"f#0": 89.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 91.5,
+    "retired": [],
+    "rule_next": {"f#0": 93.5},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 93.5,
+    "retired": [],
+    "rule_next": {"f#0": 95.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 96.0,
+    "retired": [],
+    "rule_next": {"f#0": 98.0},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 101.0,
+    "retired": [],
+    "rule_next": {"f#0": 103.0},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 103.0,
+    "retired": [],
+    "rule_next": {"f#0": 105.0},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 105.5,
+    "retired": [],
+    "rule_next": {"f#0": 107.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 108.0,
+    "retired": [],
+    "rule_next": {"f#0": 110.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 110.0,
+    "retired": [],
+    "rule_next": {"f#0": 112.0},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 115.0,
+    "retired": [],
+    "rule_next": {"f#0": 112.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 116.0,
+    "retired": [],
+    "rule_next": {"f#0": 118.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 123.0,
+    "retired": [],
+    "rule_next": {"f#0": 118.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 125.5,
+    "retired": [],
+    "rule_next": {"f#0": 127.5},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 132.5,
+    "retired": [],
+    "rule_next": {"f#0": 134.5},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["f#0"],
+    "now": 133.5,
+    "retired": [],
+    "rule_next": {"f#0": 134.5},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 140.5,
+    "retired": [],
+    "rule_next": {"f#0": 142.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 147.5,
+    "retired": [],
+    "rule_next": {"f#0": 149.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 150.0,
+    "retired": [],
+    "rule_next": {"f#0": 152.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 152.5,
+    "retired": [],
+    "rule_next": {"f#0": 154.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 155.0,
+    "retired": [],
+    "rule_next": {"f#0": 157.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 157.0,
+    "retired": [],
+    "rule_next": {"f#0": 159.0},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 162.0,
+    "retired": [],
+    "rule_next": {"f#0": 159.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 164.0,
+    "retired": [],
+    "rule_next": {"f#0": 166.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["f#0"],
+    "now": 165.0,
+    "retired": [],
+    "rule_next": {"f#0": 166.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 167.5,
+    "retired": [],
+    "rule_next": {"f#0": 166.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 174.5,
+    "retired": [],
+    "rule_next": {"f#0": 176.5},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 179.5,
+    "retired": [],
+    "rule_next": {"f#0": 176.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 186.5,
+    "retired": [],
+    "rule_next": {"f#0": 176.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 191.5,
+    "retired": [],
+    "rule_next": {"f#0": 176.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 191.75,
+    "retired": [],
+    "rule_next": {"f#0": 193.75},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#0"],
+    "now": 196.75,
+    "retired": [],
+    "rule_next": {"f#0": 193.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["f#0"],
+    "now": 197.75,
+    "retired": [],
+    "rule_next": {"f#0": 199.75},
+    "touched": true,
+    "wave": 6
+   }
+  ],
+  "fuzz_3": [
+   {
+    "acts": [["f#1", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}], ["rule_unsupported", {"do": {"no_such_action": 1}, "id": "bad#0", "index": 2, "phase": "battle", "when": {"wave_at_least": 1}, "why": "no known action in `do`"}]],
+    "fired": ["bad#0"],
+    "now": 5.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 11.5},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [["f#0", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}], ["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 4.5, "why": "cooldown"}]],
+    "fired": ["bad#0"],
+    "now": 7.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 13.5, "f#1": 11.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}], ["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "trigger": {"at_least": 1, "wave": 6}, "why": "one_action_per_tick"}]],
+    "fired": ["bad#0"],
+    "now": 14.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 20.5, "f#1": 11.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#0", "index": "f#0", "level": "debug", "wait": 4.5, "why": "cooldown"}]],
+    "fired": ["bad#0"],
+    "now": 16.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 20.5, "f#1": 11.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0"],
+    "now": 17.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 20.5, "f#1": 11.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0"],
+    "now": 17.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 20.5, "f#1": 11.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0"],
+    "now": 19.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 20.5, "f#1": 11.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0"],
+    "now": 20.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 20.5, "f#1": 26.75},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#0", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["bad#0", "f#0"],
+    "now": 22.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 26.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [["f#1", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 29.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 31.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 38.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 40.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 43.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 45.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 45.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 50.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 57.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 60.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 65.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 70.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 72.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 75.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 80.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 80.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 87.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 88.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 89.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 91.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 93.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 94.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 96.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 96.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 98.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 105.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 105.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 108.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 110.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 112.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 115.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 117.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 117.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 118.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 118.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 120.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 121.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 122.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 123.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 128.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 135.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 136.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 136.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 138.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 145.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 147.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 154.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 159.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 160.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 167.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1"],
+    "now": 168.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 28.75, "f#1": 35.75},
+    "touched": false,
+    "wave": 4
+   }
+  ],
+  "fuzz_4": [
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 7.0,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 8.0,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}], ["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "trigger": {"at_least": 1, "wave": 10}, "why": "one_action_per_tick"}]],
+    "fired": ["0"],
+    "now": 8.25,
+    "retired": [],
+    "rule_next": {"0": 14.75},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#1", "fire", false, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["0"],
+    "now": 15.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 21.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 22.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 28.75},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 6.0, "why": "cooldown"}]],
+    "fired": ["0", "f#1"],
+    "now": 22.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 28.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 23.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 28.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 28.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 35.25},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#1", "fire", false, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 35.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 42.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 36.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 42.25},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 37.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 42.25},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 39.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 42.25},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 39.5,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 42.25},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 40.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 42.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 41.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 42.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#1", "fire", false, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 48.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 54.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#1", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 55.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 61.5},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 6.2, "why": "cooldown"}]],
+    "fired": ["0", "f#1"],
+    "now": 55.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 61.5},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 57.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 61.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 58.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 61.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 59.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 61.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 61.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 61.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 62.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 68.75},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 64.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 68.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 64.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 68.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 65.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 68.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 66.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 68.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 68.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 68.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 69.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 75.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 71.5,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 75.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 73.5,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 75.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 74.5,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 75.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 79.5,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 75.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 79.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 86.25},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 80.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 86.25},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["0", "f#1"],
+    "now": 85.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 86.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 86.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 86.25},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 87.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 93.75},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 92.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 93.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 93.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 93.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 95.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 93.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 96.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 93.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 103.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 93.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 108.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 93.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 109.75,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 116.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 112.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 116.25},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 112.5,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 116.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 113.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 116.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 115.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 116.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["0", "f#1"],
+    "now": 115.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 116.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 120.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 116.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 121.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 127.75},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 126.25,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 127.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 126.5,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 127.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 127.5,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 127.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 128.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 134.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 130.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 134.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 135.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 134.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "f#1"],
+    "now": 136.0,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 142.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 136.5,
+    "retired": [],
+    "rule_next": {"0": 14.75, "f#1": 142.5},
+    "touched": false,
+    "wave": 4
+   }
+  ],
+  "fuzz_5": [
+   {
+    "acts": [],
+    "events": [["rule_unsupported", {"do": {"no_such_action": 1}, "id": "bad#0", "index": 3, "phase": "battle", "when": {"wave_at_least": 1}, "why": "no known action in `do`"}]],
+    "fired": ["bad#0"],
+    "now": 1.0,
+    "retired": ["bad#0"],
+    "rule_next": {},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}], ["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "trigger": {"at_least": 3, "wave": 10}, "why": "one_action_per_tick"}], ["rule_suppressed", {"id": "f#2", "index": "f#2", "level": "debug", "trigger": {"at_least": 9, "wave": 10}, "why": "one_action_per_tick"}]],
+    "fired": ["0", "bad#0"],
+    "now": 3.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0"],
+    "now": 8.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 3, "wave": 10}, "wave": 10, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0"],
+    "now": 9.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 15.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 6.0, "why": "cooldown"}]],
+    "fired": ["0", "bad#0"],
+    "now": 9.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 15.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0"],
+    "now": 10.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 15.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0"],
+    "now": 11.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 15.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0"],
+    "now": 12.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 15.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0"],
+    "now": 13.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 15.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0"],
+    "now": 14.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 15.5},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 3, "wave": 6}, "wave": 6, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1"],
+    "now": 21.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 27.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1"],
+    "now": 23.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 27.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 9, "wave": 10}, "wave": 10, "when": {"wave_at_least": 9}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 26.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 27.5, "f#2": 28.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 31.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 27.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 31.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 27.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 32.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 27.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", false, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 3, "wave": 10}, "wave": 10, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 34.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 40.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 35.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 40.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 37.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 40.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 42.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 40.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 42.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 40.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 3, "wave": 10}, "wave": 10, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 42.75,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 49.25, "f#2": 28.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 5.5, "why": "cooldown"}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 43.75,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 49.25, "f#2": 28.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 44.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 49.25, "f#2": 28.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#1", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 51.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 57.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 52.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 57.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 54.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 57.5, "f#2": 28.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 56.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 57.5, "f#2": 28.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 61.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 57.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 64.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 57.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 64.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 57.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 71.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 77.75, "f#2": 28.0},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 72.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 77.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 73.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 77.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 3.5, "why": "cooldown"}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 74.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 77.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 74.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 77.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 79.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 77.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 86.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 77.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 86.75,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 93.25, "f#2": 28.0},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 87.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 93.25, "f#2": 28.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 88.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 93.25, "f#2": 28.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 90.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 93.25, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 91.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 93.25, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 92.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 93.25, "f#2": 28.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 94.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 93.25, "f#2": 28.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 10}, "wave": 10, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 95.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 102.0, "f#2": 28.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 96.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 102.0, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 97.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 102.0, "f#2": 28.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 102.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 102.0, "f#2": 28.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 10}, "wave": 10, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 107.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 113.5, "f#2": 28.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 5.5, "why": "cooldown"}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 108.0,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 113.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 108.5,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 113.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 108.75,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 113.5, "f#2": 28.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 111.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 113.5, "f#2": 28.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 113.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 113.5, "f#2": 28.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 10}, "wave": 10, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 113.75,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 120.25, "f#2": 28.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 116.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 120.25, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 123.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 120.25, "f#2": 28.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 10}, "wave": 10, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 125.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 131.75, "f#2": 28.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "bad#0", "f#1", "f#2"],
+    "now": 127.25,
+    "retired": ["bad#0"],
+    "rule_next": {"0": 5.5, "f#1": 131.75, "f#2": 28.0},
+    "touched": false,
+    "wave": 0
+   }
+  ],
+  "fuzz_6": [
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 2.0,
+    "retired": [],
+    "rule_next": {"0": 4.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "rule0", "index": 0, "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["0"],
+    "now": 3.0,
+    "retired": [],
+    "rule_next": {"0": 4.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 10.0,
+    "retired": [],
+    "rule_next": {"0": 4.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 11.0,
+    "retired": [],
+    "rule_next": {"0": 4.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 18.0,
+    "retired": [],
+    "rule_next": {"0": 4.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 23.0,
+    "retired": [],
+    "rule_next": {"0": 4.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 25.5,
+    "retired": [],
+    "rule_next": {"0": 27.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 30.5,
+    "retired": [],
+    "rule_next": {"0": 27.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 31.0,
+    "retired": [],
+    "rule_next": {"0": 33.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 33.5,
+    "retired": [],
+    "rule_next": {"0": 35.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 40.5,
+    "retired": [],
+    "rule_next": {"0": 42.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "rule0", "index": 0, "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["0"],
+    "now": 41.5,
+    "retired": [],
+    "rule_next": {"0": 42.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 48.5,
+    "retired": [],
+    "rule_next": {"0": 50.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 53.5,
+    "retired": [],
+    "rule_next": {"0": 50.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 60.5,
+    "retired": [],
+    "rule_next": {"0": 50.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 61.5,
+    "retired": [],
+    "rule_next": {"0": 50.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 62.5,
+    "retired": [],
+    "rule_next": {"0": 50.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 69.5,
+    "retired": [],
+    "rule_next": {"0": 50.5},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 71.5,
+    "retired": [],
+    "rule_next": {"0": 73.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "rule0", "index": 0, "level": "debug", "wait": 1.8, "why": "cooldown"}]],
+    "fired": ["0"],
+    "now": 71.75,
+    "retired": [],
+    "rule_next": {"0": 73.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 76.75,
+    "retired": [],
+    "rule_next": {"0": 78.75},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 83.75,
+    "retired": [],
+    "rule_next": {"0": 78.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 84.0,
+    "retired": [],
+    "rule_next": {"0": 78.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 86.5,
+    "retired": [],
+    "rule_next": {"0": 78.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 93.5,
+    "retired": [],
+    "rule_next": {"0": 95.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 94.5,
+    "retired": [],
+    "rule_next": {"0": 95.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 101.5,
+    "retired": [],
+    "rule_next": {"0": 95.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 104.0,
+    "retired": [],
+    "rule_next": {"0": 106.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 109.0,
+    "retired": [],
+    "rule_next": {"0": 111.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 116.0,
+    "retired": [],
+    "rule_next": {"0": 118.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "rule0", "index": 0, "level": "debug", "wait": 1.8, "why": "cooldown"}]],
+    "fired": ["0"],
+    "now": 116.25,
+    "retired": [],
+    "rule_next": {"0": 118.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 117.25,
+    "retired": [],
+    "rule_next": {"0": 118.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 119.75,
+    "retired": [],
+    "rule_next": {"0": 118.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 120.75,
+    "retired": [],
+    "rule_next": {"0": 118.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 123.25,
+    "retired": [],
+    "rule_next": {"0": 118.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 123.5,
+    "retired": [],
+    "rule_next": {"0": 125.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 128.5,
+    "retired": [],
+    "rule_next": {"0": 130.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 129.0,
+    "retired": [],
+    "rule_next": {"0": 130.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 131.5,
+    "retired": [],
+    "rule_next": {"0": 133.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 132.5,
+    "retired": [],
+    "rule_next": {"0": 133.5},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 137.5,
+    "retired": [],
+    "rule_next": {"0": 133.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 139.5,
+    "retired": [],
+    "rule_next": {"0": 133.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 140.0,
+    "retired": [],
+    "rule_next": {"0": 133.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 142.5,
+    "retired": [],
+    "rule_next": {"0": 133.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 149.5,
+    "retired": [],
+    "rule_next": {"0": 151.5},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 152.0,
+    "retired": [],
+    "rule_next": {"0": 151.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 152.5,
+    "retired": [],
+    "rule_next": {"0": 151.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 10}, "wave": 10, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 152.75,
+    "retired": [],
+    "rule_next": {"0": 154.75},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "rule0", "index": 0, "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["0"],
+    "now": 153.75,
+    "retired": [],
+    "rule_next": {"0": 154.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 158.75,
+    "retired": [],
+    "rule_next": {"0": 160.75},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 161.25,
+    "retired": [],
+    "rule_next": {"0": 160.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 162.25,
+    "retired": [],
+    "rule_next": {"0": 160.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 164.75,
+    "retired": [],
+    "rule_next": {"0": 160.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 165.75,
+    "retired": [],
+    "rule_next": {"0": 160.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 170.75,
+    "retired": [],
+    "rule_next": {"0": 160.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 171.0,
+    "retired": [],
+    "rule_next": {"0": 160.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}]],
+    "fired": ["0"],
+    "now": 173.0,
+    "retired": [],
+    "rule_next": {"0": 175.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 178.0,
+    "retired": [],
+    "rule_next": {"0": 175.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 178.25,
+    "retired": [],
+    "rule_next": {"0": 175.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0"],
+    "now": 178.75,
+    "retired": [],
+    "rule_next": {"0": 175.0},
+    "touched": false,
+    "wave": null
+   }
+  ],
+  "fuzz_7": [
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 5, "wave": 6}, "wave": 6, "when": {"wave_at_least": 5}}], ["rule_suppressed", {"id": "f#2", "index": "f#2", "level": "debug", "trigger": {"at_least": 1, "wave": 6}, "why": "one_action_per_tick"}], ["rule_unsupported", {"do": {"no_such_action": 1}, "id": "bad#0", "index": 3, "phase": "battle", "when": {"wave_at_least": 1}, "why": "no known action in `do`"}]],
+    "fired": ["bad#0", "f#1"],
+    "now": 5.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["f#2", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#1"],
+    "now": 7.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 12.0},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#2", "index": "f#2", "level": "debug", "wait": 3.0, "why": "cooldown"}]],
+    "fired": ["bad#0", "f#1"],
+    "now": 9.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 12.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1"],
+    "now": 11.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 12.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1"],
+    "now": 12.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 12.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1"],
+    "now": 19.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 12.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1"],
+    "now": 24.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 12.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 24.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 29.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 25.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 29.25},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 27.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 29.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#2", "fire", false, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 32.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 37.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 33.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 37.25},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 33.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 37.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 36.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 37.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 36.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 37.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 37.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 37.25},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 39.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 37.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 44.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 37.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#2", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 51.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 56.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#2", "index": "f#2", "level": "debug", "wait": 2.5, "why": "cooldown"}]],
+    "fired": ["bad#0", "f#1", "f#2"],
+    "now": 53.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#1": 7.0, "f#2": 56.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#0", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 9, "wave": 10}, "wave": 10, "when": {"wave_at_least": 9}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 54.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 56.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 55.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 56.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 57.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 62.5},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["f#2", "fire", true, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 64.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 69.5},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 64.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 69.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 65.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 69.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 70.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 75.75},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 71.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 75.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 10}, "wave": 10, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 76.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 81.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 77.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 81.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 79.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 81.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 86.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 91.5},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#2", "index": "f#2", "level": "debug", "wait": 4.0, "why": "cooldown"}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 87.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 91.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 89.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 91.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 90.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 91.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 92.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 97.5},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 93.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 97.5},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 93.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 97.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 93.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 97.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 2}, "wave": 2, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 100.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 105.5},
+    "touched": true,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 101.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 105.5},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 101.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 105.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 103.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 105.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 103.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 105.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 105.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 110.75},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 108.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 110.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 108.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 110.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 115.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 120.75},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 116.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 120.75},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#2", "index": "f#2", "level": "debug", "wait": 2.0, "why": "cooldown"}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 118.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 120.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 123.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 128.75},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 124.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 128.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 124.5,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 128.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 125.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 128.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 130.0,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 128.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 4}, "wave": 4, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 130.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 135.25},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [["f#2", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#2", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 6}, "wave": 6, "when": {"wave_at_least": 1}}]],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 137.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 142.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 137.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 142.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 138.75,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 142.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0", "f#0", "f#1", "f#2"],
+    "now": 139.25,
+    "retired": ["bad#0"],
+    "rule_next": {"f#0": 59.5, "f#1": 7.0, "f#2": 142.25},
+    "touched": false,
+    "wave": 4
+   }
+  ],
+  "fuzz_8": [
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 2.5,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["f#1"],
+    "now": 9.5,
+    "retired": [],
+    "rule_next": {"f#1": 11.5},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 1.8, "why": "cooldown"}]],
+    "fired": ["f#1"],
+    "now": 9.75,
+    "retired": [],
+    "rule_next": {"f#1": 11.5},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#1"],
+    "now": 10.25,
+    "retired": [],
+    "rule_next": {"f#1": 11.5},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#1"],
+    "now": 15.25,
+    "retired": [],
+    "rule_next": {"f#1": 11.5},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["f#1"],
+    "now": 17.75,
+    "retired": [],
+    "rule_next": {"f#1": 19.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#1", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["f#1"],
+    "now": 19.75,
+    "retired": [],
+    "rule_next": {"f#1": 21.75},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#1"],
+    "now": 24.75,
+    "retired": [],
+    "rule_next": {"f#1": 21.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#1"],
+    "now": 29.75,
+    "retired": [],
+    "rule_next": {"f#1": 21.75},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["f#1"],
+    "now": 30.0,
+    "retired": [],
+    "rule_next": {"f#1": 21.75},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#1", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 3, "wave": 6}, "wave": 6, "when": {"wave_at_least": 3}}]],
+    "fired": ["f#1"],
+    "now": 32.0,
+    "retired": [],
+    "rule_next": {"f#1": 34.0},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#1", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["f#1"],
+    "now": 39.0,
+    "retired": [],
+    "rule_next": {"f#1": 41.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 9, "wave": 10}, "wave": 10, "when": {"wave_at_least": 9}}]],
+    "fired": ["0", "f#1"],
+    "now": 39.25,
+    "retired": [],
+    "rule_next": {"0": 44.25, "f#1": 41.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "rule0", "index": 0, "level": "debug", "wait": 4.8, "why": "cooldown"}]],
+    "fired": ["0", "f#1"],
+    "now": 39.5,
+    "retired": [],
+    "rule_next": {"0": 44.25, "f#1": 41.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["0", "f#1"],
+    "now": 40.0,
+    "retired": [],
+    "rule_next": {"0": 44.25, "f#1": 41.0},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 40.25,
+    "retired": [],
+    "rule_next": {"0": 44.25, "f#1": 41.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["f#1", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 3, "wave": 6}, "wave": 6, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 45.25,
+    "retired": [],
+    "rule_next": {"0": 44.25, "f#1": 47.25},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 45.75,
+    "retired": [],
+    "rule_next": {"0": 44.25, "f#1": 47.25},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 52.75,
+    "retired": [],
+    "rule_next": {"0": 44.25, "f#1": 47.25},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 55.25,
+    "retired": [],
+    "rule_next": {"0": 44.25, "f#1": 47.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 57.75,
+    "retired": [],
+    "rule_next": {"0": 44.25, "f#1": 47.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 9, "wave": 10}, "wave": 10, "when": {"wave_at_least": 9}}], ["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "trigger": {"at_least": 3, "wave": 10}, "why": "one_action_per_tick"}]],
+    "fired": ["0", "f#1"],
+    "now": 59.75,
+    "retired": [],
+    "rule_next": {"0": 64.75, "f#1": 47.25},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 60.25,
+    "retired": [],
+    "rule_next": {"0": 64.75, "f#1": 47.25},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 6}, "wave": 6, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 67.25,
+    "retired": [],
+    "rule_next": {"0": 64.75, "f#1": 69.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 9, "wave": 10}, "wave": 10, "when": {"wave_at_least": 9}}]],
+    "fired": ["0", "f#1"],
+    "now": 69.25,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 69.25},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_suppressed", {"id": "rule0", "index": 0, "level": "debug", "wait": 2.5, "why": "cooldown"}], ["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 71.75,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 73.75},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 1.0, "why": "cooldown"}]],
+    "fired": ["0", "f#1"],
+    "now": 72.75,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 73.75},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 73.75,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 75.75},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 74.25,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 75.75},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 6}, "wave": 6, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 81.25,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 83.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 81.5,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 83.25},
+    "touched": false,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 86.5,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 83.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 91.5,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 83.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 96.5,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 98.5},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 6}, "wave": 6, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 99.0,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 101.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 99.5,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 101.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 100.0,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 101.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 102.5,
+    "retired": [],
+    "rule_next": {"0": 74.25, "f#1": 101.0},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 9, "wave": 10}, "wave": 10, "when": {"wave_at_least": 9}}], ["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "trigger": {"at_least": 3, "wave": 10}, "why": "one_action_per_tick"}]],
+    "fired": ["0", "f#1"],
+    "now": 105.0,
+    "retired": [],
+    "rule_next": {"0": 110.0, "f#1": 101.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_suppressed", {"id": "rule0", "index": 0, "level": "debug", "wait": 4.8, "why": "cooldown"}], ["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 6}, "wave": 6, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 105.25,
+    "retired": [],
+    "rule_next": {"0": 110.0, "f#1": 107.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 6}, "wave": 6, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 110.25,
+    "retired": [],
+    "rule_next": {"0": 110.0, "f#1": 112.25},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "f#1", "index": "f#1", "level": "debug", "wait": 1.5, "why": "cooldown"}]],
+    "fired": ["0", "f#1"],
+    "now": 110.75,
+    "retired": [],
+    "rule_next": {"0": 110.0, "f#1": 112.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 111.25,
+    "retired": [],
+    "rule_next": {"0": 110.0, "f#1": 112.25},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 112.25,
+    "retired": [],
+    "rule_next": {"0": 110.0, "f#1": 112.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 112.75,
+    "retired": [],
+    "rule_next": {"0": 110.0, "f#1": 112.25},
+    "touched": false,
+    "wave": 2
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 113.0,
+    "retired": [],
+    "rule_next": {"0": 110.0, "f#1": 115.0},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 114.0,
+    "retired": [],
+    "rule_next": {"0": 110.0, "f#1": 115.0},
+    "touched": false,
+    "wave": 4
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 9, "wave": 10}, "wave": 10, "when": {"wave_at_least": 9}}]],
+    "fired": ["0", "f#1"],
+    "now": 115.0,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 115.0},
+    "touched": true,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 117.0,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 115.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 122.0,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 124.0},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 122.25,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 124.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 127.25,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 124.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 127.75,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 124.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 128.75,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 124.0},
+    "touched": false,
+    "wave": null
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 129.0,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 131.0},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 130.0,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 131.0},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 132.5,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 134.5},
+    "touched": true,
+    "wave": 4
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "f#1"],
+    "now": 133.0,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 134.5},
+    "touched": false,
+    "wave": 0
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 6}, "wave": 6, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 135.0,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 137.0},
+    "touched": true,
+    "wave": 6
+   },
+   {
+    "acts": [["f#1", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "f#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 4}, "wave": 4, "when": {"wave_at_least": 3}}]],
+    "fired": ["0", "f#1"],
+    "now": 137.0,
+    "retired": [],
+    "rule_next": {"0": 120.0, "f#1": 139.0},
+    "touched": true,
+    "wave": 4
+   }
+  ],
+  "index_keyed_rules": [
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}], ["rule_suppressed", {"id": "rule1", "index": 1, "level": "debug", "trigger": {"at_least": 2, "wave": 5}, "why": "one_action_per_tick"}]],
+    "fired": ["0"],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"0": 5.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["rule1", "fire", true, true]],
+    "events": [["rule_suppressed", {"id": "rule0", "index": 0, "level": "debug", "wait": 4.0, "why": "cooldown"}], ["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 2, "wave": 5}, "wave": 5, "when": {"wave_at_least": 2}}]],
+    "fired": ["0", "1"],
+    "now": 1.0,
+    "retired": [],
+    "rule_next": {"0": 5.0, "1": 6.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["0", "1"],
+    "now": 2.0,
+    "retired": [],
+    "rule_next": {"0": 5.0, "1": 6.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "1"],
+    "now": 6.0,
+    "retired": [],
+    "rule_next": {"0": 11.0, "1": 6.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["rule0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "rule0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["0", "1"],
+    "now": 12.0,
+    "retired": [],
+    "rule_next": {"0": 17.0, "1": 6.0},
+    "touched": true,
+    "wave": 5
+   }
+  ],
+  "no_contact_still_stamps_the_floor": [
+   {
+    "acts": [["a#0", "fire", false, false]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": false, "phase": "battle", "result": false, "touched": false, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": [],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 4.0, "why": "cooldown"}]],
+    "fired": [],
+    "now": 1.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", false, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": false, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 5.0,
+    "retired": [],
+    "rule_next": {"a#0": 10.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 6.0,
+    "retired": [],
+    "rule_next": {"a#0": 10.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 10.0,
+    "retired": [],
+    "rule_next": {"a#0": 15.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 15.0,
+    "retired": [],
+    "rule_next": {"a#0": 20.0},
+    "touched": true,
+    "wave": 5
+   }
+  ],
+  "normalized_spelling_and_alias_floors": [
+   {
+    "acts": [["n#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"button": "nuke", "kind": "fire"}, "id": "n#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 5}, "wave": 5, "when": {"kind": "wave_at_least", "value": 3}}], ["rule_suppressed", {"id": "n#1", "index": "n#1", "level": "debug", "trigger": {"at_least": 3, "wave": 5}, "why": "one_action_per_tick"}]],
+    "fired": ["n#0"],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"n#0": 2.5},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["n#1", "fire", true, true]],
+    "events": [["rule_suppressed", {"id": "n#0", "index": "n#0", "level": "debug", "wait": 1.5, "why": "cooldown"}], ["rule_fire", {"action": "fire", "do": {"fire": {"button": "demon_mode", "throttle_sec": 9}}, "id": "n#1", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 5}, "wave": 5, "when": {"wave_at_least": 3}}]],
+    "fired": ["n#0", "n#1"],
+    "now": 1.0,
+    "retired": [],
+    "rule_next": {"n#0": 2.5, "n#1": 10.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["n#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"button": "nuke", "kind": "fire"}, "id": "n#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 5}, "wave": 5, "when": {"kind": "wave_at_least", "value": 3}}], ["rule_suppressed", {"id": "n#1", "index": "n#1", "level": "debug", "wait": 7.5, "why": "cooldown"}]],
+    "fired": ["n#0", "n#1"],
+    "now": 2.5,
+    "retired": [],
+    "rule_next": {"n#0": 5.0, "n#1": 10.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["n#0", "n#1"],
+    "now": 3.0,
+    "retired": [],
+    "rule_next": {"n#0": 5.0, "n#1": 10.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["n#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"button": "nuke", "kind": "fire"}, "id": "n#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 5}, "wave": 5, "when": {"kind": "wave_at_least", "value": 3}}]],
+    "fired": ["n#0", "n#1"],
+    "now": 5.0,
+    "retired": [],
+    "rule_next": {"n#0": 7.5, "n#1": 10.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["n#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"button": "nuke", "kind": "fire"}, "id": "n#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 5}, "wave": 5, "when": {"kind": "wave_at_least", "value": 3}}]],
+    "fired": ["n#0", "n#1"],
+    "now": 9.0,
+    "retired": [],
+    "rule_next": {"n#0": 11.5, "n#1": 10.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["n#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"button": "nuke", "kind": "fire"}, "id": "n#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 5}, "wave": 5, "when": {"kind": "wave_at_least", "value": 3}}]],
+    "fired": ["n#0", "n#1"],
+    "now": 12.0,
+    "retired": [],
+    "rule_next": {"n#0": 14.5, "n#1": 10.0},
+    "touched": true,
+    "wave": 5
+   }
+  ],
+  "once_per_run": [
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 1.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 2.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 30.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 400.0,
+    "retired": [],
+    "rule_next": {"a#0": 5.0},
+    "touched": false,
+    "wave": 5
+   }
+  ],
+  "one_contact_per_tick": [
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}], ["rule_suppressed", {"id": "b#0", "index": "b#0", "level": "debug", "trigger": {"at_least": 1, "wave": 5}, "why": "one_action_per_tick"}], ["rule_suppressed", {"id": "c#0", "index": "c#0", "level": "debug", "trigger": {"at_least": 3, "wave": 5}, "why": "one_action_per_tick"}]],
+    "fired": ["a#0"],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"a#0": 3.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["b#0", "fire", true, true]],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 2.0, "why": "cooldown"}], ["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "b#0", "index": 1, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0", "b#0"],
+    "now": 1.0,
+    "retired": [],
+    "rule_next": {"a#0": 3.0, "b#0": 6.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["c#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "c#0", "index": 2, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 3, "wave": 5}, "wave": 5, "when": {"wave_at_least": 3}}]],
+    "fired": ["a#0", "b#0", "c#0"],
+    "now": 2.0,
+    "retired": [],
+    "rule_next": {"a#0": 3.0, "b#0": 6.0, "c#0": 7.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0", "b#0", "c#0"],
+    "now": 3.0,
+    "retired": [],
+    "rule_next": {"a#0": 6.0, "b#0": 6.0, "c#0": 7.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0", "b#0", "c#0"],
+    "now": 4.0,
+    "retired": [],
+    "rule_next": {"a#0": 6.0, "b#0": 6.0, "c#0": 7.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0", "b#0", "c#0"],
+    "now": 5.0,
+    "retired": [],
+    "rule_next": {"a#0": 6.0, "b#0": 6.0, "c#0": 7.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0", "b#0", "c#0"],
+    "now": 6.5,
+    "retired": [],
+    "rule_next": {"a#0": 9.5, "b#0": 6.0, "c#0": 7.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0", "b#0", "c#0"],
+    "now": 9.0,
+    "retired": [],
+    "rule_next": {"a#0": 9.5, "b#0": 6.0, "c#0": 7.0},
+    "touched": false,
+    "wave": 5
+   }
+  ],
+  "repeat_floor_boundary": [
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"a#0": 7.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 6.0, "why": "cooldown"}]],
+    "fired": ["a#0"],
+    "now": 1.0,
+    "retired": [],
+    "rule_next": {"a#0": 7.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 6.5,
+    "retired": [],
+    "rule_next": {"a#0": 7.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 6.75,
+    "retired": [],
+    "rule_next": {"a#0": 7.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 7.0,
+    "retired": [],
+    "rule_next": {"a#0": 14.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 7.25,
+    "retired": [],
+    "rule_next": {"a#0": 14.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 14.0,
+    "retired": [],
+    "rule_next": {"a#0": 21.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 14.5,
+    "retired": [],
+    "rule_next": {"a#0": 21.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 21.0,
+    "retired": [],
+    "rule_next": {"a#0": 28.0},
+    "touched": true,
+    "wave": 5
+   }
+  ],
+  "retired_beats_repeat": [
+   {
+    "acts": [],
+    "events": [["rule_unsupported", {"do": {"no_such_action": 1}, "id": "bad#0", "index": 0, "phase": "battle", "when": {"wave_at_least": 1}, "why": "no known action in `do`"}]],
+    "fired": ["bad#0"],
+    "now": 0.0,
+    "retired": ["bad#0"],
+    "rule_next": {},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0"],
+    "now": 40.0,
+    "retired": ["bad#0"],
+    "rule_next": {},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["bad#0"],
+    "now": 100.0,
+    "retired": ["bad#0"],
+    "rule_next": {},
+    "touched": false,
+    "wave": 5
+   }
+  ],
+  "suppression_log_is_rate_limited": [
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": true,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 95.0, "why": "cooldown"}]],
+    "fired": ["a#0"],
+    "now": 5.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 10.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 15.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 20.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 25.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 30.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 65.0, "why": "cooldown"}]],
+    "fired": ["a#0"],
+    "now": 35.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 40.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 45.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 50.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 55.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 60.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 35.0, "why": "cooldown"}]],
+    "fired": ["a#0"],
+    "now": 65.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 70.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 75.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 80.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 85.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 90.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [["rule_suppressed", {"id": "a#0", "index": "a#0", "level": "debug", "wait": 5.0, "why": "cooldown"}]],
+    "fired": ["a#0"],
+    "now": 95.0,
+    "retired": [],
+    "rule_next": {"a#0": 100.0},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 1, "wave": 5}, "wave": 5, "when": {"wave_at_least": 1}}]],
+    "fired": ["a#0"],
+    "now": 100.0,
+    "retired": [],
+    "rule_next": {"a#0": 200.0},
+    "touched": true,
+    "wave": 5
+   }
+  ],
+  "the_death_phase_retires_what_it_cannot_run": [
+   {
+    "acts": [],
+    "events": [["rule_unsupported", {"do": {"fire": "nuke"}, "id": "a#0", "index": 0, "phase": "death", "when": {"wave_at_least": 1}, "why": "'wave_at_least' is not a death-screen trigger (latency said death_handler)"}]],
+    "fired": ["a#0"],
+    "now": 0.0,
+    "retired": ["a#0"],
+    "rule_next": {},
+    "touched": false,
+    "wave": 5
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 1.0,
+    "retired": ["a#0"],
+    "rule_next": {},
+    "touched": false,
+    "wave": 5
+   }
+  ],
+  "trigger_not_reached_logs_nothing": [
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 0.0,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": 10
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": [],
+    "now": 1.0,
+    "retired": [],
+    "rule_next": {},
+    "touched": false,
+    "wave": 49
+   },
+   {
+    "acts": [["a#0", "fire", true, true]],
+    "events": [["rule_fire", {"action": "fire", "do": {"fire": "nuke"}, "id": "a#0", "index": 0, "latency": null, "ok": true, "phase": "battle", "result": true, "touched": true, "trigger": {"at_least": 50, "wave": 50}, "wave": 50, "when": {"wave_at_least": 50}}]],
+    "fired": ["a#0"],
+    "now": 2.0,
+    "retired": [],
+    "rule_next": {"a#0": 7.0},
+    "touched": true,
+    "wave": 50
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 3.0,
+    "retired": [],
+    "rule_next": {"a#0": 7.0},
+    "touched": false,
+    "wave": 60
+   },
+   {
+    "acts": [],
+    "events": [],
+    "fired": ["a#0"],
+    "now": 10.0,
+    "retired": [],
+    "rule_next": {"a#0": 7.0},
+    "touched": false,
+    "wave": 60
+   }
+  ]
+ },
+ "version": 1
+}

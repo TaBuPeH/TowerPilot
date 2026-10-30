@@ -44,6 +44,8 @@ if __name__ == "__main__":
     ap.add_argument("--preset", default=FLOW["legacy_preset"],
                     help="preset key (default: %(default)s)")
     args = ap.parse_args()
+    from runtime.device_lease import prepare_instance
+    prepare_instance(args.instance or settings.CONFIG["active_instance"])
     settings.select_instance(
         args.instance or settings.CONFIG["active_instance"], args.preset)
     orchestrator.main()

@@ -1,0 +1,154 @@
+/* Title | Account | Emulator: each section is labelled and divided, so the
+   facts every action is bound to read as separate things, not one cluster. */
+.tp-topbar__row.tp-topbar-content {
+  max-width: none;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 2fr) minmax(0, 3fr);
+  align-items: center;
+  gap: var(--tp-space-2) 0;
+  padding-block: var(--tp-space-2);
+  font-size: var(--tp-font-size-13);
+}
+.tp-topbar-content > h1 {
+  padding-inline-end: var(--tp-space-6);
+  font-size: var(--tp-font-size-title);
+  line-height: 1.2;
+  color: var(--tp-color-text-strong);
+}
+.tp-topbar-section {
+  display: grid;
+  align-content: start;
+  gap: 0.15rem;
+  min-width: 0;
+  align-self: stretch;
+  padding-inline: var(--tp-space-4);
+  border-inline-start: 1px solid var(--tp-color-border);
+}
+.tp-topbar-section__label,
+.tp-header-input__label {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-12);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+/* One control-row height in every section keeps the labels on one line. */
+.tp-topbar-section__body {
+  min-height: var(--tp-control-height);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-3);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tp-topbar-account [data-server-text],
+.tp-topbar-emulator__name {
+  color: var(--tp-color-text-strong);
+  font-weight: 600;
+}
+.tp-topbar-emulator__name,
+.tp-topbar-connection,
+.tp-topbar-reconnect {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  min-width: 0;
+}
+/* Recovery belongs to the connection it repairs, at the section's far edge. */
+.tp-topbar-reconnect {
+  margin-inline-start: auto;
+}
+.tp-topbar-meta,
+.tp-topbar-reconnect > span {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-12);
+}
+.tp-topbar-why[open],
+.tp-topbar-details[open] {
+  max-width: 18rem;
+}
+.tp-topbar-why p,
+.tp-topbar-details .tp-server {
+  margin: var(--tp-space-1) 0;
+}
+@container workspace (max-width: 700px) {
+  .tp-topbar__row.tp-topbar-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tp-topbar-content > h1 {
+    padding-inline-end: 0;
+  }
+  .tp-topbar-section {
+    padding-inline: 0;
+    padding-block-start: var(--tp-space-2);
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--tp-color-border);
+  }
+  .tp-topbar a,
+  .tp-topbar summary,
+  .tp-topbar button {
+    min-height: var(--tp-control-height-touch);
+    min-width: var(--tp-control-height-touch);
+    align-content: center;
+  }
+}
+.tp-header-input {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2) var(--tp-space-3);
+  flex-basis: 100%;
+  min-width: 0;
+  border-top: 1px solid var(--tp-color-border);
+  padding-top: var(--tp-space-2);
+}
+.tp-header-input__status,
+.tp-header-input__action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+.tp-header-input__status {
+  margin-inline-end: auto;
+}
+.tp-header-input__status .tp-seen {
+  display: contents;
+}
+.tp-header-input__action .tp-disclosure {
+  margin-inline-start: auto;
+}
+.tp-header-input__action .tp-button[data-tier='halt']:not([aria-disabled='true']) {
+  background: var(--tp-color-surface-strong);
+  border-color: var(--tp-color-border-active);
+  color: var(--tp-color-text-strong);
+}
+.tp-header-input__action .tp-button__glyph {
+  color: var(--tp-color-halt-border);
+}
+@container workspace (max-width: 700px) {
+  .tp-header-input {
+    gap: var(--tp-space-1) var(--tp-space-2);
+  }
+  .tp-header-input__status {
+    display: contents;
+  }
+  .tp-header-input__action {
+    display: contents;
+  }
+  .tp-header-input__action .tp-reason {
+    flex: 1 1 10rem;
+    font-size: var(--tp-font-size-12);
+  }
+}
+.tp-header-input__outcomes {
+  flex-basis: 100%;
+  min-width: 0;
+}
+.tp-header-input p {
+  margin-block: 0;
+}

@@ -129,6 +129,9 @@ def main():
     ap.add_argument("--action", choices=ACTIONS, required=True)
     ap.add_argument("--execute", action="store_true")
     args = ap.parse_args()
+    if args.execute:
+        from runtime.device_lease import prepare_instance
+        prepare_instance(args.instance)
     settings.bind_device(args.instance)
     if args.execute:
         from player.bootstrap import preflight

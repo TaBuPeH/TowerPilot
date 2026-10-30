@@ -1,0 +1,219 @@
+.tp-preview {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.tp-preview [data-preview-verdict] {
+  display: block;
+  font-size: var(--tp-font-size-15);
+  color: var(--tp-color-text-strong);
+}
+.tp-preview[data-verdict='failed'] [data-preview-verdict],
+.tp-preview[data-verdict='stale'] [data-preview-verdict] {
+  color: var(--tp-color-warn);
+}
+.tp-preview__facts {
+  display: grid;
+  gap: 0;
+  margin-block: var(--tp-space-2);
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+  font-variant-numeric: tabular-nums;
+}
+.tp-preview .tp-preview__facts p {
+  margin: 0;
+}
+.tp-preview p {
+  margin: var(--tp-space-2) 0;
+}
+.tp-preview__content,
+.tp-preview__settings {
+  min-width: 0;
+}
+.tp-preview button,
+.tp-preview select,
+.tp-preview summary,
+.tp-preview a {
+  min-height: 32px;
+  min-width: 24px;
+}
+.tp-preview select {
+  max-width: 100%;
+}
+/* The title's help icon keeps its own size, not the 32px control floor above. */
+.tp-preview .tp-help__trigger {
+  min-height: 0;
+  min-width: 0;
+}
+/* A disabled preview control looks like every other disabled button. */
+.tp-preview .tp-button:disabled {
+  border-color: color-mix(in srgb, var(--tp-color-border-active) 55%, transparent);
+  background: transparent;
+  color: var(--tp-color-text-muted);
+}
+/* Title and Hide screen share the card's first line, like every region header. */
+/* Title, verdict and its Why on one wrapping line, Hide screen at its end, like a region header. */
+.tp-preview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2);
+}
+/* Collapsed, Hide screen alone takes the header's end (the title's help icon sits between). */
+.tp-preview > .tp-help__trigger + .tp-button {
+  margin-inline-start: auto;
+}
+.tp-preview__verdict {
+  margin-inline-start: auto;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  min-width: 0;
+}
+.tp-preview__verdict > details[open] {
+  flex-basis: 100%;
+}
+/* Hide screen sits on the title's line without making it taller than other region titles. */
+.tp-preview > .tp-button {
+  min-height: var(--tp-control-height-small);
+  margin-block: -0.3rem;
+}
+.tp-preview > h2 {
+  margin: 0;
+}
+.tp-preview > .tp-button {
+  justify-self: end;
+}
+/* Controls and status, then the frame, then its facts and settings. */
+.tp-preview__content {
+  flex-basis: 100%;
+  display: grid;
+  grid-template-areas: 'status' 'picture' 'meta';
+  gap: var(--tp-space-2);
+  margin-top: var(--tp-space-2);
+}
+.tp-preview__status {
+  grid-area: status;
+  min-width: 0;
+}
+.tp-preview__picture {
+  grid-area: picture;
+}
+.tp-preview__meta {
+  grid-area: meta;
+  min-width: 0;
+}
+.tp-preview__status > :first-child,
+.tp-preview__meta > :first-child {
+  margin-top: 0;
+}
+.tp-preview button:disabled {
+  cursor: not-allowed;
+}
+.tp-preview :focus-visible {
+  outline: 2px solid var(--tp-color-text);
+  outline-offset: 3px;
+}
+/* Every disclosure in the panel reads like the page's other disclosures. */
+.tp-preview__settings > summary {
+  color: var(--tp-color-text-nav);
+  font-size: var(--tp-font-size-13);
+}
+.tp-preview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2);
+  margin-block: var(--tp-space-2);
+}
+.tp-preview label {
+  display: grid;
+  gap: var(--tp-space-1);
+  margin-block: var(--tp-space-2);
+}
+/* The frame is drawn at the game's own shape: no letterbox bars around it. */
+.tp-preview__picture {
+  display: grid;
+  justify-items: center;
+}
+.tp-preview canvas {
+  display: block;
+  width: auto;
+  height: 70svh;
+  max-width: 100%;
+  max-height: 70svh;
+  object-fit: contain;
+  /* An outline, not a border: the frame keeps the picture's exact aspect ratio. */
+  outline: 1px solid var(--tp-color-border);
+  border-radius: var(--tp-radius-control);
+}
+.tp-preview__settings > div > span + span {
+  margin-inline-start: 0.35rem;
+}
+.tp-preview canvas[hidden] {
+  display: none;
+}
+.tp-preview dt {
+  color: var(--tp-color-text-muted);
+}
+.tp-preview dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--tp-space-1);
+  font-size: var(--tp-font-size-13);
+  font-variant-numeric: tabular-nums;
+}
+.tp-preview dd {
+  margin: 0;
+}
+.tp-preview a {
+  display: inline-flex;
+  align-items: center;
+}
+/* Below 700 px the frame stands above its controls. */
+@media (max-width: 699.98px) {
+  .tp-preview canvas {
+    height: 60svh;
+    max-height: 60svh;
+  }
+}
+/* Use the workspace left by navigation, not the full browser width. */
+@container workspace (min-width: 700px) and (max-width: 1399.98px) {
+  .tp-preview__content {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      'picture status'
+      'picture meta';
+    column-gap: var(--tp-space-4);
+    align-items: start;
+  }
+  .tp-preview__picture {
+    justify-items: start;
+  }
+  .tp-preview canvas {
+    height: clamp(440px, 65svh, 640px);
+    max-height: clamp(440px, 65svh, 640px);
+  }
+}
+/* A separate preview column only when the operations retain useful width. */
+@container workspace (min-width: 1400px) {
+  .tp-preview canvas {
+    height: min(70svh, calc(100svh - 14rem));
+    max-height: min(70svh, calc(100svh - 14rem));
+  }
+}
+@media (max-width: 480px) {
+  .tp-preview .tp-button {
+    min-height: 44px;
+    width: 100%;
+  }
+  .tp-preview select {
+    min-height: 44px;
+    width: 100%;
+  }
+  .tp-preview__actions {
+    display: grid;
+  }
+}

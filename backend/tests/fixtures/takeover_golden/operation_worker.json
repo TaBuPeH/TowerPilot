@@ -1,0 +1,36 @@
+{
+ "about": "the operation worker deletes stop_after_run for run operations (T3-0)",
+ "rebased_on": {
+  "deliberate_changes": [
+   {
+    "case": "kind run, request_keys [attach]",
+    "changed": ["flag_after: false -> true", "flag_present_at_target: false -> true"],
+    "package": "T3b (item 3)",
+    "recorded_source_unchanged": "89773A81144177889AF46FABD02B251525F76EFEFE07CCDAA5DEEB3676D85EAF",
+    "scenario": "worker_run_flag",
+    "source_after_change": {"backend/runtime/operation_worker.py": "77B97C57898BBA47045D333DA02081470EA153CBCFDC223F4EDDA625B92100EB"},
+    "why": "a takeover attaches to a battle it did not start, so the scheduler's stop_after_run request must survive; every other case is the recorded answer of the unchanged code"
+   }
+  ],
+  "head": "38e15ec9f088da4cea78e3aeb47186c05c72ff3c",
+  "note": "scenarios unchanged; re-verified on this HEAD after the backend/dashboard.py move and the test reorganization",
+  "sources": {
+   "backend/runtime/operation_worker.py": "89773A81144177889AF46FABD02B251525F76EFEFE07CCDAA5DEEB3676D85EAF"
+  }
+ },
+ "recorded_on": {
+  "backend/runtime/operation_worker.py": "89773A81144177889AF46FABD02B251525F76EFEFE07CCDAA5DEEB3676D85EAF"
+ },
+ "scenarios": {
+  "worker_run_flag": {
+   "cases": [
+    {"final_status": "succeeded", "flag_after": false, "flag_present_at_target": false, "kind": "run", "lease_before_flag_removal": true, "other_instance_flag_after": true, "request_keys": [], "status_at_target": "running"},
+    {"final_status": "succeeded", "flag_after": false, "flag_present_at_target": false, "kind": "run", "lease_before_flag_removal": true, "other_instance_flag_after": true, "request_keys": ["preset"], "status_at_target": "running"},
+    {"final_status": "succeeded", "flag_after": true, "flag_present_at_target": true, "kind": "run", "lease_before_flag_removal": true, "other_instance_flag_after": true, "request_keys": ["attach"], "status_at_target": "running"},
+    {"final_status": "succeeded", "flag_after": true, "flag_present_at_target": true, "kind": "gems", "lease_before_flag_removal": true, "other_instance_flag_after": true, "request_keys": [], "status_at_target": "running"},
+    {"final_status": "succeeded", "flag_after": true, "flag_present_at_target": true, "kind": "gems", "lease_before_flag_removal": true, "other_instance_flag_after": true, "request_keys": ["harvest"], "status_at_target": "running"}
+   ]
+  }
+ },
+ "version": 1
+}

@@ -67,10 +67,48 @@ CLOSE_X = "overlays/ad_close_x.png"
 CLOSE_THRESHOLD = 0.90
 
 
-def windows(serial: str) -> list[str]:
-    out = adbclient.shell(serial, "dumpsys window windows").decode(
-        errors="replace")
-    return re.findall(r"Window #\d+ Window\{[0-9a-f]+ u\d+ ([^}]+)\}", out)
+def windows(serial: str, *, visible_only: bool = False,
+            deadline: float | None = None, timeout: float | None = None) -> list[str]:
+    """Front-to-back windows; input guards require on-screen evidence.
+
+    Android keeps hidden keyboards, notification shades and stopped apps in
+    this dump. Cleanup retains the full inventory; input ownership filters
+    by visibility without treating system app names as permission to tap.
+    Unknown visibility fails closed instead of silently dropping a window.
+    An absolute monotonic deadline covers I/O and parsing; expiration raises
+    TimeoutError, never an empty inventory. timeout optionally caps each socket
+    operation without extending that deadline. Transport errors propagate.
+    """
+    adbclient.check_deadline(deadline)
+    options = {}
+    if deadline is not None:
+        options["deadline"] = deadline
+    if timeout is not None:
+        options["timeout"] = timeout
+    out = adbclient.shell(serial, "dumpsys window windows", **options)
+    adbclient.check_deadline(deadline)
+    out = out.decode(errors="replace")
+    adbclient.check_deadline(deadline)
+    entries = list(re.finditer(
+        r"Window #\d+ Window\{[0-9a-f]+ u\d+ ([^}]+)\}", out))
+    adbclient.check_deadline(deadline)
+    result = []
+    for index, entry in enumerate(entries):
+        adbclient.check_deadline(deadline)
+        title = entry.group(1)
+        if visible_only:
+            end = entries[index + 1].start() if index + 1 < len(entries) else len(out)
+            block = out[entry.end():end]
+            visibility = re.findall(
+                r"\bis(?:OnScreen|Visible)(?:\(\))?=(true|false)\b", block)
+            adbclient.check_deadline(deadline)
+            if not visibility:
+                raise ValueError(f"window visibility unavailable: {title}")
+            if "true" not in visibility:
+                continue
+        result.append(title)
+    adbclient.check_deadline(deadline)
+    return result
 
 
 def offending(wins: list[str]) -> tuple[list[str], list[str]]:
@@ -88,6 +126,22 @@ def offending(wins: list[str]) -> tuple[list[str], list[str]]:
 
 def game_on_screen(wins: list[str]) -> bool:
     return any(w.startswith(GAME_PKG) for w in wins)
+
+
+def foreground_blocker(wins: list[str]) -> str | None:
+    """Why the game cannot receive input, using front-to-back window evidence."""
+    if not wins:
+        return "no_windows"
+    if not game_on_screen(wins):
+        return "game_not_on_screen"
+    for window in wins:
+        if window.startswith(GAME_PKG):
+            return None
+        # Cleanup tolerates launchers/emulator apps; input ownership cannot.
+        # Only noninteractive system decoration may sit above the game.
+        if not window.startswith(("StatusBar", "ScreenDecorOverlay", "DockedStackDivider")):
+            return "in_front:" + window.split("/")[0]
+    return "game_not_on_screen"
 
 
 def sweep(serial: str | None = None) -> bool:
@@ -161,7 +215,12 @@ def _tap(serial: str, frame, x: int, y: int, reason: str) -> dict:
     ev = {"type": "tap", "x": jx, "y": jy, "reason": reason,
           "dry_run": bool(CONFIG["loop"]["dry_run"])}
     if not ev["dry_run"]:
-        adbclient.shell(serial, f"input tap {jx} {jy}")
+        from runtime.device_lease import InputRevoked, input_scope
+        try:
+            with input_scope():
+                adbclient.shell(serial, f"input tap {jx} {jy}")
+        except InputRevoked as exc:
+            raise act.TapRefused(str(exc)) from None
     return ev
 
 
@@ -204,7 +263,9 @@ def clean(rounds: int = 3, settle: float = 4.0) -> bool:
         # No close button on screen (ad art without one, or the match is
         # below threshold) or the tap did not take: kill the owner. Data
         # loss is not a concern for a store/ad process.
-        adbclient.shell(serial, f"am force-stop {pkg}")
+        from runtime.device_lease import input_scope
+        with input_scope(game_input=False):   # closing an ad's process sends no game input
+            adbclient.shell(serial, f"am force-stop {pkg}")
         logger.event("overlay_close", window=win, via="force_stop",
                      close_button_seen=bool(hit))
         if not _gone(serial, pkg, settle):

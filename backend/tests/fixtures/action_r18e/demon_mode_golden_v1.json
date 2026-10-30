@@ -1,0 +1,4144 @@
+{
+ "captured_on": {
+  "backend/orchestrator.py": "56347B88F206A9A25D917AAEF06B92C5C13F1CC0ED7B690262581F8DD5FD57EC"
+ },
+ "traces": {
+  "a_late_pass_after_a_long_gap": [
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 0.0,
+    "returned": true,
+    "try_at": 15.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [["demon_mode_always", {"count": 2, "wave": 2500}]],
+    "now": 900.0,
+    "returned": true,
+    "try_at": 915.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 901.0,
+    "returned": false,
+    "try_at": 915.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [["demon_mode_always", {"count": 3, "wave": 2500}]],
+    "now": 915.0,
+    "returned": true,
+    "try_at": 930.0
+   }
+  ],
+  "confirmed_fire_then_the_15s_grain": [
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 100.0,
+    "returned": true,
+    "try_at": 115.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 105.0,
+    "returned": false,
+    "try_at": 115.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 114.5,
+    "returned": false,
+    "try_at": 115.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [["demon_mode_always", {"count": 2, "wave": 2500}]],
+    "now": 115.0,
+    "returned": true,
+    "try_at": 130.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 115.5,
+    "returned": false,
+    "try_at": 130.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [["demon_mode_always", {"count": 3, "wave": 2500}]],
+    "now": 130.0,
+    "returned": true,
+    "try_at": 145.0
+   }
+  ],
+  "disabled_behaviour_never_stamps": [
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 1.0,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 1.5,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 2.0,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 2.5,
+    "returned": true,
+    "try_at": 17.5
+   }
+  ],
+  "fuzz_1": [
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 3.0,
+    "returned": false,
+    "try_at": 18.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 18.5,
+    "returned": false,
+    "try_at": 18.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 0,
+    "events": [],
+    "now": 19.0,
+    "returned": false,
+    "try_at": 34.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 34.0,
+    "returned": false,
+    "try_at": 34.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 49.5,
+    "returned": false,
+    "try_at": 34.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 0,
+    "events": [],
+    "now": 79.5,
+    "returned": false,
+    "try_at": 94.5
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 94.0,
+    "returned": false,
+    "try_at": 94.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 0,
+    "events": [],
+    "now": 97.0,
+    "returned": false,
+    "try_at": 112.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 0,
+    "events": [],
+    "now": 112.5,
+    "returned": false,
+    "try_at": 127.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 128.0,
+    "returned": true,
+    "try_at": 143.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 131.0,
+    "returned": false,
+    "try_at": 143.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 132.0,
+    "returned": false,
+    "try_at": 143.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [],
+    "now": 147.0,
+    "returned": false,
+    "try_at": 162.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 162.5,
+    "returned": false,
+    "try_at": 162.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 169.5,
+    "returned": false,
+    "try_at": 162.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 184.0,
+    "returned": false,
+    "try_at": 162.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 187.0,
+    "returned": false,
+    "try_at": 162.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 202.0,
+    "returned": false,
+    "try_at": 162.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 217.0,
+    "returned": false,
+    "try_at": 232.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 232.0,
+    "returned": false,
+    "try_at": 232.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 235.0,
+    "returned": false,
+    "try_at": 232.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 236.0,
+    "returned": false,
+    "try_at": 232.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 250.5,
+    "returned": false,
+    "try_at": 232.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [["demon_mode_always", {"count": 2, "wave": 2500}]],
+    "now": 265.0,
+    "returned": true,
+    "try_at": 280.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 280.0,
+    "returned": false,
+    "try_at": 280.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 287.0,
+    "returned": false,
+    "try_at": 302.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 302.5,
+    "returned": false,
+    "try_at": 302.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 305.5,
+    "returned": false,
+    "try_at": 302.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 335.5,
+    "returned": false,
+    "try_at": 302.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [["demon_mode_always", {"count": 3, "wave": 40}]],
+    "now": 350.5,
+    "returned": true,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 351.0,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 354.0,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 354.5,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 355.0,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [["demon_mode_always", {"count": 4, "wave": 2500}]],
+    "now": 370.5,
+    "returned": true,
+    "try_at": 385.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 400.5,
+    "returned": false,
+    "try_at": 385.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 403.5,
+    "returned": false,
+    "try_at": 385.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 419.0,
+    "returned": false,
+    "try_at": 385.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 434.0,
+    "returned": false,
+    "try_at": 385.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 434.5,
+    "returned": false,
+    "try_at": 385.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 449.5,
+    "returned": false,
+    "try_at": 385.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 464.0,
+    "returned": false,
+    "try_at": 385.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [],
+    "now": 465.0,
+    "returned": false,
+    "try_at": 480.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 468.0,
+    "returned": false,
+    "try_at": 480.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 469.0,
+    "returned": false,
+    "try_at": 480.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 483.5,
+    "returned": false,
+    "try_at": 480.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 5,
+    "events": [["demon_mode_always", {"count": 5, "wave": 1}]],
+    "now": 484.0,
+    "returned": true,
+    "try_at": 499.0
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 484.5,
+    "returned": false,
+    "try_at": 499.0
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 514.5,
+    "returned": false,
+    "try_at": 499.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [["demon_mode_always", {"count": 6, "wave": 2500}]],
+    "now": 530.0,
+    "returned": true,
+    "try_at": 545.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 537.0,
+    "returned": false,
+    "try_at": 545.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 552.0,
+    "returned": false,
+    "try_at": 545.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 582.0,
+    "returned": false,
+    "try_at": 545.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 7,
+    "events": [["demon_mode_always", {"count": 7, "wave": 1}]],
+    "now": 612.0,
+    "returned": true,
+    "try_at": 627.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 627.0,
+    "returned": false,
+    "try_at": 627.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 642.0,
+    "returned": false,
+    "try_at": 627.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 656.5,
+    "returned": false,
+    "try_at": 627.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 657.5,
+    "returned": false,
+    "try_at": 627.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 658.5,
+    "returned": false,
+    "try_at": 627.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 688.5,
+    "returned": false,
+    "try_at": 703.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 691.5,
+    "returned": false,
+    "try_at": 703.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 692.5,
+    "returned": false,
+    "try_at": 703.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 693.0,
+    "returned": false,
+    "try_at": 703.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 700.0,
+    "returned": false,
+    "try_at": 703.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [["demon_mode_always", {"count": 8, "wave": 1}]],
+    "now": 707.0,
+    "returned": true,
+    "try_at": 722.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 721.5,
+    "returned": false,
+    "try_at": 722.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 736.5,
+    "returned": false,
+    "try_at": 722.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 737.0,
+    "returned": false,
+    "try_at": 722.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 751.5,
+    "returned": false,
+    "try_at": 722.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 752.0,
+    "returned": false,
+    "try_at": 722.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 759.0,
+    "returned": false,
+    "try_at": 722.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 774.5,
+    "returned": false,
+    "try_at": 722.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 781.5,
+    "returned": false,
+    "try_at": 722.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 9,
+    "events": [["demon_mode_always", {"count": 9, "wave": 1}]],
+    "now": 788.5,
+    "returned": true,
+    "try_at": 803.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 9,
+    "events": [],
+    "now": 818.5,
+    "returned": false,
+    "try_at": 833.5
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 834.0,
+    "returned": false,
+    "try_at": 833.5
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 834.5,
+    "returned": false,
+    "try_at": 833.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 10,
+    "events": [["demon_mode_always", {"count": 10, "wave": 2500}]],
+    "now": 837.5,
+    "returned": true,
+    "try_at": 852.5
+   },
+   {
+    "calls": [],
+    "count": 10,
+    "events": [],
+    "now": 838.5,
+    "returned": false,
+    "try_at": 852.5
+   },
+   {
+    "calls": [],
+    "count": 10,
+    "events": [],
+    "now": 839.5,
+    "returned": false,
+    "try_at": 852.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 11,
+    "events": [["demon_mode_always", {"count": 11, "wave": 2500}]],
+    "now": 852.5,
+    "returned": true,
+    "try_at": 867.5
+   }
+  ],
+  "fuzz_2": [
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 0.5,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 15.0,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 30.5,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 45.0,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 60.5,
+    "returned": true,
+    "try_at": 75.5
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 75.5,
+    "returned": false,
+    "try_at": 75.5
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 78.5,
+    "returned": false,
+    "try_at": 75.5
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 93.5,
+    "returned": false,
+    "try_at": 75.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [["demon_mode_always", {"count": 2, "wave": 2500}]],
+    "now": 123.5,
+    "returned": true,
+    "try_at": 138.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 138.5,
+    "returned": false,
+    "try_at": 138.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [],
+    "now": 168.5,
+    "returned": false,
+    "try_at": 183.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 183.0,
+    "returned": false,
+    "try_at": 183.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [],
+    "now": 198.5,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 199.5,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 200.0,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 201.0,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 201.5,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 202.0,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 202.5,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 203.0,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 203.5,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 218.0,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 218.5,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 225.5,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 228.5,
+    "returned": false,
+    "try_at": 213.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [["demon_mode_always", {"count": 3, "wave": 1}]],
+    "now": 243.5,
+    "returned": true,
+    "try_at": 258.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 246.5,
+    "returned": false,
+    "try_at": 258.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 253.5,
+    "returned": false,
+    "try_at": 258.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 268.0,
+    "returned": false,
+    "try_at": 258.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 283.0,
+    "returned": false,
+    "try_at": 258.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 298.5,
+    "returned": false,
+    "try_at": 313.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 299.5,
+    "returned": false,
+    "try_at": 313.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [],
+    "now": 329.5,
+    "returned": false,
+    "try_at": 344.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 336.5,
+    "returned": false,
+    "try_at": 344.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 352.0,
+    "returned": false,
+    "try_at": 344.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 367.0,
+    "returned": false,
+    "try_at": 344.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [["demon_mode_always", {"count": 4, "wave": 1}]],
+    "now": 382.0,
+    "returned": true,
+    "try_at": 397.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 389.0,
+    "returned": false,
+    "try_at": 397.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 390.0,
+    "returned": false,
+    "try_at": 397.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 397.0,
+    "returned": false,
+    "try_at": 412.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 400.0,
+    "returned": false,
+    "try_at": 412.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [],
+    "now": 415.0,
+    "returned": false,
+    "try_at": 430.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 415.5,
+    "returned": false,
+    "try_at": 430.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 430.0,
+    "returned": false,
+    "try_at": 430.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 5,
+    "events": [["demon_mode_always", {"count": 5, "wave": 40}]],
+    "now": 445.5,
+    "returned": true,
+    "try_at": 460.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 461.0,
+    "returned": false,
+    "try_at": 460.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 5,
+    "events": [],
+    "now": 464.0,
+    "returned": false,
+    "try_at": 479.0
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 464.5,
+    "returned": false,
+    "try_at": 479.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [["demon_mode_always", {"count": 6, "wave": 40}]],
+    "now": 479.5,
+    "returned": true,
+    "try_at": 494.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 495.0,
+    "returned": false,
+    "try_at": 494.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [],
+    "now": 498.0,
+    "returned": false,
+    "try_at": 513.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 501.0,
+    "returned": false,
+    "try_at": 513.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 504.0,
+    "returned": false,
+    "try_at": 513.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [],
+    "now": 519.5,
+    "returned": false,
+    "try_at": 534.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 520.5,
+    "returned": false,
+    "try_at": 534.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 521.0,
+    "returned": false,
+    "try_at": 534.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 524.0,
+    "returned": false,
+    "try_at": 534.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 539.5,
+    "returned": false,
+    "try_at": 534.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 554.0,
+    "returned": false,
+    "try_at": 534.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [],
+    "now": 569.5,
+    "returned": false,
+    "try_at": 584.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 570.5,
+    "returned": false,
+    "try_at": 584.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 571.5,
+    "returned": false,
+    "try_at": 584.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 601.5,
+    "returned": false,
+    "try_at": 584.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 617.0,
+    "returned": false,
+    "try_at": 632.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 631.5,
+    "returned": false,
+    "try_at": 632.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 632.0,
+    "returned": false,
+    "try_at": 632.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 662.0,
+    "returned": false,
+    "try_at": 632.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 7,
+    "events": [["demon_mode_always", {"count": 7, "wave": 1}]],
+    "now": 676.5,
+    "returned": true,
+    "try_at": 691.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [["demon_mode_always", {"count": 8, "wave": 2500}]],
+    "now": 692.0,
+    "returned": true,
+    "try_at": 707.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 695.0,
+    "returned": false,
+    "try_at": 707.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 702.0,
+    "returned": false,
+    "try_at": 707.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 9,
+    "events": [["demon_mode_always", {"count": 9, "wave": 1}]],
+    "now": 717.5,
+    "returned": true,
+    "try_at": 732.5
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 720.5,
+    "returned": false,
+    "try_at": 732.5
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 750.5,
+    "returned": false,
+    "try_at": 732.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 10,
+    "events": [["demon_mode_always", {"count": 10, "wave": 1}]],
+    "now": 757.5,
+    "returned": true,
+    "try_at": 772.5
+   },
+   {
+    "calls": [],
+    "count": 10,
+    "events": [],
+    "now": 773.0,
+    "returned": false,
+    "try_at": 788.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 11,
+    "events": [["demon_mode_always", {"count": 11, "wave": 40}]],
+    "now": 788.0,
+    "returned": true,
+    "try_at": 803.0
+   },
+   {
+    "calls": [],
+    "count": 11,
+    "events": [],
+    "now": 802.5,
+    "returned": false,
+    "try_at": 803.0
+   },
+   {
+    "calls": [],
+    "count": 11,
+    "events": [],
+    "now": 832.5,
+    "returned": false,
+    "try_at": 803.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 11,
+    "events": [],
+    "now": 833.5,
+    "returned": false,
+    "try_at": 848.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 12,
+    "events": [["demon_mode_always", {"count": 12, "wave": 2500}]],
+    "now": 848.5,
+    "returned": true,
+    "try_at": 863.5
+   }
+  ],
+  "fuzz_3": [
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 7.0,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 8.0,
+    "returned": true,
+    "try_at": 23.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 15.0,
+    "returned": false,
+    "try_at": 23.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 18.0,
+    "returned": false,
+    "try_at": 23.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 19.0,
+    "returned": false,
+    "try_at": 23.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 33.5,
+    "returned": false,
+    "try_at": 23.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 49.0,
+    "returned": false,
+    "try_at": 23.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 50.0,
+    "returned": false,
+    "try_at": 23.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 64.5,
+    "returned": false,
+    "try_at": 23.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [],
+    "now": 80.0,
+    "returned": false,
+    "try_at": 95.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 94.5,
+    "returned": false,
+    "try_at": 95.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 95.5,
+    "returned": false,
+    "try_at": 95.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 125.5,
+    "returned": false,
+    "try_at": 95.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 140.0,
+    "returned": false,
+    "try_at": 95.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 140.5,
+    "returned": false,
+    "try_at": 95.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 147.5,
+    "returned": false,
+    "try_at": 95.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [["demon_mode_always", {"count": 2, "wave": 40}]],
+    "now": 154.5,
+    "returned": true,
+    "try_at": 169.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [["demon_mode_always", {"count": 3, "wave": 1}]],
+    "now": 169.5,
+    "returned": true,
+    "try_at": 184.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 199.5,
+    "returned": false,
+    "try_at": 184.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [["demon_mode_always", {"count": 4, "wave": 40}]],
+    "now": 214.0,
+    "returned": true,
+    "try_at": 229.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 228.5,
+    "returned": false,
+    "try_at": 229.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 229.0,
+    "returned": false,
+    "try_at": 229.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [],
+    "now": 244.0,
+    "returned": false,
+    "try_at": 259.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 274.0,
+    "returned": false,
+    "try_at": 259.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 5,
+    "events": [["demon_mode_always", {"count": 5, "wave": 40}]],
+    "now": 288.5,
+    "returned": true,
+    "try_at": 303.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 303.5,
+    "returned": false,
+    "try_at": 303.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 5,
+    "events": [],
+    "now": 304.0,
+    "returned": false,
+    "try_at": 319.0
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 311.0,
+    "returned": false,
+    "try_at": 319.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [["demon_mode_always", {"count": 6, "wave": 1}]],
+    "now": 326.0,
+    "returned": true,
+    "try_at": 341.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 341.0,
+    "returned": false,
+    "try_at": 341.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 348.0,
+    "returned": false,
+    "try_at": 341.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 7,
+    "events": [["demon_mode_always", {"count": 7, "wave": 2500}]],
+    "now": 349.0,
+    "returned": true,
+    "try_at": 364.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 363.5,
+    "returned": false,
+    "try_at": 364.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 364.0,
+    "returned": false,
+    "try_at": 379.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 379.5,
+    "returned": false,
+    "try_at": 394.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 394.0,
+    "returned": false,
+    "try_at": 394.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 408.5,
+    "returned": false,
+    "try_at": 394.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 415.5,
+    "returned": false,
+    "try_at": 394.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 430.0,
+    "returned": false,
+    "try_at": 394.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 431.0,
+    "returned": false,
+    "try_at": 446.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 431.5,
+    "returned": false,
+    "try_at": 446.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 434.5,
+    "returned": false,
+    "try_at": 446.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 435.0,
+    "returned": false,
+    "try_at": 446.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 449.5,
+    "returned": false,
+    "try_at": 446.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 450.0,
+    "returned": false,
+    "try_at": 446.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 450.5,
+    "returned": false,
+    "try_at": 446.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 465.5,
+    "returned": false,
+    "try_at": 446.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 7,
+    "events": [],
+    "now": 480.5,
+    "returned": false,
+    "try_at": 495.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 481.5,
+    "returned": false,
+    "try_at": 495.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 497.0,
+    "returned": false,
+    "try_at": 495.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 512.0,
+    "returned": false,
+    "try_at": 495.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 7,
+    "events": [],
+    "now": 513.0,
+    "returned": false,
+    "try_at": 528.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 528.0,
+    "returned": false,
+    "try_at": 543.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 543.5,
+    "returned": false,
+    "try_at": 543.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 544.0,
+    "returned": false,
+    "try_at": 559.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 545.0,
+    "returned": false,
+    "try_at": 559.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 545.5,
+    "returned": false,
+    "try_at": 559.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 546.5,
+    "returned": false,
+    "try_at": 559.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 547.5,
+    "returned": false,
+    "try_at": 559.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 548.5,
+    "returned": false,
+    "try_at": 559.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [["demon_mode_always", {"count": 8, "wave": 1}]],
+    "now": 564.0,
+    "returned": true,
+    "try_at": 579.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 565.0,
+    "returned": false,
+    "try_at": 579.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 568.0,
+    "returned": false,
+    "try_at": 579.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 598.0,
+    "returned": false,
+    "try_at": 579.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 628.0,
+    "returned": false,
+    "try_at": 579.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 635.0,
+    "returned": false,
+    "try_at": 579.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 649.5,
+    "returned": false,
+    "try_at": 579.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 656.5,
+    "returned": false,
+    "try_at": 671.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 671.5,
+    "returned": false,
+    "try_at": 671.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [],
+    "now": 701.5,
+    "returned": false,
+    "try_at": 716.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 702.0,
+    "returned": false,
+    "try_at": 716.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 702.5,
+    "returned": false,
+    "try_at": 716.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 703.5,
+    "returned": false,
+    "try_at": 716.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 706.5,
+    "returned": false,
+    "try_at": 716.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 721.5,
+    "returned": false,
+    "try_at": 716.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [],
+    "now": 736.0,
+    "returned": false,
+    "try_at": 751.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 736.5,
+    "returned": false,
+    "try_at": 751.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 9,
+    "events": [["demon_mode_always", {"count": 9, "wave": 40}]],
+    "now": 766.5,
+    "returned": true,
+    "try_at": 781.5
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 782.0,
+    "returned": false,
+    "try_at": 781.5
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 797.0,
+    "returned": false,
+    "try_at": 781.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 10,
+    "events": [["demon_mode_always", {"count": 10, "wave": 2500}]],
+    "now": 781.5,
+    "returned": true,
+    "try_at": 796.5
+   }
+  ],
+  "fuzz_4": [
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 1}]],
+    "now": 7.0,
+    "returned": true,
+    "try_at": 22.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 7.5,
+    "returned": false,
+    "try_at": 22.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 14.5,
+    "returned": false,
+    "try_at": 22.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 29.0,
+    "returned": false,
+    "try_at": 22.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 36.0,
+    "returned": false,
+    "try_at": 22.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 51.0,
+    "returned": false,
+    "try_at": 22.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 58.0,
+    "returned": false,
+    "try_at": 73.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 72.5,
+    "returned": false,
+    "try_at": 73.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 79.5,
+    "returned": false,
+    "try_at": 73.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 94.0,
+    "returned": false,
+    "try_at": 109.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [["demon_mode_always", {"count": 2, "wave": 1}]],
+    "now": 124.0,
+    "returned": true,
+    "try_at": 139.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 131.0,
+    "returned": false,
+    "try_at": 139.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 138.0,
+    "returned": false,
+    "try_at": 139.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 145.0,
+    "returned": false,
+    "try_at": 139.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 160.0,
+    "returned": false,
+    "try_at": 139.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [],
+    "now": 174.5,
+    "returned": false,
+    "try_at": 189.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 175.5,
+    "returned": false,
+    "try_at": 189.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [["demon_mode_always", {"count": 3, "wave": 2500}]],
+    "now": 191.0,
+    "returned": true,
+    "try_at": 206.0
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 194.0,
+    "returned": false,
+    "try_at": 206.0
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 201.0,
+    "returned": false,
+    "try_at": 206.0
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 204.0,
+    "returned": false,
+    "try_at": 206.0
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 204.5,
+    "returned": false,
+    "try_at": 206.0
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 211.5,
+    "returned": false,
+    "try_at": 226.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [["demon_mode_always", {"count": 4, "wave": 40}]],
+    "now": 227.0,
+    "returned": true,
+    "try_at": 242.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 234.0,
+    "returned": false,
+    "try_at": 242.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 241.0,
+    "returned": false,
+    "try_at": 242.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 242.0,
+    "returned": false,
+    "try_at": 242.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 242.5,
+    "returned": false,
+    "try_at": 242.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [],
+    "now": 245.5,
+    "returned": false,
+    "try_at": 260.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 5,
+    "events": [["demon_mode_always", {"count": 5, "wave": 2500}]],
+    "now": 261.0,
+    "returned": true,
+    "try_at": 276.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 5,
+    "events": [],
+    "now": 276.5,
+    "returned": false,
+    "try_at": 291.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 283.5,
+    "returned": false,
+    "try_at": 291.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 284.0,
+    "returned": false,
+    "try_at": 291.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 291.0,
+    "returned": false,
+    "try_at": 291.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 292.0,
+    "returned": false,
+    "try_at": 291.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 299.0,
+    "returned": false,
+    "try_at": 291.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 329.0,
+    "returned": false,
+    "try_at": 291.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [["demon_mode_always", {"count": 6, "wave": 2500}]],
+    "now": 359.0,
+    "returned": true,
+    "try_at": 374.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 359.5,
+    "returned": false,
+    "try_at": 374.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 375.0,
+    "returned": false,
+    "try_at": 374.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 390.5,
+    "returned": false,
+    "try_at": 374.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 406.0,
+    "returned": false,
+    "try_at": 374.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 420.5,
+    "returned": false,
+    "try_at": 374.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 423.5,
+    "returned": false,
+    "try_at": 374.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 424.0,
+    "returned": false,
+    "try_at": 374.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 7,
+    "events": [["demon_mode_always", {"count": 7, "wave": 2500}]],
+    "now": 454.0,
+    "returned": true,
+    "try_at": 469.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 461.0,
+    "returned": false,
+    "try_at": 469.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [["demon_mode_always", {"count": 8, "wave": 2500}]],
+    "now": 491.0,
+    "returned": true,
+    "try_at": 506.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 521.0,
+    "returned": false,
+    "try_at": 536.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 536.0,
+    "returned": false,
+    "try_at": 536.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 539.0,
+    "returned": false,
+    "try_at": 554.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 540.0,
+    "returned": false,
+    "try_at": 554.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 9,
+    "events": [["demon_mode_always", {"count": 9, "wave": 1}]],
+    "now": 555.0,
+    "returned": true,
+    "try_at": 570.0
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 556.0,
+    "returned": false,
+    "try_at": 570.0
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 557.0,
+    "returned": false,
+    "try_at": 570.0
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 571.5,
+    "returned": false,
+    "try_at": 570.0
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 586.5,
+    "returned": false,
+    "try_at": 570.0
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 602.0,
+    "returned": false,
+    "try_at": 570.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 10,
+    "events": [["demon_mode_always", {"count": 10, "wave": 1}]],
+    "now": 602.5,
+    "returned": true,
+    "try_at": 617.5
+   },
+   {
+    "calls": [],
+    "count": 10,
+    "events": [],
+    "now": 617.5,
+    "returned": false,
+    "try_at": 617.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 11,
+    "events": [["demon_mode_always", {"count": 11, "wave": 2500}]],
+    "now": 632.5,
+    "returned": true,
+    "try_at": 647.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 12,
+    "events": [["demon_mode_always", {"count": 12, "wave": 2500}]],
+    "now": 662.5,
+    "returned": true,
+    "try_at": 677.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 663.0,
+    "returned": false,
+    "try_at": 677.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 677.5,
+    "returned": false,
+    "try_at": 677.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 692.5,
+    "returned": false,
+    "try_at": 677.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 695.5,
+    "returned": false,
+    "try_at": 677.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 710.5,
+    "returned": false,
+    "try_at": 677.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 725.0,
+    "returned": false,
+    "try_at": 677.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 739.5,
+    "returned": false,
+    "try_at": 677.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 12,
+    "events": [],
+    "now": 742.5,
+    "returned": false,
+    "try_at": 757.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 743.0,
+    "returned": false,
+    "try_at": 757.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 743.5,
+    "returned": false,
+    "try_at": 757.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 746.5,
+    "returned": false,
+    "try_at": 757.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 753.5,
+    "returned": false,
+    "try_at": 757.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 13,
+    "events": [["demon_mode_always", {"count": 13, "wave": 2500}]],
+    "now": 769.0,
+    "returned": true,
+    "try_at": 784.0
+   },
+   {
+    "calls": [],
+    "count": 13,
+    "events": [],
+    "now": 783.5,
+    "returned": false,
+    "try_at": 784.0
+   },
+   {
+    "calls": [],
+    "count": 13,
+    "events": [],
+    "now": 798.5,
+    "returned": false,
+    "try_at": 784.0
+   },
+   {
+    "calls": [],
+    "count": 13,
+    "events": [],
+    "now": 813.5,
+    "returned": false,
+    "try_at": 784.0
+   },
+   {
+    "calls": [],
+    "count": 13,
+    "events": [],
+    "now": 820.5,
+    "returned": false,
+    "try_at": 784.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 13,
+    "events": [],
+    "now": 823.5,
+    "returned": false,
+    "try_at": 838.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 14,
+    "events": [["demon_mode_always", {"count": 14, "wave": 2500}]],
+    "now": 838.5,
+    "returned": true,
+    "try_at": 853.5
+   }
+  ],
+  "fuzz_5": [
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 14.5,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 15.0,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 16.0,
+    "returned": true,
+    "try_at": 31.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 31.5,
+    "returned": false,
+    "try_at": 31.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 32.0,
+    "returned": false,
+    "try_at": 31.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [],
+    "now": 35.0,
+    "returned": false,
+    "try_at": 50.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 42.0,
+    "returned": false,
+    "try_at": 50.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [["demon_mode_always", {"count": 2, "wave": 40}]],
+    "now": 57.0,
+    "returned": true,
+    "try_at": 72.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 57.5,
+    "returned": false,
+    "try_at": 72.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 72.5,
+    "returned": false,
+    "try_at": 72.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 73.0,
+    "returned": false,
+    "try_at": 72.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [],
+    "now": 73.5,
+    "returned": false,
+    "try_at": 88.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 74.5,
+    "returned": false,
+    "try_at": 88.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 104.5,
+    "returned": false,
+    "try_at": 88.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 105.0,
+    "returned": false,
+    "try_at": 120.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 108.0,
+    "returned": false,
+    "try_at": 120.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [],
+    "now": 123.0,
+    "returned": false,
+    "try_at": 138.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 137.5,
+    "returned": false,
+    "try_at": 138.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 153.0,
+    "returned": false,
+    "try_at": 138.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 168.5,
+    "returned": false,
+    "try_at": 138.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 183.5,
+    "returned": false,
+    "try_at": 138.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 199.0,
+    "returned": false,
+    "try_at": 138.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 213.5,
+    "returned": false,
+    "try_at": 138.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [["demon_mode_always", {"count": 3, "wave": 40}]],
+    "now": 243.5,
+    "returned": true,
+    "try_at": 258.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 246.5,
+    "returned": false,
+    "try_at": 258.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [],
+    "now": 276.5,
+    "returned": false,
+    "try_at": 291.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 291.5,
+    "returned": false,
+    "try_at": 291.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [],
+    "now": 306.5,
+    "returned": false,
+    "try_at": 321.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 321.0,
+    "returned": false,
+    "try_at": 321.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [],
+    "now": 335.5,
+    "returned": false,
+    "try_at": 350.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [],
+    "now": 350.5,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 365.5,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 368.5,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 384.0,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 399.5,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 400.0,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 403.0,
+    "returned": false,
+    "try_at": 365.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [["demon_mode_always", {"count": 4, "wave": 1}]],
+    "now": 404.0,
+    "returned": true,
+    "try_at": 419.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 419.0,
+    "returned": false,
+    "try_at": 419.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 434.0,
+    "returned": false,
+    "try_at": 419.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 5,
+    "events": [["demon_mode_always", {"count": 5, "wave": 2500}]],
+    "now": 435.0,
+    "returned": true,
+    "try_at": 450.0
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 449.5,
+    "returned": false,
+    "try_at": 450.0
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 452.5,
+    "returned": false,
+    "try_at": 450.0
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 455.5,
+    "returned": false,
+    "try_at": 450.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [["demon_mode_always", {"count": 6, "wave": 2500}]],
+    "now": 458.5,
+    "returned": true,
+    "try_at": 473.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 459.5,
+    "returned": false,
+    "try_at": 473.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 475.0,
+    "returned": false,
+    "try_at": 473.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [],
+    "now": 490.5,
+    "returned": false,
+    "try_at": 505.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 520.5,
+    "returned": false,
+    "try_at": 505.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 535.0,
+    "returned": false,
+    "try_at": 505.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 7,
+    "events": [["demon_mode_always", {"count": 7, "wave": 1}]],
+    "now": 542.0,
+    "returned": true,
+    "try_at": 557.0
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 556.5,
+    "returned": false,
+    "try_at": 557.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [["demon_mode_always", {"count": 8, "wave": 1}]],
+    "now": 559.5,
+    "returned": true,
+    "try_at": 574.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 560.5,
+    "returned": false,
+    "try_at": 574.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [],
+    "now": 575.0,
+    "returned": false,
+    "try_at": 590.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 578.0,
+    "returned": false,
+    "try_at": 590.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 585.0,
+    "returned": false,
+    "try_at": 590.0
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 615.0,
+    "returned": false,
+    "try_at": 590.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [],
+    "now": 629.5,
+    "returned": false,
+    "try_at": 644.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 644.0,
+    "returned": false,
+    "try_at": 644.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 674.0,
+    "returned": false,
+    "try_at": 644.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 675.0,
+    "returned": false,
+    "try_at": 644.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 675.5,
+    "returned": false,
+    "try_at": 644.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 676.0,
+    "returned": false,
+    "try_at": 644.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 679.0,
+    "returned": false,
+    "try_at": 644.5
+   },
+   {
+    "calls": [],
+    "count": 8,
+    "events": [],
+    "now": 682.0,
+    "returned": false,
+    "try_at": 644.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 9,
+    "events": [["demon_mode_always", {"count": 9, "wave": 1}]],
+    "now": 683.0,
+    "returned": true,
+    "try_at": 698.0
+   },
+   {
+    "calls": [],
+    "count": 9,
+    "events": [],
+    "now": 686.0,
+    "returned": false,
+    "try_at": 698.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 10,
+    "events": [["demon_mode_always", {"count": 10, "wave": 1}]],
+    "now": 701.0,
+    "returned": true,
+    "try_at": 716.0
+   },
+   {
+    "calls": [],
+    "count": 10,
+    "events": [],
+    "now": 715.5,
+    "returned": false,
+    "try_at": 716.0
+   },
+   {
+    "calls": [],
+    "count": 10,
+    "events": [],
+    "now": 730.0,
+    "returned": false,
+    "try_at": 716.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 11,
+    "events": [["demon_mode_always", {"count": 11, "wave": 40}]],
+    "now": 760.0,
+    "returned": true,
+    "try_at": 775.0
+   },
+   {
+    "calls": [],
+    "count": 11,
+    "events": [],
+    "now": 760.5,
+    "returned": false,
+    "try_at": 775.0
+   },
+   {
+    "calls": [],
+    "count": 11,
+    "events": [],
+    "now": 790.5,
+    "returned": false,
+    "try_at": 805.5
+   },
+   {
+    "calls": [],
+    "count": 11,
+    "events": [],
+    "now": 806.0,
+    "returned": false,
+    "try_at": 805.5
+   },
+   {
+    "calls": [],
+    "count": 11,
+    "events": [],
+    "now": 807.0,
+    "returned": false,
+    "try_at": 805.5
+   },
+   {
+    "calls": [],
+    "count": 11,
+    "events": [],
+    "now": 822.0,
+    "returned": false,
+    "try_at": 805.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 12,
+    "events": [["demon_mode_always", {"count": 12, "wave": 40}]],
+    "now": 837.5,
+    "returned": true,
+    "try_at": 852.5
+   },
+   {
+    "calls": [],
+    "count": 12,
+    "events": [],
+    "now": 853.0,
+    "returned": false,
+    "try_at": 852.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 13,
+    "events": [["demon_mode_always", {"count": 13, "wave": 40}]],
+    "now": 856.0,
+    "returned": true,
+    "try_at": 871.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 14,
+    "events": [["demon_mode_always", {"count": 14, "wave": 2500}]],
+    "now": 871.0,
+    "returned": true,
+    "try_at": 886.0
+   }
+  ],
+  "fuzz_6": [
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 40}]],
+    "now": 1.0,
+    "returned": true,
+    "try_at": 16.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 16.0,
+    "returned": false,
+    "try_at": 31.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 31.5,
+    "returned": false,
+    "try_at": 31.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [["demon_mode_always", {"count": 2, "wave": 2500}]],
+    "now": 46.0,
+    "returned": true,
+    "try_at": 61.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 61.5,
+    "returned": false,
+    "try_at": 61.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 76.0,
+    "returned": false,
+    "try_at": 61.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [],
+    "now": 91.0,
+    "returned": false,
+    "try_at": 106.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 91.5,
+    "returned": false,
+    "try_at": 106.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 92.5,
+    "returned": false,
+    "try_at": 106.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 99.5,
+    "returned": false,
+    "try_at": 106.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 100.0,
+    "returned": false,
+    "try_at": 106.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 114.5,
+    "returned": false,
+    "try_at": 106.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 144.5,
+    "returned": false,
+    "try_at": 106.0
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 174.5,
+    "returned": false,
+    "try_at": 106.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [],
+    "now": 204.5,
+    "returned": false,
+    "try_at": 219.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 220.0,
+    "returned": false,
+    "try_at": 219.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 223.0,
+    "returned": false,
+    "try_at": 219.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 230.0,
+    "returned": false,
+    "try_at": 219.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 245.5,
+    "returned": false,
+    "try_at": 219.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 275.5,
+    "returned": false,
+    "try_at": 219.5
+   },
+   {
+    "calls": [],
+    "count": 2,
+    "events": [],
+    "now": 290.5,
+    "returned": false,
+    "try_at": 219.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [["demon_mode_always", {"count": 3, "wave": 40}]],
+    "now": 306.0,
+    "returned": true,
+    "try_at": 321.0
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 336.0,
+    "returned": false,
+    "try_at": 321.0
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 351.0,
+    "returned": false,
+    "try_at": 321.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [],
+    "now": 365.5,
+    "returned": false,
+    "try_at": 380.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 395.5,
+    "returned": false,
+    "try_at": 380.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 402.5,
+    "returned": false,
+    "try_at": 417.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 403.5,
+    "returned": false,
+    "try_at": 417.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 406.5,
+    "returned": false,
+    "try_at": 417.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [],
+    "now": 436.5,
+    "returned": false,
+    "try_at": 451.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 466.5,
+    "returned": false,
+    "try_at": 451.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 467.5,
+    "returned": false,
+    "try_at": 482.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 482.0,
+    "returned": false,
+    "try_at": 482.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 482.5,
+    "returned": false,
+    "try_at": 482.5
+   },
+   {
+    "calls": [],
+    "count": 3,
+    "events": [],
+    "now": 483.0,
+    "returned": false,
+    "try_at": 482.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 3,
+    "events": [],
+    "now": 490.0,
+    "returned": false,
+    "try_at": 505.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [["demon_mode_always", {"count": 4, "wave": 2500}]],
+    "now": 505.5,
+    "returned": true,
+    "try_at": 520.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 506.5,
+    "returned": false,
+    "try_at": 520.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 509.5,
+    "returned": false,
+    "try_at": 520.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 516.5,
+    "returned": false,
+    "try_at": 520.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 523.5,
+    "returned": false,
+    "try_at": 520.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 538.5,
+    "returned": false,
+    "try_at": 520.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 541.5,
+    "returned": false,
+    "try_at": 520.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 544.5,
+    "returned": false,
+    "try_at": 520.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 545.0,
+    "returned": false,
+    "try_at": 520.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [],
+    "now": 552.0,
+    "returned": false,
+    "try_at": 567.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 553.0,
+    "returned": false,
+    "try_at": 567.0
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 583.0,
+    "returned": false,
+    "try_at": 567.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 4,
+    "events": [],
+    "now": 583.5,
+    "returned": false,
+    "try_at": 598.5
+   },
+   {
+    "calls": [],
+    "count": 4,
+    "events": [],
+    "now": 590.5,
+    "returned": false,
+    "try_at": 598.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 5,
+    "events": [["demon_mode_always", {"count": 5, "wave": 2500}]],
+    "now": 605.5,
+    "returned": true,
+    "try_at": 620.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 606.5,
+    "returned": false,
+    "try_at": 620.5
+   },
+   {
+    "calls": [],
+    "count": 5,
+    "events": [],
+    "now": 607.0,
+    "returned": false,
+    "try_at": 620.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 6,
+    "events": [["demon_mode_always", {"count": 6, "wave": 1}]],
+    "now": 637.0,
+    "returned": true,
+    "try_at": 652.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 640.0,
+    "returned": false,
+    "try_at": 652.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 655.5,
+    "returned": false,
+    "try_at": 652.0
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 658.5,
+    "returned": false,
+    "try_at": 673.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 659.5,
+    "returned": false,
+    "try_at": 673.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 689.5,
+    "returned": false,
+    "try_at": 673.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 705.0,
+    "returned": false,
+    "try_at": 673.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 719.5,
+    "returned": false,
+    "try_at": 734.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 726.5,
+    "returned": false,
+    "try_at": 734.5
+   },
+   {
+    "calls": [],
+    "count": 6,
+    "events": [],
+    "now": 733.5,
+    "returned": false,
+    "try_at": 734.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 7,
+    "events": [["demon_mode_always", {"count": 7, "wave": 2500}]],
+    "now": 736.5,
+    "returned": true,
+    "try_at": 751.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 751.5,
+    "returned": false,
+    "try_at": 751.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 752.5,
+    "returned": false,
+    "try_at": 767.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 755.5,
+    "returned": false,
+    "try_at": 767.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 756.5,
+    "returned": false,
+    "try_at": 767.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 763.5,
+    "returned": false,
+    "try_at": 767.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 7,
+    "events": [],
+    "now": 793.5,
+    "returned": false,
+    "try_at": 808.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 800.5,
+    "returned": false,
+    "try_at": 808.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 801.5,
+    "returned": false,
+    "try_at": 808.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 831.5,
+    "returned": false,
+    "try_at": 846.5
+   },
+   {
+    "calls": [],
+    "count": 7,
+    "events": [],
+    "now": 846.5,
+    "returned": false,
+    "try_at": 846.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 8,
+    "events": [["demon_mode_always", {"count": 8, "wave": 40}]],
+    "now": 876.5,
+    "returned": true,
+    "try_at": 891.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 9,
+    "events": [["demon_mode_always", {"count": 9, "wave": 1}]],
+    "now": 906.5,
+    "returned": true,
+    "try_at": 921.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 10,
+    "events": [["demon_mode_always", {"count": 10, "wave": 1}]],
+    "now": 936.5,
+    "returned": true,
+    "try_at": 951.5
+   },
+   {
+    "calls": [],
+    "count": 10,
+    "events": [],
+    "now": 939.5,
+    "returned": false,
+    "try_at": 951.5
+   },
+   {
+    "calls": [],
+    "count": 10,
+    "events": [],
+    "now": 954.0,
+    "returned": false,
+    "try_at": 951.5
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 11,
+    "events": [["demon_mode_always", {"count": 11, "wave": 2500}]],
+    "now": 961.0,
+    "returned": true,
+    "try_at": 976.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 12,
+    "events": [["demon_mode_always", {"count": 12, "wave": 2500}]],
+    "now": 976.0,
+    "returned": true,
+    "try_at": 991.0
+   }
+  ],
+  "no_wave_never_stamps": [
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 5.0,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 5.5,
+    "returned": false,
+    "try_at": 0.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 6.0,
+    "returned": true,
+    "try_at": 21.0
+   },
+   {
+    "calls": [],
+    "count": 1,
+    "events": [],
+    "now": 6.5,
+    "returned": false,
+    "try_at": 21.0
+   }
+  ],
+  "the_sprint_blocks_the_tap_but_not_the_stamp": [
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 50.0,
+    "returned": false,
+    "try_at": 65.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 60.0,
+    "returned": false,
+    "try_at": 65.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 65.0,
+    "returned": false,
+    "try_at": 80.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 66.0,
+    "returned": false,
+    "try_at": 80.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 80.0,
+    "returned": true,
+    "try_at": 95.0
+   }
+  ],
+  "unconfirmed_fire_still_spaces_attempts": [
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 0,
+    "events": [],
+    "now": 10.0,
+    "returned": false,
+    "try_at": 25.0
+   },
+   {
+    "calls": [],
+    "count": 0,
+    "events": [],
+    "now": 24.5,
+    "returned": false,
+    "try_at": 25.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [["demon_mode_always", {"count": 1, "wave": 2500}]],
+    "now": 25.0,
+    "returned": true,
+    "try_at": 40.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 1,
+    "events": [],
+    "now": 40.0,
+    "returned": false,
+    "try_at": 55.0
+   },
+   {
+    "calls": [["demon_mode", "demon_mode_always", true]],
+    "count": 2,
+    "events": [["demon_mode_always", {"count": 2, "wave": 2500}]],
+    "now": 55.0,
+    "returned": true,
+    "try_at": 70.0
+   }
+  ]
+ },
+ "version": 1
+}

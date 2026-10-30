@@ -1,0 +1,80 @@
+/*
+ * Design tokens. Values match the legacy dark theme
+ * (frontend/webui/app-shell.css and dashboard.css) so both apps look like one
+ * product while pages move across. Components use these variables only.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --tp-color-page: #17191e;
+  --tp-color-surface: #1b1d22;
+  --tp-color-surface-inner: #1e2026;
+  --tp-color-surface-raised: #202329;
+  --tp-color-surface-strong: #26292f;
+  --tp-color-surface-active: #30343c;
+  --tp-color-border: #34373e;
+  --tp-color-border-active: #3b404b;
+
+  /* Text */
+  --tp-color-text: #e5e7eb;
+  --tp-color-text-strong: #f1f3f7;
+  --tp-color-text-nav: #bcc0c9;
+  --tp-color-text-muted: #a0a5af;
+
+  /* Status tones (dashboard.css) */
+  --tp-color-ok: #3ccf6a;
+  --tp-color-warn: #e6e36b;
+  --tp-color-bad: #ff7f9e;
+  --tp-color-busy: #7cbaff;
+  --tp-color-quiet: #a0a5af;
+
+  /* Spec 3.1: Unknown (violet, dashed) and Blocked (orange) */
+  --tp-color-unknown: #a385ff;
+  --tp-color-blocked: #ff9248;
+
+  /* Actions */
+  --tp-color-primary: #2969b5;
+  --tp-color-danger: #a93232;
+  /* Halt tier (every Stop, Pause harvesting, Turn input off): red-tinted fill, #c64b4e border, light text */
+  --tp-color-halt-fill: #3a1f22;
+  --tp-color-halt-border: #c64b4e;
+  --tp-color-halt-text: #ffd9d6;
+  --tp-color-on-action: #ffffff;
+  --tp-color-focus: #7cbaff;
+
+  /* Shape and rhythm */
+  --tp-radius-control: 6px;
+  --tp-radius-card: 9px;
+  --tp-radius-pill: 999px;
+  --tp-space-1: 0.25rem;
+  --tp-space-2: 0.5rem;
+  --tp-space-3: 0.75rem;
+  --tp-space-4: 1rem;
+  --tp-space-6: 1.6rem;
+
+  /* Type: system fonts only, nothing downloaded */
+  --tp-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --tp-font-mono: ui-monospace, 'Cascadia Mono', Consolas, 'Liberation Mono', monospace;
+  --tp-font-size-small: 0.84rem;
+  --tp-font-size-body: 0.95rem;
+  --tp-font-size-title: 1.25rem;
+  --tp-font-size-12: 0.75rem;
+  --tp-font-size-13: 0.8125rem;
+  --tp-font-size-14: 0.875rem;
+  --tp-font-size-15: 0.9375rem;
+
+  /* Every control in a row shares its size; action importance changes colour only. */
+  --tp-control-height: 2rem;
+  --tp-control-height-small: var(--tp-control-height);
+  --tp-control-height-touch: 2.75rem;
+  --tp-control-font-size: 0.875rem;
+  --tp-control-line-height: 1.4;
+  --tp-control-padding-block: 0.2rem;
+}
+
+@media (max-width: 600px), (pointer: coarse) {
+  :root {
+    --tp-control-height: var(--tp-control-height-touch);
+  }
+}

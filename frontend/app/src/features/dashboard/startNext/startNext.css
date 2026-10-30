@@ -1,0 +1,142 @@
+.tp-region[data-region='startNext'] {
+  container-type: inline-size;
+}
+
+@container (max-width: 560px) {
+  .tp-start-next__picker {
+    flex-basis: 100%;
+  }
+}
+
+.tp-start-next {
+  display: grid;
+  gap: var(--tp-space-2);
+  min-width: 0;
+}
+
+.tp-start-next p,
+.tp-start-next ul {
+  margin: 0;
+}
+
+.tp-start-next .tp-actions {
+  gap: var(--tp-space-2);
+}
+
+.tp-start-next .tp-actions__buttons > .tp-button {
+  white-space: normal;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+
+.tp-start-next__picker {
+  display: flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.tp-start-next__picker > span {
+  white-space: nowrap;
+}
+
+.tp-start-next__picker select {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/*
+ * The reasons grid: each blocked action's label in one column, Blocked and its
+ * reason in the next, its Why under the reason; the selected run's readiness on
+ * the same grid. Every line keeps its own words, so each button's description
+ * reads "{label}: Blocked {reason}".
+ */
+.tp-start-next .tp-actions__reason > .tp-start-next__reasons {
+  flex: 1 1 100%;
+}
+.tp-start-next__reasons {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--tp-space-1) var(--tp-space-3);
+  min-width: 0;
+  color: var(--tp-color-text-muted);
+}
+.tp-start-next__reason,
+.tp-start-next__readiness,
+.tp-start-next__reason > p,
+.tp-start-next__readiness > p {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+  row-gap: var(--tp-space-1);
+  min-width: 0;
+}
+.tp-start-next__label {
+  grid-column: 1;
+}
+.tp-start-next__reason > :not(p),
+.tp-start-next__readiness > :not(p),
+.tp-start-next__value {
+  grid-column: 2;
+  min-width: 0;
+}
+.tp-start-next__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1);
+}
+.tp-start-next__value > :last-child {
+  color: var(--tp-color-text);
+}
+
+/* What Start does first and where runs are prepared: one quiet footer row. */
+.tp-start-next__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tp-space-1) var(--tp-space-3);
+  padding-block-start: var(--tp-space-2);
+  border-block-start: 1px solid var(--tp-color-border);
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-start-next a {
+  font-size: var(--tp-font-size-13);
+  display: inline-flex;
+  margin-block: 0;
+  align-items: center;
+  min-height: var(--tp-control-height);
+  width: fit-content;
+}
+
+@container (max-width: 560px) {
+  .tp-start-next__reasons {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tp-start-next__label,
+  .tp-start-next__reason > :not(p),
+  .tp-start-next__readiness > :not(p),
+  .tp-start-next__value {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 40rem) {
+  .tp-start-next .tp-actions__buttons {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tp-start-next__picker {
+    flex-basis: auto;
+  }
+
+  .tp-start-next__picker select {
+    flex: 1;
+  }
+}

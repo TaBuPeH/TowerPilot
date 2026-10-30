@@ -1,0 +1,201 @@
+/* The Profiles page (profiles brief section "Layout"). */
+.tp-profiles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-4);
+  max-width: 1100px;
+  min-width: 0;
+}
+
+.tp-region[data-region^='profiles'] {
+  container-type: inline-size;
+}
+
+.tp-profiles__scope,
+.tp-profiles__summary,
+.tp-profiles__validation,
+.tp-profiles__not-sent {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  margin: var(--tp-space-1) 0;
+}
+
+.tp-profiles__scope,
+.tp-profiles__help {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+/* Shared rows own alignment and control geometry. */
+.tp-profiles__row,
+.tp-profiles__actions {
+  margin-block: var(--tp-space-2);
+}
+
+.tp-profiles__field {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.tp-profiles__input {
+  width: 16rem;
+}
+
+.tp-profiles__invalid {
+  color: var(--tp-color-bad);
+  font-size: var(--tp-font-size-12);
+}
+
+.tp-profiles__check {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2);
+  margin: var(--tp-space-1) 0;
+}
+
+.tp-profiles__check label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+}
+
+.tp-profiles__check input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--tp-color-busy);
+}
+
+.tp-profiles__confirm {
+  padding-block-start: var(--tp-space-2);
+  border-block-start: 1px solid var(--tp-color-busy);
+}
+
+.tp-profiles__confirm p {
+  margin: 0 0 var(--tp-space-2);
+}
+
+.tp-profiles__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-profiles__table th,
+.tp-profiles__table td {
+  padding: var(--tp-space-1) var(--tp-space-2) var(--tp-space-1) 0;
+  border-bottom: 1px solid var(--tp-color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.tp-profiles__table th {
+  color: var(--tp-color-text-muted);
+  font-weight: 400;
+}
+
+.tp-profiles__table td > span {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 var(--tp-space-2);
+}
+
+.tp-profiles__mark {
+  margin-left: var(--tp-space-2);
+  color: var(--tp-color-busy);
+}
+
+.tp-profiles__status {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1) var(--tp-space-3);
+}
+
+.tp-profiles__condition {
+  flex-basis: 100%;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-profiles__table .tp-profiles__mobile-label {
+  display: none;
+}
+
+.tp-profiles__table th:first-child {
+  width: 22%;
+  min-width: 9rem;
+}
+
+.tp-profile-outcome {
+  margin-top: var(--tp-space-2);
+}
+
+.tp-profile-outcome .tp-notice__lead,
+.tp-profile-outcome__line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 0.4em;
+}
+
+.tp-profile-problems {
+  margin: var(--tp-space-1) 0;
+  padding-left: var(--tp-space-4);
+}
+
+@container (max-width: 700px) {
+  /* 390: one field and one action per row, full width, touch-sized. */
+  .tp-profiles__row,
+  .tp-profiles__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tp-profiles__field,
+  .tp-profiles__input,
+  .tp-profiles__field select {
+    width: 100%;
+  }
+}
+
+/* File identifiers get the full row on narrow screens; details remain table cells. */
+@container (max-width: 600px) {
+  .tp-profiles__table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .tp-profiles__table tbody,
+  .tp-profiles__table tr,
+  .tp-profiles__table td {
+    display: block;
+  }
+  .tp-profiles__table tr {
+    padding-block: var(--tp-space-2);
+    border-bottom: 1px solid var(--tp-color-border);
+  }
+  .tp-profiles__table td {
+    padding-block: var(--tp-space-1);
+    border: 0;
+  }
+  .tp-profiles__file-name {
+    font-weight: 600;
+  }
+  .tp-profiles__table .tp-profiles__mobile-label {
+    display: inline;
+    margin-inline-end: var(--tp-space-2);
+    color: var(--tp-color-text-muted);
+  }
+  .tp-profiles__file-kind > span:last-child {
+    display: inline;
+  }
+  .tp-profiles__file-kind .tp-profiles__help {
+    display: block;
+  }
+}

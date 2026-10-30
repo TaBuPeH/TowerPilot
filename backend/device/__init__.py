@@ -1,1 +1,1 @@
-"""device layer - see BEHAVIORS.md and the root README for the map."""
+"""device layer - see docs/BEHAVIORS.md and the root README for the map."""

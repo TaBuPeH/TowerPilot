@@ -555,6 +555,8 @@ class ManifestDriver(ScreenDriver):
 
     def scan_inventory(self, manifest, stopped=lambda:False):
         import cv2
+        import time
+        from device import capture
         from interactions import inventory
         from vision import pills
         self._close()
@@ -583,8 +585,11 @@ class ManifestDriver(ScreenDriver):
                     self.progress(f'Inventory page {page+1}, module {len(records)+1}: reading name and rarity')
                     panel = self._panel((cx,cy))
                     try:
-                        from player.module_descriptor import read_descriptor
+                        from player.module_descriptor import read_descriptor, settled_panel
                         from player.calibrate import module_slug
+                        # The close control can precede the artwork's final
+                        # position. Use the same binding gate as discovery.
+                        panel = settled_panel(icon, panel, capture.grab, time.sleep)
                         descriptor_name, descriptor_rarity, icon_box = read_descriptor(icon,panel)
                         identity = self._inventory_identity(panel)
                         if identity.get("slug") != module_slug(descriptor_name) or identity.get("rarity") != descriptor_rarity:

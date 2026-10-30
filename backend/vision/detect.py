@@ -27,6 +27,8 @@ def _tpl(rel: str) -> np.ndarray:
         from player import accounts
         from settings import CONFIG
         p = accounts.template_path(ROOT, CONFIG, rel)
+        if not p.is_file():
+            raise TemplateMissing(f"missing template {p}")
         img = cv2.imread(str(p), cv2.IMREAD_COLOR)
         if img is None:
             raise TemplateMissing(f"missing template {p}")

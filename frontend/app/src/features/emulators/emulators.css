@@ -1,0 +1,160 @@
+/* Emulator-specific table layout; surfaces and controls belong to src/ui. */
+.tp-emulators {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-3);
+  max-width: 1100px;
+  min-width: 0;
+}
+
+.tp-emulators__line,
+.tp-emulators__facts-list dd > span,
+.tp-emulators__facts-list dd[data-live] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-2);
+}
+
+.tp-emulators__line {
+  margin: 0;
+}
+
+.tp-emulators__action {
+  min-width: 0;
+}
+
+.tp-emulators__warn {
+  color: var(--tp-color-bad);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-emulators__cell-label {
+  display: none;
+}
+
+/* The one Suggested row for an address no detected row names: label, facts and the Use action. */
+.tp-emulators__suggestion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-3);
+  margin-block: var(--tp-space-2);
+}
+
+.tp-emulators__suggested {
+  display: inline-flex;
+  align-items: center;
+  color: var(--tp-color-busy);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-emulators__check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+}
+
+.tp-emulators__check input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--tp-color-busy);
+}
+
+.tp-emulators__muted {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-emulators__notes,
+.tp-emulators__changes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  margin: var(--tp-space-2) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tp-emulators__notes li,
+.tp-emulators__changes li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--tp-space-2);
+  overflow-wrap: anywhere;
+}
+
+.tp-emulators__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-emulators__table th,
+.tp-emulators__table td {
+  padding: var(--tp-space-1) var(--tp-space-2) var(--tp-space-1) 0;
+  border-bottom: 1px solid var(--tp-color-border);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.tp-emulators__table th {
+  color: var(--tp-color-text-muted);
+  font-weight: 400;
+}
+
+.tp-emulators__cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-1) var(--tp-space-2);
+}
+
+.tp-emulators__commands {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.tp-emulators__outcome {
+  flex-basis: 100%;
+  margin-top: var(--tp-space-2);
+}
+
+.tp-emulators__outcome-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0 0.4em;
+}
+
+.tp-emulators__owner {
+  margin: var(--tp-space-2) 0;
+}
+
+@media (max-width: 700px) {
+  /* Keep the table's labelled rows on narrow screens, separated by dividers. */
+  .tp-emulators__table thead {
+    display: none;
+  }
+  .tp-emulators__table,
+  .tp-emulators__table tbody,
+  .tp-emulators__table tr,
+  .tp-emulators__table td {
+    display: block;
+    width: 100%;
+  }
+  .tp-emulators__table tr {
+    padding-block: var(--tp-space-3);
+    border-block-start: 1px solid var(--tp-color-border);
+  }
+  .tp-emulators__table td {
+    border: 0;
+    padding: 0.125rem 0;
+  }
+  .tp-emulators__cell-label {
+    display: block;
+    color: var(--tp-color-text-muted);
+  }
+}

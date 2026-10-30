@@ -120,23 +120,68 @@ def _tighten(crop):
     return crop[y0:y1, x0:x1]
 
 
-def capture_stats(panel_bgr, read_text, wanted):
-    """{stat_slug: label_crop} for boxes on this panel whose OCR'd name maps to
-    a `wanted` slug. read_text(bgr)->str. Labels are trimmed to their text."""
-    out = {}
+def verify_stat_labels(crops, read_many):
+    """Per-target semantic evidence for saved images or fresh screen crops.
+
+    Accept only the exact normalized label. Fuzzy similarity cannot distinguish
+    Bounce Shot Range from Bounce Shot Chance. Missing/blank images are visible
+    failures and are never sent to OCR. The caller owns persistence and policy.
+    """
+    result, readable = {}, {}
+    for slug, crop in crops.items():
+        if crop is None or not crop.size or cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY).std() < 2:
+            result[slug] = {'status': 'unreadable', 'text': '', 'observed_slug': None}
+        else:
+            readable[slug] = crop
+    readings = read_many(list(readable.values())) if readable else []
+    if len(readings) != len(readable):
+        raise ValueError('Stat verification did not return one reading per label')
+    for slug, text in zip(readable, readings):
+        observed = stat_slug(text)
+        expected = 'max' if slug == 'max_label' else slug
+        result[slug] = {'status': 'verified' if observed == expected else 'mismatch',
+                        'text': text, 'observed_slug': observed}
+    return result
+
+
+def capture_stats(panel_bgr, read_text, wanted, *, read_many=None, known=None):
+    """{stat_slug: label_crop} for exact normalized names in `wanted`.
+    read_text(bgr)->str. Labels are trimmed to their text. `known` must contain
+    semantically verified images; whole-label matching avoids repeated OCR."""
+    out, pending = {}, []
     for x, y, w, h in stat_boxes(panel_bgr):
         label = panel_bgr[y + 6:y + h - 6, x + 8:x + int(w * STAT_LABEL_LEFT_FRAC)]
-        slug = match_stat(read_text(label), wanted)
-        if slug and slug not in out:
+        tight = _tighten(label)
+        # Whole-label agreement only: a short saved "Damage" must never
+        # consume a row whose full label is "Damage / Meter".
+        matches = [slug for slug, image in (known or {}).items()
+                   if image.shape == tight.shape
+                   and cv2.cvtColor(image, cv2.COLOR_BGR2GRAY).std() >= 2
+                   and float(cv2.matchTemplate(
+                       tight, image, cv2.TM_CCOEFF_NORMED)[0, 0]) >= .98]
+        if len(matches) == 1:
+            out.setdefault(matches[0], tight)
+        else:
+            pending.append(label)
+    readings = read_many(pending) if read_many and pending else [read_text(label) for label in pending]
+    if len(readings) != len(pending):
+        raise ValueError('Stat OCR did not return one reading per label')
+    for label, text in zip(pending, readings):
+        slug = stat_slug(text)
+        if slug in wanted and slug not in out:
             out[slug] = _tighten(label)
     return out
 
 
-def capture_max_plaque(panel_bgr, read_text):
+def capture_max_plaque(panel_bgr, read_text, *, read_many=None):
     """The grey 'Max' plaque under a maxed stat's value, or None. (stats/max_label.png)"""
-    for x, y, w, h in stat_boxes(panel_bgr):
-        plaque = panel_bgr[y + int(h * 0.55):y + h - 6, x + int(w * 0.55):x + w - 8]
-        if read_text(plaque).strip().lower() == "max":
+    plaques = [panel_bgr[y + int(h * 0.55):y + h - 6, x + int(w * 0.55):x + w - 8]
+               for x, y, w, h in stat_boxes(panel_bgr)]
+    readings = read_many(plaques) if read_many and plaques else [read_text(plaque) for plaque in plaques]
+    if len(readings) != len(plaques):
+        raise ValueError('Plaque OCR did not return one reading per plaque')
+    for plaque, text in zip(plaques, readings):
+        if text.strip().lower() == "max":
             return _tighten(plaque)
     return None
 

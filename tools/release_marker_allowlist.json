@@ -1,0 +1,47 @@
+{
+  "note": "Exact strings in shipped source files that match a personal-content marker but are not personal data. One entry per path, marker and matched string; anything else in the file is still checked. Maintained by hand; tools/release_archive_policy.py loads it.",
+  "entries": [
+    {
+      "path": "backend/tests/unit/test_action_declared_proofs.py",
+      "marker": "email",
+      "text": "changes={'routines.view_only@main.enabled",
+      "reason": "action live-control key <action>@<instance>.<field>, not an e-mail address"
+    },
+    {
+      "path": "backend/tests/unit/test_action_declared_proofs.py",
+      "marker": "email",
+      "text": "routines.allowed_probe@main.enabled",
+      "reason": "action live-control key <action>@<instance>.<field>, not an e-mail address"
+    },
+    {
+      "path": "backend/tests/unit/test_action_dispatch_generated.py",
+      "marker": "email",
+      "text": "ad_gems@a.b",
+      "reason": "action instance keys and refused key shapes (<action>@<instance>), not e-mail addresses"
+    },
+    {
+      "path": "backend/tests/unit/test_action_dispatch_generated.py",
+      "marker": "email",
+      "text": "probe@a.b",
+      "reason": "action instance keys and refused key shapes (<action>@<instance>), not e-mail addresses"
+    },
+    {
+      "path": "backend/tests/unit/test_action_dispatch_generated.py",
+      "marker": "email",
+      "text": "routines.probe@one.burst",
+      "reason": "action instance keys and refused key shapes (<action>@<instance>), not e-mail addresses"
+    },
+    {
+      "path": "backend/tests/unit/test_action_dispatch_generated.py",
+      "marker": "email",
+      "text": "routines.probe@two.burst",
+      "reason": "action instance keys and refused key shapes (<action>@<instance>), not e-mail addresses"
+    },
+    {
+      "path": "backend/tests/unit/test_action_synthetic_extension.py",
+      "marker": "email",
+      "text": "routines.synthetic_probe@Bad.burst",
+      "reason": "synthetic action live-control key <action>@<instance>.<field>, not an e-mail address"
+    }
+  ]
+}

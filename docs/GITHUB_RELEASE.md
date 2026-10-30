@@ -13,7 +13,8 @@ Download **TowerPilot-0.5-beta-source.zip** below, or clone the repository and
 check out `v0.5-beta`. Install Python 3.12, then double-click **Start Tower
 Pilot.cmd**; the source launcher creates its environment and installs dependencies.
 Alternatively run `py -3.12 -m pip install -r requirements.txt`, then
-`py -3.12 frontend/dashboard.py` and open http://127.0.0.1:8620/ui/index.html#setup.
+`py -3.12 backend/dashboard.py` and open http://127.0.0.1:8620/ui/app/#emulators. The source ZIP includes the dashboard app build; a clone builds it
+once with `cd frontend/app; npm ci; npm run build`.
 
 GitHub's automatically generated “Source code” downloads are also source-only;
 choose **windows-x64.zip** if you do not want to install Python.
@@ -36,7 +37,8 @@ choose **windows-x64.zip** if you do not want to install Python.
 
 ## First setup
 
-1. Use Windows 10/11 x64. Install MuMu or BlueStacks, install The Tower, and sign in.
+1. Use Windows 11 x64 (Windows 10 is untested) and a current Chrome or Edge browser.
+   Install MuMu or BlueStacks, install The Tower, and sign in.
 2. Recommended game frame: **1080 × 2560 portrait, 360 DPI**. For BlueStacks use
    a 2560 × 1080 panel; the game rotates it to portrait.
 3. In Setup, install connection tools (ADB) and connect your emulator. This download
@@ -64,6 +66,9 @@ dependencies retain their own licenses; game artwork is not covered.
 - Stop now stops automation, not the live battle. Stop automation before manual use.
 - Keep your existing app folder/account data when upgrading; don't replace local
   configuration with someone else's settings.
+- Every environment limit (Windows 10, browsers, emulators, the scrcpy preview,
+  Windows text recognition, ad overlays) is listed under "Environment limits" in
+  `docs/RELEASE_0.6_BETA.md` in the repository.
 
 Local validation: **1,239 Python tests passed, 3 skipped; 25 frontend tests passed**.
 The release workflow checks package boundaries and the dashboard before building.

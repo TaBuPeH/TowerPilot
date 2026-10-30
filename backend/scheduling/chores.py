@@ -14,11 +14,17 @@ Every chore is (name, due, run) and every one of them obeys the same rules:
     nice-to-haves squeezed into a gap; none of them is worth stopping a farm
     loop over.
   * at most ONE chore per gap, so a single restart never turns into a
-    ten-minute menu expedition.
+    ten-minute menu expedition. A chore that was attempted and failed has
+    used the gap like one that completed (item 7, C1).
 """
 import datetime
+import time
 
-START_HOUR = 3          # nothing runs before this; the day rolls over at 3 AM
+from towerpilot_workflows import action_contract
+
+# When a chore is due is the schedule policy of its catalog definition (`action_contract.CHORE_SCHEDULE`, a DailyCalendar): the day is the local date
+# (it rolls at local midnight), and 03:00 is only the hour from which the first Home gap may run it. This module keeps the registry and the dispatcher.
+START_HOUR = action_contract.CHORE_SCHEDULE.floor_hour
 
 # daystate/logger are imported INSIDE the functions that use them: they pull
 # settings (CONFIG) and cv2, and this module's registry (CHORES) is consumed
@@ -28,14 +34,33 @@ START_HOUR = 3          # nothing runs before this; the day rolls over at 3 AM
 
 # P0 (2026-08-18): all daily_state IO delegates to daystate.py (single
 # writer, atomic saves). Key format unchanged: chore_<name> = ISO date.
+_unsaved: dict[str, str] = {}      # chore -> the day whose mark the daily state refused (its lock stayed held): closed in this process anyway
+
+
+def _schedule(name: str):
+    return action_contract.catalog().get(name).schedule
+
+
 def _mark(name: str):
+    """Close today for `name`. A mark the daily state refuses is kept in this process: the chore is not retried in every gap because a file was busy."""
     from scheduling import daystate
-    daystate.mark_today(f"chore_{name}")
+    try:
+        daystate.mark_today(f"chore_{name}")
+    except OSError as exc:                      # DaystateLockTimeout is one: nothing was written
+        from runtime import logger
+        _unsaved[name] = action_contract.CHORE_SCHEDULE.day(time.time())     # every chore shares the schedule; this path must not depend on the catalog having `name`
+        logger.event("daystate_write_failed", key=f"chore_{name}", error=str(exc)[:150], error_type=type(exc).__name__)
+    else:
+        _unsaved.pop(name, None)
 
 
-def _done_today(name: str) -> bool:
+def decide(name: str, now: float | None = None):
+    """The decision on chore `name` now: its DailyCalendar over the day flag in the daily state."""
     from scheduling import daystate
-    return daystate.flag_today(f"chore_{name}")
+    now = time.time() if now is None else now
+    schedule = _schedule(name)
+    consumed = _unsaved[name] if _unsaved.get(name) == schedule.day(now) else daystate.get_raw(f"chore_{name}")
+    return schedule.evaluate(now, {'consumed': consumed})[0]
 
 
 def _daily(name: str) -> bool:
@@ -45,8 +70,7 @@ def _daily(name: str) -> bool:
     first run that ENDS after the hour, which is already unpredictable, and
     tying them to a clock would sooner or later mean interrupting a live run.
     """
-    return (not _done_today(name)
-            and datetime.datetime.now().hour >= START_HOUR)
+    return decide(name).kind == 'due'
 
 
 # ---------------------------------------------------------------- the chores
@@ -110,12 +134,51 @@ def _policy() -> dict | None:
 
 _disabled_logged: set[tuple[str, str]] = set()   # (date, name) - log once/day
 
+NO_GAME_EFFECT = frozenset({"housekeeping"})     # pure disk retention: its history rows claim no game effect (the others touch the game: effect unknown)
 
-def run_due(limit: int = 1) -> list:
+
+def _bookkeeping(name, step):
+    """Run one step of a chore's history. It is bookkeeping beside a chore that touches the game's menus: whatever it raises is logged and dropped."""
+    try:
+        return step()
+    except Exception as exc:                    # noqa: BLE001
+        from runtime import logger
+        logger.event("action_record_failed", reason="chore", chore=name, error=str(exc)[:150], error_type=type(exc).__name__)
+        return None
+
+
+def _open_row(session, name):
+    """The recorder holding the open row of chore `name` (None with no session: a run outside a ledger operation records nothing)."""
+    if session is None:
+        return None
+
+    def open_it():
+        recorder = session.recorder(name)
+        recorder.opened(occurrence_key=_schedule(name).day(time.time()))
+        return recorder
+    return _bookkeeping(name, open_it)
+
+
+def _close_row(recorder, name, completed):
+    if recorder is not None:
+        effect = "none" if name in NO_GAME_EFFECT else "unknown"
+        close = ((lambda: recorder.closed(result="succeeded", reason="completed", effect=effect)) if completed
+                 else (lambda: recorder.closed(result="failed", reason="error", effect=effect)))
+        _bookkeeping(name, close)
+
+
+def _refused_row(session, name):
+    if session is not None:
+        _bookkeeping(name, lambda: session.recorder(name).check(result="refused", reason="disabled_by_profile"))
+
+
+def run_due(limit: int = 1, session=None) -> list:
     """Run up to `limit` due chores. Returns the names actually run.
 
     Call ONLY when on Home with no run going. Returns [] if nothing is due,
-    which is the common case.
+    which is the common case. `session` (an operation-scoped ActionSession,
+    else None) records each attempt in the action history. The list holds the
+    chores that completed; an attempted one that raised used the gap too.
     """
     from runtime import logger
     policy = _policy()
@@ -125,9 +188,9 @@ def run_due(limit: int = 1) -> list:
                          "unreadable - refusing to run chores it may have "
                          "disabled")
         return []
-    ran = []
+    ran, attempted = [], 0
     for name, due, action in CHORES:
-        if len(ran) >= limit:
+        if attempted >= limit:
             break
         try:
             if not due():
@@ -144,16 +207,23 @@ def run_due(limit: int = 1) -> list:
                 _disabled_logged.add(key)
                 logger.event("chore", name=name, ok=True, result="disabled "
                              "by the profile's chores policy - skipped")
+            _refused_row(session, name)
             continue
+        recorder = _open_row(session, name)
+        completed = False
         try:
             result = action()
             logger.event("chore", name=name, ok=True, result=str(result))
             ran.append(name)
+            completed = True
         except Exception as e:                    # noqa: BLE001
             # Logged and skipped: a chore is never worth ending a farm loop.
             logger.event("chore", name=name, ok=False, error=repr(e))
         finally:
-            # Marked even on failure, so a chore that is broken today does not
-            # get retried on every single run boundary for the rest of the day.
+            # The row is finished first, then the day is closed. Marked even
+            # on failure, so a chore that is broken today does not get retried
+            # on every single run boundary for the rest of the day.
+            _close_row(recorder, name, completed)
             _mark(name)
+            attempted += 1
     return ran

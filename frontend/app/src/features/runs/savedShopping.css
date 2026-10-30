@@ -1,0 +1,9 @@
+.tp-saved-shopping {
+  min-width: 0;
+}
+.tp-saved-shopping__review {
+  overflow-wrap: anywhere;
+}
+.tp-saved-shopping__actions {
+  margin-block: var(--tp-space-3);
+}

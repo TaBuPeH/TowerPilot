@@ -1,0 +1,173 @@
+.tp-abilities {
+  max-width: 1440px;
+}
+.tp-abilities,
+.tp-abilities * {
+  min-width: 0;
+}
+.tp-abilities__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--tp-space-4);
+  margin-block: var(--tp-space-4);
+  align-items: start;
+}
+.tp-abilities__library-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: var(--tp-space-4);
+}
+.tp-abilities__editor-name {
+  display: block;
+  color: var(--tp-color-text-strong);
+  font-size: var(--tp-font-size-15);
+  letter-spacing: normal;
+  text-transform: none;
+}
+.tp-abilities__editor-id {
+  display: block;
+  margin-block-start: var(--tp-space-1);
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.tp-abilities__list,
+.tp-abilities__rules {
+  list-style: none;
+  padding: 0;
+}
+.tp-abilities__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-2);
+}
+.tp-abilities__list li {
+  display: grid;
+  gap: var(--tp-space-1);
+  margin-block: var(--tp-space-2);
+}
+.tp-abilities [aria-pressed='true'] {
+  border-color: var(--tp-color-focus);
+  background: var(--tp-color-surface-active);
+}
+.tp-abilities label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tp-space-2);
+  margin-block: var(--tp-space-1);
+}
+.tp-abilities__field {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.7fr) minmax(0, 1fr);
+  gap: var(--tp-space-2);
+  align-items: center;
+  margin-block: var(--tp-space-1);
+}
+.tp-abilities__field > div {
+  grid-column: 1 / -1;
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-small);
+}
+.tp-abilities__field > div:empty {
+  display: none;
+}
+.tp-abilities__field p {
+  margin-block: var(--tp-space-1);
+}
+.tp-abilities .tp-field-control {
+  width: 100%;
+}
+.tp-abilities input[type='checkbox'] {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.tp-abilities button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.tp-abilities__weapon .tp-abilities__field {
+  margin-block: var(--tp-space-1);
+}
+.tp-abilities__fields {
+  display: grid;
+  gap: var(--tp-space-3);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.tp-abilities__field-group {
+  border: 0;
+  border-block-start: 1px solid var(--tp-color-border);
+  padding: var(--tp-space-2) 0 0;
+  margin-block: var(--tp-space-2);
+}
+.tp-abilities__field-group > legend {
+  float: left;
+  inline-size: 100%;
+  margin-block-end: var(--tp-space-2);
+  padding: 0;
+}
+.tp-abilities__field-group > legend + * {
+  clear: both;
+}
+.tp-abilities__rule {
+  border-block-start: 1px solid var(--tp-color-border);
+  padding-block-start: var(--tp-space-2);
+  margin-block: var(--tp-space-2);
+}
+.tp-abilities fieldset:disabled {
+  opacity: 0.7;
+}
+.tp-abilities pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 32rem;
+  overflow: auto;
+  padding: var(--tp-space-2);
+}
+.tp-abilities .tp-server {
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.tp-abilities__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--tp-space-3);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.tp-abilities__pair .tp-abilities__field {
+  display: block;
+}
+.tp-abilities__compare {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--tp-space-3);
+}
+.tp-abilities__required {
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-small);
+}
+.tp-abilities__errors {
+  border-inline-start: 3px solid var(--tp-color-danger);
+  padding: var(--tp-space-3);
+  margin-block: var(--tp-space-3);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .tp-abilities__field {
+    display: block;
+  }
+  .tp-abilities__pair,
+  .tp-abilities__compare {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* F6-14 PE5: a save outcome names its target on one line and the outcome on the next. */
+.tp-abilities__line {
+  display: block;
+}

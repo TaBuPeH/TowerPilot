@@ -1,1 +1,1 @@
-"""player layer - see BEHAVIORS.md and the root README for the map."""
+"""player layer - see docs/BEHAVIORS.md and the root README for the map."""

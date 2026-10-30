@@ -4,3 +4,12 @@
 *.jpg binary
 *.ico binary
 *.ps1 text eol=crlf
+
+# Recorded and generated data: GitHub collapses these in diffs and leaves them
+# out of language statistics. They are still reviewed through their generators
+# and hash tests, not line by line.
+backend/tests/fixtures/*.json linguist-generated=true
+frontend/app/src/contract/generated/** linguist-generated=true
+frontend/app/tests/fixtures/*.json linguist-generated=true
+frontend/app/tests/unit/store/__dumps__/** linguist-generated=true
+frontend/app/package-lock.json linguist-generated=true

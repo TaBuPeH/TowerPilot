@@ -23,7 +23,7 @@ description: >-
 3. **Refresh after code changes.** cbm does NOT auto-update. After editing a repo, run the refresh script (`~/.local/bin/cbm-refresh.sh <abs-repo-path>`, or `--all`) — it re-indexes that repo AND re-runs the cross-repo pass.
 4. **Static vs runtime.** cbm shows what code CAN call, not what actually ran. For runtime behavior, read logs / run output.
 5. **Vendored and generated code is NOT indexed.** Third-party packages and build output are invisible to the graph. Files it could only partially parse live in the separate `missed` graph (`query_graph(graph="missed")`) — absence from the code graph is not a completeness guarantee.
-6. **Project name = repo path, mechanically.** Drive letter upper-cased, `:` dropped, every `/` → `-`. `d:/projects/tower` → `D-projects-tower`. Run `list_projects` if unsure.
+6. **Project name = repo path, mechanically.** Drive letter upper-cased, `:` dropped, every `/` → `-`. `e:/code/myrepo` → `E-code-myrepo`. Run `list_projects` if unsure.
 
 ---
 

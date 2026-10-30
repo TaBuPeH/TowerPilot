@@ -60,15 +60,16 @@ def reward_dismiss(frame):
     return None
 
 
-def event_flow():
-    frame=yield
+@missions.reward_flow
+def event_flow(guard):
+    frame = yield from guard.wait()
     point=missions.find_tile(frame,'icons/tile_events.png')
     if point is None:
         logger.event('event_rewards_unavailable',reason='Event menu icon not recognized')
         return
-    missions._tap(*point,'events_open')
+    guard.tap(frame, *point, 'events_open', screen='battle_menu', destination='events_entry')
     for _ in range(12):
-        frame=yield
+        frame = yield from guard.wait()
         if screen(frame): break
     else:
         logger.event('event_rewards_unavailable',reason='Event screen not recognized')
@@ -76,62 +77,63 @@ def event_flow():
     # The entry remembers its last tab. Select Missions by its verified label.
     hit,_,loc=detect._match(frame,'icons/event_missions_tab.png',.85)
     tpl=detect._tpl('icons/event_missions_tab.png')
-    missions._tap(loc[0]+tpl.shape[1]//2,loc[1]+tpl.shape[0]//2,'event_missions_tab')
-    frame=yield
-    frame=yield
+    guard.tap(frame, loc[0]+tpl.shape[1]//2,loc[1]+tpl.shape[0]//2,
+              'event_missions_tab', screen=missions.reward_screen(frame), destination='events')
+    frame = yield from guard.wait()
+    frame = yield from guard.wait()
     spec=manifest()['reward_collection']['event_missions']
     pages=0; claims=0; previous=None
     for _ in range(100):
         if not screen(frame):
             point=missions.find_skip(frame) or reward_dismiss(frame)
-            if point: missions._tap(*point,'event_reward_skip')
+            if point: guard.dismiss(frame, 'events', 'event_reward_skip')
             else: break
-            frame=yield
+            frame = yield from guard.wait()
             continue
         points=claim_buttons(frame)
         if points:
             point=points[0]
-            frame=yield
-            if point not in claim_buttons(frame): continue
-            missions._tap(*point,'event_quest_claim')
+            frame = yield from guard.wait()
+            if not screen(frame) or point not in claim_buttons(frame): continue
+            guard.tap(frame, *point, 'event_quest_claim', screen='events', rewards=True)
             claims+=1
             previous=None
-            frame=yield
-            frame=yield
+            frame = yield from guard.wait()
+            frame = yield from guard.wait()
             continue
         x,y,w,h=spec['viewport']
         small=cv2.resize(frame[y:y+h,x:x+w],(100,190))
         if pages>=14 or (previous is not None and np.abs(small.astype(float)-previous.astype(float)).mean()<1): break
         previous=small
-        act.swipe(*spec['scroll'],400,reason='event quest next page')
+        guard.swipe(frame, *spec['scroll'],400,screen='events',reason='event quest next page')
         pages+=1
-        frame=yield
-        frame=yield
+        frame = yield from guard.wait()
+        frame = yield from guard.wait()
     # The reward track scrolls too: restore the top before checking its slots.
     for _ in range(pages+1):
         if not screen(frame): break
         x0,y0,x1,y1=spec['scroll']
-        act.swipe(x1,y1,x0,y0,400,reason='event rewards return to top')
-        frame=yield
-        frame=yield
+        guard.swipe(frame,x1,y1,x0,y0,400,screen='events',reason='event rewards return to top')
+        frame = yield from guard.wait()
+        frame = yield from guard.wait()
     milestones=0
     for _ in range(8):
         if not screen(frame):
             point=missions.find_skip(frame) or reward_dismiss(frame)
             if not point: break
-            missions._tap(*point,'event_reward_skip')
-            frame=yield
+            guard.dismiss(frame, 'events', 'event_reward_skip')
+            frame = yield from guard.wait()
             continue
         points=claim_buttons(frame,True)
         if not points: break
         point=points[0]
-        frame=yield
-        if point not in claim_buttons(frame,True): continue
-        missions._tap(*point,'event_milestone_claim')
+        frame = yield from guard.wait()
+        if not screen(frame) or point not in claim_buttons(frame,True): continue
+        guard.tap(frame, *point, 'event_milestone_claim', screen='events', rewards=True)
         milestones+=1
-        frame=yield
-        frame=yield
+        frame = yield from guard.wait()
+        frame = yield from guard.wait()
     logger.event('event_rewards_done',quests=claims,milestones=milestones,pages=pages)
     if screen(frame):
-        missions._tap(*spec['return'],'event_return_to_game')
-        frame=yield
+        guard.exit(frame)
+        frame = yield from guard.wait()

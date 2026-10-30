@@ -1,0 +1,255 @@
+{
+ "captured_on": {
+  "functions": {
+   "_fast_wall_watch": "F139A5000CDD2EF311158ECBC2E23BA077ADF559E164DAC013CA087F76B93FBC",
+   "_rule_act": "F4F601ED6FB70A1C7F72E632C8E4D44A7D621BB7B2FE95CF6DDDF6F4117D54D6",
+   "_run_rules": "B175E9D2B9E464EA2736CA4BB6EA3C9BA04A8B402EBBCDC9EBDD1669EB78C0A9",
+   "demon_mode_always": "1B0A309A4009255C801D57E8C5A30DB27BBC1970E73DC2BB0A20BB3A8B37CE3B",
+   "end_intro_sprint": "4FB7C02CE20F26CCF3C50090DB9F64018843E49A635BC8EA18D39A8F9A203E7A",
+   "eval_rules": "F425D132A83008B69446F02D31FF24B3F9C565130EDD856E085F93AFCFF6912C",
+   "fire_button": "333E6A195667248769A5C8531CD479ED14AA2F66615AE1DDC8BB0EBB86A49FD6",
+   "fleet_fire_skipped": "C486E0D58755EAA8E3605902E764C4F0B2A925CEBC1CB66EABD4EC9DF195DC39",
+   "fleet_gate": "085D3B2439644A9760FD6BE3412B06EE3E6EEF8B5E04CCC425DE06FBD570A226",
+   "marks": "2C1C1479E77640F73DB3CB1C76BDA821CF833FA1230AC2B35B9B27E61293CAC5",
+   "watch_frame": "32D98A71C5B5F46D4E831B91E9CAED04B99261CA2380D12160D17132562D478E"
+  },
+  "note": "counts of one pass of each path of the pinned unmigrated orchestrator, under the fakes of _fakes.py, with the real BattleSession for the checkpoint-bearing paths",
+  "snapshot": "orchestrator_unmigrated.py.txt",
+  "snapshot_sha256": "56347B88F206A9A25D917AAEF06B92C5C13F1CC0ED7B690262581F8DD5FD57EC"
+ },
+ "counters": [
+  "sqlite_connect",
+  "file_open",
+  "lock_acquire",
+  "image_write",
+  "event",
+  "shot"
+ ],
+ "paths": {
+  "fast_burst_demon_mode_only": {
+   "before_first_tap": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   },
+   "first_tap": true,
+   "total": {
+    "event": 2,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 1,
+    "sqlite_connect": 0
+   }
+  },
+  "fast_burst_with_sprint_cancel": {
+   "before_first_tap": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   },
+   "first_tap": true,
+   "total": {
+    "event": 2,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 1,
+    "sqlite_connect": 0
+   }
+  },
+  "fast_checkpoint_sample": {
+   "before_first_tap": null,
+   "first_tap": false,
+   "total": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 4
+   }
+  },
+  "fast_fleet_fire": {
+   "before_first_tap": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 4
+   },
+   "first_tap": true,
+   "total": {
+    "event": 2,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 1,
+    "sqlite_connect": 4
+   }
+  },
+  "fast_idle_samples": {
+   "before_first_tap": null,
+   "first_tap": false,
+   "total": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   }
+  },
+  "fast_strict_unmatched": {
+   "before_first_tap": null,
+   "first_tap": false,
+   "total": {
+    "event": 1,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 1,
+    "sqlite_connect": 0
+   }
+  },
+  "fire_button_with_confirmation": {
+   "before_first_tap": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   },
+   "first_tap": true,
+   "total": {
+    "event": 1,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   }
+  },
+  "hp_rescue_fire": {
+   "before_first_tap": {
+    "event": 1,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 1,
+    "sqlite_connect": 0
+   },
+   "first_tap": true,
+   "total": {
+    "event": 2,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 1,
+    "sqlite_connect": 0
+   }
+  },
+  "rules_pass_fire_and_defer": {
+   "before_first_tap": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   },
+   "first_tap": true,
+   "total": {
+    "event": 3,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   }
+  },
+  "rules_pass_nothing_to_do": {
+   "before_first_tap": null,
+   "first_tap": false,
+   "total": {
+    "event": 1,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   }
+  },
+  "watch_frame_demon_mode_always": {
+   "before_first_tap": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   },
+   "first_tap": true,
+   "total": {
+    "event": 2,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   }
+  },
+  "watch_frame_fleet_fire": {
+   "before_first_tap": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   },
+   "first_tap": true,
+   "total": {
+    "event": 2,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 1,
+    "sqlite_connect": 0
+   }
+  },
+  "watch_frame_idle": {
+   "before_first_tap": null,
+   "first_tap": false,
+   "total": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   }
+  },
+  "watch_frame_wall_watch_entry": {
+   "before_first_tap": null,
+   "first_tap": false,
+   "total": {
+    "event": 0,
+    "file_open": 0,
+    "image_write": 0,
+    "lock_acquire": 0,
+    "shot": 0,
+    "sqlite_connect": 0
+   }
+  }
+ },
+ "version": 1
+}

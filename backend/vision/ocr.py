@@ -22,6 +22,81 @@ _FONT_DIRS = {
 }
 _glyph_cache: dict[str, dict[str, np.ndarray]] = {}
 
+# Native 1080x2560 battle HUD: excludes the diamond icon and neighboring rows.
+GEM_BALANCE_REGION = (90, 190, 240, 60)
+# Native 1080x2560 Home top bar, measured on captured Home frames (966, 972,
+# 993, 2522): the digits start 13 px inside the region, right of the diamond
+# icon (x 382-428), and stay left of the stones icon (x >= 668).
+HOME_GEM_BALANCE_REGION = (434, 18, 226, 60)
+
+
+def gem_balance_crop(frame: np.ndarray, region=None) -> np.ndarray | None:
+    """The exact counter pixels used by the reader and failure diagnostics."""
+    if getattr(frame, 'shape', None) != (2560, 1080, 3):
+        return None
+    x, y, w, h = GEM_BALANCE_REGION if region is None else region
+    return frame[y:y+h, x:x+w]
+
+
+def read_gem_balance(frame: np.ndarray, region=None) -> int | None:
+    """Strict integer-only counter read; unknown/cropped glyphs fail closed.
+
+    Uses existing account-local digit templates, never captures new templates.
+    Callers must independently establish the screen `region` belongs to: the
+    battle HUD by default, `HOME_GEM_BALANCE_REGION` on the exact Home screen.
+    Only a contiguous, baseline-aligned number belongs to the HUD. Detached
+    battle art clipped at the lower crop edge may follow a clear gutter;
+    overlapping components must also be too wide for a digit in this font.
+    """
+    crop = gem_balance_crop(frame, region)
+    if crop is None:
+        return None
+    h, w = crop.shape[:2]
+    glyphs = {ch: tpl for ch, tpl in _load().items() if len(ch) == 1 and ch.isdigit()}
+    if len(glyphs) != 10:
+        return None
+    bw = cv2.inRange(crop, (180, 180, 180), (255, 255, 255))
+    contours, _ = cv2.findContours(bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    boxes = sorted((cv2.boundingRect(c) for c in contours), key=lambda b: b[0])
+    if not boxes or not 0 < boxes[0][0] <= 25:
+        return None
+    _, top, _, height = boxes[0]
+    bottom = top + height
+    baseline_tolerance = 3
+    max_digit_width = (height+baseline_tolerance)*max(
+        tpl.shape[1]/tpl.shape[0] for tpl in glyphs.values())+2*baseline_tolerance
+    digits = []
+    right = None
+    for index, (gx, gy, gw, gh) in enumerate(boxes):
+        if right is not None and gx-right >= height/2:
+            # Prove a full blank gutter, rather than merely a gap between
+            # bounding boxes that might contain smaller glyph fragments.
+            if np.any(bw[:, right:gx]):
+                return None
+            # Do not silently truncate a separated digit or an unknown mark
+            # on the counter line. Every remaining component must reach the
+            # bottom edge. Anything overlapping the digit band must exceed
+            # the widest glyph in the loaded font, including alignment slack.
+            if any(sy <= top+baseline_tolerance or sy+sh != h
+                   or (sy < bottom-baseline_tolerance and sw <= max_digit_width)
+                   for _, sy, sw, sh in boxes[index:]):
+                return None
+            break
+        if gx <= 0 or gy <= 0 or gx+gw >= w-1 or gy+gh >= h-1 or not 28 <= gh <= 48:
+            return None
+        if abs(gy-top) > baseline_tolerance or abs(gy+gh-bottom) > baseline_tolerance:
+            return None
+        patch = bw[gy:gy+gh, gx:gx+gw]
+        scores = sorted((float(cv2.matchTemplate(
+            cv2.resize(patch, (tpl.shape[1], tpl.shape[0])), tpl,
+            cv2.TM_CCOEFF_NORMED)[0, 0]), ch) for ch, tpl in glyphs.items())
+        score, ch = scores[-1]
+        if score < .8 or score-scores[-2][0] < .1:
+            return None
+        digits.append(ch)
+        right = gx+gw
+    return int(''.join(digits))
+
 
 def _load(font: str = "value") -> dict[str, np.ndarray]:
     if font not in _glyph_cache:

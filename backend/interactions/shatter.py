@@ -369,6 +369,17 @@ def dismiss_rewards() -> int:
 
 # ------------------------------------------------------------- the batch
 
+def _selection_frame(frame) -> None:
+    """Do not interpret a disappeared tile on an unrecognized screen as staged."""
+    if inventory._panel_open(frame):
+        logger.shot(frame, "shatter_panel_opened")
+        inventory._close_panel()
+        raise Abort("a module panel opened - this is not the Shatter tab")
+    if not on_modules(frame) or "shatter" not in tab_points(frame):
+        logger.shot(frame, "shatter_grid_unrecognized")
+        raise Abort("the module grid is no longer recognized - refusing to tap")
+
+
 def select_batch(frame) -> int:
     """Stage up to BATCH_MAX blue tiles from the CURRENT screen only.
 
@@ -389,6 +400,7 @@ def select_batch(frame) -> int:
     wrong screen costs one tap and one closed panel, not twelve taps walking
     into Equip.
     """
+    _selection_frame(frame)
     staged = 0
     # NO sleep between taps. Selecting 12 tiles is a burst - the user does it
     # in under 3 seconds - and act.tap already spends 300-450ms per tap on the
@@ -403,11 +415,7 @@ def select_batch(frame) -> int:
         act.tap(x, y, reason=f"stage blue tile {staged + 1}", instant=True)
         logger.event("shatter_tap", n=staged + 1, x=x, y=y)
         after = capture.grab()
-        if inventory._panel_open(after):
-            logger.shot(after, "shatter_panel_opened")
-            inventory._close_panel()
-            raise Abort(f"tile {staged + 1} at ({x},{y}) opened a module panel "
-                        f"- this is not the Shatter tab")
+        _selection_frame(after)
         if staged == 0 and not _staged(after, x, y):
             logger.shot(capture.grab(), "shatter_tile_not_staged")
             raise Abort(f"the tile at ({x},{y}) did not stage - "
@@ -423,14 +431,13 @@ def _staged(frame, x, y) -> bool:
     the mistake that matters here."""
     deadline = time.monotonic() + STAGE_WAIT
     while True:
+        _selection_frame(frame)
         if not tile_is_blue(frame, x, y):
             return True
         if time.monotonic() >= deadline:
             return False
         time.sleep(0.2)
         frame = capture.grab()
-        if inventory._panel_open(frame):
-            return False
 
 
 def one_batch(n: int) -> int:

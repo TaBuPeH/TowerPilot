@@ -46,8 +46,10 @@ def _orchestrator_running() -> bool:
 
 
 def _spawn(args: list) -> subprocess.Popen:
+    from runtime.device_lease import child_environment
     root = Path(__file__).resolve().parents[1]
     return subprocess.Popen([sys.executable, *args], cwd=str(root),
+                            env=child_environment(),
                             creationflags=CREATE_NO_WINDOW)
 
 
@@ -56,6 +58,8 @@ def _enter(tier: int) -> bool:
     the stats dialog (the flag-stop's parking spot) or Home. Anything else
     is an Abort-style stop - log and refuse, never blind-tap."""
     from device import capture
+    from runtime.device_lease import ensure_current
+    ensure_current()
     from runtime import logger
     from interactions import tourney
     from flows import shard

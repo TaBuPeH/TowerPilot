@@ -1,0 +1,211 @@
+/* The Recognition page (screens brief section "Layout"): journey and blockers left, the
+   operation and its evidence right at 1360; one column below; advanced sections below. */
+.tp-recognition {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'notice notice'
+    'journey state'
+    'more more';
+  gap: var(--tp-space-4);
+  max-width: 1320px;
+  min-width: 0;
+}
+
+.tp-recognition__notice {
+  grid-area: notice;
+  min-width: 0;
+}
+
+.tp-recognition__journey,
+.tp-recognition__state,
+.tp-recognition__more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-4);
+  min-width: 0;
+}
+
+.tp-recognition__journey {
+  grid-area: journey;
+}
+
+.tp-recognition__state {
+  grid-area: state;
+}
+
+.tp-recognition__more {
+  grid-area: more;
+}
+
+.tp-recognition__pair {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--tp-space-1);
+  min-width: 0;
+}
+
+.tp-recognition__list,
+.tp-recognition__entries,
+.tp-recognition__groups,
+.tp-recognition__cards,
+.tp-recognition__effects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  margin: var(--tp-space-1) 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.tp-recognition__list li,
+.tp-recognition__entry,
+.tp-recognition__groups > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.tp-recognition__effects {
+  padding-left: var(--tp-space-4);
+  list-style: disc;
+}
+
+.tp-recognition__group-name {
+  font-weight: 600;
+}
+
+.tp-recognition__entry,
+.tp-recognition__card {
+  padding-block: var(--tp-space-2);
+  border-block-end: 1px solid var(--tp-color-border);
+}
+
+.tp-recognition__entry {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.tp-recognition__entry-facts > .tp-facts__item:first-child {
+  flex-basis: 100%;
+}
+
+.tp-recognition__entry-reason[data-layout='cells'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.tp-recognition__groups > li > .tp-shown-list {
+  flex-basis: 100%;
+}
+
+.tp-recognition__timeline-facts[data-layout='rows'] {
+  grid-template-columns: max-content minmax(0, 1fr);
+}
+
+.tp-recognition__timeline-facts[data-layout='rows'] > .tp-facts__item {
+  display: grid;
+}
+
+.tp-recognition__option-note {
+  margin: 0 0 var(--tp-space-2) calc(24px + var(--tp-space-2));
+  color: var(--tp-color-text-muted);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-recognition__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  overflow-wrap: anywhere;
+}
+
+.tp-recognition__card-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-2);
+  font-weight: 600;
+}
+
+.tp-recognition__timeline h3,
+.tp-recognition__roadmap h3,
+.tp-recognition__readiness h3 {
+  margin: var(--tp-space-2) 0 var(--tp-space-1);
+  font-size: var(--tp-font-size-13);
+}
+
+.tp-recognition__choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  margin: var(--tp-space-1) 0;
+  padding: 0;
+  border: 0;
+}
+
+.tp-recognition__choices legend {
+  padding: 0;
+  font-weight: 600;
+}
+
+.tp-recognition__check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tp-space-2);
+  min-height: 24px;
+}
+
+.tp-recognition__check input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--tp-color-busy);
+}
+
+.tp-recognition__number {
+  width: 6rem;
+}
+
+.tp-recognition__outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  margin-top: var(--tp-space-2);
+}
+
+.tp-recognition__outcome .tp-notice__server,
+.tp-recognition__context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tp-space-1);
+  min-width: 0;
+}
+
+.tp-recognition__context-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tp-space-1);
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .tp-recognition {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'notice'
+      'journey'
+      'state'
+      'more';
+  }
+}
+
+@media (max-width: 700px) {
+  .tp-recognition__number {
+    width: 100%;
+  }
+}

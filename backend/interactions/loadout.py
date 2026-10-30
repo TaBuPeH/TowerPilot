@@ -16,20 +16,21 @@ Every section is OPTIONAL and every section is IDEMPOTENT:
     unequip anything. "Not mentioned" means "not this loadout's business",
     which is what lets the No Card quest loadout touch only the cards.
   * applying a loadout twice is the same as applying it once. Card presets are
-    checked for the active border before tapping, and an equipped module is
-    absent from the inventory, which _equip_module already reads as "already".
+    checked for the active border, and modules require positive equipped-slot
+    evidence. Absence from an inventory viewport never proves equipment.
 
 Restoring matters as much as applying. A quest run that switches to the No
 Card preset and does not put the old one back hands the next run an empty
 deck - so current_cards() reads what is selected BEFORE a swap, and callers
 are expected to restore it afterwards.
 """
-import glob
+import copy
 import os
 
 from runtime import logger
-from device import capture
+from device import act, capture
 from interactions import tourney
+from vision import detect
 from settings import CONFIG, ROOT
 
 CARD_TPL = "cards/preset_{}.png"
@@ -54,6 +55,32 @@ MODULE_GRID = (1100, 2200)
 # templates - templates/modules/equipped/<slug>.png - cut from the header.
 HEADER_BAND = (250, 780)
 EQUIPPED_THRESH = 0.88
+
+
+def unknown_setup(name=None, *, detail='adopted', reason=None):
+    return dict(state='unknown', loadout=name, detail=detail, reason=reason,
+                continued_with_partial=False, modules=[])
+
+
+def setup_failure(name, exc):
+    report = copy.deepcopy(getattr(exc, 'setup', None))
+    if not isinstance(report, dict):
+        report = unknown_setup(name, detail='setup_refused')
+    report.update(state='degraded', loadout=name, continued_with_partial=False,
+                  reason=str(exc), detail='setup_refused')
+    return report
+
+
+class SetupAbort(tourney.Abort):
+    def __init__(self, message, setup):
+        super().__init__(message)
+        self.setup = copy.deepcopy(setup)
+
+
+class ModuleResults(dict):
+    def __init__(self, results, evidence):
+        super().__init__(results)
+        self.evidence = evidence
 
 
 def spec(name: str) -> dict:
@@ -148,135 +175,125 @@ def apply_cards(preset: str) -> str:
 V29_EQUIP_BTN = "modules/v29_equip_btn.png"
 
 
+def _plan_evidence(plan, version, frame):
+    from interactions import module_evidence
+    evidence = []
+    for name, role in plan:
+        ok = (module_evidence.verify_v29(name, frame) if version == 'v29'
+              else tourney.verify_slot(name, role, frame))
+        evidence.append(dict(module=name, role='category' if version == 'v29' else role,
+                             state='verified' if ok is True else 'degraded' if ok is False else 'unknown',
+                             detail='equipped_header' if ok is True else 'not_in_expected_slot' if ok is False else 'not_verified',
+                             reason=None if ok is True else 'module_not_positively_equipped'))
+    return evidence
+
+
+def _verify_plan(plan, version, frame):
+    evidence = _plan_evidence(plan, version, frame)
+    if any(item['state'] != 'verified' for item in evidence):
+        report = unknown_setup(detail='manual_equipment', reason='module_plan_not_verified')
+        report.update(state='degraded', modules=evidence)
+        raise SetupAbort('module plan is not positively equipped after all changes', report)
+    return evidence
+
+
 def _apply_modules_v29(plan) -> dict:
-    """Equip a module plan on the redesigned v29 modules screen.
+    """Equip by category, retaining the historical v29 role-label semantics.
 
-    Live-verified 2026-08-27 (space_displacer <-> sharp_fortitude, both
-    directions): tapping a module's inventory icon opens its detail
-    dialog; the single Equip button places it in its category's slot; the
-    dialog closes itself; the displaced module returns to the inventory
-    grid and the equipped one leaves it. Slot names in the plan are
-    ignored - v29 has no primary/assist buttons, the category decides.
-
-    PRESETS AUTO-SAVE: every equip here permanently mutates the ACTIVE
-    module preset. Callers declare that preset via `module_preset` (the
-    validator's corruption advisory enforces the habit) and own restoring
-    displaced modules afterwards (`modules_restore` in quest loadouts).
+    Every already/equipped result is a positive header read. Changes auto-save
+    into the selected category preset; callers own declarative restoration.
     """
     import time
-    from vision import detect
+    from interactions import module_evidence
     results = {}
-    for name, _slot in plan:
-        detect._tpl(f"modules/{name}.png")   # fail closed on missing template
-        frame = capture.grab()
-        hit = tourney.find(frame, f"modules/{name}.png", 0.95)
-        if not hit:
-            # Equipped modules leave the inventory grid (verified live), so
-            # absence normally means "already equipped". It can also mean
-            # "below the fold" - not distinguishable without scrolling, so
-            # say it LOUDLY: nothing taps blind either way, and a module
-            # misread as equipped shows up as a quest that farms zero.
-            logger.event("module_assumed_equipped", module=name,
-                         shot=logger.shot(frame, f"module_assumed_{name}"))
-            results[name] = "already (not in inventory)"
+    for name, _role in plan:
+        frame = module_evidence.settled('v29')
+        proof = module_evidence.verify_v29(name, frame)
+        if proof is True:
+            results[name] = 'already (header)'
             continue
-        tourney.tap_at(hit[0], f"open module dialog {name}")
-        frame, btn = tourney.wait_for(V29_EQUIP_BTN, 5.0)
-        if not btn:
-            logger.shot(frame, f"module_dialog_missing_{name}")
-            raise tourney.Abort(f"module dialog for {name} did not open "
-                                f"(no Equip button)")
-        tourney.tap_at(btn, f"equip module {name} (v29)")
-        deadline = time.monotonic() + 5.0
-        while time.monotonic() < deadline:
+        if proof is None:
+            raise tourney.Abort(f'module {name} category or equipped identity is not verifiable')
+        frame, point = module_evidence.find_inventory(name, 'v29')
+        if point is None:
+            raise tourney.Abort(f'module {name} is neither positively equipped nor found in inventory')
+        module_evidence.require_screen(frame, 'v29')
+        tourney.tap_at(point, f'open module dialog {name}')
+        frame, button = tourney.wait_for(V29_EQUIP_BTN, 5.0, thresh=tourney.STRICT)
+        from interactions import inventory
+        if button is None or not inventory._panel_open(frame):
+            raise tourney.Abort(f'owned v29 module dialog for {name} did not open')
+        tourney.tap_at(button, f'equip module {name} (v29)')
+        # Closing a dialog or losing an inventory tile is only a transition.
+        # A role-choice prompt is unsupported here; never guess a button.
+        for _ in range(13):
             frame = capture.grab()
-            if not tourney.find(frame, V29_EQUIP_BTN, 0.95):
+            if (tourney.find(frame, 'modules/primary_btn.png', tourney.STRICT)
+                    or tourney.find(frame, 'modules/assist_btn.png', tourney.STRICT)):
+                raise tourney.Abort('v29 module role chooser is unsupported; no role was selected')
+            if not inventory._panel_open(frame):
+                module_evidence.require_screen(frame, 'v29')
                 break
-            time.sleep(0.4)
+            time.sleep(.4)
         else:
-            logger.shot(frame, f"module_dialog_stuck_{name}")
-            raise tourney.Abort(f"equip dialog for {name} would not close")
-        # the equip is confirmed by the icon LEAVING the inventory grid
-        frame = capture.grab()
-        if tourney.find(frame, f"modules/{name}.png", 0.95):
-            logger.shot(frame, f"module_equip_swallowed_{name}")
-            raise tourney.Abort(f"module {name} still in the inventory "
-                                f"after Equip - the equip did not take")
-        logger.event("module_equipped_v29", module=name)
-        results[name] = "equipped"
-    logger.event("loadout_modules", plan=results)
-    tourney.return_to_game("modules")
-    return results
+            raise tourney.Abort(f'equip dialog for {name} did not close')
+        frame = module_evidence.settled('v29')
+        if module_evidence.verify_v29(name, frame) is not True:
+            raise tourney.Abort(f'module {name} equip was not proven in its category slot')
+        logger.event('module_equipped_v29', module=name, proof='equipped_header')
+        results[name] = 'equipped'
+    evidence = _verify_plan(plan, 'v29', module_evidence.settled('v29'))
+    logger.event('loadout_modules', plan=results, verified=True)
+    tourney.return_to_game('modules')
+    return ModuleResults(results, evidence)
 
 
 def apply_modules(plan) -> dict:
-    """Equip a module plan: [[name, slot], ...], in the order given.
+    """Apply and verify the entire ordered plan, including restoration plans.
 
-    Order is load-bearing, not cosmetic - equipping one module DISPLACES
-    whatever held its slot, and the Transfer Level prompt moves the levels
-    across. The shard loadout depends on exactly this to free Primordial
-    Collapse before claiming Primary.
+    A structural v29 row selects its choreography independently of user labels.
+    Otherwise only positive legacy header/control evidence permits success or
+    mutation; absent v29 tabs do not themselves prove a legacy UI.
     """
-    # A MISSING TEMPLATE MUST NOT BE SILENT. find() returns None for one,
-    # _scan_grid reads that as "not in the inventory", and _equip_module reads
-    # that as "already equipped" - so a typo or an unharvested module would be
-    # skipped while the log said everything was in place.
-    #
-    # But "already equipped" is often the TRUTH, and it is unharvestable: the
-    # game removes an equipped module from the inventory grid, so a module that
-    # never leaves the build can never have a grid template cut for it. That is
-    # not a reason to refuse the loadout - it is a reason to stop INFERRING the
-    # answer. An equipped module is drawn in the header, so look there and
-    # confirm it positively; only a module that is in neither place is a fault.
-    from vision import detect
-    tourney.open_nav("modules", "modules/buy_module.png", "modules screen")
-    header = capture.grab()
-    # v29 (2026-08-27): the redesigned modules screen carries preset tabs
-    # (as the player named them) - its equip choreography is a
-    # different flow, live-verified the same day.
-    if (tourney.find(header, "presets/modules_farm.png", 0.85)
-            or tourney.find(header, "presets/modules_tourney.png", 0.85)):
-        return _apply_modules_v29(plan)
-    missing = []
-    confirmed = {}
-    for name, _ in plan:
-        try:
-            detect._tpl(f"modules/{name}.png")
-            continue
-        except detect.TemplateMissing:
-            pass
-        hit = tourney._find_in_band(header, f"modules/equipped/{name}.png",
-                                    *HEADER_BAND, EQUIPPED_THRESH)
-        if hit:
-            confirmed[name] = "already (header)"
-        else:
-            missing.append(name)
-    if missing:
-        raise tourney.Abort("no template for module(s), and not equipped: "
-                            + ", ".join(missing))
-    todo = [(n, s) for n, s in plan if n not in confirmed]
-    rels = [f"modules/{n}.png" for n, _ in todo]
-    present = set(tourney._scan_grid(rels, *MODULE_GRID))
-    results = dict(confirmed)
-    # THE BATCH SCAN IS ONLY VALID UNTIL THE FIRST EQUIP. _scan_grid's contract
-    # says "absent does not go stale, because equipping one module cannot make
-    # another appear" - which is false in the one case that matters here.
-    # Equipping DISPLACES the module holding the slot, and a displaced module
-    # lands back in the grid. Live: equipping Multiverse Nexus as primary threw
-    # Primordial Collapse out of the build, but PC had already been recorded
-    # absent-therefore-equipped by the pre-swap scan, so the loadout finished
-    # reporting success with PC not equipped at all.
-    # After any equip, later lookups get a fresh frame instead (present=None).
-    for name, slot in todo:
-        results[name] = tourney._equip_module(name, slot, present)
-        if results[name] == "equipped":
-            present = None
-    logger.event("loadout_modules", plan=results)
-    tourney.return_to_game("modules")
-    return results
+    from interactions import module_evidence
+    plan = [tuple(entry) for entry in plan]
+    version = None
+    try:
+        tourney.open_nav('modules', 'modules/buy_module.png', 'modules screen')
+        header = capture.grab()
+        module_evidence.require_screen(header)
+        version = module_evidence.ui_version(header)
+        if version == 'v29':
+            return _apply_modules_v29(plan)
+        results = {}
+        for name, role in plan:
+            results[name] = tourney._equip_module(name, role)
+        frame = capture.grab()
+        module_evidence.require_screen(frame)
+        evidence = _verify_plan(plan, 'legacy', frame)
+        logger.event('loadout_modules', plan=results, verified=True)
+        tourney.return_to_game('modules')
+        return ModuleResults(results, evidence)
+    except SetupAbort:
+        raise
+    except (tourney.Abort, act.TapRefused, detect.TemplateMissing) as exc:
+        report = unknown_setup(detail='manual_equipment', reason=str(exc))
+        report.update(state='degraded', modules=[
+            dict(module=name, role='category' if version == 'v29' else role,
+                 state='unknown', detail='not_verified', reason=str(exc))
+            for name, role in plan])
+        raise SetupAbort(str(exc), report) from exc
 
 
 def apply(name: str, restore_cards: bool = False) -> dict:
+    """Apply required setup; report verified/degraded/unknown to the caller."""
+    try:
+        return _apply(name, restore_cards)
+    except (tourney.Abort, act.TapRefused, detect.TemplateMissing) as exc:
+        raise SetupAbort(str(exc), setup_failure(name, exc)) from exc
+
+
+def _apply(name: str, restore_cards: bool = False) -> dict:
     """Apply a named loadout. Returns what it did, plus what it displaced.
 
     v29 ordering matters here:
@@ -296,6 +313,9 @@ def apply(name: str, restore_cards: bool = False) -> dict:
     done = {"loadout": name}
     if lo.get("global_preset"):
         done["global_preset"] = presets.select_global(lo["global_preset"])
+        done['setup'] = dict(state='verified', loadout=name,
+                             detail='global_preset_selection', reason=None,
+                             continued_with_partial=False, modules=[])
         logger.event("loadout_applied",
                      **{k: str(v) for k, v in done.items()})
         return done
@@ -342,5 +362,14 @@ def apply(name: str, restore_cards: bool = False) -> dict:
     # re-applies the still-selected Global Preset at entry and wipes it.
     if presets.available():
         done["picker"] = presets.select_global(None)
+    done['setup'] = unknown_setup(name, detail='as_is')
+    if any(lo.get(key) for key in ('cards', 'guardians', 'modules', 'module_preset',
+                                   'guardian_preset', 'workshop_preset', 'bot_preset')):
+        evidence = getattr(done.get('modules'), 'evidence', [])
+        if lo.get('modules') and not evidence:
+            raise tourney.Abort('module application returned no final equipment evidence')
+        done['setup'].update(state='verified', detail='manual_equipment', modules=evidence)
+        if str(done.get('bot_preset', '')).startswith('FAILED'):
+            done['setup'].update(state='degraded', reason='optional_bot_preset_failed')
     logger.event("loadout_applied", **{k: str(v) for k, v in done.items()})
     return done

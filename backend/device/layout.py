@@ -75,31 +75,17 @@ def activate(display):
 
 def prepare_scan():
     """Bind and persist rendering before resolving any calibration paths."""
-    import os
-    import tempfile
-    import time
     import yaml
     import settings
     from dataclasses import asdict
+    from runtime.files import atomic_text
     display = discover()
     activate(display)
     cfg = yaml.safe_load(settings.CONFIG_PATH.read_text(encoding='utf-8'))
     if cfg['instances'][settings.CONFIG['active_instance']].get('rendering') == asdict(display):
         return display
     cfg['instances'][settings.CONFIG['active_instance']]['rendering'] = asdict(display)
-    fd, name = tempfile.mkstemp(dir=settings.CONFIG_PATH.parent, suffix='.tmp')
-    try:
-        with os.fdopen(fd,'w',encoding='utf-8') as stream:
-            yaml.safe_dump(cfg,stream,allow_unicode=True,sort_keys=False)
-        for attempt in range(6):
-            try:
-                os.replace(name,settings.CONFIG_PATH)
-                break
-            except PermissionError:
-                if attempt == 5: raise
-                time.sleep(.05 * 2**attempt)
-    finally:
-        if os.path.exists(name): os.unlink(name)
+    atomic_text(settings.CONFIG_PATH, yaml.safe_dump(cfg,allow_unicode=True,sort_keys=False))
     return display
 
 

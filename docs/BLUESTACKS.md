@@ -3,7 +3,7 @@
 > **Status:** Active
 > **Type:** Knowledge
 > **Created:** 2026-09-05
-> **Updated:** 2026-09-06
+> **Updated:** 2026-10-24
 > **Tags:** bluestacks, emulator, setup
 
 The autopilot was built against MuMu Player. Everything it needs from an
@@ -67,7 +67,7 @@ landscape values for that reason.
 
 ## Connecting the autopilot
 
-1. Start `python frontend/dashboard.py`, open <http://127.0.0.1:8620/>.
+1. Start `python backend/dashboard.py`, open <http://127.0.0.1:8620/>.
 2. On **Setup**, scan. BlueStacks appears with its instance name, the adb
    port from `bluestacks.conf`, and whether it is running (the wizard
    looks for `HD-Player.exe --instance <key>`).

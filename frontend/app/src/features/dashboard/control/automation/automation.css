@@ -1,0 +1,29 @@
+.tp-automation-list {
+  display: grid;
+  gap: var(--tp-space-3);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tp-automation-list p {
+  margin: 0;
+}
+
+/* A state and its Why on one line: the chip, its words, the disclosure. */
+.tp-automation-state-line,
+.tp-automation-state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tp-space-1) var(--tp-space-2);
+  min-width: 0;
+}
+.tp-automation-state-line > details[open] {
+  flex-basis: 100%;
+}
+
+.tp-automation-note {
+  font-size: var(--tp-font-size-12);
+  color: var(--tp-color-text-muted);
+}

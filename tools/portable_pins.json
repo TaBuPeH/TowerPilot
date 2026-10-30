@@ -1,0 +1,325 @@
+{
+  "target": "CPython 3.12, Windows x64",
+  "packages": [
+    {
+      "requirement": "archspec==0.2.6",
+      "source": "https://pypi.org/pypi/archspec/0.2.6/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "archspec-0.2.6-py3-none-any.whl",
+          "sha256": "22463371fe8e9fa92fa144bf320cb445373a99f2ca6a5914c890e0c0b7816f8f",
+          "url": "https://files.pythonhosted.org/packages/15/12/7f9edf5a5a547ce0421e8f120c157b3602eabb12147ffea95eefbd55a94e/archspec-0.2.6-py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "astc-encoder-py==0.1.12",
+      "source": "https://pypi.org/pypi/astc-encoder-py/0.1.12/json",
+      "wheel_count": 39,
+      "artifacts": [
+        {
+          "filename": "astc_encoder_py-0.1.12-cp37-abi3-win_amd64.whl",
+          "sha256": "a45d375fc6b0ff2cd3d772aab3eef19a6b7f3e067306e11fab37820ea9576121",
+          "url": "https://files.pythonhosted.org/packages/81/36/9c36fdcedc314f514298f602661518a1525bcb37d81c1197fc290bce8484/astc_encoder_py-0.1.12-cp37-abi3-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "attrs==26.1.0",
+      "source": "https://pypi.org/pypi/attrs/26.1.0/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "attrs-26.1.0-py3-none-any.whl",
+          "sha256": "c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309",
+          "url": "https://files.pythonhosted.org/packages/64/b4/17d4b0b2a2dc85a6df63d1157e028ed19f90d4cd97c36717afef2bc2f395/attrs-26.1.0-py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "blinker==1.9.0",
+      "source": "https://pypi.org/pypi/blinker/1.9.0/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "blinker-1.9.0-py3-none-any.whl",
+          "sha256": "ba0efaa9080b619ff2f3459d1d500c57bddea4a6b424b60a91141db6fd2f08bc",
+          "url": "https://files.pythonhosted.org/packages/10/cb/f2ad4230dc2eb1a74edf38f1a38b9b52277f75bef262d8908e60d957e13c/blinker-1.9.0-py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "brotli==1.2.0",
+      "source": "https://pypi.org/pypi/brotli/1.2.0/json",
+      "wheel_count": 99,
+      "artifacts": [
+        {
+          "filename": "brotli-1.2.0-cp312-cp312-win_amd64.whl",
+          "sha256": "b35c13ce241abdd44cb8ca70683f20c0c079728a36a996297adb5334adfc1c44",
+          "url": "https://files.pythonhosted.org/packages/1c/4e/bc1dcac9498859d5e353c9b153627a3752868a9d5f05ce8dedd81a2354ab/brotli-1.2.0-cp312-cp312-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "click==8.5.0",
+      "source": "https://pypi.org/pypi/click/8.5.0/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "click-8.5.0-py3-none-any.whl",
+          "sha256": "255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360",
+          "url": "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "etcpak==0.9.15",
+      "source": "https://pypi.org/pypi/etcpak/0.9.15/json",
+      "wheel_count": 38,
+      "artifacts": [
+        {
+          "filename": "etcpak-0.9.15-cp37-abi3-win_amd64.whl",
+          "sha256": "669d902eeb774bc6d4df226183c09c3d03c9fc0f47b4c0c20030fc2b39eec2f2",
+          "url": "https://files.pythonhosted.org/packages/65/d5/6659ba74d4fec78a46dcf4ae6780c6fac34acf041c8e4d63bba709995a4d/etcpak-0.9.15-cp37-abi3-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "Flask==3.1.3",
+      "source": "https://pypi.org/pypi/Flask/3.1.3/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "flask-3.1.3-py3-none-any.whl",
+          "sha256": "f4bcbefc124291925f1a26446da31a5178f9483862233b23c0c96a20701f670c",
+          "url": "https://files.pythonhosted.org/packages/7f/9c/34f6962f9b9e9c71f6e5ed806e0d0ff03c9d1b0b2340088a0cf4bce09b18/flask-3.1.3-py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "fmod_toolkit==0.1.3",
+      "source": "https://pypi.org/pypi/fmod_toolkit/0.1.3/json",
+      "wheel_count": 24,
+      "artifacts": [
+        {
+          "filename": "fmod_toolkit-0.1.3-cp38-abi3.abi3t-win_amd64.whl",
+          "sha256": "a56432c291d0cfbf9e88dcb94e144bc9f244672590871398f8e1891d5d6f3c2e",
+          "url": "https://files.pythonhosted.org/packages/d2/3d/0bc89ec60114514bae299c589ebece9b46361e6f6b64d521f905a029b855/fmod_toolkit-0.1.3-cp38-abi3.abi3t-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "fsspec==2026.7.0",
+      "source": "https://pypi.org/pypi/fsspec/2026.7.0/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "fsspec-2026.7.0-py3-none-any.whl",
+          "sha256": "b57ddbafedfaef7018c1ecab32aa200a9d7ca26b77965f64e48b70061249d279",
+          "url": "https://files.pythonhosted.org/packages/fd/3c/6a2bf344106328fd04963664a60b9bb6496fc25df8e962fcdc1367285fb9/fsspec-2026.7.0-py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "itsdangerous==2.2.0",
+      "source": "https://pypi.org/pypi/itsdangerous/2.2.0/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "itsdangerous-2.2.0-py3-none-any.whl",
+          "sha256": "c6242fc49e35958c8b15141343aa660db5fc54d4f13a1db01a3f5891b98700ef",
+          "url": "https://files.pythonhosted.org/packages/04/96/92447566d16df59b2a776c0fb82dbc4d9e07cd95062562af01e408583fc4/itsdangerous-2.2.0-py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "Jinja2==3.1.6",
+      "source": "https://pypi.org/pypi/Jinja2/3.1.6/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "jinja2-3.1.6-py3-none-any.whl",
+          "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67",
+          "url": "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "lz4==4.4.5",
+      "source": "https://pypi.org/pypi/lz4/4.4.5/json",
+      "wheel_count": 56,
+      "artifacts": [
+        {
+          "filename": "lz4-4.4.5-cp312-cp312-win_amd64.whl",
+          "sha256": "713a777de88a73425cf08eb11f742cd2c98628e79a8673d6a52e3c5f0c116f33",
+          "url": "https://files.pythonhosted.org/packages/a5/0b/a54cd7406995ab097fceb907c7eb13a6ddd49e0b231e448f1a81a50af65c/lz4-4.4.5-cp312-cp312-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "MarkupSafe==3.0.3",
+      "source": "https://pypi.org/pypi/MarkupSafe/3.0.3/json",
+      "wheel_count": 88,
+      "artifacts": [
+        {
+          "filename": "markupsafe-3.0.3-cp312-cp312-win_amd64.whl",
+          "sha256": "26a5784ded40c9e318cfc2bdb30fe164bdb8665ded9cd64d500a34fb42067b1c",
+          "url": "https://files.pythonhosted.org/packages/aa/5b/bec5aa9bbbb2c946ca2733ef9c4ca91c91b6a24580193e891b5f7dbe8e1e/markupsafe-3.0.3-cp312-cp312-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "numpy==2.5.2",
+      "source": "https://pypi.org/pypi/numpy/2.5.2/json",
+      "wheel_count": 65,
+      "artifacts": [
+        {
+          "filename": "numpy-2.5.2-cp312-cp312-win_amd64.whl",
+          "sha256": "28ac63476ec7651484215ee7fa15a1f78b57c14621f01e392afe17b9a1390ce4",
+          "url": "https://files.pythonhosted.org/packages/7f/b9/87fea2769fe1c47c1b5b01d8310772c9d1a85d485de7cf386ef7a3332b02/numpy-2.5.2-cp312-cp312-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "opencv-python==5.0.0.93",
+      "source": "https://pypi.org/pypi/opencv-python/5.0.0.93/json",
+      "wheel_count": 8,
+      "artifacts": [
+        {
+          "filename": "opencv_python-5.0.0.93-cp37-abi3-win_amd64.whl",
+          "sha256": "f90ba04b8f73bc5c3814037699739f0156f597338a98f05956c684e7c3ca10d2",
+          "url": "https://files.pythonhosted.org/packages/21/f0/9fa6e85cb10c8eb36a0222d27e50fe381b86ce49a55446bf39f491727564/opencv_python-5.0.0.93-cp37-abi3-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "pillow==12.3.0",
+      "source": "https://pypi.org/pypi/pillow/12.3.0/json",
+      "wheel_count": 86,
+      "artifacts": [
+        {
+          "filename": "pillow-12.3.0-cp312-cp312-win_amd64.whl",
+          "sha256": "a2b55dd6b2a4c4b7d87ffa56bdb33fdc5fdb9a462173861a7bc097f17d91cb09",
+          "url": "https://files.pythonhosted.org/packages/45/89/da2f7971a317f83d807fdd4065c0af40208e59e692cc43d315a71a0e96d1/pillow-12.3.0-cp312-cp312-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "psutil==7.2.2",
+      "source": "https://pypi.org/pypi/psutil/7.2.2/json",
+      "wheel_count": 20,
+      "artifacts": [
+        {
+          "filename": "psutil-7.2.2-cp37-abi3-win_amd64.whl",
+          "sha256": "eb7e81434c8d223ec4a219b5fc1c47d0417b12be7ea866e24fb5ad6e84b3d988",
+          "url": "https://files.pythonhosted.org/packages/b4/90/e2159492b5426be0c1fef7acba807a03511f97c5f86b3caeda6ad92351a7/psutil-7.2.2-cp37-abi3-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "pyfmodex==0.7.2",
+      "source": "https://pypi.org/pypi/pyfmodex/0.7.2/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "pyfmodex-0.7.2-py3-none-any.whl",
+          "sha256": "1c42112b788e80ee7b4b57ae25bbbc0a98eb1e32a8e7c9e1246698cdf72efa9d",
+          "url": "https://files.pythonhosted.org/packages/2c/7b/f7fdcdf6a6e8fd951c41e91baae8c1cecfffc2ed3199157afd6ab5728716/pyfmodex-0.7.2-py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "pystray==0.19.5",
+      "source": "https://pypi.org/pypi/pystray/0.19.5/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "pystray-0.19.5-py2.py3-none-any.whl",
+          "sha256": "a0c2229d02cf87207297c22d86ffc57c86c227517b038c0d3c59df79295ac617",
+          "url": "https://files.pythonhosted.org/packages/5c/64/927a4b9024196a4799eba0180e0ca31568426f258a4a5c90f87a97f51d28/pystray-0.19.5-py2.py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "PyYAML==6.0.3",
+      "source": "https://pypi.org/pypi/PyYAML/6.0.3/json",
+      "wheel_count": 72,
+      "artifacts": [
+        {
+          "filename": "pyyaml-6.0.3-cp312-cp312-win_amd64.whl",
+          "sha256": "5fcd34e47f6e0b794d17de1b4ff496c00986e1c83f7ab2fb8fcfe9616ff7477b",
+          "url": "https://files.pythonhosted.org/packages/86/bf/899e81e4cce32febab4fb42bb97dcdf66bc135272882d1987881a4b519e9/pyyaml-6.0.3-cp312-cp312-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "six==1.17.0",
+      "source": "https://pypi.org/pypi/six/1.17.0/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "six-1.17.0-py2.py3-none-any.whl",
+          "sha256": "4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
+          "url": "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "texture2ddecoder==1.0.6",
+      "source": "https://pypi.org/pypi/texture2ddecoder/1.0.6/json",
+      "wheel_count": 91,
+      "artifacts": [
+        {
+          "filename": "texture2ddecoder-1.0.6-cp311-abi3-win_amd64.whl",
+          "sha256": "1bad8209d9dfbfc7daf13ea2e545236ea2bbc1e423b2992b6e7563909975a47b",
+          "url": "https://files.pythonhosted.org/packages/ac/f8/cbbefcb1b3435aea8ef1b3d65622c933f79ea7c70af4d4571f667277cc86/texture2ddecoder-1.0.6-cp311-abi3-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "tpk_ar==0.2.4",
+      "source": "https://pypi.org/pypi/tpk_ar/0.2.4/json",
+      "wheel_count": 0,
+      "artifacts": [
+        {
+          "filename": "tpk_ar-0.2.4.tar.gz",
+          "sha256": "d64897e5a0bcddd58e8a7d4dd922f372da984a0f98bc3b460ec869aab906ee78",
+          "url": "https://files.pythonhosted.org/packages/fa/02/654a73cbd323970b5c1551881968dbadec1d697984fff5fdd33b66764dfc/tpk_ar-0.2.4.tar.gz"
+        }
+      ]
+    },
+    {
+      "requirement": "UnityPy==1.25.3",
+      "source": "https://pypi.org/pypi/UnityPy/1.25.3/json",
+      "wheel_count": 71,
+      "artifacts": [
+        {
+          "filename": "unitypy-1.25.3-cp312-cp312-win_amd64.whl",
+          "sha256": "e48098837c067833083e7be0fc96f7af39ac68a589e328b4ead656e6350d9ce1",
+          "url": "https://files.pythonhosted.org/packages/70/b2/d35920055001e7603a36bab5e25ff58bd2a31cab9b05ec626d780f22d16f/unitypy-1.25.3-cp312-cp312-win_amd64.whl"
+        }
+      ]
+    },
+    {
+      "requirement": "Werkzeug==3.1.8",
+      "source": "https://pypi.org/pypi/Werkzeug/3.1.8/json",
+      "wheel_count": 1,
+      "artifacts": [
+        {
+          "filename": "werkzeug-3.1.8-py3-none-any.whl",
+          "sha256": "63a77fb8892bf28ebc3178683445222aa500e48ebad5ec77b0ad80f8726b1f50",
+          "url": "https://files.pythonhosted.org/packages/93/8c/2e650f2afeb7ee576912636c23ddb621c91ac6a98e66dc8d29c3c69446e1/werkzeug-3.1.8-py3-none-any.whl"
+        }
+      ]
+    }
+  ],
+  "platform_tools": {
+    "version": "37.0.1",
+    "url": "https://dl.google.com/android/repository/platform-tools_r37.0.1-win.zip",
+    "sha256": "45f4d63113e895ebde0c90f194099a4676b6ac653bd28d54314a9e022bbc1a99",
+    "size": 8044989,
+    "repository": "https://dl.google.com/android/repository/repository2-3.xml",
+    "repository_sha1": "e03e78b1d80b396f1c3358e31251cb31740e1110"
+  }
+}

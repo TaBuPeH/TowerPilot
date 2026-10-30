@@ -19,8 +19,10 @@ template until first sighted. An UNKNOWN row is never auto-restarted - it
 could be the jackpot - it is logged with a crop (sm_unknown_uw) and the
 runner waits for logs/<instance>/sm_decision to contain 'proceed' or
 'restart' (the supervising agent reads the crop, saves the labelled
-template for next time, writes the decision). Timeout holds the run: a
-Tier 1 farm run in progress costs nothing.
+template for next time, writes the decision). Timeout restarts only a
+continuously observed run this process started. Foreign runs and aftermath
+are refused; --adopt-ride observes a live normal battle and leaves it active
+when the target is reached, without surrender or another ride.
 
 The claim flow on the event screen is deliberately NOT here yet.
 """
@@ -115,10 +117,10 @@ def _bind_preset(instance: str, name: str | None) -> None:
 
     No --preset at all binds the legacy preset, exactly as before. A `bp_`
     preset of another kind is REFUSED before the first capture and long
-    before the first tap: `flows/quest_sm.py --preset bp_tourney_main` would
-    otherwise reach "adopt running battle via retry" and SURRENDER A
-    TOURNAMENT. bp_ presets exist only after select_instance materializes
-    them, hence bind-then-check-then-exit.
+    before the first tap. Blueprint selection never grants authority over
+    a run; a separate process-local guard requires an observed own start.
+    bp_ presets exist only after select_instance materializes them, hence
+    bind-then-check-then-exit.
     """
     from settings import CONFIG
     if name is None:
@@ -141,7 +143,7 @@ def _decision_path() -> str:
                         "sm_decision")
 
 
-def uw_setup() -> None:
+def uw_setup(*, guard=None) -> None:
     """Spotlight, Black Hole and Golden Tower ON; Chain Lightning, Death
     Wave and Poison Swamp OFF (user, 2026-08-16).
 
@@ -151,7 +153,8 @@ def uw_setup() -> None:
     from interactions import shopper
     wanted = _preset().get("uw_setup") or UW_SETUP
     for uw, on in wanted.items():
-        shopper.uw_toggle(uw, want_on=bool(on))
+        shopper.uw_toggle(uw, want_on=bool(on),
+                          **({"guard": guard} if guard is not None else {}))
 
 
 def _grant_templates() -> list[str]:
@@ -159,7 +162,7 @@ def _grant_templates() -> list[str]:
             if settings.template_path(f"uw/{g}.png").exists()]
 
 
-def scan_grant(targets: tuple[str, ...] = ("smart_missiles",)
+def scan_grant(targets: tuple[str, ...] = ("smart_missiles",), *, guard=None
                ) -> tuple[str, object]:
     """One UW-panel sweep. Returns (verdict, extra):
     ('none', None) | ('smart_missiles', None) | ('wrong', name) |
@@ -174,15 +177,16 @@ def scan_grant(targets: tuple[str, ...] = ("smart_missiles",)
     from runtime import logger
     import numpy as np
     from interactions import shopper
-    if not shopper._tap_tab("uw"):
+    opts = {"guard": guard} if guard is not None else {}
+    if not shopper._tap_tab("uw", **opts):
         return "none", None
-    shopper._scroll_to_top()
+    shopper._scroll_to_top(**opts)
     frames = []
     for _ in range(3):
-        frames.append(capture.grab())
-        shopper._swipe_panel_down()
+        frames.append(shopper._quest_frame(guard))
+        shopper._swipe_panel_down(**opts)
         time.sleep(0.5)
-    frames.append(capture.grab())
+    frames.append(shopper._quest_frame(guard))
     # RUN-TIME UW-label subroutine (2026-09-07): capture any still-unknown weapon
     # label from the panel we already have open, so the farm IDENTIFIES a granted
     # UW itself instead of waiting for the sm_unknown_uw agent, and every game
@@ -237,12 +241,13 @@ def scan_grant(targets: tuple[str, ...] = ("smart_missiles",)
     return "none", None
 
 
-def await_decision() -> str:
+def await_decision(run) -> str:
     """Block until the supervising agent labels the unknown row."""
     from runtime import logger
     path = _decision_path()
     deadline = time.monotonic() + DECISION_TIMEOUT_SEC
     while time.monotonic() < deadline:
+        run.fresh()
         try:
             with open(path, encoding="utf-8") as fh:
                 d = fh.read().strip()
@@ -252,7 +257,7 @@ def await_decision() -> str:
                 return d
         except FileNotFoundError:
             pass
-        time.sleep(3)
+        run.pause(3)
     # RESTART on timeout (changed 2026-08-16 after the first live run): an
     # unanswered unknown used to keep rolling, and a granted Inner Land
     # Mines run then farmed nothing for over an hour. A restart risks
@@ -262,30 +267,34 @@ def await_decision() -> str:
     return "restart"
 
 
-def ride_to(target: int) -> None:
+def ride_to(target: int, run) -> None:
     """Sprint cancelled; just wait for the wave counter to reach target."""
     from device import capture
     from runtime import logger
     from flows import shard
     from vision import wave_reader
-    shard.cancel_sprint()
+    shard.cancel_sprint(guard=run.guard)
     last_log = 0
     # Gems are claimed through the whole ride (user, 2026-08-28: circling
     # gems went unclaimed through whole quest batches). The old 10s sleep
     # would lose the orbiting gem between polls - 1s keeps GemWatch's
     # fresh-detection rule workable and costs one template match a second.
-    gems = shard.GemWatch()
+    from runtime.action_session import ActionSession
+    gems = shard.GemWatch(guard=run.guard, session=ActionSession.for_operation('quest_sm'))
     while True:
-        frame = capture.grab()
+        frame = run.check(capture.grab())
         w = wave_reader.read_wave(frame)
-        gems.poll(frame)
+        after = gems.poll(frame)
+        run.observe(after)
+        if after is not frame:
+            continue                    # target must be read from a current battle frame
         if w is not None and w >= target:
             logger.event("sm_ride", wave=w, stage="target reached")
             return
         if w is not None and w - last_log >= 500:
             logger.event("sm_ride", wave=w)
             last_log = w
-        time.sleep(1)
+        run.pause(1)
 
 
 def _cli(argv=None):
@@ -298,7 +307,8 @@ def _cli(argv=None):
                          "(default: the blueprint's `rides`/`count`, else 1)")
     ap.add_argument("--adopt-ride", action="store_true",
                     help="the live battle already HAS Smart Missiles granted:"
-                         " skip setup and lottery, ride it out as ride 1")
+                         " skip setup and lottery, observe to the target and"
+                         " leave the battle active")
     ap.add_argument("--preset", type=_bp_arg, default=None,
                     help="a compiled blueprint preset (bp_<name>, kind "
                          "uw_grant_quest). Any other value is an argparse "
@@ -308,6 +318,8 @@ def _cli(argv=None):
 
 def main() -> None:
     a = _cli()
+    from runtime.device_lease import prepare_instance
+    prepare_instance(a.instance)
     _bind_preset(a.instance, a.preset)
     from player import readiness
     readiness.require(settings.ROOT, settings.CONFIG, _preset())
@@ -325,35 +337,26 @@ def main() -> None:
     lo_name = _preset().get("loadout") or "coin_farm"
     tier = int(_preset().get("tier") or 1)
     from device import capture
-    from vision import detect
-    from device import act
     from runtime import logger
     from interactions import loadout
     from flows import shard
-    from interactions import tourney
     from vision import wave_reader
     logger.event("sm_quest", stage="begin", rides=rides, targets=targets,
                  reroll_at_wave=reroll_at, ride_to_wave=ride_to_wave)
+    from flows._quest_run import QuestRun
+    run = QuestRun()
     frame = capture.grab()
-    dead, retry = detect.death_screen(frame)
     if a.adopt_ride:
-        # NEVER route through the adopt-via-retry paths here: they surrender
-        # the battle, and this battle is the jackpot.
-        w = wave_reader.read_wave(frame)
-        if w is None:
-            raise tourney.Abort("--adopt-ride but no readable wave on screen")
+        # Adoption permits observation, never surrender or a successor cycle.
+        run.adopt(frame)
+        w = run.wave
         logger.event("sm_quest", stage="adopt live SM ride", wave=w)
-    elif dead and retry and wave_reader.read_wave(frame) is None:
-        logger.event("sm_quest", stage="adopt stats dialog via retry")
-        act.tap(*retry, reason="RETRY", instant=True)
-    elif wave_reader.read_wave(frame) is not None:
-        logger.event("sm_quest", stage="adopt running battle via retry")
-        shard.abandon_run()
     else:
-        tourney.ensure_home()
-        loadout.apply(lo_name)              # blueprint's loadout, else the
-        shard.set_tier(tier)                # standard farming one at tier 1
-        shard.start_battle()
+        run.home(frame)
+        loadout.apply(lo_name)
+        run.home()
+        shard.set_tier(tier)
+        run.start()
     rides_done = 0
     first = not a.adopt_ride    # adopting means toggles are already set
     adopting = a.adopt_ride
@@ -362,24 +365,24 @@ def main() -> None:
             adopting = False
             granted = True
         else:
-            shard.wait_for_wave(1)
-            shard.ensure_max_speed()
+            shard.wait_for_wave(1, guard=run.guard, recover_home=False)
+            shard.ensure_max_speed(guard=run.guard)
             if first:
-                uw_setup()
+                uw_setup(guard=run.guard)
                 first = False
             granted = False
         while not granted:
-            time.sleep(SCAN_EVERY_SEC)
-            w = wave_reader.read_wave(capture.grab())
+            run.pause(SCAN_EVERY_SEC)
+            w = wave_reader.read_wave(run.fresh())
             if w is not None and w >= reroll_at:
                 logger.event("sm_reroll", wave=w)
-                shard.abandon_run()
-                shard.wait_for_wave(1)
-                shard.ensure_max_speed()
+                run.abandon()
+                shard.ensure_max_speed(guard=run.guard)
                 continue
-            verdict, extra = scan_grant(targets)
+            verdict, extra = scan_grant(targets, guard=run.guard)
+            run.fresh()
             if verdict == "unknown":
-                verdict = await_decision()
+                verdict = await_decision(run)
                 if verdict == "proceed":
                     verdict = "smart_missiles"
             if verdict == "smart_missiles":
@@ -387,15 +390,17 @@ def main() -> None:
                 granted = True
             elif verdict in ("wrong", "restart"):
                 logger.event("sm_grant", weapon=str(extra), action="restart")
-                shard.abandon_run()
-                shard.wait_for_wave(1)
-                shard.ensure_max_speed()
+                run.abandon()
+                shard.ensure_max_speed(guard=run.guard)
     # jackpot: Smart Missiles are ON by default when granted; Spotlight is
     # already ON; everything else already OFF. Cancel the sprint and ride.
-        ride_to(ride_to_wave)
+        ride_to(ride_to_wave, run)
+        if a.adopt_ride:
+            logger.event("sm_quest", stage="adopted target reached; leaving run active")
+            return
         rides_done += 1
         last = rides_done >= rides
-        shard.abandon_run(to_home=last)
+        run.abandon(to_home=last)
         logger.event("sm_quest", stage="ride done", rides_done=rides_done)
     logger.event("sm_quest", stage="done", rides=rides_done)
 

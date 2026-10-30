@@ -1,8 +1,7 @@
 # Profile schema (v1) - the contract for P2 builders
-
 > **Status:** Active
 > **Type:** Knowledge
-> **Updated:** 2026-09-06
+> **Updated:** 2026-10-24
 > **Tags:** profiles, schema, validator, presets
 
 One YAML file per player: `profiles/<name>.yaml`. Four top-level sections.
@@ -296,6 +295,21 @@ not at all. The refusal names the plan block rather than merely saying no.
 A tournament blueprint is one entry, and a tournament BLOCK is one per day
 for the same reason (the ticket auto-starts the run; 10 -> 20 -> 30 gems).
 
+### A run's `kind` is fixed once the run is added
+`kind` picks the runner and decides which fields the run may carry; the plan (a block
+must match its run's kind) and the readiness checks key on it too. The editor route
+(`POST /api/profile-patch`) therefore refuses a patch that changes the `kind` of a run
+that exists both before and after it - by the `kind` field, by replacing the whole run,
+or by replacing the whole `blueprints` mapping - with
+`400 {ok: false, code: "kind_change_refused", error, changes: [{blueprint, from_kind,
+to_kind}]}` and writes nothing. It is judged after the revision and context checks and
+after the validator: a change the validator already refuses (an unknown or deleted
+kind, a field the new kind may not carry, `loadout: as_is` on a non-coin run) keeps the
+validator's own message. Adding a run, removing one, and writing the kind a run already
+has are not changes. To change a run's type, remove the run and add a new one (a plan
+block that names the run blocks the removal until the block is changed). A dissonance
+run is not another kind: it is a coin run with `dissonant_tab`.
+
 ## policies
 ```yaml
 policies:
@@ -408,19 +422,25 @@ cooldown floor; default 5.0). The composable half, all Tier B:
         do:   {burst: {fire: demon_mode}}      # no retaps: Tier A's alone
         repeat: true
         refire_sec: 20
-      - when: {death_screen: true}
-        do:   {stop_after_run: true}          # the only death-phase action
 ```
 
 Triggers: `bar` (wall|hp; below; falling_samples; deadband),
 `wall_collapse` (from_above), `fleet_mark` (after_waves, window_waves),
 `wave_at_least` (N), `wave_between` ([lo, hi]), `second_wind` (state:
-open|closed|after_immunity|any; min_procs), `death_screen`.
+open|closed|after_immunity|any; min_procs).
 Actions: `burst` (fixed 3-tap sequence: sprint -> Yes -> DM; fire,
 cancel_sprint, retaps, require_match, require_ready), `fire`
 (button, require_ready, throttle_sec, refire_guard_sec), `toggle_uw`
 (weapon, want_on), `cancel_sprint`, `switch_cards` (preset - **refused, see
-below**), `surrender_retry`, `stop_after_run`.
+below**), `surrender_retry`.
+
+The legacy `death_screen` trigger and `stop_after_run` action are retired.
+Saved policies containing either remain loadable, but those rules are
+excluded from active compilation and copied into `retired_rules` on the
+compiled preset when present. Remaining rules retain their original source
+indices in diagnostics and stable IDs. Already compiled death-handler
+rules are refused by the runtime. This retirement does not remove explicit
+live run boundary controls or scheduler handoffs.
 
 ### `switch_cards` is refused in EVERY phase (pending a verified route)
 There is no verified route from a live battle to the cards screen.
@@ -436,8 +456,8 @@ The runtime retires the action the first time it SEES the rule
 (`orchestrator._rule_admits_action`), in every phase. So the compiler refuses it
 too, at validation AND at compile: a rule the runtime always retires is
 the accepted-but-ignored shape this schema exists to abolish - it renders
-in the dashboard, reads as configured, and does nothing. The death-phase
-refusal below is the same obstacle, one screen later, and is unchanged.
+in the dashboard, reads as configured, and does nothing. Precompiled
+death-phase rules remain refused without screen input.
 
 The word STAYS IN THE VOCABULARY, marked `PENDING VERIFIED ROUTE` in
 `vocab()`, so the editor shows the truth rather than hiding the feature.
@@ -505,21 +525,6 @@ rule the compiler keeps is a rule that runs:
   * `falling_samples` / `deadband` on a Tier A `bar`+`fire: nuke` rule -
     the watch hoists those from the bar+`burst` rule, and the threshold
     nuke reads a level only.
-  * **every action but `stop_after_run` under `death_screen`.** The stats
-    dialog is not a battlefield and it is not Home either, and the runtime
-    refuses all five loudly, so accepting one here would compile a rule
-    that validates, lists in the dashboard, and is retired with
-    `rule_unsupported` the first time the player dies. The message names
-    the obstacle, per action:
-      * `fire` / `burst` / `cancel_sprint` - no ability row, no sprint, no
-        wall, so the tap lands at a fixed coordinate inside a menu.
-      * `switch_cards` - `loadout.apply_cards` navigates FROM HOME and the
-        stats dialog has no verified route there. Between-run card swaps
-        belong to the chores path (P5/P6), not to a death rule.
-      * `surrender_retry` - `shard.abandon_run` surrenders a LIVE battle;
-        on the stats dialog the run is already over, so it is null.
-    `stop_after_run` survives because it writes the run flag and touches
-    no screen at all.
   * `surrender_retry` reachable from a **tournament** blueprint - a
     tournament run is never cancelled (the entry is paid for and the next
     costs more). Third lock, after tourney.end_round and shard.abandon_run.
@@ -530,10 +535,7 @@ rule the compiler keeps is a rule that runs:
     per-rule bookkeeping (it re-decides from the hoisted scalars every
     sample and rate-limits through `refire_guard_sec` / the fleet
     `throttle_sec`), so both are main-loop-only fields.
-  * A flag TRIGGER that is not exactly `true` (`{death_screen: false}`
-    reads as "switched off" and fires on every death - the trigger is
-    recognised by its name).
-  * A flag action that is not exactly `true` (`{stop_after_run: false}`
+  * A flag action that is not exactly `true` (`{cancel_sprint: false}`
     reads as "does nothing" but fires under presence-dispatch).
 
 ### The compiled Tier B rule - the interpreter's contract
@@ -542,10 +544,10 @@ rule the compiler keeps is a rule that runs:
 ```python
 {"id": "high_tier_wall#3",                  # str, stable; see below
  "when": {"kind": "wave_at_least", ...},    # trigger spec, always a mapping
- "do":   {"kind": "stop_after_run", ...},   # action spec, always a mapping
+ "do":   {"kind": "fire", "button": "demon_mode", "require_ready": True},
  "repeat": False,                           # bool, never absent
  "refire_sec": 5.0,                         # float, never absent, > 0
- "latency": "main_loop",                    # or "death_handler"
+ "latency": "main_loop",                    # active Tier B rules run here
  "requires": {"abilities": ["demon_mode"],  # list[str], may be empty
               "wall": False,                # bool
               "card_presets": [],           # list[str], may be empty
@@ -567,7 +569,7 @@ them:
     `now < inf` is True forever (the rule never fires again), and neither
     raises anywhere.
   * **Dispatch on `kind`, never on key presence.** Presence-dispatch is
-    what would make `{stop_after_run: false}` stop a run.
+    what would make `{cancel_sprint: false}` cancel the sprint.
   * **Numbers are numbers.** Nothing needs parsing, no value is a string
     except `kind`, `bar`, `button`, `preset`, `weapon`, `state` and `id`.
   * **`id` is stable**: `<rescue policy name>#<index of the rule within
@@ -577,12 +579,9 @@ them:
   * **`repeat: false` means at most once per RUN** - state resets with the
     run, not with the process. `refire_sec` is the floor between two
     firings of the SAME rule and applies to repeat and retry alike.
-  * **`latency: "death_handler"`** rules (every `death_screen` rule, and
-    only those) are NOT evaluated by the observe loop - that loop has
-    exited by the time the screen exists. They belong to the death path,
-    and their `do.kind` is always `stop_after_run`: the compiler emits no
-    other action at this latency, so the death phase needs exactly one
-    branch and no screen-touching code.
+  * **`latency: "main_loop"`** is emitted for every active Tier B rule.
+    Legacy `death_handler` rules are never executed: the death path
+    reports them as unsupported and sends no screen input.
 
 Trigger specs (`when`):
 
@@ -594,7 +593,6 @@ Trigger specs (`when`):
 | `wall_collapse` | `from_above` (0..1) - the PREVIOUS sample was above this |
 | `fleet_mark` | `after_waves` (int, default 1), `window_waves` (int, default 60) |
 | `second_wind` | `state` ("open"\|"closed"\|"after_immunity"\|"any"), `min_procs` (int, default 1) |
-| `death_screen` | none |
 
 A rule that states only `below` is a LEVEL question ("hp is under 30%"),
 so it compiles to `falling_samples: 0, deadband: 0.0` - no fall required,
@@ -612,7 +610,7 @@ Action specs (`do`):
 | `burst` | `button`, `cancel_sprint` (bool, default true), `require_ready` (bool, default false) |
 | `switch_cards` | `preset` (str) |
 | `toggle_uw` | `weapon` (UW name), `on` (bool, default true) |
-| `cancel_sprint`, `surrender_retry`, `stop_after_run` | none |
+| `cancel_sprint`, `surrender_retry` | none |
 
 `fire`'s `throttle_sec` / `refire_guard_sec` are NOT emitted in the action
 spec: at Tier B they ARE the rule's cooldown, so they compile into
@@ -860,7 +858,7 @@ name backed by the wrong preset - and takes `--minutes` for a full
 1440x7 walk (the 15-minute default grid cannot see a 07:59 drift) and
 `--fill block=HH:MM` to put the counter switchover on the clock as well. An
 empty diff on `profiles/default.yaml` is P5's core verification, and
-`tests/golden_default_plan.json` freezes that plan.
+`tests/fixtures/golden_default_plan.json` freezes that plan.
 
 ## Compilation contract (profile.py)
 `compile_preset(profile, blueprint_name) -> dict` produces a FLAT preset
@@ -926,7 +924,6 @@ show them.
 | `shop_stats` | enum | stats the sweep can FIND on screen, from the template library |
 | `rule_triggers` | object | rescue-rule `when` vocabulary, per trigger, with its params |
 | `rule_actions` | object | rescue-rule `do` vocabulary, per action, with its params |
-| `death_screen_actions` | enum | the only actions a `death_screen` rule may take |
 | `in_run_action_kinds` | enum | tournament `in_run_actions` vocabulary (v1) |
 | `weekdays` | enum | `plan.week` keys, in `datetime.weekday()` order |
 | `block_fields` | object | one plan block |
@@ -970,7 +967,7 @@ starter's 1 is not knowledge, and the tier arrows stop at the real ceiling. `in_
 is written as a LIST of its shape, which its doc says); `policies` nests
 `uw`/`rescue`/`gather`.
 
-`tests/test_playerprofile.py` cross-checks this section against a
+`tests/unit/test_playerprofile.py` cross-checks this section against a
 validation probe per kind: every listed field is fed a legal value and the
 profile must validate clean, and every field the kind does NOT list is fed
 one and the profile must be refused by name.

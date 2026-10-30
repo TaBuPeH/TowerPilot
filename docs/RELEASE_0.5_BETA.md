@@ -71,7 +71,7 @@ Choose your own farming tier and equipment after mapping.
   `.claude` skills, agents and hooks, `.codex/config.toml` and the release
   workflow. No captured image ever ships.
 
-## Beta limits
+## Environment limits
 
 - The portable build is an extracted folder, not an installer. Keep all files
   together in a writable location. Local account data lives in that folder.

@@ -13,6 +13,7 @@ flow is kept short and every tap is preceded by a screen-state check.
 import random
 import time
 import traceback
+from functools import wraps
 
 import cv2
 import numpy as np
@@ -35,13 +36,261 @@ GUILD_SLOTS = [141, 374, 693, 1014]   # fixed milestone box centers (100..750)
 MAX_CLAIMS = 8                  # standing-quest cap (2 new / 8h, max 8)
 
 
-def bail(frame, reason: str):
-    """Recovery tap when a flow's expected screen never appeared. Only taps
-    the return strip when we are actually OFF the battle screen - in battle
-    that strip is the shop tab area and must not be touched."""
-    from vision import wave_reader
-    if wave_reader.read_wave(frame) is None:
-        act.tap(*RETURN_STRIP, reason=f"bail_{reason}", instant=True)
+class FlowInterrupted(RuntimeError):
+    """The current screen no longer belongs to this reward navigation."""
+
+
+def tabbed_surface(frame, menu, names):
+    """Use the same selected-tab evidence as bootstrap, independent of scroll."""
+    from player.bootstrap_layout import manifest
+    from player.bootstrap import selected_tab_index
+    tabs = manifest()['screens'][menu]['selected_tab']['rects']
+    index = selected_tab_index(frame, tabs)
+    if index is None:
+        return 'unknown'
+    return names[index]
+
+
+def guild_surface(frame):
+    return tabbed_surface(frame, 'guild', ('guild', 'guild_guardian', 'guild_store'))
+
+
+def event_surface(frame):
+    return tabbed_surface(frame, 'events', ('events', 'event_shop', 'event_bots'))
+
+
+def reward_screen(frame):
+    """Name reward surfaces using their own markers, including fresh installs."""
+    from vision import screen
+    from interactions import event_rewards
+    name = screen.identify(frame).name
+    # A recognized foreign surface always outranks a partial parent marker.
+    if name not in {'unknown', 'battle', 'guild', 'reward_listing'}:
+        return name
+    if name == 'reward_listing':
+        return 'reward'
+    for rel, kind in (('icons/daily_missions.png', 'quests'),
+                      ('icons/premium_store.png', 'premium'),
+                      ('icons/guild_header.png', 'guild')):
+        try:
+            if detect._match(frame, rel, .75)[0]:
+                return guild_surface(frame) if kind == 'guild' else kind
+        except detect.TemplateMissing:
+            continue
+    try:
+        if event_rewards.screen(frame):
+            return event_surface(frame)
+    except detect.TemplateMissing:
+        pass
+    if name == 'battle':
+        return 'battle_menu' if detect.side_menu_open(frame) else 'battle'
+    if find_skip(frame) or event_rewards.reward_dismiss(frame):
+        return 'reward'
+    if name == 'guild':
+        return guild_surface(frame)
+    return name
+
+
+def return_target(frame):
+    """Fresh, unambiguous local exit image; absent calibration means hands off."""
+    from player.clicker import locate
+    from player.bootstrap_layout import manifest
+    try:
+        template = detect._tpl('buttons/return_to_game.png')
+    except detect.TemplateMissing:
+        return None
+    spec = next(t for t in manifest()['screens']['guild']['targets']
+                if t['rel'] == 'buttons/return_to_game.png')
+    hit = locate(frame, template, spec['rect'])
+    if not hit['ok']:
+        return None
+    x, y, w, h = hit['rect']
+    return x + w // 2, y + h // 2
+
+
+class FlowGuard:
+    """Revocable screen ownership, created only by our observed entry action.
+
+    Every receive and input checks the expected surface. An action permits a
+    bounded animation gap; a recognized foreign screen revokes immediately.
+    Neither an unreadable wave nor the existence of a generator is authority.
+    """
+    TRANSITION_FRAMES = 12
+    GUILD_SURFACES = {'guild', 'guild_guardian', 'guild_store'}
+    ENTRY_SURFACES = {'guild_entry': GUILD_SURFACES,
+                      'events_entry': {'events', 'event_shop', 'event_bots'}}
+
+    def __init__(self):
+        self.allowed = {'battle_menu'}
+        self.owned = False
+        self.revoked = False
+        self.animation_frames = 0
+        self.frame = None
+        self.destination = None
+        self.source = None
+        self.reward_parent = None
+        self.reward_seen = False
+
+    def revoke(self):
+        self.revoked = True
+        self.owned = False
+        self.frame = None
+
+    def observe(self, frame):
+        if self.revoked:
+            return False
+        name = reward_screen(frame)
+        if not self.animation_frames and self.destination is not None:
+            self.allowed = set(self.ENTRY_SURFACES.get(self.destination, {self.destination}))
+            if self.destination == 'battle':
+                self.allowed.add('battle_menu')
+        if name in self.allowed:
+            if (self.destination in self.ENTRY_SURFACES
+                    and name in self.ENTRY_SURFACES[self.destination]):
+                self.allowed = {name}
+                self.destination = name
+            if name == self.destination and self.source != self.destination:
+                self.allowed.discard(self.source)
+            if name == 'reward':
+                self.reward_seen = True
+            elif name == self.reward_parent and self.reward_seen:
+                self.allowed.discard('reward')
+                self.reward_seen = False
+            self.frame = frame
+            if self.animation_frames:
+                self.animation_frames -= 1
+            return True
+        if name == 'unknown' and self.animation_frames:
+            self.animation_frames -= 1
+            self.frame = None
+            return False
+        self.revoke()
+        raise FlowInterrupted(f'reward navigation interrupted by {name}')
+
+    def wait(self):
+        while True:
+            frame = yield
+            if self.observe(frame):
+                return frame
+
+    def require(self, frame, expected):
+        if (self.revoked or frame is not self.frame
+                or reward_screen(frame) != expected
+                or expected not in self.allowed
+                or (expected != 'battle_menu' and not self.owned)):
+            self.revoke()
+            raise FlowInterrupted(f'no current owned {expected} screen')
+
+    def transition(self, source, destination, rewards=False):
+        self.owned = True
+        self.source, self.destination = source, destination
+        self.allowed = set(self.ENTRY_SURFACES.get(destination, {destination}))
+        if destination == 'battle':
+            self.allowed.add('battle_menu')
+        # While our action animates its parent may remain visible. A battle
+        # menu is not retained after entry has actually reached its menu.
+        self.allowed.add(source)
+        if rewards:
+            self.allowed.add('reward')
+            self.reward_parent = destination
+        self.reward_seen = source == 'reward'
+        self.animation_frames = self.TRANSITION_FRAMES
+
+    def tap(self, frame, x, y, reason, *, screen, destination=None, rewards=False):
+        self.require(frame, screen)
+        try:
+            if screen in self.GUILD_SURFACES:
+                event = _guild_tap(x, y, reason)
+            else:
+                event = _tap(x, y, reason)
+            if not isinstance(event, dict) or event.get('dry_run', True):
+                raise FlowInterrupted('reward tap was not dispatched')
+        except Exception:
+            self.revoke()
+            raise
+        self.transition(screen, destination or screen, rewards)
+
+    def swipe(self, frame, *args, screen, reason):
+        self.require(frame, screen)
+        try:
+            event = act.swipe(*args, reason=reason)
+            if not isinstance(event, dict) or event.get('dry_run', True):
+                raise FlowInterrupted('reward swipe was not dispatched')
+        except Exception:
+            self.revoke()
+            raise
+        self.transition(screen, screen)
+
+    def dismiss(self, frame, parent, reason='reward_skip'):
+        self.require(frame, 'reward')
+        from interactions.event_rewards import reward_dismiss
+        point = find_skip(frame) or reward_dismiss(frame)
+        if point is None:
+            self.revoke()
+            raise FlowInterrupted('owned reward has no verified dismiss target')
+        self.tap(frame, *point, reason, screen='reward', destination=parent,
+                 rewards=True)
+
+    def exit(self, frame):
+        name = reward_screen(frame)
+        self.require(frame, name)
+        point = return_target(frame)
+        if point is None:
+            self.revoke()
+            raise FlowInterrupted('owned menu has no verified return target')
+        self.tap(frame, *point, 'return_to_game', screen=name, destination='battle')
+
+    def recover(self, frame):
+        # observe() runs once per captured frame. Recovery can only consume
+        # the frame it authorized, never reuse an older successful observation.
+        if not self.owned or self.revoked or frame is not self.frame:
+            return False
+        name = reward_screen(frame)
+        if name in {'battle', 'battle_menu'}:
+            self.revoke()
+            return False
+        if name == 'reward':
+            if self.reward_parent is None:
+                self.revoke()
+                return False
+            self.dismiss(frame, self.reward_parent)
+        else:
+            self.exit(frame)
+        return True
+
+
+class RewardFlow:
+    def __init__(self, flow, args, kwargs):
+        self.guard = FlowGuard()
+        self._gen = flow(self.guard, *args, **kwargs)
+        self.__name__ = flow.__name__
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self._gen)
+
+    def send(self, frame):
+        return self._gen.send(frame)
+
+    def close(self):
+        self.guard.revoke()
+        self._gen.close()
+
+
+def reward_flow(flow):
+    @wraps(flow)
+    def guarded(*args, **kwargs):
+        return RewardFlow(flow, args, kwargs)
+    return guarded
+
+
+def bail(frame, reason: str, guard=None):
+    """A failed flow may exit only a still-owned, freshly recognized menu."""
+    if guard is not None:
+        return guard.recover(frame)
+    return False
 
 
 def find_tile(frame, tpl_rel: str, fallback=None) -> tuple[int, int] | None:
@@ -391,13 +640,27 @@ class Mission:
 
     def __init__(self):
         self._gen = None
+        self._recovery = None
+        self.ended = None       # how the newest flow ended: 'completed', 'interrupted', 'crashed' or 'aborted'
+        self.on_end = None      # the host's hook, called once as on_end(how) when a flow ends (its history row); what it raises is logged and dropped
 
     @property
     def active(self) -> bool:
         return self._gen is not None
 
+    def _end(self, how):
+        self.ended = how
+        hook = self.on_end
+        if hook is None:
+            return
+        try:
+            hook(how)
+        except Exception as exc:                # noqa: BLE001 - bookkeeping beside a live flow must never end it
+            logger.event('mission_end_hook_failed', how=how, error=str(exc)[:150], error_type=type(exc).__name__)
+
     def start(self, flow):
         if self._gen is None:
+            self.abort()
             self._gen = flow()
             next(self._gen)
 
@@ -407,22 +670,65 @@ class Mission:
         try:
             self._gen.send(frame)
         except StopIteration:
+            self._recovery = getattr(self._gen, 'guard', None)
             self._gen = None
+            # The final guard.wait already observed this frame. Do not
+            # consume its transition budget a second time on completion.
+            if self._recovery is not None and reward_screen(frame) in {'battle', 'battle_menu'}:
+                self._recovery.revoke()
+                self._recovery = None
+            self._end('completed')
+        except FlowInterrupted as exc:
+            logger.event('mission_interrupted', reason=str(exc))
+            self._stop('interrupted')
         except Exception:                       # noqa: BLE001
-            # A flow that raises is over, and the menu it opened is OURS to
-            # close: the orchestrator's stuck recovery deliberately never
-            # touches the Guild or Quests screens, so a crashed flow used to
-            # park the run there until a human returned it (2026-09-14).
-            # Log it as an abort with the screen, drop the flow and take the
-            # flows' own exit (the return strip, only when off battle).
             name = getattr(self._gen, "__name__", "?")
+            self._recovery = getattr(self._gen, 'guard', None)
             self._gen = None
             logger.event("mission_crash", flow=name, trace=traceback.format_exc(),
                          shot=logger.shot(frame, "mission_crash"))
-            bail(frame, "mission_crash")
+            self.recover(frame)
+            self._end('crashed')
+
+    @property
+    def recovery_owned(self):
+        return (self._recovery is not None and self._recovery.owned
+                and not self._recovery.revoked)
+
+    def observe(self, frame):
+        if self._recovery is not None:
+            try:
+                if self._recovery.observe(frame) and reward_screen(frame) in {'battle', 'battle_menu'}:
+                    self._recovery.revoke()
+            except Exception:
+                logger.event('mission_recovery_interrupted', trace=traceback.format_exc())
+                self._recovery.revoke()
+            if not self.recovery_owned:
+                self._recovery = None
+
+    def recover(self, frame):
+        if not self.recovery_owned:
+            return False
+        try:
+            return self._recovery.recover(frame)
+        except Exception as exc:
+            logger.event('mission_recovery_refused', reason=str(exc), trace=traceback.format_exc())
+            self._recovery.revoke()
+            return False
 
     def abort(self):
+        self._stop('aborted')
+
+    def _stop(self, how):
+        running = self._gen is not None
+        if running:
+            self._gen.close()
         self._gen = None
+        if self._recovery is not None:
+            self._recovery.revoke()
+        self._recovery = None
+        if running:
+            self._end(how)
 
 
 SKIP_AREA = (897, 375)          # SKIP button on the reward listing (fixed)
@@ -436,8 +742,10 @@ def _tap(x, y, reason, instant=True):
     try:
         ev = act.tap(x, y, reason=reason, instant=instant)
         logger.event("flow_tap", **ev)
+        return ev
     except act.TapRefused as e:
         logger.event("tap_refused", button=reason, error=str(e))
+        raise
 
 
 def _guild_tap(x, y, reason):
@@ -445,37 +753,40 @@ def _guild_tap(x, y, reason):
     widgets ignore held swipe-taps). Hard-blocks the Leave button zone."""
     if LEAVE_ZONE[0] <= x <= LEAVE_ZONE[2] and LEAVE_ZONE[1] <= y <= LEAVE_ZONE[3]:
         logger.event("tap_blocked", reason=reason, x=x, y=y)
-        return
-    _tap(x, y, reason=reason, instant=True)
+        raise FlowInterrupted('guild Leave button is forbidden')
+    return _tap(x, y, reason=reason, instant=True)
 
 
-def guild_flow():
+@reward_flow
+def guild_flow(guard):
     """Collect the guild contribution reward. Per user: navigation is by
     FIXED AREAS only (guild tile -> Members tab -> the 4 milestone box areas
     -> SKIP -> return); vision is used solely for screen-state checks."""
-    frame = yield
+    global last_guild_claims
+    last_guild_claims = 0
+    frame = yield from guard.wait()
     point = find_tile(frame, "icons/tile_guild.png")
     if point is None:
         logger.event('mission_error', stage='guild_icon_unavailable')
         return
-    _tap(*point, "guild_open")
-    frame = yield
+    guard.tap(frame, *point, 'guild_open', screen='battle_menu', destination='guild_entry')
+    frame = yield from guard.wait()
     opened = False
     for _ in range(4):
         hit, _, _ = detect._match(frame, "icons/guild_header.png", 0.75)
         if hit:
             opened = True
             break
-        frame = yield
+        frame = yield from guard.wait()
     if not opened:
         logger.event("mission_error", stage="guild_open",
                      shot=logger.shot(frame, "guild_open_fail"))
-        bail(frame, "guild_open")
+        bail(frame, "guild_open", guard)
         return
 
-    _guild_tap(*MEMBERS_TAB, "guild_members_tab")
-    frame = yield
-    frame = yield                            # let the tab content render
+    guard.tap(frame, *MEMBERS_TAB, 'guild_members_tab', screen=reward_screen(frame), destination='guild')
+    frame = yield from guard.wait()
+    frame = yield from guard.wait()          # let the tab content render
 
     # the padlock image is learned from the locked boxes on this very track
     # (missing only) so the claimable check below can tell them apart
@@ -486,8 +797,8 @@ def guild_flow():
     for x, cy in before:
         if (x, cy) not in guild_claimables(frame):
             continue
-        _guild_tap(x, 708, "guild_reward")
-        frame = yield
+        guard.tap(frame, x, 708, 'guild_reward', screen='guild', rewards=True)
+        frame = yield from guard.wait()
         for _ in range(6):
             hit, _, _ = detect._match(frame, "icons/guild_header.png", 0.75)
             if hit:
@@ -495,23 +806,22 @@ def guild_flow():
             from interactions.event_rewards import reward_dismiss
             pt = find_skip(frame) or reward_dismiss(frame)
             if not pt:
-                frame = yield
+                frame = yield from guard.wait()
                 continue
-            _guild_tap(*pt, "reward_skip")
-            frame = yield
+            guard.dismiss(frame, 'guild')
+            frame = yield from guard.wait()
         if not detect._match(frame, "icons/guild_header.png", .75)[0]:
             logger.event('mission_error',stage='guild_reward_popup_not_dismissed')
             return
     after = guild_claimables(frame)
-    global last_guild_claims
     last_guild_claims = max(0, len(before) - len(after))
     logger.event("guild_done", claimable_before=len(before),
                  claimable_after=len(after),
                  shot=logger.shot(frame, "guild_done"))
 
     for _ in range(4):
-        _tap(*RETURN_STRIP, "return_to_game")
-        frame = yield
+        guard.exit(frame)
+        frame = yield from guard.wait()
         hit, _, _ = detect._match(frame, "icons/guild_header.png", 0.75)
         if not hit:
             return
@@ -519,25 +829,25 @@ def guild_flow():
                  shot=logger.shot(frame, "guild_return_fail"))
 
 
-def quest_flow():
-    frame = yield
+@reward_flow
+def quest_flow(guard):
+    frame = yield from guard.wait()
     point = find_tile(frame, "icons/tile_quests.png")
     if point is None:
         logger.event('mission_error', stage='quests_icon_unavailable')
         return
-    _tap(*point, "quests_open",
-         instant=True)
-    frame = yield
+    guard.tap(frame, *point, 'quests_open', screen='battle_menu', destination='quests')
+    frame = yield from guard.wait()
     opened = False
     for _ in range(4):
         if missions_screen(frame):
             opened = True
             break
-        frame = yield
+        frame = yield from guard.wait()
     if not opened:
         logger.event("mission_error", stage="open",
                      shot=logger.shot(frame, "mission_open_fail"))
-        bail(frame, "quests_open")
+        bail(frame, "quests_open", guard)
         return
 
     # ---- claim every finished quest
@@ -549,8 +859,8 @@ def quest_flow():
             # a reward popup may cover the screen - skip it
             pt = find_skip(frame)
             if pt:
-                _tap(*pt, "reward_skip")
-            frame = yield
+                guard.dismiss(frame, 'quests')
+            frame = yield from guard.wait()
             continue
         pt = find_claim(frame)
         if claimed >= MAX_CLAIMS:
@@ -564,25 +874,27 @@ def quest_flow():
                     np.abs(page.astype(float)-previous_page.astype(float)).mean()<1):
                 break
             previous_page = page
-            act.swipe(540,2100,540,950,400,reason="mission list next page")
+            guard.swipe(frame, 540,2100,540,950,400,screen='quests',reason='mission list next page')
             pages += 1
-            frame = yield
-            frame = yield
+            frame = yield from guard.wait()
+            frame = yield from guard.wait()
             continue
         previous_page = None
         learn_claim_template(frame, pt)     # the image setup could not cut without a finished quest
-        _tap(*pt, "quest_claim", instant=True)
+        guard.tap(frame, *pt, 'quest_claim', screen='quests', rewards=True)
         claimed += 1
-        frame = yield
-        frame = yield          # let the card disappear / rewards land
+        frame = yield from guard.wait()
+        frame = yield from guard.wait()  # let the card disappear / rewards land
 
     # ---- weekly chests: tap anything unlocked-and-unclaimed
     chests = 0
     for cx, cy in claimable_chests(frame)[:3]:
-        _tap(cx, cy, "weekly_chest")
+        if not missions_screen(frame) or (cx, cy) not in claimable_chests(frame):
+            continue
+        guard.tap(frame, cx, cy, 'weekly_chest', screen='quests', rewards=True)
         chests += 1
-        frame = yield
-        frame = yield                  # the listing takes a moment to render
+        frame = yield from guard.wait()
+        frame = yield from guard.wait()  # the listing takes a moment to render
         # reward listing popup -> SKIP it. The popup can be several pages
         # (1/4 ...), so keep skipping until the missions screen is back.
         settled = 0
@@ -590,14 +902,14 @@ def quest_flow():
             point = find_skip(frame)
             if point:
                 settled = 0
-                _tap(*point, "reward_skip")
+                guard.dismiss(frame, 'quests')
             elif missions_screen(frame):
                 settled += 1
                 if settled >= 3:
                     break
             else:
                 settled = 0
-            frame = yield
+            frame = yield from guard.wait()
         else:
             logger.event('mission_error', stage='weekly_reward_not_dismissed')
             return
@@ -612,16 +924,16 @@ def quest_flow():
     for _ in range(10):
         pt = find_skip(frame)
         if pt:                         # reward animation outranks a number
-            _tap(*pt, "reward_skip")
+            guard.dismiss(frame, 'quests')
         elif missions_screen(frame):
-            _tap(*RETURN_STRIP, "return_to_game")
+            guard.exit(frame)
         elif wave_reader.read_wave(frame) is not None:
             logger.event("mission_done", claimed=claimed, chests=chests,
                          shot=logger.shot(frame, "mission_done"))
             return
         # Unknown transition: wait; the return coordinate is not a generic
         # dismiss control and may hit something unrelated on another screen.
-        frame = yield
+        frame = yield from guard.wait()
     logger.event("mission_error", stage="return",
                  shot=logger.shot(frame, "mission_return_fail"))
 
@@ -630,7 +942,8 @@ GEM_STORE_TILE = (910, 65)      # fallback: gold cart tile (row 1, both)
 FREE_BTN_OFFSET = (0, 138)      # claim button center relative to FREE label
 
 
-def free_gems_flow(on_success=None):
+@reward_flow
+def free_gems_flow(guard, on_success=None):
     """Daily free-gems claim: locate the free card, verify CLAIM REWARDS,
     collect and return. Scheduled around 01:00 UTC, with ten-minute jitter.
 
@@ -638,13 +951,13 @@ def free_gems_flow(on_success=None):
     The orchestrator used to mark the day claimed before starting this flow, so a
     flow that bailed (menu closed, screen never appeared) still burned the
     day's claim."""
-    frame = yield
+    frame = yield from guard.wait()
     point=find_tile(frame, "icons/tile_cart.png", GEM_STORE_TILE)
     if point is None:
         logger.event('mission_error',stage='gem_store_icon_unavailable')
         return
-    _tap(*point, "gem_store_open")
-    frame = yield
+    guard.tap(frame, *point, 'gem_store_open', screen='battle_menu', destination='premium')
+    frame = yield from guard.wait()
     opened = False
     # 4 -> 10 frames (2026-08-30): the 03:00 failure shot scored 1.0 on the
     # store marker - the store WAS open, it just rendered after the 4th
@@ -654,11 +967,11 @@ def free_gems_flow(on_success=None):
         if detect._match(frame, "icons/premium_store.png", 0.75)[0]:
             opened = True
             break
-        frame = yield
+        frame = yield from guard.wait()
     if not opened:
         logger.event("mission_error", stage="gem_store_open",
                      shot=logger.shot(frame, "gem_store_open_fail"))
-        bail(frame, "gem_store_open")
+        bail(frame, "gem_store_open", guard)
         return
 
     claimed = False
@@ -674,17 +987,17 @@ def free_gems_flow(on_success=None):
             if words != 'CLAIM REWARDS':
                 logger.event('free_gems_unavailable',reason='Free card is on cooldown or claim not verified')
                 break
-            _tap(cx, cy, "free_gems_claim")
-            frame = yield
-            frame = yield
+            guard.tap(frame, cx, cy, 'free_gems_claim', screen='premium', rewards=True)
+            frame = yield from guard.wait()
+            frame = yield from guard.wait()
             from interactions.event_rewards import reward_dismiss
             for _ in range(8):
                 if detect._match(frame,'icons/premium_store.png',.75)[0]: break
                 pt=find_skip(frame) or reward_dismiss(frame)
                 if not pt: break
-                _tap(*pt,'free_gems_reward_collect')
-                frame=yield
-                frame = yield
+                guard.dismiss(frame, 'premium', 'free_gems_reward_collect')
+                frame = yield from guard.wait()
+                frame = yield from guard.wait()
             patch=frame[max(0,cy-75):cy+75,max(0,cx-140):cx+140]
             words=' '.join(t.strip().upper() for _,_,t in textocr.read_lines(patch,2))
             # Count only the observed cooldown on the free card, not a tap attempt.
@@ -694,14 +1007,14 @@ def free_gems_flow(on_success=None):
             if claimed and on_success: on_success()
             break
         # not visible yet: scroll one stride down and look again
-        act.swipe(540, 1800, 540, 900, 400, reason="gem store scroll")
-        frame = yield
+        guard.swipe(frame, 540, 1800, 540, 900, 400, screen='premium', reason='gem store scroll')
+        frame = yield from guard.wait()
     logger.event("free_gems", clicked=claimed,
                  shot=logger.shot(frame, "free_gems"))
 
     for _ in range(4):
-        _tap(*RETURN_STRIP, "return_to_game")
-        frame = yield
+        guard.exit(frame)
+        frame = yield from guard.wait()
         if not detect._match(frame, "icons/premium_store.png", 0.75)[0]:
             return
     logger.event("mission_error", stage="gem_store_return",

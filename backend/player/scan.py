@@ -64,6 +64,8 @@ def _state_load(p) -> dict:
 
 
 def _state_save(p, st) -> None:
+    from runtime.operations import publish_progress
+    publish_progress(st)
     tmp = p["state"] + ".tmp"
     with open(tmp, "w", encoding="utf-8") as fh:
         json.dump(st, fh, indent=1)
@@ -71,6 +73,16 @@ def _state_save(p, st) -> None:
 
 
 def _stop_requested(p) -> bool:
+    from runtime.operations import environment_operation
+    ledger, operation_id = environment_operation()
+    if ledger:
+        if ledger.get(operation_id)['status'] == 'cancelling':
+            return True
+        try:
+            with open(p['stop'], encoding='utf-8') as marker:
+                return marker.read().strip() == operation_id
+        except FileNotFoundError:
+            return False
     return os.path.exists(p["stop"])
 
 
@@ -118,7 +130,6 @@ def _dismiss_tourney_open() -> None:
 # ---------------------------------------------------------------- preflight
 def preflight(adopt_battle: bool) -> None:
     from device import capture
-    import psutil
     from vision import screen
     from vision import wave_reader
     from device import adbclient, layout
@@ -133,32 +144,12 @@ def preflight(adopt_battle: bool) -> None:
     missing = missing_navigation(settings.ROOT, settings.CONFIG, [])
     if missing:
         raise SystemExit("Capture navigation and wave digits using the Scan plan first: " + ", ".join(missing))
-    mine = os.getpid()
-    for pr in psutil.process_iter(["pid", "name", "cmdline"]):
-        try:
-            cl = " ".join(pr.info["cmdline"] or [])
-        except Exception:               # noqa: BLE001
-            continue
-        if pr.info["pid"] == mine or "python" not in (pr.info["name"] or "").lower():
-            continue
-        if any(f"{r}.py" in cl for r in ("orchestrator", "shard", "combo", "tourney",
-                                         "quest_sm", "quest_ilm", "harness",
-                                         "scan", "calibrate")):
-            # P3 CLONE (2026-08-19): two trees may run side by side (main
-            # farm in ../autopilot, this clone on its own instance). A
-            # runner only conflicts with this scan if it can touch the SAME
-            # tree or the SAME device: match by process cwd (each runner is
-            # spawned with its tree as working directory). If cwd is
-            # unreadable, stay conservative and refuse as before.
-            try:
-                cwd = os.path.normcase(psutil.Process(pr.info["pid"]).cwd())
-            except Exception:               # noqa: BLE001
-                cwd = None
-            here = os.path.normcase(os.path.dirname(os.path.abspath(__file__)))
-            if cwd is not None and cwd != here:
-                continue                    # foreign tree, different device
-            raise SystemExit(f"REFUSED: runner alive (pid {pr.info['pid']}: "
-                             f"{cl.strip()}) - stop it first")
+    from runtime import runners
+    # Foreign checkouts can address the same transport. Discovery remains
+    # conservative for legacy workers that do not hold a device lease.
+    for pid, _script, args in runners.other_runners():
+        raise SystemExit(f"REFUSED: runner alive (pid {pid}: "
+                         f"{' '.join(args).strip()}) - stop it first")
     # Emulator ad overlays (com.mumu.store etc.) sit ABOVE the game and
     # would fail every identify below. Evidence-gated dismissal first;
     # an overlay that cannot be named or killed is a refusal, not a tap.
@@ -420,7 +411,11 @@ def main() -> None:
     ap.add_argument("--fresh", action="store_true",
                     help="ignore previous scan state, redo all phases")
     a = ap.parse_args()
+    from runtime.operations import restore_worker_context
+    restore_worker_context(settings)
     settings.bind_device(a.instance)
+    from runtime.device_lease import ensure_current
+    ensure_current()
     settings.CONFIG["preset"] = "normal_run"
     from runtime import logger
     p = _paths()
