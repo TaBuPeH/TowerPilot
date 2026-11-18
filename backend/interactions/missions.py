@@ -35,13 +35,92 @@ GUILD_SLOTS = [141, 374, 693, 1014]   # fixed milestone box centers (100..750)
 MAX_CLAIMS = 8                  # standing-quest cap (2 new / 8h, max 8)
 
 
+# THE RETURN STRIP IS A TARGET, NOT A COORDINATE (2026-11-18). Every flow here
+# used to leave its menu with `tap RETURN_STRIP; next frame; still open? tap
+# again`. The frame that answered "still open?" was up to several seconds old
+# on a busy emulator, so the second tap arrived after the menu had closed and
+# landed on whatever the battle screen draws there: the upgrade panel's bottom
+# row. That was a wasted tap until game 29.2 made an Ultimate Weapon card open
+# its info popup when touched - twice in one evening the popup then sat over
+# the battle for up to 53 minutes while the run went untended.
+#
+# So the strip is tapped only where it is SEEN, on a frame taken for that tap,
+# and never twice inside RETURN_SETTLE: the first tap gets time to close the
+# menu before anyone asks whether it did.
+RETURN_TEMPLATE = "buttons/return_to_game.png"
+RETURN_SETTLE = 2.0             # seconds a return tap gets to take effect
+RETURN_TAPS = 4                 # per exit; the strip surviving this is an error
+_return_tap_at = 0.0
+
+
+def return_strip(frame) -> tuple[int, int] | None:
+    """Where "Tap To Return To Game" is on THIS frame, else None.
+
+    The strip only ever sits along the bottom edge, so only that band is
+    searched. Measured 2026-11-18: 0.975-1.0 on the store, lab, missions,
+    tournament and guild screens, <= 0.39 on a battle frame."""
+    y0 = int(frame.shape[0] * 0.85)
+    band = frame[y0:]
+    try:
+        tpl = detect._tpl(RETURN_TEMPLATE)
+    except detect.TemplateMissing:
+        # No image yet: read the words where they are drawn. Text is the one
+        # thing a strip cannot be confused over, and a flow that cannot find
+        # its exit strands the run on a menu.
+        from vision import textocr
+        for y, x, text in textocr.read_lines(band, 2):
+            if "RETURN TO GAME" in text.upper():
+                return RETURN_STRIP[0], y0 + y // 2 + 20
+        return None
+    hit, _, loc = detect._match(band, RETURN_TEMPLATE, 0.85)
+    if not hit:
+        return None
+    return loc[0] + tpl.shape[1] // 2, y0 + loc[1] + tpl.shape[0] // 2
+
+
+def tap_return(reason: str = "return_to_game") -> bool:
+    """One tap on the return strip, aimed at where a frame taken NOW shows it.
+
+    False - and no tap - while an earlier return tap is still settling, or
+    when the strip is not on screen."""
+    global _return_tap_at
+    if time.monotonic() - _return_tap_at < RETURN_SETTLE:
+        return False
+    pt = return_strip(capture.grab())
+    if pt is None:
+        return False
+    _tap(*pt, reason)
+    _return_tap_at = time.monotonic()
+    return True
+
+
+def leave_menu(frame, stage: str, reason: str = "return_to_game"):
+    """Flow tail (`ok = yield from leave_menu(frame, stage)`): tap the return
+    strip until it is gone. True once no strip is on screen - back in the
+    battle, or under a popup the caller has to name; False (logged as
+    mission_error `stage`) when it survived RETURN_TAPS taps."""
+    taps = 0
+    deadline = time.monotonic() + 30 + RETURN_TAPS * RETURN_SETTLE
+    while time.monotonic() < deadline:
+        if return_strip(frame) is None:
+            return True
+        if time.monotonic() - _return_tap_at >= RETURN_SETTLE:
+            if taps >= RETURN_TAPS:
+                break
+            if not tap_return(reason):
+                return True             # gone between the two frames
+            taps += 1
+        frame = yield
+    logger.event("mission_error", stage=stage,
+                 shot=logger.shot(frame, f"{stage}_fail"))
+    return False
+
+
 def bail(frame, reason: str):
-    """Recovery tap when a flow's expected screen never appeared. Only taps
-    the return strip when we are actually OFF the battle screen - in battle
-    that strip is the shop tab area and must not be touched."""
-    from vision import wave_reader
-    if wave_reader.read_wave(frame) is None:
-        act.tap(*RETURN_STRIP, reason=f"bail_{reason}", instant=True)
+    """Recovery tap when a flow's expected screen never appeared: the return
+    strip, and only where a fresh frame shows it. On the battle screen that
+    spot is the upgrade panel and must not be touched."""
+    tap_return(f"bail_{reason}")
 
 
 def find_tile(frame, tpl_rel: str, fallback=None) -> tuple[int, int] | None:
@@ -509,14 +588,7 @@ def guild_flow():
                  claimable_after=len(after),
                  shot=logger.shot(frame, "guild_done"))
 
-    for _ in range(4):
-        _tap(*RETURN_STRIP, "return_to_game")
-        frame = yield
-        hit, _, _ = detect._match(frame, "icons/guild_header.png", 0.75)
-        if not hit:
-            return
-    logger.event("mission_error", stage="guild_return",
-                 shot=logger.shot(frame, "guild_return_fail"))
+    yield from leave_menu(frame, "guild_return")
 
 
 def quest_flow():
@@ -614,7 +686,7 @@ def quest_flow():
         if pt:                         # reward animation outranks a number
             _tap(*pt, "reward_skip")
         elif missions_screen(frame):
-            _tap(*RETURN_STRIP, "return_to_game")
+            tap_return()               # seen on a fresh frame, paced
         elif wave_reader.read_wave(frame) is not None:
             logger.event("mission_done", claimed=claimed, chests=chests,
                          shot=logger.shot(frame, "mission_done"))
@@ -628,6 +700,7 @@ def quest_flow():
 
 GEM_STORE_TILE = (910, 65)      # fallback: gold cart tile (row 1, both)
 FREE_BTN_OFFSET = (0, 138)      # claim button center relative to FREE label
+FREE_SCROLL_STRIDES = 3         # the store is three 900px strides tall
 
 
 def free_gems_flow(on_success=None):
@@ -661,8 +734,19 @@ def free_gems_flow(on_success=None):
         bail(frame, "gem_store_open")
         return
 
+    import re
+    cooldown = re.compile(r'\d+\s*[DHMS]')
     claimed = False
-    for attempt in range(3):
+    # The store reopens WHERE IT WAS LEFT. One visit that scrolled down
+    # (the card not matched on a still-loading first frame) left every later
+    # visit starting below the free card, scrolling further down and finding
+    # nothing - 5-minute visits for the rest of the day (2026-11-18). So a
+    # card that is not on the opening frame is looked for from the TOP.
+    if not detect._match(frame, "icons/free_gems.png", 0.75)[0]:
+        for _ in range(FREE_SCROLL_STRIDES):
+            act.swipe(540, 900, 540, 1800, 400, reason="gem store to top")
+            frame = yield
+    for attempt in range(FREE_SCROLL_STRIDES):
         hit, _, loc = detect._match(frame, "icons/free_gems.png", 0.75)
         if hit:
             tpl = detect._tpl("icons/free_gems.png")
@@ -672,7 +756,17 @@ def free_gems_flow(on_success=None):
             patch=frame[max(0,cy-75):cy+75,max(0,cx-140):cx+140]
             words=' '.join(t.strip().upper() for _,_,t in textocr.read_lines(patch,2))
             if words != 'CLAIM REWARDS':
-                logger.event('free_gems_unavailable',reason='Free card is on cooldown or claim not verified')
+                # A COUNTDOWN on the button is the same proof the claim
+                # itself leaves behind: today's free gems are already taken
+                # (by hand, or by a visit whose own read-back failed). It
+                # closes the day. Without this the visit repeated every five
+                # minutes until the UTC date changed - 155 store visits on
+                # 2026-11-13, 92 on 2026-11-18.
+                spent = bool(cooldown.search(words))
+                logger.event('free_gems_unavailable', words=words, cooldown=spent,
+                             reason='Free card is on cooldown' if spent
+                             else 'claim button not verified')
+                if spent and on_success: on_success()
                 break
             _tap(cx, cy, "free_gems_claim")
             frame = yield
@@ -688,9 +782,8 @@ def free_gems_flow(on_success=None):
             patch=frame[max(0,cy-75):cy+75,max(0,cx-140):cx+140]
             words=' '.join(t.strip().upper() for _,_,t in textocr.read_lines(patch,2))
             # Count only the observed cooldown on the free card, not a tap attempt.
-            import re
             claimed=bool(detect._match(frame,'icons/premium_store.png',.75)[0]
-                         and re.search(r'\d+\s*[DHMS]',words))
+                         and cooldown.search(words))
             if claimed and on_success: on_success()
             break
         # not visible yet: scroll one stride down and look again
@@ -699,10 +792,4 @@ def free_gems_flow(on_success=None):
     logger.event("free_gems", clicked=claimed,
                  shot=logger.shot(frame, "free_gems"))
 
-    for _ in range(4):
-        _tap(*RETURN_STRIP, "return_to_game")
-        frame = yield
-        if not detect._match(frame, "icons/premium_store.png", 0.75)[0]:
-            return
-    logger.event("mission_error", stage="gem_store_return",
-                 shot=logger.shot(frame, "gem_store_return_fail"))
+    yield from leave_menu(frame, "gem_store_return")

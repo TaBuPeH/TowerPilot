@@ -23,7 +23,7 @@ from vision import detect
 from device import act
 from runtime import logger
 from vision import ocr
-from interactions.missions import GUILD_TILE, RETURN_STRIP, find_skip, bail, find_tile
+from interactions.missions import GUILD_TILE, find_skip, bail, find_tile, leave_menu
 
 STORE_TAB = (791, 314)
 COIN_ROI = (108, 160, 1000, 1080)    # guild-coin balance digits (icon excluded)
@@ -255,10 +255,4 @@ def store_flow():
             logger.event("store_saving", target=target, price=price,
                          balance=balance)
 
-    for _ in range(4):
-        act.tap(*RETURN_STRIP, reason="return_to_game", instant=True)
-        frame = yield
-        if not detect._match(frame, "icons/guild_header.png", 0.75)[0]:
-            return
-    logger.event("mission_error", stage="store_return",
-                 shot=logger.shot(frame, "store_return_fail"))
+    yield from leave_menu(frame, "store_return")

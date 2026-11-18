@@ -765,10 +765,11 @@ def _game_display(serial, configured=None):
     hit = _DISPLAY_CACHE.get(serial)
     if hit and time.time() - hit[1] < _DISPLAY_TTL:
         return hit[0]
-    from device import adbclient, displays
+    from device import adbclient, displays, overlays
     try:
         disp, _logical = displays.game_display(
-            lambda cmd: adbclient.shell(serial, cmd, timeout=10).decode(errors="replace"))
+            lambda cmd: adbclient.shell(serial, cmd, timeout=10).decode(errors="replace"),
+            overlays.GAME_PKG)
     except Exception:                           # noqa: BLE001 - offline: no display
         return None
     _DISPLAY_CACHE[serial] = (disp, time.time())

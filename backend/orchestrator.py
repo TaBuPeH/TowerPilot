@@ -2428,6 +2428,14 @@ def main():
                     # not a tap into an unknown screen - and anything else
                     # is only logged. Once a minute at most.
                     rs.overlay_sweep_at = now
+                    # ...or it is not the game at all: a relaunched game can
+                    # come up on another emulator display (another app tab
+                    # held the old one, 2026-11-18) and this loop would watch
+                    # that tab for the rest of the run. Follow the game's own
+                    # window; a move is a new screen to judge from scratch.
+                    if capture.follow_game():
+                        rs.menu_logged = False
+                        continue
                     try:
                         ads, unknown = overlays.offending(
                             overlays.windows(settings.instance()["serial"]))
@@ -2500,9 +2508,13 @@ def main():
                             logger.event("stuck_recover", action="skip",
                                          screen=sc.name, x=pt[0], y=pt[1])
                         else:
-                            act.tap(*missions.RETURN_STRIP,
-                                    reason="recover_return", instant=True)
-                            logger.event("stuck_recover", action="return_strip",
+                            # the strip where a fresh frame shows it - the old
+                            # fixed coordinate is the upgrade panel's bottom
+                            # row the moment the popup is gone (missions.py)
+                            tapped = missions.tap_return("recover_return")
+                            logger.event("stuck_recover",
+                                         action="return_strip" if tapped
+                                         else "no_return_strip",
                                          screen=sc.name,
                                          shot=logger.shot(frame, "stuck_recover"))
                     except act.TapRefused as e:

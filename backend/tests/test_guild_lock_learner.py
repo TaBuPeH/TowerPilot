@@ -163,9 +163,15 @@ def test_guild_flow_returns_to_the_game_when_the_padlock_is_unknown(learner, mon
                         lambda frame, rel, thr: ("return_to_game" not in taps, 1.0, (0, 0)))
 
     def missing(rel):
+        # every image is missing EXCEPT the return strip: the exit is tapped
+        # only where it is seen (2026-11-18), so the flow has to be shown one
+        if rel == missions.RETURN_TEMPLATE:
+            return np.zeros((65, 640, 3), np.uint8)
         raise detect.TemplateMissing(rel)
     monkeypatch.setattr(detect, "_tpl", missing)
     frame = _track(slots=[missions.GUILD_SLOTS[0]])
+    monkeypatch.setattr(missions.capture, "grab", lambda: frame)
+    monkeypatch.setattr(missions, "_return_tap_at", 0.0)
     gen = missions.guild_flow()
     next(gen)
     for _ in range(20):

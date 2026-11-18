@@ -182,7 +182,24 @@ the cap resets at 00:00 UTC, which is 3 AM local - a local-date counter
 would drift by those hours daily). *Knobs:* `gather.quests_8h`,
 `quest_rewards`, `guild`, `ad_gems`. All flows navigate menus **the bot
 opened**; recovery taps are gated on `bot_left_battle` - a human-opened
-menu is never touched.
+menu is never touched. Every flow leaves through
+`missions.leave_menu` / `tap_return`: "Tap To Return To Game" is tapped
+only **where a frame taken for that tap shows it**, and never twice inside
+`RETURN_SETTLE` (2 s). The old fixed-coordinate retry landed its second tap
+on the battle screen's upgrade panel once the menu had closed - and since
+game 29.2 a touched Ultimate Weapon card opens its info popup, which then
+covered the battle for up to 53 minutes (2026-11-18).
+
+### Which display is the game (MuMu)
+MuMu gives every app tab its own secondary display, so the game is not
+always "the first secondary": with a Play Store tab open, a relaunched game
+comes up on the next one. `displays.game_display(shell, package)` answers
+with the display the game's **window** is on (`dumpsys window windows`),
+falling back to the first secondary while the game has no window.
+`capture.refresh_display` and the dashboard preview both use it, and the
+observe loop calls `capture.follow_game` once a minute while it cannot name
+the screen, so a game Android restarted is followed to its new display
+(`display_refreshed`, logged on change only).
 
 ### Workshop shopping
 An ordered directive list IS the priority (`shopping_lists`, per-directive
