@@ -101,8 +101,7 @@ def scan() -> int:
             time.sleep(0.6)
 
         logger.event("questscan", ok=True, pages=pages, dir=str(out))
-        act.tap(*missions.RETURN_STRIP, reason="questscan_return",
-                instant=True)
+        missions.tap_return("questscan_return")     # where the strip is seen
         time.sleep(1.0)
         return pages
     except Exception as e:                  # noqa: BLE001 - see docstring

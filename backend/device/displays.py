@@ -40,15 +40,46 @@ def logical_display(dumpsys_display_text: str, physical_id: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
-def game_display(shell) -> tuple[str | None, int | None]:
+def physical_display(dumpsys_display_text: str, logical_id: int) -> str | None:
+    """The physical display id a logical display (an `input -d` index) wraps."""
+    m = re.search(rf"mDisplayId={int(logical_id)}\s*\n\s*mPrimaryDisplayDevice="
+                  r"[^\n(]*\(local:(\d+)\)", dumpsys_display_text)
+    return m.group(1) if m else None
+
+
+def window_display(dumpsys_windows_text: str, package: str) -> int | None:
+    """The logical display `package`'s window is on, from `dumpsys window
+    windows` (front to back: the first window of the package wins)."""
+    m = re.search(r"Window #\d+ Window\{[0-9a-f]+ u\d+ " + re.escape(package)
+                  + r"/[^}]*\}:\s*\n\s*mDisplayId=(\d+)", dumpsys_windows_text)
+    return int(m.group(1)) if m else None
+
+
+def game_display(shell, package: str | None = None) -> tuple[str | None, int | None]:
     """(physical display id, logical input index) of the game display, or
     (None, None) for an emulator with one display. `shell(cmd) -> str` runs
-    a shell command on the device (the caller owns the transport)."""
+    a shell command on the device (the caller owns the transport).
+
+    MuMu gives every app tab its own secondary mumuscreen, so "the first
+    secondary" is the game only while the game is the only tab. On 2026-11-18
+    a Play Store tab held mumuscreen001 when the game was relaunched; the game
+    came up on mumuscreen002 and every capture and tap went to the store page.
+    Given `package`, the display its WINDOW is on wins - evidence, where the
+    first-secondary rule is a guess - and that rule stays the answer while the
+    game has no window yet (boot, the launcher) or sits on the default display.
+    """
     screens = parse_screens(shell("dumpsys SurfaceFlinger --display-id"))
     disp = secondary_display(screens)
     if disp is None:
         return None, None
-    return disp, logical_display(shell("dumpsys display"), disp)
+    dd = shell("dumpsys display")
+    if package:
+        logical = window_display(shell("dumpsys window windows"), package)
+        phys = physical_display(dd, logical) if logical else None
+        if phys is not None and any(did == phys and port != 0
+                                    for did, port, _name in screens):
+            return phys, logical
+    return disp, logical_display(dd, disp)
 
 
 def strip_warning(raw: bytes, limit: int = 512) -> bytes:

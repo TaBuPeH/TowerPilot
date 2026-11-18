@@ -25,37 +25,53 @@ def refresh_display(serial: str | None = None) -> str | None:
     Raises CaptureError when the screens cannot be parsed: a guessed
     display is a blind tap waiting to happen.
     """
-    from device import adbclient, displays
+    from device import adbclient, displays, overlays
     from settings import instance as _inst
     inst = _inst()
     configured = bool(inst.get("display"))
     serial = serial or inst["serial"]
-    sf = adbclient.shell(serial, "dumpsys SurfaceFlinger --display-id",
-                         timeout=10).decode(errors="replace")
-    screens = displays.parse_screens(sf)
-    if not screens and not configured:
-        return None                     # not MuMu (BlueStacks etc.): one display
-    disp = displays.secondary_display(screens)
+    # The display the GAME's window is on, not merely the first secondary:
+    # another app tab (a Play Store page) takes a mumuscreen of its own and
+    # the game then lives on the next one (displays.game_display).
+    disp, logical = displays.game_display(
+        lambda cmd: adbclient.shell(serial, cmd, timeout=10).decode(
+            errors="replace"), overlays.GAME_PKG)
     if disp is None:
         if not configured:
-            return None                 # single-screen MuMu: the default display
+            return None     # BlueStacks / single-screen MuMu: the default display
         raise CaptureError(
-            f"display refresh: no secondary mumuscreen in SurfaceFlinger "
-            f"({len(screens)} screen(s) listed)")
-    dd = adbclient.shell(serial, "dumpsys display",
-                         timeout=10).decode(errors="replace")
-    logical = displays.logical_display(dd, disp)
+            "display refresh: no secondary mumuscreen in SurfaceFlinger")
     if logical is None:
         raise CaptureError(
             f"display refresh: no logical display wraps local:{disp}")
     old = (inst.get("display"), inst.get("input_display"))
     inst["display"] = disp
     inst["input_display"] = logical
-    from runtime import logger
-    logger.event("display_refreshed", display=disp,
-                 input_display=inst["input_display"],
-                 was_display=old[0], was_input=old[1])
+    if old != (disp, logical):
+        # only a CHANGE is news: the observe loop re-derives once a minute
+        # while it cannot name the screen (follow_game)
+        from runtime import logger
+        logger.event("display_refreshed", display=disp,
+                     input_display=inst["input_display"],
+                     was_display=old[0], was_input=old[1])
     return disp
+
+
+def follow_game(serial: str | None = None) -> bool:
+    """Re-derive the game display; True when it MOVED since the last frame.
+
+    The game restarting (an Android package update killed it, 2026-11-18)
+    can land it on a different mumuscreen than the one this process is
+    capturing, and nothing about the old display's frames says so - they
+    just stop being the game. The observe loop calls this while the screen
+    reads `unknown`. Never raises: a failed probe is "did not move"."""
+    from settings import instance as _inst
+    before = _inst().get("display")
+    try:
+        after = refresh_display(serial)
+    except Exception:                   # noqa: BLE001 - adb hiccup / mid-boot
+        return False
+    return after is not None and after != before
 
 
 def grab(serial: str | None = None, display: str | None = None, *, discover=False) -> np.ndarray:

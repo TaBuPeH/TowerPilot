@@ -133,5 +133,5 @@ def event_flow():
         frame=yield
     logger.event('event_rewards_done',quests=claims,milestones=milestones,pages=pages)
     if screen(frame):
-        missions._tap(*spec['return'],'event_return_to_game')
-        frame=yield
+        # the strip where it is seen, never twice before the first tap lands
+        yield from missions.leave_menu(frame,'event_return','event_return_to_game')
