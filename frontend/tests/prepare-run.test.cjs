@@ -74,5 +74,6 @@ test('a ready run cannot launch or prepare again while automation is running',()
   vm.runInContext('renderRunReady()',ctx);
   assert.equal(controls['#start-run'].disabled,true);
   assert.equal(prepare.disabled,true);
-  assert.match(controls['#run-ready'].textContent,/Automation is running/);
+  // wording since the "finish current run, then stop" button was removed
+  assert.match(controls['#run-ready'].textContent,/until you press Stop now/);
 });

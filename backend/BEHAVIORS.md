@@ -123,6 +123,19 @@ the blast (one survived an on-time nuke and killed the run at wave 3516).
 `throttle_sec` paces retries; `require_ready` is per-site. Deliberately not
 Second-Wind-gated. *Knobs:* `fleet_mark` rule / `nuke_on_fleet`.
 
+Inside that window the tap waits for a SIGHTING (`orchestrator.fleet_gate`,
+`vision/fleet_scan.py`): the fleet is one big outlined pentagon - saboteur
+red, commander orange, overcharge blue - found by shape + colour, no
+template. Once seen the Nuke fires at once whatever the colour: the fleet's
+Scatter swarm killed the tower 3-8 waves after spawn (3753, 4498 x2 on
+2026-10-18) while a 10-wave "is it dying?" hold kept the Nuke idle, and the
+Nuke refreshes long before the next fleet anyway. Events: `fleet_sighting`
+(type, count, shot), `fleet_nuke.why` (`blue_fleet` / `fleet_<type>` /
+`schedule`), `fleet_fire_skipped` (button absent or not ready - the intro
+sprint locks the row at 1495). `fleet.sighting.enabled: false` restores the
+blind schedule; `fleet.sighting.min_area` tunes the pentagon size (live
+T15: fleet 1848-1882 px, ordinary pentagons <= 582).
+
 ### Demon Mode on cooldown (global behaviour, quest kills)
 `policies.global_behaviors.demon_mode_always: true` fires Demon Mode whenever
 the button reads ready, on every run, outside the Second Wind hold and the
@@ -169,7 +182,24 @@ the cap resets at 00:00 UTC, which is 3 AM local - a local-date counter
 would drift by those hours daily). *Knobs:* `gather.quests_8h`,
 `quest_rewards`, `guild`, `ad_gems`. All flows navigate menus **the bot
 opened**; recovery taps are gated on `bot_left_battle` - a human-opened
-menu is never touched.
+menu is never touched. Every flow leaves through
+`missions.leave_menu` / `tap_return`: "Tap To Return To Game" is tapped
+only **where a frame taken for that tap shows it**, and never twice inside
+`RETURN_SETTLE` (2 s). The old fixed-coordinate retry landed its second tap
+on the battle screen's upgrade panel once the menu had closed - and since
+game 29.2 a touched Ultimate Weapon card opens its info popup, which then
+covered the battle for up to 53 minutes (2026-11-18).
+
+### Which display is the game (MuMu)
+MuMu gives every app tab its own secondary display, so the game is not
+always "the first secondary": with a Play Store tab open, a relaunched game
+comes up on the next one. `displays.game_display(shell, package)` answers
+with the display the game's **window** is on (`dumpsys window windows`),
+falling back to the first secondary while the game has no window.
+`capture.refresh_display` and the dashboard preview both use it, and the
+observe loop calls `capture.follow_game` once a minute while it cannot name
+the screen, so a game Android restarted is followed to its new display
+(`display_refreshed`, logged on change only).
 
 ### Workshop shopping
 An ordered directive list IS the priority (`shopping_lists`, per-directive

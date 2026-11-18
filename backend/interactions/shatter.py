@@ -28,9 +28,34 @@ a shattered Epic would be the wrong instrument for an irreversible action.
 
 The user declined to drive the "All Rarities" filter, so selection is visual -
 hence the belt-and-braces.
+
+2026-09-16: for three days this shattered nothing and EQUIPPED a module
+instead. Its private geometry had gone stale - the Shatter tab was tapped at
+y=923 while the bar the game draws sits at y 1000-1100 (the native layout
+manifest's module_inventory.inventory_tab). The tap missed the bar, the
+Inventory tab stayed open, and the guard agreed anyway: it asked the screen
+classifier for "modules" and then took the BRIGHTNESS of one band as proof of
+the tab - a band the equipped row lights up on every tab. Twelve blind taps
+then landed on inventory tiles, where the first opens a module detail panel
+and the rest hit that panel's own buttons; the saved frame is the game asking
+"Equip Matrix Sim to the primary slot or assist slot?".
+
+So this file no longer owns geometry or trusts a threshold:
+
+  * the tab bar, the grid lattice and the nav button come from the native
+    layout manifest, which device/layout rescales per display, and the tab is
+    TAPPED WHERE IT IS READ (vision.textocr over the bar) rather than at a
+    remembered point - the same idiom the calibrator uses for the Inventory
+    tab;
+  * a bar that cannot be read positively is an Abort with ZERO taps;
+  * every tile tap is logged with its coordinates, and the scrim is checked
+    after each one: a detail panel means this is not the Shatter tab, so the
+    panel is closed and the batch abandoned. The first tile must also be seen
+    to take its green check before the other eleven are tapped, so a wrong
+    screen costs one tap instead of twelve.
 """
 import argparse
-import random
+import re
 import sys
 import time
 
@@ -48,40 +73,37 @@ import numpy as np
 from vision import screen
 from settings import CONFIG
 
+from interactions import inventory
 from interactions import tourney
 from interactions.tourney import Abort, find, tap_at
+from player.bootstrap_layout import manifest
+from vision import pills
+from vision import textocr
 
 # --- this runs on ONE account -------------------------------------------
 ALLOWED_INSTANCE = "main"       # the user's rule: blue-shatter is a main-only
                                 # chore. Enforced, not left as a convention -
                                 # the other accounts keep their rares.
 
-# --- chrome measured off the recording ----------------------------------
-NAV_MODULES = (630, 2470)       # bottom nav, the diamond icon
-SHATTER_TAB = (682, 923)        # Inventory | Merge | [Shatter] | Assist
+# --- chrome -------------------------------------------------------------
+# What is NOT here: the tab bar, the grid lattice, the paging gestures and
+# the nav button. They live in the native layout manifest, are rescaled for
+# the player's display by device/layout.activate, and are read per call -
+# this module's own copies of them are what went stale (see the note above).
+# The Confirm button and the dialog are still measured points: they sit on a
+# screen this flow reaches only after the tab is confirmed, and the dialog is
+# verified by its template and its wording before anything is destroyed.
+# `tray_text` logs what the tray says on every batch, which is what will let
+# Confirm be read rather than remembered.
 CONFIRM_SHATTER = (538, 799)    # button spans x 311-768, y 753-849
 DIALOG_YES = (727, 1514)
 DIALOG_NO = (351, 1514)
 REWARD_NEXT = (540, 1965)       # magenta button, measured x 275-806 y 1877-2056
 REWARD_SKIP = (898, 400)        # cyan button, top right; only when >1 screen
 
-# Grid geometry: 5 columns, ~200px row pitch, first row centred at y=1088.
-GRID_COLS = (154, 346, 544, 740, 938)
-GRID_TOP = 1088
-GRID_PITCH = 200
-GRID_BOTTOM = 2270              # below this the filter bar starts
-SCROLL_BAND = (1200, 2200)      # swipe endpoints for paging the grid
-# The user does not drag the list - they FLING it, and one fling crosses the
-# whole grid either way. Measured off their own four drags in the recording:
-#   to bottom  (703,2119)->(341,128)  2041px/196ms   10413 px/s
-#              (434,1898)->(410, 28)  1888px/168ms   11268 px/s
-#   to top     (398,1406)->(395,2752) 1384px/194ms    7138 px/s
-#              (472,1431)->(257,2496) 1120px/138ms    8089 px/s
-# so ~1900px in ~180ms. Their endpoints run off-screen (y=28, y=2752) because
-# a real finger leaves the panel; ours stay just inside the bounds check.
-FLING_MS = 180
-FLING_TOP = (538, 700, 538, 2400)      # downward finger -> list goes to row 1
-FLING_BOTTOM = (538, 2400, 538, 700)   # upward finger  -> list goes to the end
+TAB_WORDS = ("inventory", "merge", "shatter", "assist")
+TRAY_DEPTH = 300                # the tray strip sits above the tab bar
+STAGE_WAIT = 2.0                # how long the green check may take to draw
 
 BATCH_MAX = 12                  # the game's cap per shatter, per the user
                                 # Selection adds no delay of its own: see
@@ -158,104 +180,118 @@ def tile_is_blue(frame, cx: int, cy: int) -> bool:
 def visible_blue(frame) -> list[tuple[int, int]]:
     """Every blue tile centre currently on screen, reading order.
 
+    The lattice is not remembered either: the rows are the lit-pixel runs of
+    THIS frame whose whole tile clears the tab bar and the filter bar
+    (vision.pills.grid_rows) and the columns come from the native manifest, so
+    the module sweep and this flow walk one grid on any display.
+
     Selected tiles carry a big green check (hue ~60) and so fail the blue
     test, which makes a re-scan naturally idempotent: already-staged tiles are
     not counted twice. Equipped tiles are locked by the game AND fail the test.
     """
-    out = []
-    y = GRID_TOP
-    while y <= GRID_BOTTOM:
-        for x in GRID_COLS:
-            if tile_is_blue(frame, x, y):
-                out.append((x, y))
-        y += GRID_PITCH
-    return out
-
-
-_at_top = False                 # do we KNOW the grid is parked at row 1?
-
-
-def fling(to_top: bool, reason: str):
-    x0, y0, x1, y1 = FLING_TOP if to_top else FLING_BOTTOM
-    act.swipe(x0, y0, x1, y1, FLING_MS, reason=reason)
-    time.sleep(0.5)                 # let the momentum settle before reading
-
-
-def scroll_grid(down: bool = True):
-    global _at_top
-    fling(to_top=not down, reason="page module grid")
-    if down:
-        _at_top = False
-
-
-def ensure_top(max_swipes: int = 3):
-    """Park the grid at row 1, WITHOUT re-dragging when it is already there.
-
-    tourney._scroll_to_top swipes a fixed four times every call. That is right
-    for a routine that visits a list once, but this one returns to the grid
-    after every batch and is almost always still at the top - so it was paying
-    four drags to discover nothing had moved.
-
-    Two things stop that. The position is remembered across calls (only a
-    downward page invalidates it), and even on a cold start it swipes until
-    the grid STOPS CHANGING rather than a fixed count - so an already-parked
-    grid costs one swipe to confirm, not four.
-    """
-    global _at_top
-    if _at_top:
-        logger.event("shatter_scroll", already_top=True, swipes=0)
-        return capture.grab()
-    before = capture.grab()
-    for i in range(max_swipes):
-        fling(to_top=True, reason="fling module grid to top")
-        after = capture.grab()
-        if np.array_equal(before[GRID_TOP:GRID_BOTTOM],
-                          after[GRID_TOP:GRID_BOTTOM]):
-            _at_top = True
-            logger.event("shatter_scroll", already_top=False, swipes=i + 1)
-            return after
-        before = after
-    _at_top = True
-    logger.event("shatter_scroll", already_top=False, swipes=max_swipes)
-    return before
+    return [(cx, cy)
+            for cy in pills.grid_rows(frame)
+            for cx in inventory.COL_X
+            if tile_is_blue(frame, cx, cy)]
 
 
 # ------------------------------------------------------------ the screens
 
-def on_shatter_tab(frame) -> bool:
-    """Modules screen with the Shatter tab open.
+def on_modules(frame) -> bool:
+    return screen.identify(frame).name == "modules"
 
-    Checked by the screen classifier plus the Confirm button, rather than by
-    remembering that we tapped the tab - a tap that silently missed would
-    otherwise have us selecting tiles on the Inventory tab, where tapping a
-    module opens it instead of staging it.
+
+def _band(key: str) -> tuple[int, int]:
+    """Geometry from the ACTIVE native manifest, read per call: a rescaled
+    display rebinds it (device/layout.activate) long after import."""
+    return tuple(manifest()["module_inventory"][key])
+
+
+def nav_modules() -> tuple[int, int]:
+    return tuple(manifest()["navigation"]["modules"])
+
+
+def tab_points(frame) -> dict[str, tuple[int, int]]:
+    """Tap point of every module tab the bar shows, by lowercase name.
+
+    Read off the frame, never remembered - the same idiom the calibrator uses
+    for the Inventory tab (player.module_roundtrip.ScreenDriver.inventory_tab).
+    A name that reads twice is dropped rather than guessed between, and a bar
+    that is covered by a detail panel reads nothing at all: that is the case
+    which used to pass on brightness alone.
     """
-    if screen.identify(frame).name != "modules":
-        return False
-    band = frame[753:849, 311:768]
-    return band.size > 0 and band.mean() > 18
+    top, bottom = _band("inventory_tab")
+    found: dict[str, list[tuple[int, int]]] = {}
+    for y, x, text in textocr.read_lines(frame[top:bottom], 1.0):
+        name = re.sub(r"[^a-z]", "", text.casefold())
+        if name in TAB_WORDS:
+            found.setdefault(name, []).append((x + 20, y + top + 10))
+    return {name: hits[0] for name, hits in found.items() if len(hits) == 1}
+
+
+def tab_states(frame, points: dict) -> dict[str, str]:
+    """Which tab the game outlines as active, when this bar is drawn as pills.
+
+    EVIDENCE, NOT A GATE. Every other preset control in the game outlines the
+    active one in green and the rest in cyan (vision.pills), but this bar has
+    never been measured, and an unmeasured assumption about the tab is exactly
+    what caused the incident this file opens with. It is logged on every batch
+    so the first live readings can promote it to a gate; what protects the
+    inventory meanwhile is the scrim check and the first tile's own
+    confirmation.
+    """
+    top, bottom = _band("inventory_tab")
+    found = pills.pills(frame, top, bottom)
+    states = {}
+    for name, (x, y) in points.items():
+        for pill in found:
+            px, py, pw, ph = pill["rect"]
+            if px <= x <= px + pw and py <= y <= py + ph:
+                states[name] = pill["state"]
+    return states
+
+
+def tray_text(frame) -> str:
+    """What the strip above the tab bar says - the shatter tray, when the
+    Shatter tab is open. Logged for the same reason as `tab_states`: Confirm
+    is still a measured point, and these readings are what will let it be
+    read instead."""
+    top, _ = _band("inventory_tab")
+    band = frame[max(0, top - TRAY_DEPTH):top]
+    return " ".join(t for _, _, t in textocr.read_lines(band, 2.0)).strip()
 
 
 def open_shatter():
+    """Reach the Shatter tab, or abort without ever touching the grid."""
     frame = capture.grab()
-    if not on_shatter_tab(frame):
-        if screen.identify(frame).name != "modules":
-            tap_at(NAV_MODULES, "nav modules")
-            time.sleep(1.2)
-        tap_at(SHATTER_TAB, "Shatter tab")
-        time.sleep(1.0)
-    frame = capture.grab()
-    if not on_shatter_tab(frame):
+    if not on_modules(frame):
+        tap_at(nav_modules(), "nav modules")
+        time.sleep(1.2)
+        frame = capture.grab()
+    if not on_modules(frame):
+        logger.shot(frame, "shatter_not_modules")
+        raise Abort("not on the Modules screen - refusing to tap")
+    if inventory._panel_open(frame):
+        # A grid tap under an open panel lands on the panel's own buttons:
+        # that is how 2026-09-13 reached "Equip Matrix Sim".
+        if not inventory._close_panel():
+            logger.shot(capture.grab(), "shatter_panel_stuck")
+            raise Abort("a module panel is open and will not close")
+        frame = capture.grab()
+    points = tab_points(frame)
+    if "shatter" not in points:
+        logger.shot(frame, "shatter_tab_unreadable")
+        raise Abort("the module tab bar does not read a single Shatter tab")
+    act.tap(*points["shatter"], reason="Shatter tab", instant=True)
+    logger.event("shatter_tab_tap", x=points["shatter"][0], y=points["shatter"][1])
+    frame = inventory.settle()
+    points = tab_points(frame)
+    if not on_modules(frame) or inventory._panel_open(frame) or "shatter" not in points:
         logger.shot(frame, "shatter_tab_missing")
-        raise Abort("could not reach the Shatter tab")
+        raise Abort("the Shatter tab did not open")
+    logger.event("shatter_tab", tabs=sorted(points),
+                 states=tab_states(frame, points), tray=tray_text(frame))
     return frame
-
-
-def staged_count_visible(frame) -> bool:
-    """Is anything staged? The empty tray shows 'Select modules to shatter'
-    and a dimmed Confirm button; a loaded one shows the shard totals."""
-    band = frame[753:849, 311:768]
-    return band.size > 0 and band.mean() > 30
 
 
 # ------------------------------------------------------------ the dialog
@@ -268,6 +304,11 @@ def confirm_dialog() -> bool:
     misidentified something upstream, and the only safe move on an
     irreversible action is to back out.
     """
+    frame = capture.grab()
+    if inventory._panel_open(frame):
+        logger.shot(frame, "shatter_panel_before_confirm")
+        inventory._close_panel()
+        raise Abort("a panel covers the Confirm button - nothing confirmed")
     tap_at(CONFIRM_SHATTER, "Confirm Shatter")
     deadline = time.monotonic() + 6.0
     frame = None
@@ -279,6 +320,9 @@ def confirm_dialog() -> bool:
     else:
         logger.shot(frame if frame is not None else capture.grab(),
                     "shatter_no_dialog")
+        # Leave no modal behind: whatever that tap opened would otherwise be
+        # the next chore's - or the next run's - problem.
+        inventory._close_panel()
         raise Abort("SHATTER MODULES dialog never appeared")
 
     score = 0.0
@@ -338,6 +382,12 @@ def select_batch(frame) -> int:
     a batch cap of 12. When the inventory finally runs low the page holds
     fewer than 12, and a short batch is perfectly fine - the outer loop just
     runs once more. One scan, one tap each, no position visited twice.
+
+    Every tap is logged with its coordinates and answered for. A panel after
+    any tap means the tile was not a shatter cell at all, and the FIRST tile
+    must be seen to take its green check before the rest are tapped - so a
+    wrong screen costs one tap and one closed panel, not twelve taps walking
+    into Equip.
     """
     staged = 0
     # NO sleep between taps. Selecting 12 tiles is a burst - the user does it
@@ -351,22 +401,50 @@ def select_batch(frame) -> int:
     # plain tap fine.
     for (x, y) in visible_blue(frame)[:BATCH_MAX]:
         act.tap(x, y, reason=f"stage blue tile {staged + 1}", instant=True)
+        logger.event("shatter_tap", n=staged + 1, x=x, y=y)
+        after = capture.grab()
+        if inventory._panel_open(after):
+            logger.shot(after, "shatter_panel_opened")
+            inventory._close_panel()
+            raise Abort(f"tile {staged + 1} at ({x},{y}) opened a module panel "
+                        f"- this is not the Shatter tab")
+        if staged == 0 and not _staged(after, x, y):
+            logger.shot(capture.grab(), "shatter_tile_not_staged")
+            raise Abort(f"the tile at ({x},{y}) did not stage - "
+                        f"refusing to tap {BATCH_MAX - 1} more")
         staged += 1
     logger.event("shatter_select", staged=staged)
     return staged
 
 
+def _staged(frame, x, y) -> bool:
+    """Has the tile at (x, y) taken its green check? Waits up to STAGE_WAIT:
+    the check is drawn, not instant, and calling an unstaged tile staged is
+    the mistake that matters here."""
+    deadline = time.monotonic() + STAGE_WAIT
+    while True:
+        if not tile_is_blue(frame, x, y):
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(0.2)
+        frame = capture.grab()
+        if inventory._panel_open(frame):
+            return False
+
+
 def one_batch(n: int) -> int:
-    frame = open_shatter()
-    frame = ensure_top()
+    open_shatter()
+    try:
+        inventory.park_top()
+    except RuntimeError as exc:
+        logger.shot(capture.grab(), "shatter_grid_unparked")
+        raise Abort(str(exc))
+    frame = inventory.settle()
     staged = select_batch(frame)
     if staged == 0:
         logger.event("shatter_batch", n=n, staged=0, done=True)
         return 0
-    frame = capture.grab()
-    if not staged_count_visible(frame):
-        logger.shot(frame, "shatter_nothing_staged")
-        raise Abort(f"tapped {staged} tiles but nothing is staged")
     confirm_dialog()
     screens = dismiss_rewards()
     logger.event("shatter_batch", n=n, staged=staged, reward_screens=screens)
@@ -404,9 +482,9 @@ if __name__ == "__main__":
     settings.select_instance(_a.instance)
     if _a.dry_run:
         guard_instance()
-        _f = open_shatter()
-        _f = ensure_top()
-        _blue = visible_blue(_f)
+        open_shatter()
+        inventory.park_top()
+        _blue = visible_blue(inventory.settle())
         print(f"visible blue tiles: {len(_blue)}")
         for _p in _blue:
             print("   ", _p)

@@ -70,6 +70,10 @@ def test_tapper_fires_one_set_and_respects_cadence(monkeypatch):
     monkeypatch.setattr(shard.act, "tap",
                         lambda x, y, reason="": (taps.append((x, y)), {"x": x, "y": y})[1])
     monkeypatch.setattr(shard.wave_reader, "read_wave", lambda f: 100)
+    # the battlefield guard has its own file (test_gem_orbit_guard.py); here
+    # it stands in as "a clean live battle", which is what these two are about
+    monkeypatch.setattr(shard, "battlefield_live",
+                        lambda points, frame=None: (True, "live"))
     monkeypatch.setattr(shard.logger, "event", lambda *a, **k: None)
     t = shard.GemOrbitTapper(enabled=True, taps=3)
     t.poll(object())
@@ -82,6 +86,10 @@ def test_tapper_never_taps_the_ability_row(monkeypatch):
     taps = []
     monkeypatch.setattr(shard.act, "tap", lambda x, y, reason="": taps.append((x, y)))
     monkeypatch.setattr(shard.wave_reader, "read_wave", lambda f: 100)
+    # the battlefield guard has its own file (test_gem_orbit_guard.py); here
+    # it stands in as "a clean live battle", which is what these two are about
+    monkeypatch.setattr(shard, "battlefield_live",
+                        lambda points, frame=None: (True, "live"))
     monkeypatch.setattr(shard.logger, "event", lambda *a, **k: None)
     ax, ay, aw, ah = shard.CONFIG["rois"]["ability_row"]
     # aim the whole set straight into the ability row (270deg = down in screen y)

@@ -322,8 +322,7 @@
     "fleet_mark": { "fleet_mark": { "after_waves": 3, "window_waves": 60 } },
     "wave_at_least": { "wave_at_least": 1000 },
     "wave_between": { "wave_between": [1000, 2000] },
-    "second_wind": { "second_wind": { "state": "after_immunity" } },
-    "death_screen": { "death_screen": true }
+    "second_wind": { "second_wind": { "state": "after_immunity" } }
   },
   "actions": {
     "burst": { "burst": { "fire": "demon_mode", "cancel_sprint": true } },
@@ -331,8 +330,7 @@
     "fire": { "fire": { "button": "nuke" } },
     "toggle_uw": { "toggle_uw": { "weapon": "chain_lightning", "want_on": true } },
     "cancel_sprint": { "cancel_sprint": true },
-    "surrender_retry": { "surrender_retry": true },
-    "stop_after_run": { "stop_after_run": true }
+    "surrender_retry": { "surrender_retry": true }
   },
   "cl_modes": {
     "off": {},
@@ -2137,17 +2135,21 @@ function renderRunner(){
         ${presets.map(p => `<option value="${esc(p.name)}" title="${esc(p.title)}"
             ${p.name === firstReady ? "selected" : ""}>${esc(p.label)}</option>`).join("")}
       </select>
-      <button data-prepare-run onclick="prepareRun()">Prepare this run</button><button id="start-run" onclick="startPreset()">▶ Start</button>
+      <button data-prepare-run onclick="prepareRun()">Prepare this run</button><button id="start-run" onclick="startPreset()">▶ Start playing</button>
       <button onclick="startGemsOnly()" ${procs.length ? "disabled" : ""}>Collect diamonds only</button>
-      ${S.status.stop_flag
-        ? `<button class="small ghost" onclick="ctl('clear_flag')">✋ will stop after this run — cancel?</button>`
-        : `<button class="small ghost" onclick="ctl('stop_after_run')">Finish current run, then stop</button>`}
     </div>
     <div id="run-ready" class="muted" style="margin-top:.4rem"></div>
     <p class="prepare-run-status" role="status">${esc(S.prepareMessage || '')}</p>
-    <p class="muted" style="margin-top:.4rem">“Combo (day plan)” runs the whole
-      day plan below. “Stop now” never touches the game — a live run keeps
-      playing; prefer “finish current run, then stop”.</p>`;
+    ${S.status.stop_flag ? `<p class="warn" style="margin-top:.4rem">
+      <b>Scheduled to stop.</b> The day plan asked to stop when this run ends,
+      so no new run will start after it.
+      <button class="small ghost" onclick="ctl('clear_flag')">Keep playing instead</button></p>` : ""}
+    <p class="muted" style="margin-top:.4rem"><b>Start playing</b> keeps playing
+      run after run until you stop it — Start also cancels any pending stop.
+      <b>Stop now</b> ends the automation only: a battle already on screen keeps
+      playing by itself, and nothing you have earned is lost.
+      <b>Prepare this run</b> sets the equipment up without starting a battle.
+      <b>Collect diamonds only</b> gathers gems on a run you play yourself.</p>`;
   if (chosen) {
     const sel = $("#start-preset");
     if (sel && [...sel.options].some(o => o.value === chosen && !o.disabled)) sel.value = chosen;
@@ -2165,7 +2167,7 @@ function renderRunReady(){
   if (prepare) prepare.disabled = running;
   if (running) {
     if (btn) btn.disabled = true;
-    out.textContent = 'Automation is running. Use Stop now to stop the driver, or finish current run to stop after the battle.';
+    out.textContent = 'Playing. It restarts after every death until you press Stop now.';
     return;
   }
   const r = (S.runReadiness || {})[sel.value];
@@ -2872,13 +2874,13 @@ function pInput(spec, val, js){
 /* ---- RULE model: source spellings <-> {kind, params} */
 const TRIG_LABEL = { bar:"a bar is low / falling", wall_collapse:"the wall collapses",
   fleet_mark:"a fleet spawns", wave_at_least:"wave is reached",
-  wave_between:"between two waves", second_wind:"Second Wind state",
-  death_screen:"the run just ended" };
+  wave_between:"between two waves", second_wind:"Second Wind state" };
 const ACT_LABEL = { burst:"emergency burst (sprint→confirm→ability)",
   fire:"fire an ability", toggle_uw:"switch a weapon on/off",
-  cancel_sprint:"end the intro sprint", surrender_retry:"surrender & retry",
-  stop_after_run:"stop after this run" };
-const FLAG_ACTS = ["cancel_sprint", "surrender_retry", "stop_after_run"];
+  cancel_sprint:"end the intro sprint", surrender_retry:"surrender & retry" };
+// RETIRED 2026-09-27: `stop_after_run` and the "the run just ended"
+// trigger - the only way a run type could end the farm by itself.
+const FLAG_ACTS = ["cancel_sprint", "surrender_retry"];
 
 function trigParse(when){
   const kinds = Object.keys(S.vocab.rule_triggers.fields);
@@ -2887,7 +2889,6 @@ function trigParse(when){
   if (k === "wave_at_least") return { k, p:{ wave: when.wave_at_least ?? when.wave } };
   if (k === "wave_between") { const v = when.wave_between || when.value || [];
     return { k, p:{ lo:v[0], hi:v[1] } }; }
-  if (k === "death_screen") return { k, p:{} };
   return { k, p:{ ...(typeof when[k] === "object" ? when[k] : {}) } };
 }
 function trigBuild(k, p){
@@ -2896,7 +2897,6 @@ function trigBuild(k, p){
   if (k === "bar") return { ...clean };
   if (k === "wave_at_least") return { wave_at_least: clean.wave };
   if (k === "wave_between") return { wave_between: [clean.lo, clean.hi] };
-  if (k === "death_screen") return { death_screen: true };
   return { [k]: clean };
 }
 function actParse(doo){

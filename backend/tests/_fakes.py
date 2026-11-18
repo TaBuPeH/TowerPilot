@@ -281,7 +281,8 @@ def _rs(**kw):
     """A RunState stand-in carrying only what the unit under test touches."""
     base = dict(cl_offsets={}, cl_always_above=None, rules_fired=set(),
                 rule_next={}, rule_cards_tries={}, rules_cards_off=set(),
-                sprint_ended=False, bot_left_battle=False, sw_proc_count=0,
+                sprint_ended=False, sprint_end_try=0.0,
+                bot_left_battle=False, sw_proc_count=0,
                 sw_floater_seen=False, sw_miss=0, post_sw_until=0.0,
                 sw_immune_until=0.0, dm_fired=False, nuke_fired_at=0.0,
                 last_fire={"nuke": 0.0, "demon_mode": 0.0}, wall_prev=None,

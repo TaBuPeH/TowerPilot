@@ -45,6 +45,8 @@ from pathlib import Path
 # backend root as cwd - put that root on sys.path so sibling modules resolve.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import cv2
+
 from device import act
 from device import capture
 from scheduling import daystate
@@ -154,6 +156,29 @@ GEM_ORBIT_TAPS = 3              # points per set, spread over the arc
 GEM_ORBIT_JITTER = 0.03         # +-3% radius/position randomisation
 GEM_ORBIT_SPREAD = 6.0          # degrees between adjacent points in a set
 
+# WHAT A READABLE WAVE DOES NOT PROVE (2026-10-13). This harvest taps points
+# it never looks at, and its only gate was "wave_reader reads a number". That
+# is true of every frame of a run - INCLUDING one where the player has a panel
+# open over the battlefield, because the wave counter sits above it. On
+# 2026-10-13 the taps went into such a panel and bought gems with medals.
+#
+# So the tap set is now gated on evidence that the place about to be tapped
+# IS the battlefield, right now:
+#   * the wave reads AND the screen classifies as `battle` (a menu with digits
+#     in the wave box cannot pass both);
+#   * the GAME is the window on screen - `dumpsys window windows`, the same
+#     evidence overlays.py uses, because a Play Store page over the game still
+#     leaves the last game frame in a screencap;
+#   * the arc itself is MOVING. A live battlefield never holds still: measured
+#     over 0.4s on wave 4465 it changes by 25-70 mean abs diff, while a panel
+#     drawn over it is static. This is the one that catches an in-game panel,
+#     which no window list and no wave counter can see.
+# Any of them failing skips the set - a missed diamond costs nothing, and this
+# routine has no business tapping a screen it cannot vouch for.
+ORBIT_PROBE_PAD = 60            # the arc neighbourhood watched for movement
+ORBIT_MOTION_MIN = 8.0          # mean abs diff; 3x below the measured minimum
+ORBIT_MOTION_GAP = 0.4          # seconds between the two frames compared
+
 # The game-speed widget ("- x5.0 +"), panel-open layout; rides the shifting
 # bottom HUD, so capture.layout_offset applies to every y here.
 SPEED_BAND = (1535, 1615)       # y-band of the label
@@ -208,6 +233,60 @@ def _orbit_points(center, radius, angle, taps, jitter, spread):
     return pts
 
 
+def _probe_box(points, pad: int = ORBIT_PROBE_PAD) -> tuple[int, int, int, int]:
+    """(y0, y1, x0, x1) around the tap points: what must be moving."""
+    xs = [x for x, _ in points]
+    ys = [y for _, y in points]
+    return (max(0, min(ys) - pad), max(ys) + pad,
+            max(0, min(xs) - pad), max(xs) + pad)
+
+
+def battlefield_live(points, frame=None) -> tuple[bool, str]:
+    """Is the tower on screen with nothing over `points`, RIGHT NOW?
+
+    Returns (ok, why) - `why` is logged on a refusal so a run that collects
+    nothing says which gate stopped it rather than going quiet. See the note
+    above GEM_ORBIT_* for why each of the three checks is here.
+    """
+    frame = capture.grab() if frame is None else frame
+    if wave_reader.read_wave(frame) is None:
+        return False, "no_wave"
+    name = screen.identify(frame).name
+    if name != "battle":
+        return False, f"screen:{name}"
+    try:
+        from device import overlays
+        wins = overlays.windows(settings.instance()["serial"])
+    except Exception as exc:                      # noqa: BLE001
+        # The window list is EVIDENCE, and evidence that cannot be read is not
+        # permission: an adb hiccup must not turn into a blind tap.
+        return False, f"windows_unreadable:{type(exc).__name__}"
+    if not wins:
+        return False, "no_windows"
+    # IN FRONT, not merely present. `dumpsys window windows` lists front to
+    # back, and a backgrounded activity stays in it: the Play Store sat at #1
+    # behind the game (#0) all day on 2026-10-13 while the game played
+    # normally, so "is it in the list" would refuse every set forever. What
+    # matters is whether anything that is not system chrome is ABOVE the game.
+    for w in wins:
+        if w.startswith(overlays.GAME_PKG):
+            break
+        if not any(w.startswith(p) for p in overlays.EXPECTED_PREFIXES):
+            return False, "in_front:" + w.split("/")[0]
+    else:
+        return False, "game_not_on_screen"
+    y0, y1, x0, x1 = _probe_box(points)
+    time.sleep(ORBIT_MOTION_GAP)
+    after = capture.grab()
+    if wave_reader.read_wave(after) is None:
+        return False, "no_wave"
+    motion = float(cv2.absdiff(frame[y0:y1, x0:x1],
+                               after[y0:y1, x0:x1]).mean())
+    if motion < ORBIT_MOTION_MIN:
+        return False, f"static:{motion:.1f}"
+    return True, "live"
+
+
 class GemOrbitTapper:
     """Detection-free harvest of the orbiting gem: every `interval` seconds tap a
     few points on the top-left (135deg) arc it circles, clear of the ability row,
@@ -232,24 +311,34 @@ class GemOrbitTapper:
         self.jitter = float(jitter)
         self.spread = float(spread)
         self.next_at = 0.0
+        self._last_skip = None      # the refusal reason already logged
 
     def points(self):
         return _orbit_points(self.center, self.radius, self.angle, self.taps,
                              self.jitter, self.spread)
 
     def poll(self, frame) -> None:
-        """Tap the arc if enabled, in a battle, and due. Reads the wave only when
-        the timer is due (cheap), and REFUSES if none is on screen - a menu or
-        dialog is not ours to tap into (rule 4/7)."""
+        """Tap the arc if enabled and due - and only over a battlefield this
+        frame can vouch for (battlefield_live; rule 4/7). The checks run only
+        when the timer is due, so they cost nothing between sets."""
         if not self.enabled:
             return
         now = time.monotonic()
         if now < self.next_at:
             return
-        if wave_reader.read_wave(frame) is None:
-            return                                   # not a live battle - hands off
+        points = self.points()
+        ok, why = battlefield_live(points, frame)
+        if not ok:
+            # Once per reason, not once per poll: a player sitting in a menu
+            # would otherwise write a line every 25 seconds all evening.
+            if why != self._last_skip:
+                self._last_skip = why
+                logger.event("gem_orbit_skip", reason=why)
+            self.next_at = now + self.interval
+            return
+        self._last_skip = None
         self.next_at = now + self.interval * (1.0 + random.uniform(-0.12, 0.12))
-        for (x, y) in self.points():
+        for (x, y) in points:
             if _in_ability_row((x, y)):
                 logger.event("gem_orbit_skip", reason="ability_row", x=x, y=y)
                 continue
