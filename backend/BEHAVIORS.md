@@ -129,12 +129,25 @@ red, commander orange, overcharge blue - found by shape + colour, no
 template. Once seen the Nuke fires at once whatever the colour: the fleet's
 Scatter swarm killed the tower 3-8 waves after spawn (3753, 4498 x2 on
 2026-10-18) while a 10-wave "is it dying?" hold kept the Nuke idle, and the
-Nuke refreshes long before the next fleet anyway. Events: `fleet_sighting`
+Nuke refreshes long before the next fleet anyway. The scan starts AT the
+mark, not at mark+`after_waves` (2026-10-20: 4495 killed at 4497 before the
+first look, and at 4506 unsighted), and an unsighted mark still fires on
+schedule at mark+`after_waves` (`why: schedule_unsighted`). Events:
+`fleet_watch` (the first look at each mark, with a frame), `fleet_sighting`
 (type, count, shot), `fleet_nuke.why` (`blue_fleet` / `fleet_<type>` /
-`schedule`), `fleet_fire_skipped` (button absent or not ready - the intro
-sprint locks the row at 1495). `fleet.sighting.enabled: false` restores the
-blind schedule; `fleet.sighting.min_area` tunes the pentagon size (live
-T15: fleet 1848-1882 px, ordinary pentagons <= 582).
+`schedule_unsighted` / `schedule`), `fleet_fire_skipped` (button absent or
+not ready - the intro sprint locks the row at 1495).
+`fleet.sighting.enabled: false` restores the blind schedule;
+`fleet.sighting.min_area` tunes the pentagon size (live T15: fleet
+1848-1882 px, ordinary pentagons <= 582).
+
+The ~4900 ceiling is a different death: "Killed By Scatter" with no fleet
+near, Second Wind on cooldown, so the SW-gated watch never opened and Nuke +
+Demon Mode died unspent (7 of 11 deaths 2026-10-18..20). The account's
+`high_tier_wall` policy now carries two Tier B rules - `bar: wall below
+0.15` -> burst Demon Mode, then fire Nuke, `repeat`, `refire_sec 45` - which
+the main loop evaluates every pass with no Second Wind gate (profile, not
+code: SCHEMA.md "a `bar: wall` + `fire: nuke` rule is a Tier B rule").
 
 ### Demon Mode on cooldown (global behaviour, quest kills)
 `policies.global_behaviors.demon_mode_always: true` fires Demon Mode whenever
